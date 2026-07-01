@@ -304,22 +304,21 @@ pub fn update_build_preview(
         )).id(),
         BuildKind::Belt => {
             let dir = belt_dir.0;
+            let text_color = if valid {
+                Color::srgba(0.0, 0.8, 0.0, 0.6)
+            } else {
+                Color::srgba(0.8, 0.0, 0.0, 0.5)
+            };
             commands.spawn((
                 Ghost,
-                ColorMesh2dBundle {
-                    mesh: Mesh2dHandle(shapes.square.clone()),
-                    material,
-                    transform: Transform::from_xyz(cx, cy, z),
-                    ..default()
-                },
                 Text2dBundle {
                     text: Text::from_section(direction_arrow(dir), TextStyle {
                         font_size: 24.0,
-                        color: Color::srgba(1.0, 1.0, 1.0, 0.6),
+                        color: text_color,
                         ..default()
                     }),
                     text_anchor: Anchor::Center,
-                    transform: Transform::from_xyz(cx, cy, z + 0.1),
+                    transform: Transform::from_xyz(cx, cy, z),
                     ..default()
                 },
             )).id()
