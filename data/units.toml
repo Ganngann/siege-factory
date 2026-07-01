@@ -1,0 +1,16 @@
+[soldier]
+name = "Soldier"
+cost = { ore = 10 }
+hp = 30
+damage = 8
+range_tiles = 3.0
+fire_rate_sec = 1.0
+color = "#33CC4D"
+
+[worker]
+name = "Worker"
+cost = { ore = 5 }
+hp = 15
+speed = 80.0
+mine_interval_sec = 3.0
+color = "#E6CC33"

@@ -1,3 +1,12 @@
+[game]
+win_waves = 10
+wave_interval_sec = 15.0
+spawn_interval_sec = 5.0
+spawn_timer_min = 1.5
+hp_per_wave = 5
+max_enemies_base = 2
+max_enemies_cap = 20
+
 [[waves]]
 interval_sec = 60.0
 enemies = [

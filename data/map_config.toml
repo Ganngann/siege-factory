@@ -1,8 +1,24 @@
 [map]
+tile_size = 32.0
 width = 20
 height = 15
-deposit_min = 5
-deposit_max = 15
-spawner_min = 1
-spawner_max = 4
-hq_clearance = 3
+
+[deposits]
+min_amount = 50
+max_amount = 150
+positions = [
+  { x = 3, y = 3 },
+  { x = 3, y = 11 },
+  { x = 8, y = 6 },
+  { x = 12, y = 10 },
+  { x = 16, y = 4 },
+  { x = 16, y = 11 },
+]
+
+[hq]
+start_ore = 20
+hp = 100
+
+[spawners]
+min = 1
+max = 4

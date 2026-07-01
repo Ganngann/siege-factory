@@ -6,7 +6,53 @@ pub struct CorePlugin;
 impl Plugin for CorePlugin {
     fn build(&self, app: &mut App) {
         app.init_state::<GameState>();
+        app.add_systems(OnEnter(GameState::Loading), spawn_loading_ui);
+        app.add_systems(OnExit(GameState::Loading), despawn_loading_ui);
         app.add_systems(Update, game_state_transition);
+    }
+}
+
+#[derive(Component)]
+struct LoadingUi;
+
+fn spawn_loading_ui(mut commands: Commands) {
+    commands.spawn((Camera2dBundle::default(), LoadingUi));
+    commands
+        .spawn((NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            ..default()
+        }, LoadingUi))
+        .with_children(|parent| {
+            parent.spawn((TextBundle::from_section(
+                "SIEGE FACTORY",
+                TextStyle { font_size: 48.0, color: Color::srgb(0.8, 0.8, 1.0), ..default() },
+            ), LoadingUi));
+            parent.spawn((TextBundle::from_section(
+                "Build defenses  |  Survive waves  |  Automate everything",
+                TextStyle { font_size: 16.0, color: Color::srgb(0.6, 0.6, 0.8), ..default() },
+            ), LoadingUi));
+            parent.spawn((TextBundle::from_section(
+                "",
+                TextStyle::default(),
+            ), LoadingUi));
+            parent.spawn((TextBundle::from_section(
+                "Press SPACE to start",
+                TextStyle { font_size: 20.0, color: Color::WHITE, ..default() },
+            ), LoadingUi));
+        });
+}
+
+fn despawn_loading_ui(mut commands: Commands, query: Query<Entity, With<LoadingUi>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
     }
 }
 

@@ -1,43 +1,42 @@
 [buildings.hq]
-name = "Quartier Général"
-cost = {}
-hp = 500
+name = "HQ"
+hp = 100
 tile_size = { w = 2, h = 2 }
-sprite = "textures/buildings/hq.png"
+color = "#3366CC"
 
 [buildings.miner]
-name = "Mine"
+name = "Miner"
 cost = { ore = 10 }
 hp = 100
 tile_size = { w = 1, h = 1 }
-sprite = "textures/buildings/miner.png"
+color = "#993300"
 production = { resource = "ore", interval_sec = 2.0 }
 
 [buildings.assembler]
-name = "Assembleur"
+name = "Assembler"
 cost = { ore = 15 }
 hp = 80
 tile_size = { w = 1, h = 1 }
-sprite = "textures/buildings/assembler.png"
+color = "#4D99CC"
 
 [buildings.belt]
-name = "Ceinture"
+name = "Belt"
 cost = { ore = 3 }
 hp = 20
 tile_size = { w = 1, h = 1 }
-sprite = "textures/buildings/belt.png"
-
-[buildings.turret]
-name = "Tourelle"
-cost = { ore = 20, ammo = 5 }
-hp = 120
-tile_size = { w = 1, h = 1 }
-sprite = "textures/buildings/turret.png"
-combat = { damage = 10, range = 4.0, fire_rate_sec = 1.0 }
+color = "#808080"
 
 [buildings.wall]
-name = "Mur"
+name = "Wall"
 cost = { ore = 5 }
 hp = 300
 tile_size = { w = 1, h = 1 }
-sprite = "textures/buildings/wall.png"
+color = "#4D4D4D"
+
+[buildings.turret]
+name = "Turret"
+cost = { ore = 20, ammo = 5 }
+hp = 120
+tile_size = { w = 1, h = 1 }
+color = "#E63333"
+combat = { damage = 5, range = 4.0, fire_rate_sec = 1.0 }
