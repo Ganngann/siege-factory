@@ -86,6 +86,7 @@ struct BuildingsToml {
 #[derive(Deserialize)]
 struct BuildingEntry {
     name: String,
+    #[serde(default)]
     cost: HashMap<String, u32>,
     hp: u32,
     tile_size: TileSize,

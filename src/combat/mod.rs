@@ -21,8 +21,8 @@ impl Plugin for CombatPlugin {
 fn move_and_hit_projectiles(
     time: Res<Time>,
     mut commands: Commands,
-    mut projectiles: Query<(Entity, &mut Transform, &Projectile)>,
-    mut targets: Query<(&mut Health, &Transform), With<EnemyComponent>>,
+    mut projectiles: Query<(Entity, &mut Transform, &Projectile), Without<EnemyComponent>>,
+    mut targets: Query<(&mut Health, &Transform), (With<EnemyComponent>, Without<Projectile>)>,
     mut enemy_events: EventWriter<DespawnEnemy>,
 ) {
     let hit_dist = 10.0;
