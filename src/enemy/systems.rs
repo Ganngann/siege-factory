@@ -181,9 +181,9 @@ pub fn despawn_game_over_ui(mut commands: Commands, query: Query<Entity, With<Ga
 pub fn cleanup_game_entities(
     mut commands: Commands,
     enemies: Query<Entity, (With<Enemy>, Without<TilePosition>)>,
-    soldiers_and_workers: Query<Entity, Or<(With<crate::unit::Soldier>, With<crate::unit::Worker>)>>,
+    units: Query<Entity, With<crate::economy::components::Unit>>,
 ) {
-    for entity in enemies.iter().chain(soldiers_and_workers.iter()) {
+    for entity in enemies.iter().chain(units.iter()) {
         commands.entity(entity).despawn();
     }
 }

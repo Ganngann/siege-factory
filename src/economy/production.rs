@@ -1,24 +1,23 @@
 use std::collections::HashMap;
 use bevy::prelude::*;
 use crate::economy::belt::BeltSlots;
-use crate::economy::components::{Miner, Assembler, Direction};
+use crate::economy::components::{Assembler, Direction, Produces};
 use crate::economy::recipe::RecipeRegistry;
-use crate::economy::resource::ResourceId;
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 
 pub fn production_tick(
     time: Res<Time>,
-    mut miner_query: Query<(&mut Miner, &TilePosition)>,
+    mut producers: Query<(&mut Produces, &TilePosition)>,
     mut events: EventWriter<SpawnBeltItemEvent>,
 ) {
-    for (mut miner, tile_pos) in miner_query.iter_mut() {
-        miner.production_timer += time.delta_seconds();
-        while miner.production_timer >= miner.interval {
-            miner.production_timer -= miner.interval;
+    for (mut prod, tile_pos) in producers.iter_mut() {
+        prod.timer += time.delta_seconds();
+        while prod.timer >= prod.interval {
+            prod.timer -= prod.interval;
             events.send(SpawnBeltItemEvent {
                 source_tile: *tile_pos,
-                resource: ResourceId::Ore,
+                resource: prod.resource,
             });
         }
     }

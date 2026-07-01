@@ -15,6 +15,12 @@ pub struct SpawnBeltItemEvent {
     pub resource: ResourceId,
 }
 
+#[derive(Event)]
+pub struct BuildOrderEvent {
+    pub kind: String,
+    pub pos: TilePosition,
+}
+
 pub struct CleanupPlugin;
 
 impl Plugin for CleanupPlugin {

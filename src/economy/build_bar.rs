@@ -1,16 +1,16 @@
 use bevy::prelude::*;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::resource::Inventory;
-use crate::economy::components::{BuildKind, BuildMode, HQ, SetBuildModeEvent};
+use crate::economy::components::{BuildMode, HQ, SetBuildModeEvent};
 use crate::economy::unit_config::UnitConfig;
-use crate::unit::{SpawnUnitEvent, UnitKind};
+use crate::unit::SpawnUnitEvent;
 
 #[derive(Component)]
 pub struct BuildBarPanel;
 
 pub enum BuildBarEntryKind {
-    Building(BuildKind),
-    Unit(UnitKind),
+    Building(String),
+    Unit(String),
 }
 
 #[derive(Component)]
@@ -39,16 +39,6 @@ fn can_afford_building(hq_inv: &Inventory, cost: &[crate::economy::building::Bui
 
 fn can_afford_unit(hq_inv: &Inventory, cost: &[crate::economy::unit_config::UnitCost]) -> bool {
     cost.iter().all(|c| hq_inv.get(c.resource) >= c.amount)
-}
-
-fn kind_to_id(kind: BuildKind) -> &'static str {
-    match kind {
-        BuildKind::Miner => "miner",
-        BuildKind::Assembler => "assembler",
-        BuildKind::Belt => "belt",
-        BuildKind::Wall => "wall",
-        BuildKind::Turret => "turret",
-    }
 }
 
 pub fn spawn_build_bar(
@@ -83,14 +73,7 @@ pub fn spawn_build_bar(
                 if def.id == "hq" {
                     continue;
                 }
-                let kind = match def.id.as_str() {
-                    "miner" => BuildKind::Miner,
-                    "assembler" => BuildKind::Assembler,
-                    "belt" => BuildKind::Belt,
-                    "wall" => BuildKind::Wall,
-                    "turret" => BuildKind::Turret,
-                    _ => continue,
-                };
+                let kind = def.id.clone();
                 let bg_color = def.color;
                 let cost_str = format_building_cost(&def.cost);
                 parent
@@ -131,15 +114,13 @@ pub fn spawn_build_bar(
                 TextStyle { font_size: 20.0, color: Color::srgba(1.0, 1.0, 1.0, 0.3), ..default() },
             ));
 
-            for (unit_kind, name, cost) in [
-                (UnitKind::Soldier, &unit_cfg.soldier.unit.name, format_unit_cost(&unit_cfg.soldier.unit.cost)),
-                (UnitKind::Worker, &unit_cfg.worker.unit.name, format_unit_cost(&unit_cfg.worker.unit.cost)),
-            ] {
+            for (id, def) in &unit_cfg.units {
                 let bg_color = Color::srgb(0.2, 0.25, 0.3);
+                let cost_str = format_unit_cost(&def.cost);
                 parent
                     .spawn((
                         BuildBarEntry {
-                            kind: BuildBarEntryKind::Unit(unit_kind),
+                            kind: BuildBarEntryKind::Unit(id.clone()),
                             original_color: bg_color,
                         },
                         ButtonBundle {
@@ -159,11 +140,11 @@ pub fn spawn_build_bar(
                     ))
                     .with_children(|b| {
                         b.spawn(TextBundle::from_section(
-                            name.as_str(),
+                            &def.name,
                             TextStyle { font_size: 13.0, color: Color::WHITE, ..default() },
                         ));
                         b.spawn(TextBundle::from_section(
-                            cost,
+                            &cost_str,
                             TextStyle { font_size: 10.0, color: Color::srgb(1.0, 0.85, 0.3), ..default() },
                         ));
                     });
@@ -182,10 +163,10 @@ pub fn build_bar_interaction(
         }
         match &entry.kind {
             BuildBarEntryKind::Building(kind) => {
-                build_events.send(SetBuildModeEvent(Some(*kind)));
+                build_events.send(SetBuildModeEvent(Some(kind.clone())));
             }
             BuildBarEntryKind::Unit(kind) => {
-                unit_events.send(SpawnUnitEvent(*kind));
+                unit_events.send(SpawnUnitEvent(kind.clone()));
             }
         }
     }
@@ -204,13 +185,13 @@ pub fn update_build_bar(
     for (entry, mut bg, mut border) in button_query.iter_mut() {
         match &entry.kind {
             BuildBarEntryKind::Building(kind) => {
-                let is_active = build_mode.0 == Some(*kind);
+                let is_active = build_mode.0.as_ref() == Some(kind);
                 let affordable = hq_inv
                     .and_then(|inv| {
                         registry
                             .buildings
                             .iter()
-                            .find(|def| def.id == kind_to_id(*kind))
+                            .find(|def| &def.id == kind)
                             .map(|def| can_afford_building(inv, &def.cost))
                     })
                     .unwrap_or(false);
@@ -228,12 +209,10 @@ pub fn update_build_bar(
                 };
             }
             BuildBarEntryKind::Unit(kind) => {
-                let cost = match kind {
-                    UnitKind::Soldier => &unit_cfg.soldier.unit.cost,
-                    UnitKind::Worker => &unit_cfg.worker.unit.cost,
-                };
                 let affordable = hq_inv
-                    .map(|inv| can_afford_unit(inv, cost))
+                    .and_then(|inv| {
+                        unit_cfg.get(kind).map(|def| can_afford_unit(inv, &def.cost))
+                    })
                     .unwrap_or(false);
 
                 bg.0 = if affordable {

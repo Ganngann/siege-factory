@@ -34,6 +34,20 @@ impl FromWorld for ShapeCache {
     }
 }
 
+impl ShapeCache {
+    pub fn get_visual(&self, visual: &str) -> Handle<Mesh> {
+        match visual {
+            "square" => self.square.clone(),
+            "diamond" => self.diamond.clone(),
+            "triangle" => self.triangle.clone(),
+            "rectangle" => self.rectangle.clone(),
+            "pentagon" => self.pentagon.clone(),
+            "circle" => self.circle.clone(),
+            _ => self.square.clone(),
+        }
+    }
+}
+
 pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {

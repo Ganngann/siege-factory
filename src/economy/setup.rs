@@ -22,7 +22,7 @@ pub fn setup_hq(
     let cy = cfg.height as f32 * cfg.tile_size / 2.0;
     commands.spawn((
         HQ,
-        Building { name: "HQ".to_string() },
+        Building { kind: "hq".to_string(), name: "HQ".to_string() },
         inv,
         ColorMesh2dBundle {
             mesh: Mesh2dHandle(meshes.add(Rectangle::new(cfg.tile_size * 2.0 - 4.0, cfg.tile_size * 2.0 - 4.0))),

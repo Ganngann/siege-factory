@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::economy::resource::ResourceId;
 
 #[derive(Component)]
 pub struct HQ;
@@ -22,12 +23,8 @@ pub struct Assembler {
 
 #[derive(Component)]
 pub struct Building {
+    pub kind: String,
     pub name: String,
-}
-
-#[derive(Component)]
-pub struct Turret {
-    pub fire_timer: f32,
 }
 
 #[derive(Component)]
@@ -72,16 +69,7 @@ impl Direction {
 }
 
 #[derive(Resource, Default)]
-pub struct BuildMode(pub Option<BuildKind>);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BuildKind {
-    Miner,
-    Assembler,
-    Belt,
-    Wall,
-    Turret,
-}
+pub struct BuildMode(pub Option<String>);
 
 #[derive(Resource, Default)]
 pub struct BeltDirection(pub Direction);
@@ -90,4 +78,24 @@ pub struct BeltDirection(pub Direction);
 pub struct BuildPreview(pub Option<Entity>);
 
 #[derive(Event)]
-pub struct SetBuildModeEvent(pub Option<BuildKind>);
+pub struct SetBuildModeEvent(pub Option<String>);
+
+// ── Generic behavior components ──
+
+#[derive(Component)]
+pub struct Produces {
+    pub resource: ResourceId,
+    pub interval: f32,
+    pub timer: f32,
+}
+
+#[derive(Component, Clone)]
+pub struct TurretCombat {
+    pub damage: u32,
+    pub range_sq: f32,
+    pub fire_interval: f32,
+    pub timer: f32,
+}
+
+#[derive(Component)]
+pub struct Unit;

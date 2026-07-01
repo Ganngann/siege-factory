@@ -16,27 +16,18 @@ pub struct UnitDef {
     pub cost: Vec<UnitCost>,
     pub hp: u32,
     pub color: Color,
-}
-
-#[derive(Debug, Clone)]
-pub struct SoldierDef {
-    pub unit: UnitDef,
+    pub visual: String,
+    pub kind: String,
     pub damage: u32,
     pub range_tiles: f32,
     pub fire_rate_sec: f32,
-}
-
-#[derive(Debug, Clone)]
-pub struct WorkerDef {
-    pub unit: UnitDef,
     pub speed: f32,
     pub mine_interval_sec: f32,
 }
 
 #[derive(Debug, Clone, Resource)]
 pub struct UnitConfig {
-    pub soldier: SoldierDef,
-    pub worker: WorkerDef,
+    pub units: HashMap<String, UnitDef>,
 }
 
 fn parse_hex_color(s: &str) -> Color {
@@ -60,58 +51,53 @@ fn parse_cost(cost: &HashMap<String, u32>) -> Vec<UnitCost> {
 impl UnitConfig {
     pub fn load() -> Self {
         let toml_str = include_str!("../../data/units.toml");
-        let parsed: UnitsToml = toml::from_str(toml_str).expect("failed to parse units.toml");
-        Self {
-            soldier: SoldierDef {
-                damage: parsed.soldier.damage,
-                range_tiles: parsed.soldier.range_tiles,
-                fire_rate_sec: parsed.soldier.fire_rate_sec,
-                unit: UnitDef {
-                    id: "soldier".to_string(),
-                    name: parsed.soldier.name,
-                    cost: parse_cost(&parsed.soldier.cost),
-                    hp: parsed.soldier.hp,
-                    color: parse_hex_color(&parsed.soldier.color),
-                },
-            },
-            worker: WorkerDef {
-                speed: parsed.worker.speed,
-                mine_interval_sec: parsed.worker.mine_interval_sec,
-                unit: UnitDef {
-                    id: "worker".to_string(),
-                    name: parsed.worker.name,
-                    cost: parse_cost(&parsed.worker.cost),
-                    hp: parsed.worker.hp,
-                    color: parse_hex_color(&parsed.worker.color),
-                },
-            },
+        let parsed: HashMap<String, UnitEntry> = toml::from_str(toml_str)
+            .expect("failed to parse units.toml");
+        let mut units = HashMap::new();
+        for (id, entry) in parsed {
+            let def = UnitDef {
+                id: id.clone(),
+                name: entry.name,
+                cost: parse_cost(&entry.cost),
+                hp: entry.hp,
+                color: parse_hex_color(&entry.color),
+                visual: entry.visual.unwrap_or_else(|| "circle".to_string()),
+                kind: entry.kind.unwrap_or_else(|| "combat".to_string()),
+                damage: entry.damage.unwrap_or(0),
+                range_tiles: entry.range_tiles.unwrap_or(0.0),
+                fire_rate_sec: entry.fire_rate_sec.unwrap_or(0.0),
+                speed: entry.speed.unwrap_or(0.0),
+                mine_interval_sec: entry.mine_interval_sec.unwrap_or(0.0),
+            };
+            units.insert(id, def);
         }
+        Self { units }
+    }
+
+    pub fn get(&self, id: &str) -> Option<&UnitDef> {
+        self.units.get(id)
     }
 }
 
 #[derive(Deserialize)]
-struct UnitsToml {
-    soldier: SoldierEntry,
-    worker: WorkerEntry,
-}
-
-#[derive(Deserialize)]
-struct SoldierEntry {
+struct UnitEntry {
     name: String,
+    #[serde(default)]
     cost: HashMap<String, u32>,
     hp: u32,
-    damage: u32,
-    range_tiles: f32,
-    fire_rate_sec: f32,
     color: String,
-}
-
-#[derive(Deserialize)]
-struct WorkerEntry {
-    name: String,
-    cost: HashMap<String, u32>,
-    hp: u32,
-    speed: f32,
-    mine_interval_sec: f32,
-    color: String,
+    #[serde(default)]
+    visual: Option<String>,
+    #[serde(default)]
+    kind: Option<String>,
+    #[serde(default)]
+    damage: Option<u32>,
+    #[serde(default)]
+    range_tiles: Option<f32>,
+    #[serde(default)]
+    fire_rate_sec: Option<f32>,
+    #[serde(default)]
+    speed: Option<f32>,
+    #[serde(default)]
+    mine_interval_sec: Option<f32>,
 }

@@ -2,8 +2,7 @@ use bevy::prelude::*;
 use bevy::sprite::Mesh2dHandle;
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
-use crate::economy::building::BuildingRegistry;
-use crate::economy::components::{HQ, Turret};
+use crate::economy::components::{HQ, TurretCombat};
 use crate::economy::resource::Inventory;
 use crate::enemy::components::{Enemy, Health};
 use crate::enemy::registry::EnemyRegistry;
@@ -46,33 +45,20 @@ pub fn enemies_damage_hq(
 
 pub fn turret_shoot(
     mut commands: Commands,
-    mut turrets: Query<(&Transform, &mut Turret)>,
+    mut turrets: Query<(&Transform, &mut TurretCombat)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     time: Res<Time>,
-    buildings: Res<BuildingRegistry>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let turret_def = match buildings.get("turret") {
-        Some(d) => d,
-        None => return,
-    };
-    let combat = match &turret_def.combat {
-        Some(c) => c,
-        None => return,
-    };
-    let range_sq = combat.range.ceil() as u32 as f32;
-    let damage = combat.damage;
-    let fire_interval = combat.fire_rate_sec;
-
-    for (turret_pos, mut turret) in turrets.iter_mut() {
-        turret.fire_timer += time.delta_seconds();
-        if turret.fire_timer < fire_interval {
+    for (turret_pos, mut combat) in turrets.iter_mut() {
+        combat.timer += time.delta_seconds();
+        if combat.timer < combat.fire_interval {
             continue;
         }
 
         let mut target = None;
-        let mut closest_dist = range_sq;
+        let mut closest_dist = combat.range_sq;
 
         for (entity, enemy_pos) in enemies.iter() {
             let dist = enemy_pos.translation.distance_squared(turret_pos.translation);
@@ -83,12 +69,12 @@ pub fn turret_shoot(
         }
 
         if let Some(entity) = target {
-            turret.fire_timer -= fire_interval;
+            combat.timer -= combat.fire_interval;
             commands.spawn((
                 Projectile {
                     target: entity,
                     speed: 300.0,
-                    damage,
+                    damage: combat.damage,
                 },
                 ColorMesh2dBundle {
                     mesh: Mesh2dHandle(shapes.circle.clone()),

@@ -3,7 +3,7 @@ use bevy::sprite::Mesh2dHandle;
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::economy::unit_config::UnitConfig;
-use crate::economy::components::{HQ, OreDeposit};
+use crate::economy::components::{HQ, OreDeposit, Unit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;
@@ -11,13 +11,7 @@ use crate::map::config::MapConfig;
 use crate::rendering::{material_from_color, ShapeCache};
 
 #[derive(Event)]
-pub struct SpawnUnitEvent(pub UnitKind);
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UnitKind {
-    Soldier,
-    Worker,
-}
+pub struct SpawnUnitEvent(pub String);
 
 pub struct UnitPlugin;
 
@@ -50,6 +44,87 @@ pub enum WorkerState {
     Mining(Entity),
 }
 
+fn spawn_combat_unit(
+    commands: &mut Commands,
+    def: &crate::economy::unit_config::UnitDef,
+    pos: Vec3,
+    shapes: &ShapeCache,
+    materials: &mut Assets<ColorMaterial>,
+    offset: Vec3,
+) {
+    let hp = def.hp;
+    let color = def.color;
+    let mesh_name = &def.visual;
+    let mesh = match mesh_name.as_str() {
+        "pentagon" => shapes.pentagon.clone(),
+        "circle" => shapes.circle.clone(),
+        _ => shapes.pentagon.clone(),
+    };
+    commands.spawn((
+        Soldier { attack_cooldown: 0.0 },
+        Unit,
+        Health { current: hp, max: hp },
+        ColorMesh2dBundle {
+            mesh: Mesh2dHandle(mesh),
+            material: material_from_color(materials, color),
+            transform: Transform::from_translation(pos + offset),
+            ..default()
+        },
+    ));
+}
+
+fn spawn_harvester_unit(
+    commands: &mut Commands,
+    def: &crate::economy::unit_config::UnitDef,
+    pos: Vec3,
+    shapes: &ShapeCache,
+    materials: &mut Assets<ColorMaterial>,
+    offset: Vec3,
+) {
+    let hp = def.hp;
+    let color = def.color;
+    let mesh_name = &def.visual;
+    let mesh = match mesh_name.as_str() {
+        "circle" => shapes.circle.clone(),
+        _ => shapes.circle.clone(),
+    };
+    commands.spawn((
+        Worker { state: WorkerState::Idle, mining_timer: 0.0 },
+        Unit,
+        Health { current: hp, max: hp },
+        ColorMesh2dBundle {
+            mesh: Mesh2dHandle(mesh),
+            material: material_from_color(materials, color),
+            transform: Transform::from_translation(pos + offset),
+            ..default()
+        },
+    ));
+}
+
+fn spawn_unit_by_id(
+    commands: &mut Commands,
+    unit_cfg: &UnitConfig,
+    id: &str,
+    hq_pos: Vec3,
+    shapes: &ShapeCache,
+    materials: &mut Assets<ColorMaterial>,
+) -> bool {
+    let def = match unit_cfg.get(id) {
+        Some(d) => d,
+        None => return false,
+    };
+    let offset = if def.kind == "harvester" {
+        Vec3::new(-40.0, 0.0, 2.5)
+    } else {
+        Vec3::new(40.0, 0.0, 2.5)
+    };
+    match def.kind.as_str() {
+        "harvester" => spawn_harvester_unit(commands, def, hq_pos, shapes, materials, offset),
+        _ => spawn_combat_unit(commands, def, hq_pos, shapes, materials, offset),
+    }
+    true
+}
+
 fn spawn_unit_input(
     mut commands: Commands,
     keys: Res<ButtonInput<KeyCode>>,
@@ -63,98 +138,37 @@ fn spawn_unit_input(
         Ok(q) => q,
         Err(_) => return,
     };
+    let hq_pos = hq_transform.translation;
 
-    let soldier_cost = unit_cfg.soldier.unit.cost.iter()
-        .find(|c| c.resource == ResourceId::Ore)
-        .map(|c| c.amount)
-        .unwrap_or(10);
-    let soldier_hp = unit_cfg.soldier.unit.hp;
-    let soldier_color = unit_cfg.soldier.unit.color;
+    let key_units = [
+        (KeyCode::Digit6, "soldier"),
+        (KeyCode::Digit7, "worker"),
+    ];
 
-    if keys.just_pressed(KeyCode::Digit6)
-        && inv.get(ResourceId::Ore) >= soldier_cost {
-        inv.remove(ResourceId::Ore, soldier_cost);
-        commands.spawn((
-            Soldier { attack_cooldown: 0.0 },
-            Health { current: soldier_hp, max: soldier_hp },
-            ColorMesh2dBundle {
-                mesh: Mesh2dHandle(shapes.pentagon.clone()),
-                material: material_from_color(&mut materials, soldier_color),
-                transform: Transform::from_xyz(
-                    hq_transform.translation.x + 40.0,
-                    hq_transform.translation.y,
-                    2.5,
-                ),
-                ..default()
-            },
-        ));
-    }
-
-    let worker_cost = unit_cfg.worker.unit.cost.iter()
-        .find(|c| c.resource == ResourceId::Ore)
-        .map(|c| c.amount)
-        .unwrap_or(5);
-    let worker_hp = unit_cfg.worker.unit.hp;
-    let worker_color = unit_cfg.worker.unit.color;
-
-    if keys.just_pressed(KeyCode::Digit7)
-        && inv.get(ResourceId::Ore) >= worker_cost {
-        inv.remove(ResourceId::Ore, worker_cost);
-        commands.spawn((
-            Worker { state: WorkerState::Idle, mining_timer: 0.0 },
-            Health { current: worker_hp, max: worker_hp },
-            ColorMesh2dBundle {
-                mesh: Mesh2dHandle(shapes.circle.clone()),
-                material: material_from_color(&mut materials, worker_color),
-                transform: Transform::from_xyz(
-                    hq_transform.translation.x - 40.0,
-                    hq_transform.translation.y,
-                    2.5,
-                ),
-                ..default()
-            },
-        ));
+    for (key, unit_id) in key_units {
+        if keys.just_pressed(key) {
+            if let Some(def) = unit_cfg.get(unit_id) {
+                let cost_ore = def.cost.iter()
+                    .find(|c| c.resource == ResourceId::Ore)
+                    .map(|c| c.amount)
+                    .unwrap_or(0);
+                if inv.get(ResourceId::Ore) >= cost_ore {
+                    inv.remove(ResourceId::Ore, cost_ore);
+                    spawn_unit_by_id(&mut commands, &unit_cfg, unit_id, hq_pos, &shapes, &mut materials);
+                }
+            }
+        }
     }
 
     for ev in spawn_events.read() {
-        match ev.0 {
-            UnitKind::Soldier => {
-                if inv.get(ResourceId::Ore) >= soldier_cost {
-                    inv.remove(ResourceId::Ore, soldier_cost);
-                    commands.spawn((
-                        Soldier { attack_cooldown: 0.0 },
-                        Health { current: soldier_hp, max: soldier_hp },
-                        ColorMesh2dBundle {
-                            mesh: Mesh2dHandle(shapes.pentagon.clone()),
-                            material: material_from_color(&mut materials, soldier_color),
-                            transform: Transform::from_xyz(
-                                hq_transform.translation.x + 40.0,
-                                hq_transform.translation.y,
-                                2.5,
-                            ),
-                            ..default()
-                        },
-                    ));
-                }
-            }
-            UnitKind::Worker => {
-                if inv.get(ResourceId::Ore) >= worker_cost {
-                    inv.remove(ResourceId::Ore, worker_cost);
-                    commands.spawn((
-                        Worker { state: WorkerState::Idle, mining_timer: 0.0 },
-                        Health { current: worker_hp, max: worker_hp },
-                        ColorMesh2dBundle {
-                            mesh: Mesh2dHandle(shapes.circle.clone()),
-                            material: material_from_color(&mut materials, worker_color),
-                            transform: Transform::from_xyz(
-                                hq_transform.translation.x - 40.0,
-                                hq_transform.translation.y,
-                                2.5,
-                            ),
-                            ..default()
-                        },
-                    ));
-                }
+        if let Some(def) = unit_cfg.get(&ev.0) {
+            let cost_ore = def.cost.iter()
+                .find(|c| c.resource == ResourceId::Ore)
+                .map(|c| c.amount)
+                .unwrap_or(0);
+            if inv.get(ResourceId::Ore) >= cost_ore {
+                inv.remove(ResourceId::Ore, cost_ore);
+                spawn_unit_by_id(&mut commands, &unit_cfg, &ev.0, hq_pos, &shapes, &mut materials);
             }
         }
     }
@@ -171,10 +185,14 @@ fn soldier_auto_attack(
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let range_sq = (unit_cfg.soldier.range_tiles * cfg.tile_size)
-        * (unit_cfg.soldier.range_tiles * cfg.tile_size);
-    let damage = unit_cfg.soldier.damage;
-    let fire_rate = unit_cfg.soldier.fire_rate_sec;
+    let soldier_def = match unit_cfg.get("soldier") {
+        Some(d) => d,
+        None => return,
+    };
+    let range_sq = (soldier_def.range_tiles * cfg.tile_size)
+        * (soldier_def.range_tiles * cfg.tile_size);
+    let damage = soldier_def.damage;
+    let fire_rate = soldier_def.fire_rate_sec;
 
     for (soldier_pos, mut soldier) in soldiers.iter_mut() {
         soldier.attack_cooldown -= time.delta_seconds();
@@ -222,8 +240,12 @@ fn worker_harvest(
     mut deposit_events: EventWriter<DespawnDeposit>,
 ) {
     let tile_size = cfg.tile_size;
-    let speed = unit_cfg.worker.speed;
-    let mine_interval = unit_cfg.worker.mine_interval_sec;
+    let worker_def = match unit_cfg.get("worker") {
+        Some(d) => d,
+        None => return,
+    };
+    let speed = worker_def.speed;
+    let mine_interval = worker_def.mine_interval_sec;
 
     let mut hq_inv = match hq_query.get_single_mut() {
         Ok(inv) => inv,
