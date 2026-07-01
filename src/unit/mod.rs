@@ -3,7 +3,7 @@ use bevy::sprite::Mesh2dHandle;
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::economy::unit_config::UnitConfig;
-use crate::economy::systems::{HQ, OreDeposit};
+use crate::economy::components::{HQ, OreDeposit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;

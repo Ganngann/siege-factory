@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::resource::Inventory;
-use crate::economy::systems::{BuildKind, BuildMode, HQ, SetBuildModeEvent};
+use crate::economy::components::{BuildKind, BuildMode, HQ, SetBuildModeEvent};
 use crate::economy::unit_config::UnitConfig;
 use crate::unit::{SpawnUnitEvent, UnitKind};
 

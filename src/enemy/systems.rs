@@ -1,0 +1,201 @@
+use bevy::prelude::*;
+use bevy::sprite::Mesh2dHandle;
+use crate::core::game_state::GameState;
+use crate::economy::components::HQ;
+use crate::enemy::components::{Enemy, WaveState, WaveCounterText, GameOverUi, Health};
+use crate::enemy::registry::EnemyRegistry;
+use crate::enemy::wave_config::WaveConfig;
+use crate::map::components::TilePosition;
+use crate::map::config::MapConfig;
+use crate::rendering::{material_from_color, ShapeCache};
+
+pub fn wave_timer(
+    time: Res<Time>,
+    mut wave: ResMut<WaveState>,
+    existing: Query<Entity, With<Enemy>>,
+    mut next_state: ResMut<NextState<GameState>>,
+    cfg: Res<WaveConfig>,
+) {
+    wave.timer -= time.delta_seconds();
+    if wave.timer <= 0.0 && existing.iter().len() == 0 {
+        wave.wave += 1;
+        wave.timer = cfg.wave_interval_sec;
+        if wave.wave > cfg.win_waves {
+            next_state.set(GameState::GameOver);
+        }
+    }
+}
+
+pub fn spawn_enemies(
+    mut commands: Commands,
+    mut wave: ResMut<WaveState>,
+    time: Res<Time>,
+    hq: Query<&TilePosition, With<HQ>>,
+    existing: Query<Entity, With<Enemy>>,
+    enemies_registry: Res<EnemyRegistry>,
+    cfg: Res<WaveConfig>,
+    map_cfg: Res<MapConfig>,
+    shapes: Res<ShapeCache>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let tile_size = map_cfg.tile_size;
+    let grid_w = map_cfg.width;
+    let grid_h = map_cfg.height;
+
+    let max_enemies = (wave.wave * cfg.max_enemies_base).min(cfg.max_enemies_cap);
+    if existing.iter().len() >= max_enemies as usize {
+        return;
+    }
+
+    wave.spawn_timer -= time.delta_seconds();
+    if wave.spawn_timer > 0.0 {
+        return;
+    }
+    wave.spawn_timer = (cfg.spawn_interval_sec / wave.wave as f32).max(cfg.spawn_timer_min);
+
+    let hq_pos = match hq.get_single() {
+        Ok(p) => p,
+        Err(_) => return,
+    };
+
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    let (sx, sy) = loop {
+        let edge = rng.gen_range(0..4);
+        let (x, y) = match edge {
+            0 => (rng.gen_range(0..grid_w), 0),
+            1 => (rng.gen_range(0..grid_w), grid_h - 1),
+            2 => (0, rng.gen_range(0..grid_h)),
+            _ => (grid_w - 1, rng.gen_range(0..grid_h)),
+        };
+        if x != hq_pos.x || y != hq_pos.y {
+            break (x, y);
+        }
+    };
+
+    let def = enemies_registry.get("runner").unwrap_or_else(|| {
+        panic!("enemy 'runner' not found in registry")
+    });
+    let enemy_hp = def.hp + (wave.wave - 1) * cfg.hp_per_wave;
+
+    commands.spawn((
+        Enemy,
+        Health { current: enemy_hp, max: enemy_hp },
+        ColorMesh2dBundle {
+            mesh: Mesh2dHandle(shapes.circle.clone()),
+            material: material_from_color(&mut materials, def.color),
+            transform: Transform::from_xyz(
+                sx as f32 * tile_size + tile_size / 2.0,
+                sy as f32 * tile_size + tile_size / 2.0,
+                3.0,
+            ),
+            ..default()
+        },
+        TilePosition { x: sx, y: sy },
+    ));
+}
+
+pub fn wave_counter_ui(
+    wave: Res<WaveState>,
+    enemies: Query<Entity, With<Enemy>>,
+    cfg: Res<WaveConfig>,
+    mut text_query: Query<(Entity, &mut Text), With<WaveCounterText>>,
+    mut commands: Commands,
+) {
+    let count = enemies.iter().len();
+    let msg = format!("Wave {}/{}  |  Enemies: {}", wave.wave, cfg.win_waves, count);
+
+    if let Ok((_, mut text)) = text_query.get_single_mut() {
+        text.sections[0].value = msg;
+    } else {
+        commands.spawn((
+            WaveCounterText,
+            TextBundle {
+                text: Text::from_sections([TextSection::new(
+                    msg,
+                    TextStyle { font_size: 16.0, color: Color::srgb(1.0, 0.6, 0.2), ..default() },
+                )]),
+                style: Style {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(10.0),
+                    right: Val::Px(10.0),
+                    ..default()
+                },
+                ..default()
+            },
+        ));
+    }
+}
+
+pub fn spawn_game_over_ui(
+    mut commands: Commands,
+    wave: Res<WaveState>,
+    cfg: Res<WaveConfig>,
+) {
+    let won = wave.wave > cfg.win_waves;
+    commands.spawn((Camera2dBundle::default(), GameOverUi));
+    commands
+        .spawn((NodeBundle {
+            style: Style {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            ..default()
+        }, GameOverUi))
+        .with_children(|parent| {
+            parent.spawn((TextBundle::from_section(
+                if won { "VICTORY" } else { "GAME OVER" },
+                TextStyle {
+                    font_size: 48.0,
+                    color: if won { Color::srgb(0.3, 1.0, 0.3) } else { Color::srgb(1.0, 0.3, 0.3) },
+                    ..default()
+                },
+            ), GameOverUi));
+            parent.spawn((TextBundle::from_section(
+                if won { format!("Survived {} waves!", wave.wave - 1) }
+                    else { format!("Waves survived: {}", wave.wave - 1) },
+                TextStyle { font_size: 24.0, color: Color::WHITE, ..default() },
+            ), GameOverUi));
+            parent.spawn((TextBundle::from_section(
+                "",
+                TextStyle::default(),
+            ), GameOverUi));
+            parent.spawn((TextBundle::from_section(
+                "Press R to restart",
+                TextStyle { font_size: 20.0, color: Color::srgb(0.8, 0.8, 1.0), ..default() },
+            ), GameOverUi));
+        });
+}
+
+pub fn despawn_game_over_ui(mut commands: Commands, query: Query<Entity, With<GameOverUi>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
+}
+
+pub fn cleanup_game_entities(
+    mut commands: Commands,
+    enemies: Query<Entity, (With<Enemy>, Without<TilePosition>)>,
+    soldiers_and_workers: Query<Entity, Or<(With<crate::unit::Soldier>, With<crate::unit::Worker>)>>,
+) {
+    for entity in enemies.iter().chain(soldiers_and_workers.iter()) {
+        commands.entity(entity).despawn();
+    }
+}
+
+pub fn reset_wave(
+    mut commands: Commands,
+    mut wave: ResMut<WaveState>,
+    hq: Query<Entity, With<HQ>>,
+    cfg: Res<MapConfig>,
+) {
+    *wave = WaveState::default();
+    if let Ok(entity) = hq.get_single() {
+        commands.entity(entity).insert(Health { current: cfg.hq_hp, max: cfg.hq_hp });
+    }
+}

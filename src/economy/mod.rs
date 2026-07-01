@@ -1,8 +1,11 @@
 pub mod building;
 pub mod belt;
+pub mod components;
+pub mod placement;
+pub mod production;
 pub mod recipe;
 pub mod resource;
-pub mod systems;
+pub mod setup;
 pub mod ui;
 pub mod unit_config;
 pub mod build_bar;
@@ -21,13 +24,13 @@ impl Plugin for EconomyPlugin {
         app.insert_resource(BuildingRegistry::load());
         app.insert_resource(recipe::RecipeRegistry::load());
         app.insert_resource(unit_config::UnitConfig::load());
-        app.init_resource::<systems::BuildMode>();
-        app.init_resource::<systems::BeltDirection>();
-        app.init_resource::<systems::BuildPreview>();
-        app.add_event::<systems::SetBuildModeEvent>();
+        app.init_resource::<components::BuildMode>();
+        app.init_resource::<components::BeltDirection>();
+        app.init_resource::<components::BuildPreview>();
+        app.add_event::<components::SetBuildModeEvent>();
         app.add_systems(OnEnter(GameState::Playing), (
-            systems::setup_hq,
-            systems::place_ore_deposits,
+            setup::setup_hq,
+            setup::place_ore_deposits,
             build_bar::spawn_build_bar,
         ));
         app.add_systems(OnExit(GameState::Playing), (
@@ -36,12 +39,12 @@ impl Plugin for EconomyPlugin {
             build_bar::cleanup_build_bar,
         ));
         app.add_systems(Update, (
-            systems::build_mode_input,
-            systems::handle_build_click,
-            systems::update_build_preview,
-            systems::production_tick,
+            placement::build_mode_input,
+            placement::handle_build_click,
+            placement::update_build_preview,
+            production::production_tick,
             belt::belt_item_placer,
-            systems::assembler_tick,
+            production::assembler_tick,
             belt::advance_belt_slots,
             belt::animate_belt_positions,
             ui::ore_count_ui,
@@ -51,7 +54,7 @@ impl Plugin for EconomyPlugin {
     }
 }
 
-fn cleanup_ghost(mut commands: Commands, query: Query<Entity, With<systems::Ghost>>) {
+fn cleanup_ghost(mut commands: Commands, query: Query<Entity, With<components::Ghost>>) {
     for entity in &query {
         commands.entity(entity).despawn();
     }

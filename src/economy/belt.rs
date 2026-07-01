@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use bevy::sprite::Mesh2dHandle;
 use crate::economy::resource::ResourceId;
-use crate::economy::systems::Direction;
+use crate::economy::components::Direction;
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;

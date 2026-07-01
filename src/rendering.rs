@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::economy::systems::Direction;
+use crate::economy::components::Direction;
 use crate::map::config::MapConfig;
 
 #[derive(Resource)]

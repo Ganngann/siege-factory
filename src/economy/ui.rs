@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::economy::resource::{ResourceId, Inventory};
-use crate::economy::systems::HQ;
+use crate::economy::components::HQ;
 
 pub fn ore_count_ui(
     hq_query: Query<&Inventory, With<HQ>>,
