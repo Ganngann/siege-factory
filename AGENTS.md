@@ -42,6 +42,10 @@ Voir `docs/4_MULTIPLAYER.md` — ne pas implémenter maintenant.
 - Tests headless (App sans rendu)
 - Voir `docs/12_TESTING_STRATEGY.md`
 
+## Économie
+
+Ne jamais lancer `cargo test`, `cargo clippy`, ou toute commande de build/test lourde sauf demande explicite de l'utilisateur.
+
 ## Modules
 
 - `core` — GameState (Loading/Playing/GameOver), transitions, Loading UI, `schedule.rs` tests
