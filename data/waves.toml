@@ -1,0 +1,34 @@
+[[waves]]
+interval_sec = 60.0
+enemies = [
+  { kind = "runner", count = 5 },
+]
+
+[[waves]]
+interval_sec = 60.0
+enemies = [
+  { kind = "runner", count = 8 },
+  { kind = "tank", count = 2 },
+]
+
+[[waves]]
+interval_sec = 60.0
+enemies = [
+  { kind = "runner", count = 12 },
+  { kind = "tank", count = 4 },
+]
+
+[[waves]]
+interval_sec = 60.0
+enemies = [
+  { kind = "runner", count = 15 },
+  { kind = "tank", count = 6 },
+]
+
+[[waves]]
+interval_sec = 90.0
+enemies = [
+  { kind = "runner", count = 20 },
+  { kind = "tank", count = 8 },
+  { kind = "boss", count = 1 },
+]

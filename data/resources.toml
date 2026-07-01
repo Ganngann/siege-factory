@@ -1,0 +1,14 @@
+[resources.ore]
+name = "Ore"
+max_stack = 999
+icon = "textures/ui/icons/icon_ore.png"
+
+[resources.ammo]
+name = "Ammo"
+max_stack = 999
+icon = "textures/ui/icons/icon_ammo.png"
+
+[resources.energy]
+name = "Energy"
+max_stack = 9999
+icon = "textures/ui/icons/icon_energy.png"

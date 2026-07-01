@@ -1,0 +1,8 @@
+[map]
+width = 20
+height = 15
+deposit_min = 5
+deposit_max = 15
+spawner_min = 1
+spawner_max = 4
+hq_clearance = 3

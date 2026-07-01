@@ -1,0 +1,4 @@
+[recipes.ammo_craft]
+input = { ore = 3 }
+output = { ammo = 1 }
+time_sec = 2.0

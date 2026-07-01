@@ -1,0 +1,43 @@
+[buildings.hq]
+name = "Quartier Général"
+cost = {}
+hp = 500
+tile_size = { w = 2, h = 2 }
+sprite = "textures/buildings/hq.png"
+
+[buildings.miner]
+name = "Mine"
+cost = { ore = 10 }
+hp = 100
+tile_size = { w = 1, h = 1 }
+sprite = "textures/buildings/miner.png"
+production = { resource = "ore", interval_sec = 2.0 }
+
+[buildings.assembler]
+name = "Assembleur"
+cost = { ore = 15 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+sprite = "textures/buildings/assembler.png"
+
+[buildings.belt]
+name = "Ceinture"
+cost = { ore = 3 }
+hp = 20
+tile_size = { w = 1, h = 1 }
+sprite = "textures/buildings/belt.png"
+
+[buildings.turret]
+name = "Tourelle"
+cost = { ore = 20, ammo = 5 }
+hp = 120
+tile_size = { w = 1, h = 1 }
+sprite = "textures/buildings/turret.png"
+combat = { damage = 10, range = 4.0, fire_rate_sec = 1.0 }
+
+[buildings.wall]
+name = "Mur"
+cost = { ore = 5 }
+hp = 300
+tile_size = { w = 1, h = 1 }
+sprite = "textures/buildings/wall.png"

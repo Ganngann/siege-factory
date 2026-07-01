@@ -71,11 +71,15 @@ fn handle_tile_click(
     let Some(cursor_pos) = window.cursor_position() else { return };
     let Some(world_pos) = camera.viewport_to_world_2d(camera_transform, cursor_pos) else { return };
 
-    let tile_x = (world_pos.x / TILE_SIZE).floor() as u32;
-    let tile_y = (world_pos.y / TILE_SIZE).floor() as u32;
+    let tile_x = ((world_pos.x + TILE_SIZE / 2.0) / TILE_SIZE).floor() as i32;
+    let tile_y = ((world_pos.y + TILE_SIZE / 2.0) / TILE_SIZE).floor() as i32;
+
+    if tile_x < 0 || tile_y < 0 || tile_x >= GRID_WIDTH as i32 || tile_y >= GRID_HEIGHT as i32 {
+        return;
+    }
 
     for (tile_pos, mut sprite) in tile_query.iter_mut() {
-        if tile_pos.x == tile_x && tile_pos.y == tile_y {
+        if tile_pos.x == tile_x as u32 && tile_pos.y == tile_y as u32 {
             sprite.color = Color::srgb(0.5, 0.8, 0.3);
         }
     }

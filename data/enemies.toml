@@ -1,0 +1,20 @@
+[enemies.runner]
+name = "Runner"
+hp = 20
+speed = 2.0
+damage = 5
+sprite = "textures/units/runner.png"
+
+[enemies.tank]
+name = "Tank"
+hp = 80
+speed = 0.8
+damage = 15
+sprite = "textures/units/tank.png"
+
+[enemies.boss]
+name = "Boss"
+hp = 500
+speed = 0.5
+damage = 50
+sprite = "textures/units/boss.png"
