@@ -83,6 +83,44 @@ Miner ──ore──► Belt ──ore──► Assembler ──ammo──► B
 
 Chaque building a un inventaire local (entrée/sortie). Les ceintures transferent automatiquement. Le joueur place les buildings et les ceintures, ensuite le flux est automatique.
 
+## Anti-microgestion
+
+### Principe
+
+Tout ce qui est répétitif doit être automatisable. Le joueur design l'usine, ne l'exploite pas manuellement.
+
+### Production
+
+- Les buildings tournent en continu tant qu'ils ont des inputs.
+- Les ceintures transportent sans intervention.
+- Les excédents sont stockés automatiquement (HQ / entrepôts).
+- Files de production infinies (pas de "craft 10 fois").
+
+### Défense
+
+- Tourelles auto : tir automatique, priorité au plus proche.
+- Auto-repair : un building répare les structures dans son rayon.
+- Alertes seulement : notification "Base attaquée secteur Est".
+
+### Construction
+
+- Placement fantôme (ghost) : suit la souris, clic = posé.
+- Blueprint / copie de patterns de buildings.
+- Drag pour murs ou lignes de ceintures.
+
+### Unités
+
+- Rally point : les unités produites marchent automatiquement vers un point.
+- Auto-squad : les unités du même type se regroupent.
+- Ordres persistants : patrouille en boucle jusqu'à nouvel ordre.
+- Smart priority : unités idle attaquent les ennemis à proximité.
+
+### Interface
+
+- Queue d'ordres : Shift+clic pour enchaîner des actions.
+- Sélection box : drag-select pour ordres groupés.
+- Vue d'ensemble : statut des usines (production, stock, arrêt) en un écran.
+
 ## Difficulté progressive
 
 - Vagues 1-5 : Runners uniquement
