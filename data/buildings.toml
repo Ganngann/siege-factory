@@ -25,6 +25,8 @@ cost = { ore = 3 }
 hp = 20
 tile_size = { w = 1, h = 1 }
 color = "#808080"
+slots = 4
+speed = 2.0
 
 [buildings.wall]
 name = "Wall"

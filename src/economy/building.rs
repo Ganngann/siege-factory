@@ -25,6 +25,12 @@ pub struct CombatStats {
 }
 
 #[derive(Debug, Clone)]
+pub struct BeltProperties {
+    pub slots: u32,
+    pub speed: f32,
+}
+
+#[derive(Debug, Clone)]
 pub struct BuildingDef {
     pub id: String,
     pub name: String,
@@ -33,6 +39,7 @@ pub struct BuildingDef {
     pub tile_size: (u32, u32),
     pub color: Color,
     pub combat: Option<CombatStats>,
+    pub belt: Option<BeltProperties>,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -60,6 +67,10 @@ impl BuildingRegistry {
                 range: c.range * c.range, // square for distance² comparisons
                 fire_rate_sec: c.fire_rate_sec,
             });
+            let belt = entry.belt.map(|b| BeltProperties {
+                slots: b.slots,
+                speed: b.speed,
+            });
             buildings.push(BuildingDef {
                 id: id.clone(),
                 name: entry.name,
@@ -68,6 +79,7 @@ impl BuildingRegistry {
                 tile_size: (entry.tile_size.w, entry.tile_size.h),
                 color,
                 combat,
+                belt,
             });
         }
         Self { buildings }
@@ -93,6 +105,8 @@ struct BuildingEntry {
     color: Option<String>,
     #[serde(default)]
     combat: Option<CombatEntry>,
+    #[serde(default)]
+    belt: Option<BeltEntry>,
 }
 
 #[derive(Deserialize)]
@@ -106,4 +120,10 @@ struct CombatEntry {
     damage: u32,
     range: f32,
     fire_rate_sec: f32,
+}
+
+#[derive(Deserialize)]
+struct BeltEntry {
+    slots: u32,
+    speed: f32,
 }

@@ -10,10 +10,20 @@ use crate::events::DespawnDeposit;
 use crate::map::config::MapConfig;
 use crate::rendering::{material_from_color, ShapeCache};
 
+#[derive(Event)]
+pub struct SpawnUnitEvent(pub UnitKind);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnitKind {
+    Soldier,
+    Worker,
+}
+
 pub struct UnitPlugin;
 
 impl Plugin for UnitPlugin {
     fn build(&self, app: &mut App) {
+        app.add_event::<SpawnUnitEvent>();
         app.add_systems(Update, (
             spawn_unit_input,
             soldier_auto_attack,
@@ -47,13 +57,13 @@ fn spawn_unit_input(
     mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut spawn_events: EventReader<SpawnUnitEvent>,
 ) {
     let (hq_transform, mut inv) = match hq_query.get_single_mut() {
         Ok(q) => q,
         Err(_) => return,
     };
 
-    // Soldier
     let soldier_cost = unit_cfg.soldier.unit.cost.iter()
         .find(|c| c.resource == ResourceId::Ore)
         .map(|c| c.amount)
@@ -80,7 +90,6 @@ fn spawn_unit_input(
         ));
     }
 
-    // Worker
     let worker_cost = unit_cfg.worker.unit.cost.iter()
         .find(|c| c.resource == ResourceId::Ore)
         .map(|c| c.amount)
@@ -105,6 +114,49 @@ fn spawn_unit_input(
                 ..default()
             },
         ));
+    }
+
+    for ev in spawn_events.read() {
+        match ev.0 {
+            UnitKind::Soldier => {
+                if inv.get(ResourceId::Ore) >= soldier_cost {
+                    inv.remove(ResourceId::Ore, soldier_cost);
+                    commands.spawn((
+                        Soldier { attack_cooldown: 0.0 },
+                        Health { current: soldier_hp, max: soldier_hp },
+                        ColorMesh2dBundle {
+                            mesh: Mesh2dHandle(shapes.pentagon.clone()),
+                            material: material_from_color(&mut materials, soldier_color),
+                            transform: Transform::from_xyz(
+                                hq_transform.translation.x + 40.0,
+                                hq_transform.translation.y,
+                                2.5,
+                            ),
+                            ..default()
+                        },
+                    ));
+                }
+            }
+            UnitKind::Worker => {
+                if inv.get(ResourceId::Ore) >= worker_cost {
+                    inv.remove(ResourceId::Ore, worker_cost);
+                    commands.spawn((
+                        Worker { state: WorkerState::Idle, mining_timer: 0.0 },
+                        Health { current: worker_hp, max: worker_hp },
+                        ColorMesh2dBundle {
+                            mesh: Mesh2dHandle(shapes.circle.clone()),
+                            material: material_from_color(&mut materials, worker_color),
+                            transform: Transform::from_xyz(
+                                hq_transform.translation.x - 40.0,
+                                hq_transform.translation.y,
+                                2.5,
+                            ),
+                            ..default()
+                        },
+                    ));
+                }
+            }
+        }
     }
 }
 

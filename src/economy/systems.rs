@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use bevy::prelude::*;
 use bevy::sprite::{Anchor, Mesh2dHandle};
+use crate::economy::belt::{BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::{ResourceId, Inventory};
-use crate::events::DespawnDeposit;
+use crate::events::{DespawnDeposit, SpawnBeltItemEvent};
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::rendering::{direction_arrow, material_from_color, ShapeCache};
@@ -37,20 +38,6 @@ pub struct Building {
 #[derive(Component)]
 pub struct Turret {
     pub fire_timer: f32,
-}
-
-#[derive(Component)]
-pub struct Belt {
-    pub direction: Direction,
-}
-
-#[derive(Component)]
-pub struct BeltItem {
-    pub path: Vec<Vec2>,
-    pub distance_traveled: f32,
-    pub speed: f32,
-    pub resource: ResourceId,
-    pub dest_tile: (u32, u32),
 }
 
 #[derive(Component)]
@@ -105,6 +92,9 @@ pub enum BuildKind {
     Wall,
     Turret,
 }
+
+#[derive(Event)]
+pub struct SetBuildModeEvent(pub Option<BuildKind>);
 
 pub fn setup_hq(
     mut commands: Commands,
@@ -191,7 +181,8 @@ pub fn build_mode_input(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
-    mut placed_belts: Query<(&mut Belt, &mut Text, &TilePosition)>,
+    mut placed_belts: Query<(&mut BeltSlots, &mut Text, &TilePosition)>,
+    mut mode_events: EventReader<SetBuildModeEvent>,
 ) {
     let key_map = [
         (KeyCode::Digit1, BuildKind::Miner),
@@ -216,6 +207,10 @@ pub fn build_mode_input(
             for (mut belt, mut text, pos) in placed_belts.iter_mut() {
                 if pos.x == tx && pos.y == ty {
                     belt.direction = belt.direction.next();
+                    belt.slot_positions = compute_slot_positions(
+                        pos.x, pos.y, belt.direction,
+                        belt.slots.len() as u32, cfg.tile_size,
+                    );
                     text.sections[0].value = direction_arrow(belt.direction).to_string();
                     rotated = true;
                     break;
@@ -227,6 +222,10 @@ pub fn build_mode_input(
         } else {
             belt_dir.0 = belt_dir.0.next();
         }
+    }
+
+    for ev in mode_events.read() {
+        build_mode.0 = ev.0;
     }
 
     if keys.just_pressed(KeyCode::Escape) {
@@ -496,8 +495,12 @@ pub fn handle_build_click(
             let dir = belt_dir.0;
             let cx = tx as f32 * tile_size;
             let cy = ty as f32 * tile_size;
+            let num_slots = def.belt.as_ref().map_or(4, |b| b.slots);
+            let speed = def.belt.as_ref().map_or(2.0, |b| b.speed);
+            let slot_positions = compute_slot_positions(tx, ty, dir, num_slots, tile_size);
+            let slots = vec![None; num_slots as usize];
             commands.spawn((
-                Belt { direction: dir },
+                BeltSlots { direction: dir, slots, slot_positions, speed },
                 Building { name: def.name.clone() },
                 Inventory::new(),
                 Text2dBundle {
@@ -540,306 +543,79 @@ pub fn handle_build_click(
     }
 }
 
-// ── Belt chain tracing ──
+// ── Production / Assembly — logic only (no rendering) ──
 
-fn trace_belt_output(
-    building: TilePosition,
-    belt_map: &HashMap<(u32, u32), Direction>,
-    grid_w: u32,
-    grid_h: u32,
-) -> Option<(u32, u32)> {
-    for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-        let ax = building.x.wrapping_add_signed(dx);
-        let ay = building.y.wrapping_add_signed(dy);
-        if let Some(&dir) = belt_map.get(&(ax, ay)) {
-            return Some(trace_chain((ax, ay), dir, belt_map, grid_w, grid_h));
-        }
-    }
-    None
-}
-
-fn trace_chain(
-    start: (u32, u32),
-    start_dir: Direction,
-    belt_map: &HashMap<(u32, u32), Direction>,
-    grid_w: u32,
-    grid_h: u32,
-) -> (u32, u32) {
-    let mut cur = start;
-    let mut dir = start_dir;
-    loop {
-        let (dx, dy) = dir.offset();
-        let nx = cur.0.wrapping_add_signed(dx);
-        let ny = cur.1.wrapping_add_signed(dy);
-        if nx >= grid_w || ny >= grid_h {
-            return (nx.min(grid_w - 1), ny.min(grid_h - 1));
-        }
-        if let Some(&next_dir) = belt_map.get(&(nx, ny)) {
-            cur = (nx, ny);
-            dir = next_dir;
-        } else {
-            return (nx, ny);
-        }
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
 pub fn production_tick(
     time: Res<Time>,
-    cfg: Res<MapConfig>,
-    mut miner_query: Query<(&mut Miner, &TilePosition, &Transform)>,
-    mut inventories: Query<(Entity, &TilePosition, &mut Inventory)>,
-    belts: Query<(&TilePosition, &Belt)>,
-    mut commands: Commands,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut miner_query: Query<(&mut Miner, &TilePosition)>,
+    mut events: EventWriter<SpawnBeltItemEvent>,
 ) {
-    let grid_w = cfg.width;
-    let grid_h = cfg.height;
-    let tile_size = cfg.tile_size;
-
-    let belt_map: HashMap<(u32, u32), Direction> =
-        belts.iter().map(|(pos, belt)| ((pos.x, pos.y), belt.direction)).collect();
-
-    let inv_lookup: HashMap<(u32, u32), Entity> =
-        inventories.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
-
-    for (mut miner, tile_pos, transform) in miner_query.iter_mut() {
+    for (mut miner, tile_pos) in miner_query.iter_mut() {
         miner.production_timer += time.delta_seconds();
         while miner.production_timer >= miner.interval {
             miner.production_timer -= miner.interval;
-
-            if let Some((end, tile_path)) = trace_belt_output_with_path(*tile_pos, &belt_map, grid_w, grid_h) {
-                let world_path: Vec<Vec2> = tile_path.iter().map(|(x, y)| {
-                    Vec2::new(*x as f32 * tile_size, *y as f32 * tile_size)
-                }).collect();
-                commands.spawn((
-                    BeltItem {
-                        path: world_path,
-                        distance_traveled: 0.0,
-                        speed: tile_size * 2.0,
-                        resource: ResourceId::Ore,
-                        dest_tile: end,
-                    },
-                    ColorMesh2dBundle {
-                        mesh: Mesh2dHandle(shapes.circle.clone()),
-                        material: material_from_color(&mut materials, Color::srgb(0.7, 0.5, 0.1)),
-                        transform: Transform::from_xyz(transform.translation.x, transform.translation.y, 2.5)
-                            .with_scale(Vec3::splat(0.25)),
-                        ..default()
-                    },
-                ));
-            } else {
-                let end = trace_belt_output(*tile_pos, &belt_map, grid_w, grid_h)
-                    .unwrap_or((tile_pos.x, tile_pos.y));
-                if let Some(&target) = inv_lookup.get(&end)
-                    && let Ok((_, _, mut inv)) = inventories.get_mut(target) {
-                    inv.add(ResourceId::Ore, 1);
-                }
-            }
+            events.send(SpawnBeltItemEvent {
+                source_tile: *tile_pos,
+                resource: ResourceId::Ore,
+            });
         }
     }
 }
 
 pub fn assembler_tick(
     time: Res<Time>,
-    cfg: Res<MapConfig>,
     recipes: Res<RecipeRegistry>,
     mut assembler_query: Query<(&mut Assembler, &TilePosition)>,
-    mut inventories: Query<(Entity, &TilePosition, &mut Inventory)>,
-    belts: Query<(&TilePosition, &Belt)>,
+    mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
+    mut commands: Commands,
+    mut events: EventWriter<SpawnBeltItemEvent>,
 ) {
-    let grid_w = cfg.width;
-    let grid_h = cfg.height;
-
     let recipe = match recipes.get("ammo_craft") {
         Some(r) => r,
         None => return,
     };
 
-    let belt_map: HashMap<(u32, u32), Direction> =
-        belts.iter().map(|(pos, belt)| ((pos.x, pos.y), belt.direction)).collect();
-
-    let inv_lookup: HashMap<(u32, u32), Entity> =
-        inventories.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
+    let belt_map: HashMap<(u32, u32), Entity> =
+        belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
 
     for (mut assembler, tile_pos) in assembler_query.iter_mut() {
         assembler.production_timer += time.delta_seconds();
         while assembler.production_timer >= recipe.time_sec {
-            // Find input source: check belt chain for incoming resources
-            let source = find_input_source(*tile_pos, &belt_map)
-                .unwrap_or((tile_pos.x, tile_pos.y));
-            let has_input = inv_lookup.get(&source)
-                .and_then(|&e| inventories.get(e).ok())
-                .map(|(_, _, inv)| inv.get(recipe.input_resource) >= recipe.input_amount)
-                .unwrap_or(false);
+            let input_dirs: [(i32, i32, Direction); 4] = [
+                (1, 0, Direction::West),
+                (-1, 0, Direction::East),
+                (0, 1, Direction::South),
+                (0, -1, Direction::North),
+            ];
 
-            if !has_input {
+            let mut consumed = false;
+            for (dx, dy, expected_dir) in input_dirs {
+                let ax = tile_pos.x.wrapping_add_signed(dx);
+                let ay = tile_pos.y.wrapping_add_signed(dy);
+                if let Some(&belt_entity) = belt_map.get(&(ax, ay)) {
+                    if let Ok((_, _, mut bs)) = belt_query.get_mut(belt_entity) {
+                        if bs.direction == expected_dir {
+                            let last = bs.slots.len() - 1;
+                            if let Some(item_entity) = bs.slots[last].take() {
+                                commands.entity(item_entity).despawn();
+                                consumed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if !consumed {
                 break;
             }
 
-            // Consume input
-            if let Some(&src_entity) = inv_lookup.get(&source)
-                && let Ok((_, _, mut src_inv)) = inventories.get_mut(src_entity) {
-                src_inv.remove(recipe.input_resource, recipe.input_amount);
-            }
-
-            // Output to belt or direct
-            let output = trace_belt_output(*tile_pos, &belt_map, grid_w, grid_h)
-                .unwrap_or((tile_pos.x, tile_pos.y));
-            if let Some(&target) = inv_lookup.get(&output)
-                && let Ok((_, _, mut inv)) = inventories.get_mut(target) {
-                inv.add(recipe.output_resource, recipe.output_amount);
-            }
+            events.send(SpawnBeltItemEvent {
+                source_tile: *tile_pos,
+                resource: recipe.output_resource,
+            });
 
             assembler.production_timer -= recipe.time_sec;
         }
     }
-}
-
-fn find_input_source(
-    building: TilePosition,
-    belt_map: &HashMap<(u32, u32), Direction>,
-) -> Option<(u32, u32)> {
-    // Check adjacent tiles for a belt pointing TOWARD the building
-    let dirs: [(i32, i32, Direction); 4] = [
-        (1, 0, Direction::West),
-        (-1, 0, Direction::East),
-        (0, 1, Direction::South),
-        (0, -1, Direction::North),
-    ];
-    for (dx, dy, expected_dir) in dirs {
-        let ax = building.x.wrapping_add_signed(dx);
-        let ay = building.y.wrapping_add_signed(dy);
-        if let Some(&dir) = belt_map.get(&(ax, ay))
-            && dir == expected_dir {
-            return Some(trace_chain_back((ax, ay), belt_map));
-        }
-    }
-    None
-}
-
-pub fn move_belt_items(
-    time: Res<Time>,
-    mut commands: Commands,
-    mut belt_items: Query<(Entity, &mut Transform, &mut BeltItem)>,
-    mut inventories: Query<(Entity, &TilePosition, &mut Inventory)>,
-) {
-    let inv_lookup: HashMap<(u32, u32), Entity> =
-        inventories.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
-
-    let mut to_despawn = Vec::new();
-    let dt = time.delta_seconds();
-
-    for (entity, mut transform, mut item) in belt_items.iter_mut() {
-        if item.path.len() < 2 {
-            to_despawn.push(entity);
-            continue;
-        }
-
-        item.distance_traveled += item.speed * dt;
-
-        let total_dist: f32 = item.path.windows(2)
-            .map(|w| w[0].distance(w[1]))
-            .sum();
-
-        if item.distance_traveled >= total_dist {
-            if let Some(&target) = inv_lookup.get(&item.dest_tile)
-                && let Ok((_, _, mut inv)) = inventories.get_mut(target) {
-                inv.add(item.resource, 1);
-            }
-            to_despawn.push(entity);
-        } else {
-            let mut accumulated = 0.0;
-            let mut pos = item.path[0];
-            for i in 0..item.path.len() - 1 {
-                let seg_len = item.path[i].distance(item.path[i + 1]);
-                if item.distance_traveled <= accumulated + seg_len {
-                    let t = if seg_len > 0.0 { (item.distance_traveled - accumulated) / seg_len } else { 0.0 };
-                    pos = item.path[i].lerp(item.path[i + 1], t);
-                    break;
-                }
-                accumulated += seg_len;
-                pos = item.path[i + 1];
-            }
-            transform.translation = Vec3::new(pos.x, pos.y, 2.5);
-        }
-    }
-
-    for entity in to_despawn {
-        commands.entity(entity).despawn();
-    }
-}
-
-fn trace_chain_back(
-    start: (u32, u32),
-    belt_map: &HashMap<(u32, u32), Direction>,
-) -> (u32, u32) {
-    let mut cur = start;
-    loop {
-        // Check if adjacent tile has a belt pointing INTO cur
-        let mut found = false;
-        for (dx, dy, expected) in [(1, 0, Direction::West), (-1, 0, Direction::East), (0, 1, Direction::South), (0, -1, Direction::North)] {
-            let ax = cur.0.wrapping_add_signed(dx);
-            let ay = cur.1.wrapping_add_signed(dy);
-            if let Some(&dir) = belt_map.get(&(ax, ay))
-                && dir == expected {
-                cur = (ax, ay);
-                found = true;
-                break;
-            }
-        }
-        if !found {
-            return cur;
-        }
-    }
-}
-
-fn trace_chain_path(
-    start: (u32, u32),
-    start_dir: Direction,
-    belt_map: &HashMap<(u32, u32), Direction>,
-    grid_w: u32,
-    grid_h: u32,
-) -> Vec<(u32, u32)> {
-    let mut path = vec![start];
-    let mut cur = start;
-    let mut dir = start_dir;
-    loop {
-        let (dx, dy) = dir.offset();
-        let nx = cur.0.wrapping_add_signed(dx);
-        let ny = cur.1.wrapping_add_signed(dy);
-        if nx >= grid_w || ny >= grid_h {
-            path.push((nx.min(grid_w - 1), ny.min(grid_h - 1)));
-            return path;
-        }
-        if let Some(&next_dir) = belt_map.get(&(nx, ny)) {
-            cur = (nx, ny);
-            dir = next_dir;
-            path.push(cur);
-        } else {
-            path.push((nx, ny));
-            return path;
-        }
-    }
-}
-
-type BeltPath = Option<((u32, u32), Vec<(u32, u32)>)>;
-
-fn trace_belt_output_with_path(
-    building: TilePosition,
-    belt_map: &HashMap<(u32, u32), Direction>,
-    grid_w: u32,
-    grid_h: u32,
-) -> BeltPath {
-    for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-        let ax = building.x.wrapping_add_signed(dx);
-        let ay = building.y.wrapping_add_signed(dy);
-        if let Some(&dir) = belt_map.get(&(ax, ay)) {
-            let path = trace_chain_path((ax, ay), dir, belt_map, grid_w, grid_h);
-            let end = *path.last().unwrap_or(&(ax, ay));
-            return Some((end, path));
-        }
-    }
-    None
 }

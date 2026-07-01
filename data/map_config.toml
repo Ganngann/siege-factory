@@ -16,7 +16,7 @@ positions = [
 ]
 
 [hq]
-start_ore = 20
+start_ore = 200
 hp = 100
 
 [spawners]
