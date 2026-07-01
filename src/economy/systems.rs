@@ -53,6 +53,9 @@ pub struct BeltItem {
     pub dest_tile: (u32, u32),
 }
 
+#[derive(Component)]
+pub struct Ghost;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Direction {
     #[default]
@@ -161,10 +164,34 @@ pub fn place_ore_deposits(
 #[derive(Resource, Default)]
 pub struct BeltDirection(pub Direction);
 
+#[derive(Resource, Default)]
+pub struct BuildPreview(pub Option<Entity>);
+
+fn cursor_tile(
+    windows: &Query<&Window>,
+    camera: &Query<(&Camera, &GlobalTransform)>,
+    cfg: &MapConfig,
+) -> Option<(u32, u32)> {
+    let window = windows.iter().next()?;
+    let cursor = window.cursor_position()?;
+    let (cam, cam_transform) = camera.iter().next()?;
+    let world_pos = cam.viewport_to_world_2d(cam_transform, cursor)?;
+    let tile_x = ((world_pos.x + cfg.tile_size / 2.0) / cfg.tile_size).floor() as i32;
+    let tile_y = ((world_pos.y + cfg.tile_size / 2.0) / cfg.tile_size).floor() as i32;
+    if tile_x < 0 || tile_y < 0 || tile_x >= cfg.width as i32 || tile_y >= cfg.height as i32 {
+        return None;
+    }
+    Some((tile_x as u32, tile_y as u32))
+}
+
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
     mut belt_dir: ResMut<BeltDirection>,
     keys: Res<ButtonInput<KeyCode>>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform)>,
+    cfg: Res<MapConfig>,
+    mut placed_belts: Query<(&mut Belt, &mut Text, &TilePosition)>,
 ) {
     let key_map = [
         (KeyCode::Digit1, BuildKind::Miner),
@@ -184,11 +211,145 @@ pub fn build_mode_input(
     }
 
     if keys.just_pressed(KeyCode::KeyR) && build_mode.0 == Some(BuildKind::Belt) {
-        belt_dir.0 = belt_dir.0.next();
+        if let Some((tx, ty)) = cursor_tile(&windows, &camera, &cfg) {
+            let mut rotated = false;
+            for (mut belt, mut text, pos) in placed_belts.iter_mut() {
+                if pos.x == tx && pos.y == ty {
+                    belt.direction = belt.direction.next();
+                    text.sections[0].value = direction_arrow(belt.direction).to_string();
+                    rotated = true;
+                    break;
+                }
+            }
+            if !rotated {
+                belt_dir.0 = belt_dir.0.next();
+            }
+        } else {
+            belt_dir.0 = belt_dir.0.next();
+        }
     }
 
     if keys.just_pressed(KeyCode::Escape) {
         build_mode.0 = None;
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn update_build_preview(
+    mut commands: Commands,
+    mut preview: ResMut<BuildPreview>,
+    build_mode: Res<BuildMode>,
+    belt_dir: Res<BeltDirection>,
+    cfg: Res<MapConfig>,
+    shapes: Res<ShapeCache>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform)>,
+    buildings: Query<&TilePosition, With<Building>>,
+    deposits: Query<&TilePosition, With<OreDeposit>>,
+    miners: Query<&TilePosition, With<Miner>>,
+) {
+    let Some(kind) = build_mode.0 else {
+        despawn_ghost(&mut commands, &mut preview);
+        return;
+    };
+
+    let Some((tx, ty)) = cursor_tile(&windows, &camera, &cfg) else {
+        despawn_ghost(&mut commands, &mut preview);
+        return;
+    };
+
+    let valid = match kind {
+        BuildKind::Miner => {
+            deposits.iter().any(|pos| pos.x == tx && pos.y == ty)
+                && !miners.iter().any(|pos| pos.x == tx && pos.y == ty)
+        }
+        _ => tile_is_free(tx, ty, &buildings),
+    };
+
+    let color = if valid {
+        Color::srgba(0.0, 0.8, 0.0, 0.4)
+    } else {
+        Color::srgba(0.8, 0.0, 0.0, 0.3)
+    };
+    let material = materials.add(ColorMaterial::from_color(color));
+
+    if let Some(entity) = preview.0.take() {
+        commands.entity(entity).despawn();
+    }
+
+    let z = 1.8;
+    let cx = tx as f32 * cfg.tile_size;
+    let cy = ty as f32 * cfg.tile_size;
+
+    let entity = match kind {
+        BuildKind::Miner => commands.spawn((
+            Ghost,
+            ColorMesh2dBundle {
+                mesh: Mesh2dHandle(shapes.square.clone()),
+                material,
+                transform: Transform::from_xyz(cx, cy, z),
+                ..default()
+            },
+        )).id(),
+        BuildKind::Assembler => commands.spawn((
+            Ghost,
+            ColorMesh2dBundle {
+                mesh: Mesh2dHandle(shapes.diamond.clone()),
+                material,
+                transform: Transform::from_xyz(cx, cy, z)
+                    .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_4)),
+                ..default()
+            },
+        )).id(),
+        BuildKind::Belt => {
+            let dir = belt_dir.0;
+            commands.spawn((
+                Ghost,
+                ColorMesh2dBundle {
+                    mesh: Mesh2dHandle(shapes.square.clone()),
+                    material,
+                    transform: Transform::from_xyz(cx, cy, z),
+                    ..default()
+                },
+                Text2dBundle {
+                    text: Text::from_section(direction_arrow(dir), TextStyle {
+                        font_size: 24.0,
+                        color: Color::srgba(1.0, 1.0, 1.0, 0.6),
+                        ..default()
+                    }),
+                    text_anchor: Anchor::Center,
+                    transform: Transform::from_xyz(cx, cy, z + 0.1),
+                    ..default()
+                },
+            )).id()
+        }
+        BuildKind::Wall => commands.spawn((
+            Ghost,
+            ColorMesh2dBundle {
+                mesh: Mesh2dHandle(shapes.rectangle.clone()),
+                material,
+                transform: Transform::from_xyz(cx, cy, z),
+                ..default()
+            },
+        )).id(),
+        BuildKind::Turret => commands.spawn((
+            Ghost,
+            ColorMesh2dBundle {
+                mesh: Mesh2dHandle(shapes.triangle.clone()),
+                material,
+                transform: Transform::from_xyz(cx, cy, z),
+                ..default()
+            },
+        )).id(),
+    };
+
+    preview.0 = Some(entity);
+}
+
+fn despawn_ghost(commands: &mut Commands, preview: &mut ResMut<BuildPreview>) {
+    if let Some(entity) = preview.0.take() {
+        commands.entity(entity).despawn();
     }
 }
 
@@ -451,7 +612,7 @@ pub fn production_tick(
 
             if let Some((end, tile_path)) = trace_belt_output_with_path(*tile_pos, &belt_map, grid_w, grid_h) {
                 let world_path: Vec<Vec2> = tile_path.iter().map(|(x, y)| {
-                    Vec2::new(*x as f32 * tile_size + tile_size / 2.0, *y as f32 * tile_size + tile_size / 2.0)
+                    Vec2::new(*x as f32 * tile_size, *y as f32 * tile_size)
                 }).collect();
                 commands.spawn((
                     BeltItem {
