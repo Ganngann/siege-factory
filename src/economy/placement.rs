@@ -301,14 +301,16 @@ pub fn handle_deconstruct_click_v2(
     camera: Query<(&Camera, &GlobalTransform)>,
     building_query: Query<(Entity, &OccupiedTiles, &Building, &TilePosition)>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
+    keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
+    bindings: Res<KeyBindings>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
     belt_slots_query: Query<&BeltSlots>,
     item_query: Query<Entity, With<BeltItem>>,
 ) {
     if !deconstruct.0 { return; }
-    if !buttons.just_pressed(MouseButton::Left) { return; }
+    if !bindings.just_pressed("place", &keys, &buttons) { return; }
 
     let tile_size = cfg.tile_size;
     let Ok(window) = windows.single() else { return };
@@ -588,6 +590,7 @@ pub fn handle_belt_placement(
         Query<(&TilePosition, &mut BeltSlots, &mut Text2d)>,
     )>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
+    keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
     registry: Res<BuildingRegistry>,
@@ -765,7 +768,9 @@ pub fn handle_build_click(
     deposits: Query<(Entity, &TilePosition), With<OreDeposit>>,
     occupied: Query<&OccupiedTiles, With<Building>>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
+    keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
+    bindings: Res<KeyBindings>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
 ) {
@@ -774,7 +779,7 @@ pub fn handle_build_click(
     let grid_h = cfg.height;
 
     let Some(ref kind) = build_mode.0 else { return };
-    if !buttons.just_pressed(MouseButton::Left) {
+    if !bindings.just_pressed("place", &keys, &buttons) {
         return;
     }
 

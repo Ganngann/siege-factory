@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
 use crate::economy::components::{
     Building, BuildMode, DeconstructMode, OccupiedTiles, Sorter, BuildingPopup,
@@ -15,8 +16,9 @@ pub fn building_inspect_click(
     mut popup: ResMut<BuildingPopup>,
     build_mode: Res<BuildMode>,
     deconstruct: Res<DeconstructMode>,
-    buttons: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
+    buttons: Res<ButtonInput<MouseButton>>,
+    bindings: Res<KeyBindings>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
@@ -28,7 +30,7 @@ pub fn building_inspect_click(
     resource_registry: Res<ResourceRegistry>,
 ) {
     // Escape → dismiss popup
-    if keys.just_pressed(KeyCode::Escape) {
+    if keys.just_pressed(bindings.key("cancel")) {
         if let Some(entity) = popup.0.take() {
             commands.entity(entity).despawn();
         }
@@ -36,7 +38,7 @@ pub fn building_inspect_click(
     }
 
     if build_mode.0.is_some() || deconstruct.0 { return; }
-    if !buttons.just_pressed(MouseButton::Left) { return; }
+    if !bindings.just_pressed("place", &keys, &buttons) { return; }
 
     // If popup is already open, despawn and re-evaluate
     if let Some(entity) = popup.0.take() {
@@ -146,7 +148,9 @@ pub fn building_inspect_click(
 pub fn sorter_toggle_click(
     build_mode: Res<BuildMode>,
     deconstruct: Res<DeconstructMode>,
+    keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
+    bindings: Res<KeyBindings>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
@@ -156,7 +160,7 @@ pub fn sorter_toggle_click(
     popup: Res<BuildingPopup>,
 ) {
     if build_mode.0.is_some() || deconstruct.0 { return; }
-    if !buttons.just_pressed(MouseButton::Left) { return; }
+    if !bindings.just_pressed("place", &keys, &buttons) { return; }
     if popup.0.is_some() { return; } // Let the popup system handle it
 
     let tile_size = cfg.tile_size;
