@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use crate::core::tooltip::TooltipText;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::resource::Inventory;
-use crate::economy::components::{BuildMode, HQ};
+use crate::economy::components::{BuildMode, DeconstructMode, HQ};
 use crate::economy::unit_config::UnitConfig;
 use crate::unit::SpawnUnitEvent;
 
@@ -12,6 +12,7 @@ pub struct BuildBarPanel;
 pub enum BuildBarEntryKind {
     Building(String),
     Unit(String),
+    Delete,
 }
 
 #[derive(Component)]
@@ -142,12 +143,50 @@ pub fn spawn_build_bar(
                         ));
                     });
             }
+
+            // Delete button (all the way right)
+            parent.spawn((
+                Text::new("|"),
+                TextFont::from_font_size(20.0),
+                TextColor(Color::srgba(1.0, 1.0, 1.0, 0.3)),
+            ));
+
+            let delete_color = Color::srgb(0.8, 0.2, 0.2);
+            parent
+                .spawn((
+                    BuildBarEntry { kind: BuildBarEntryKind::Delete, original_color: delete_color },
+                    Button,
+                    Node {
+                        width: Val::Px(100.0),
+                        height: Val::Px(64.0),
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        border: UiRect::all(Val::Px(2.0)),
+                        ..default()
+                    },
+                    BackgroundColor(delete_color),
+                    BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.2)),
+                ))
+                .with_children(|b| {
+                    b.spawn((
+                        Text::new("🗑"),
+                        TextFont::from_font_size(20.0),
+                        TextColor(Color::WHITE),
+                    ));
+                    b.spawn((
+                        Text::new("Delete"),
+                        TextFont::from_font_size(10.0),
+                        TextColor(Color::WHITE),
+                    ));
+                });
         });
 }
 
 pub fn build_bar_interaction(
     query: Query<(&Interaction, &BuildBarEntry), Changed<Interaction>>,
     mut build_mode: ResMut<BuildMode>,
+    mut deconstruct: ResMut<DeconstructMode>,
     mut commands: Commands,
     mut tooltip: ResMut<TooltipText>,
     registry: Res<BuildingRegistry>,
@@ -158,6 +197,7 @@ pub fn build_bar_interaction(
             Interaction::Pressed => {
                 match &entry.kind {
                     BuildBarEntryKind::Building(kind) => {
+                        deconstruct.0 = false;
                         build_mode.0 = match &build_mode.0 {
                             Some(current) if current == kind => None,
                             _ => Some(kind.clone()),
@@ -165,6 +205,12 @@ pub fn build_bar_interaction(
                     }
                     BuildBarEntryKind::Unit(kind) => {
                         commands.trigger(SpawnUnitEvent(kind.clone()));
+                    }
+                    BuildBarEntryKind::Delete => {
+                        deconstruct.0 = !deconstruct.0;
+                        if deconstruct.0 {
+                            build_mode.0 = None;
+                        }
                     }
                 }
             }
@@ -198,6 +244,9 @@ pub fn build_bar_interaction(
                             tooltip.0 = Some(parts.join("  |  "));
                         }
                     }
+                    BuildBarEntryKind::Delete => {
+                        tooltip.0 = Some("[Delete] Deconstruct mode — click a building to dismantle".to_string());
+                    }
                     BuildBarEntryKind::Unit(kind) => {
                         let keys: Vec<&String> = unit_cfg.units.keys().collect();
                         let key = keys.iter()
@@ -230,6 +279,7 @@ pub fn build_bar_interaction(
 #[allow(clippy::too_many_arguments)]
 pub fn update_build_bar(
     build_mode: Res<BuildMode>,
+    deconstruct: Res<DeconstructMode>,
     hq_query: Query<&Inventory, With<HQ>>,
     registry: Res<BuildingRegistry>,
     unit_cfg: Res<UnitConfig>,
@@ -271,6 +321,15 @@ pub fn update_build_bar(
                 } else {
                     Color::srgb(0.3, 0.3, 0.3)
                 };
+            }
+            BuildBarEntryKind::Delete => {
+                let is_active = deconstruct.0;
+                *border = BorderColor::all(if is_active {
+                    Color::srgb(0.3, 1.0, 0.3)
+                } else {
+                    Color::srgba(1.0, 1.0, 1.0, 0.2)
+                });
+                bg.0 = entry.original_color;
             }
         }
     }

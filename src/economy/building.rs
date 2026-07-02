@@ -49,6 +49,31 @@ pub struct BuildingDef {
     pub combat: Option<CombatStats>,
     pub belt: Option<BeltProperties>,
     pub production: Option<ProductionDef>,
+    pub can_deconstruct: bool,
+    pub refund_ratio: f32,
+    pub repair_cost_ratio: f32,
+    pub inventory_capacity: u32,
+}
+
+#[derive(Debug, Clone, Resource)]
+pub struct DefaultSettings {
+    pub can_deconstruct: bool,
+    pub refund_ratio: f32,
+    pub repair_cost_ratio: f32,
+    pub inventory_capacity: u32,
+}
+
+impl DefaultSettings {
+    pub fn load() -> Self {
+        let toml_str = include_str!("../../data/buildings.toml");
+        let parsed: BuildingsToml = toml::from_str(toml_str).expect("failed to parse buildings.toml");
+        Self {
+            can_deconstruct: parsed.defaults.can_deconstruct,
+            refund_ratio: parsed.defaults.refund_ratio,
+            repair_cost_ratio: parsed.defaults.repair_cost_ratio,
+            inventory_capacity: parsed.defaults.inventory_capacity,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -60,6 +85,7 @@ impl BuildingRegistry {
     pub fn load() -> Self {
         let toml_str = include_str!("../../data/buildings.toml");
         let parsed: BuildingsToml = toml::from_str(toml_str).expect("failed to parse buildings.toml");
+        let defaults = &parsed.defaults;
         let mut buildings = Vec::new();
         for (id, entry) in parsed.buildings {
             let mut cost = Vec::new();
@@ -98,6 +124,10 @@ impl BuildingRegistry {
                 combat,
                 belt,
                 production,
+                can_deconstruct: entry.can_deconstruct.unwrap_or(defaults.can_deconstruct),
+                refund_ratio: entry.refund_ratio.unwrap_or(defaults.refund_ratio),
+                repair_cost_ratio: entry.repair_cost_ratio.unwrap_or(defaults.repair_cost_ratio),
+                inventory_capacity: entry.inventory_capacity.unwrap_or(defaults.inventory_capacity),
             });
         }
         Self { buildings }
@@ -110,7 +140,17 @@ impl BuildingRegistry {
 
 #[derive(Deserialize)]
 struct BuildingsToml {
+    defaults: DefaultsEntry,
+    #[serde(default)]
     buildings: HashMap<String, BuildingEntry>,
+}
+
+#[derive(Deserialize)]
+struct DefaultsEntry {
+    can_deconstruct: bool,
+    refund_ratio: f32,
+    repair_cost_ratio: f32,
+    inventory_capacity: u32,
 }
 
 #[derive(Deserialize)]
@@ -131,6 +171,14 @@ struct BuildingEntry {
     combat: Option<CombatEntry>,
     #[serde(default)]
     belt: Option<BeltEntry>,
+    #[serde(default)]
+    can_deconstruct: Option<bool>,
+    #[serde(default)]
+    refund_ratio: Option<f32>,
+    #[serde(default)]
+    repair_cost_ratio: Option<f32>,
+    #[serde(default)]
+    inventory_capacity: Option<u32>,
 }
 
 #[derive(Deserialize)]

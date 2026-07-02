@@ -58,6 +58,15 @@ impl Direction {
         }
     }
 
+    pub fn prev(&self) -> Self {
+        match self {
+            Direction::East => Direction::South,
+            Direction::North => Direction::East,
+            Direction::West => Direction::North,
+            Direction::South => Direction::West,
+        }
+    }
+
     pub fn color(&self) -> Color {
         match self {
             Direction::East => Color::srgb(0.6, 0.5, 0.4),
@@ -76,6 +85,13 @@ impl Direction {
             _ => Direction::East,
         }
     }
+
+    pub fn perpendicular(&self) -> [Direction; 2] {
+        match self {
+            Direction::East | Direction::West => [Direction::North, Direction::South],
+            Direction::North | Direction::South => [Direction::East, Direction::West],
+        }
+    }
 }
 
 #[derive(Resource, Default)]
@@ -91,6 +107,12 @@ pub struct BuildPreview(pub Option<Entity>);
 pub struct BeltDrag {
     pub start_coord: Option<(u32, u32)>,
 }
+
+#[derive(Resource, Default)]
+pub struct DeconstructMode(pub bool);
+
+#[derive(Resource, Default)]
+pub struct BuildingPopup(pub Option<Entity>);
 
 // ── Generic behavior components ──
 
@@ -120,6 +142,22 @@ pub struct HasHpBar;
 
 #[derive(Component)]
 pub struct OccupiedTiles(pub Vec<(u32, u32)>);
+
+#[derive(Component)]
+pub struct Storage;
+
+#[derive(Component)]
+pub struct Splitter {
+    pub counter: u32,
+    pub outputs: u32,
+    pub input_direction: Option<Direction>,
+}
+
+#[derive(Component)]
+pub struct Sorter {
+    pub filter: ResourceId,
+    pub inverted: bool,
+}
 
 #[derive(Event)]
 pub struct SetBuildModeEvent(pub Option<String>);

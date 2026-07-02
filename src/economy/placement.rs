@@ -1,12 +1,12 @@
 use bevy::prelude::*;
-use bevy::prelude::*;
-use crate::economy::belt::{BeltSlots, compute_slot_positions};
+use crate::economy::belt::{BeltItem, BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
-    Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag,
-    Building, Miner, Assembler, OreDeposit, Ghost, HQ, OccupiedTiles, Produces, TurretCombat,
+    Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode,
+    Building, Miner, Assembler, OreDeposit, Ghost, HQ, OccupiedTiles,
+    Produces, TurretCombat, Storage, Splitter, Sorter,
 };
-use crate::economy::resource::Inventory;
+use crate::economy::resource::{ResourceId, Inventory};
 use crate::core::toast::ToastQueue;
 use crate::events::DespawnDeposit;
 use crate::map::components::{HoveredTile, TilePosition};
@@ -15,6 +15,7 @@ use crate::rendering::{direction_arrow, material_from_color, ShapeCache};
 
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
+    mut deconstruct: ResMut<DeconstructMode>,
     mut belt_dir: ResMut<BeltDirection>,
     keys: Res<ButtonInput<KeyCode>>,
     cfg: Res<MapConfig>,
@@ -23,12 +24,20 @@ pub fn build_mode_input(
     hovered: Res<HoveredTile>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
+    if keys.just_pressed(KeyCode::Delete) {
+        if build_mode.0.is_some() {
+            build_mode.0 = None;
+        }
+        deconstruct.0 = !deconstruct.0;
+    }
+
     let build_ids: Vec<&String> = registry.buildings.iter()
         .filter(|b| b.id != "hq")
         .map(|b| &b.id)
         .collect();
     for (i, key) in [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4, KeyCode::Digit5].iter().enumerate() {
         if keys.just_pressed(*key) {
+            deconstruct.0 = false;
             if let Some(id) = build_ids.get(i) {
                 build_mode.0 = match &build_mode.0 {
                     Some(current) if current == *id => None,
@@ -63,6 +72,7 @@ pub fn build_mode_input(
 
     if buttons.just_pressed(MouseButton::Right) {
         build_mode.0 = None;
+        deconstruct.0 = false;
     }
 }
 
@@ -180,6 +190,183 @@ fn compute_line(start: (u32, u32), end: (u32, u32)) -> Vec<(u32, u32, Direction)
     result
 }
 
+// ── Multi-tile helpers ──
+
+fn tile_is_free(tx: u32, ty: u32, occupied: &Query<&OccupiedTiles, With<Building>>) -> bool {
+    !occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty))
+}
+
+fn tiles_are_free(tiles: &[(u32, u32)], occupied: &Query<&OccupiedTiles, With<Building>>) -> bool {
+    tiles.iter().all(|&(tx, ty)| tile_is_free(tx, ty, occupied))
+}
+
+fn compute_footprint(tx: u32, ty: u32, tw: u32, th: u32) -> Vec<(u32, u32)> {
+    let mut tiles = Vec::with_capacity((tw * th) as usize);
+    for dx in 0..tw {
+        for dy in 0..th {
+            tiles.push((tx + dx, ty + dy));
+        }
+    }
+    tiles
+}
+
+fn building_at_tile(tx: u32, ty: u32, occupied: &Query<&OccupiedTiles, With<Building>>) -> Option<(usize, usize)> {
+    for (idx, tiles) in occupied.iter().enumerate() {
+        for (tile_idx, &(x, y)) in tiles.0.iter().enumerate() {
+            if x == tx && y == ty {
+                return Some((idx, tile_idx));
+            }
+        }
+    }
+    None
+}
+
+// ── Deconstruction ──
+
+#[allow(unused_mut, unused_variables)]
+pub fn handle_deconstruct_click(
+    mut commands: Commands,
+    deconstruct: Res<DeconstructMode>,
+    cfg: Res<MapConfig>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform)>,
+    occupied: Query<(&OccupiedTiles, &Building, &TilePosition)>,
+    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    buttons: Res<ButtonInput<MouseButton>>,
+    registry: Res<BuildingRegistry>,
+    mut toast_queue: ResMut<ToastQueue>,
+) {
+    if !deconstruct.0 { return; }
+    if !buttons.just_pressed(MouseButton::Left) { return; }
+
+    let tile_size = cfg.tile_size;
+    let Ok(window) = windows.single() else { return };
+    let Ok((cam, cam_transform)) = camera.single() else { return };
+    let Some(cursor) = window.cursor_position() else { return };
+    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
+
+    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+
+    if tile_x < 0 || tile_y < 0 {
+        return;
+    }
+    let tx = tile_x as u32;
+    let ty = tile_y as u32;
+
+    // Find building occupying this tile
+    let building_entry = occupied.iter().find(|(tiles, _, _)| {
+        tiles.0.iter().any(|&(x, y)| x == tx && y == ty)
+    });
+
+    let Some((_tiles, building, _)) = building_entry else {
+        return;
+    };
+
+    let def = match registry.get(&building.kind) {
+        Some(d) => d,
+        None => return,
+    };
+
+    if !def.can_deconstruct {
+        toast_queue.0.push(format!("Cannot deconstruct {}", building.name));
+        return;
+    }
+
+    // Compute refund
+    let mut refund_total = 0u32;
+    for c in &def.cost {
+        let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
+        if refund > 0 {
+            if let Ok(mut hq_inv) = hq_query.single_mut() {
+                hq_inv.add(c.resource, refund);
+            }
+            refund_total += refund;
+        }
+    }
+
+    toast_queue.0.push(format!("{} dismantled (refund: {} resources)", building.name, refund_total));
+}
+
+// Actually we need entity ids. Let's use a different query approach.
+// We'll just do it directly in the system.
+pub fn handle_deconstruct_click_v2(
+    mut commands: Commands,
+    deconstruct: Res<DeconstructMode>,
+    cfg: Res<MapConfig>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform)>,
+    building_query: Query<(Entity, &OccupiedTiles, &Building, &TilePosition)>,
+    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    buttons: Res<ButtonInput<MouseButton>>,
+    registry: Res<BuildingRegistry>,
+    mut toast_queue: ResMut<ToastQueue>,
+    belt_slots_query: Query<&BeltSlots>,
+    item_query: Query<Entity, With<BeltItem>>,
+) {
+    if !deconstruct.0 { return; }
+    if !buttons.just_pressed(MouseButton::Left) { return; }
+
+    let tile_size = cfg.tile_size;
+    let Ok(window) = windows.single() else { return };
+    let Ok((cam, cam_transform)) = camera.single() else { return };
+    let Some(cursor) = window.cursor_position() else { return };
+    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
+
+    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+
+    if tile_x < 0 || tile_y < 0 {
+        return;
+    }
+    let tx = tile_x as u32;
+    let ty = tile_y as u32;
+
+    let Some((entity, _, building, _)) = building_query.iter().find(|(_, tiles, _, _)| {
+        tiles.0.iter().any(|&(x, y)| x == tx && y == ty)
+    }) else { return };
+
+    let def = match registry.get(&building.kind) {
+        Some(d) => d,
+        None => return,
+    };
+
+    if !def.can_deconstruct {
+        toast_queue.0.push(format!("Cannot deconstruct {}", building.name));
+        return;
+    }
+
+    // Compute refund
+    let mut refund_names = Vec::new();
+    for c in &def.cost {
+        let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
+        if refund > 0 {
+            if let Ok(mut hq_inv) = hq_query.single_mut() {
+                hq_inv.add(c.resource, refund);
+            }
+            refund_names.push(format!("{} {}", refund, c.resource.display_name()));
+        }
+    }
+
+    // Despawn orphaned BeltItems on deconstructed belt/splitter/sorter
+    if let Ok(belt_slots) = belt_slots_query.get(entity) {
+        for slot in belt_slots.slots.iter() {
+            if let Some(item_entity) = slot {
+                if item_query.contains(*item_entity) {
+                    commands.entity(*item_entity).despawn();
+                }
+            }
+        }
+    }
+
+    commands.entity(entity).despawn();
+    toast_queue.0.push(format!(
+        "{} dismantled (+{})",
+        building.name,
+        refund_names.join(", ")
+    ));
+}
+
 // ── Preview ──
 
 #[allow(clippy::too_many_arguments)]
@@ -188,6 +375,7 @@ pub fn update_build_preview(
     mut preview: ResMut<BuildPreview>,
     build_mode: Res<BuildMode>,
     belt_dir: Res<BeltDirection>,
+    deconstruct: Res<DeconstructMode>,
     cfg: Res<MapConfig>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -205,12 +393,33 @@ pub fn update_build_preview(
     }
     preview.0 = None;
 
+    if deconstruct.0 {
+        let Some(TilePosition { x: tx, y: ty }) = hovered.0 else { return };
+        if tx < cfg.width && ty < cfg.height {
+            let occupied_here = occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty));
+            let color = if occupied_here {
+                Color::srgba(0.8, 0.0, 0.0, 0.4)
+            } else {
+                Color::srgba(0.8, 0.0, 0.0, 0.15)
+            };
+            let cx = tx as f32 * cfg.tile_size;
+            let cy = ty as f32 * cfg.tile_size;
+            commands.spawn((
+                Ghost,
+                Mesh2d(shapes.rectangle.clone()),
+                MeshMaterial2d(materials.add(color)),
+                Transform::from_xyz(cx, cy, 1.8),
+            ));
+        }
+        return;
+    }
+
     let Some(ref kind) = build_mode.0 else { return };
     let Some(def) = registry.get(kind) else { return };
     let Some(TilePosition { x: tx, y: ty }) = hovered.0 else { return };
 
     // ── Drag line preview (belt only) ──
-    if def.id == "belt" {
+    if def.id == "belt" || def.id == "splitter" || def.id == "sorter" {
         if let Some((sx, sy)) = drag.start_coord {
             let line = compute_line((sx, sy), (tx, ty));
             for &(lx, ly, dir) in &line {
@@ -245,12 +454,30 @@ pub fn update_build_preview(
         }
     }
 
-    // ── Single-tile preview ──
+    // ── Multi-tile preview ──
+    let (tw, th) = def.tile_size;
+    let footprint = compute_footprint(tx, ty, tw, th);
+
+    if tx + tw > cfg.width || ty + th > cfg.height {
+        // Out of bounds — show red
+        let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * cfg.tile_size;
+        let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * cfg.tile_size;
+        let mat_handle = materials.add(Color::srgba(0.8, 0.0, 0.0, 0.3));
+        let mesh = shapes.get_visual(&def.visual);
+        commands.spawn((
+            Ghost,
+            Mesh2d(mesh),
+            MeshMaterial2d(mat_handle),
+            Transform::from_xyz(cx, cy, 1.8),
+        ));
+        return;
+    }
+
     let valid = if def.requires_deposit {
         deposits.iter().any(|pos| pos.x == tx && pos.y == ty)
-            && !occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty))
+            && tiles_are_free(&footprint, &occupied)
     } else {
-        tile_is_free(tx, ty, &occupied)
+        tiles_are_free(&footprint, &occupied)
     };
 
     let color = if valid {
@@ -260,10 +487,10 @@ pub fn update_build_preview(
     };
     let mat_handle = materials.add(color);
     let z = 1.8;
-    let cx = tx as f32 * cfg.tile_size;
-    let cy = ty as f32 * cfg.tile_size;
+    let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * cfg.tile_size;
+    let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * cfg.tile_size;
 
-    let entity = if def.id == "belt" {
+    let entity = if def.id == "belt" || def.id == "splitter" || def.id == "sorter" {
         let dir = auto_detect_direction(tx, ty, &producers, &belts_query, belt_dir.0);
         let angle = match dir {
             Direction::East => 0.0,
@@ -276,7 +503,7 @@ pub fn update_build_preview(
         } else {
             Color::srgba(0.8, 0.0, 0.0, 0.5)
         };
-        let belt_entity = commands.spawn((
+        let ghost_entity = commands.spawn((
             Ghost,
             Mesh2d(shapes.rectangle.clone()),
             MeshMaterial2d(mat_handle),
@@ -315,8 +542,9 @@ pub fn update_build_preview(
             }
         }
 
-        belt_entity
+        ghost_entity
     } else {
+        // Multi-tile buildings — show all footprint tiles as ghost
         let mesh = shapes.get_visual(&def.visual);
         commands.spawn((
             Ghost,
@@ -337,10 +565,6 @@ fn deduct_cost(hq_inv: &mut Inventory, cost: &[BuildingCost]) {
     for c in cost {
         hq_inv.remove(c.resource, c.amount);
     }
-}
-
-fn tile_is_free(tx: u32, ty: u32, occupied: &Query<&OccupiedTiles, With<Building>>) -> bool {
-    !occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty))
 }
 
 // ── Belt click/drag ──
@@ -364,16 +588,18 @@ pub fn handle_belt_placement(
     buttons: Res<ButtonInput<MouseButton>>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
+    shapes: Res<ShapeCache>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let Some(ref kind) = build_mode.0 else {
         drag.start_coord = None;
         return;
     };
-    if kind != "belt" {
+    if kind != "belt" && kind != "splitter" && kind != "sorter" {
         drag.start_coord = None;
         return;
     }
-    let Some(def) = registry.get("belt") else { return };
+    let Some(def) = registry.get(kind) else { return };
     let tile_size = cfg.tile_size;
     let grid_w = cfg.width;
     let grid_h = cfg.height;
@@ -414,7 +640,6 @@ pub fn handle_belt_placement(
     if buttons.just_released(MouseButton::Left) {
         let Some(start) = drag.start_coord.take() else { return };
 
-        // Collect belt data once, release p0 borrow before using p1
         let belt_data: Vec<((u32, u32), Direction)> = {
             let read = belt_params.p0();
             read.iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect()
@@ -423,7 +648,6 @@ pub fn handle_belt_placement(
         let line = compute_line(start, (tx, ty));
         let single = line.len() == 1;
 
-        // Separate existing belts from new tiles
         let mut existing: Vec<(u32, u32, Direction)> = Vec::new();
         let mut new_tiles: Vec<(u32, u32, Direction)> = Vec::new();
 
@@ -446,7 +670,6 @@ pub fn handle_belt_placement(
             return;
         }
 
-        // Deduct cost only for new belts
         if !new_tiles.is_empty() {
             let mut hq_inv = match hq_query.single_mut() {
                 Ok(inv) => inv,
@@ -465,10 +688,9 @@ pub fn handle_belt_placement(
             deduct_cost(&mut hq_inv, &scaled_cost);
         }
 
-        let num_slots = def.belt.as_ref().map_or(4, |b| b.slots);
+        let num_slots = def.belt.as_ref().map_or(2, |b| b.slots);
         let speed = def.belt.as_ref().map_or(2.0, |b| b.speed);
 
-        // Update existing belts (p1 borrow released after each iteration)
         for &(bx, by, dir) in &existing {
             if let Some((_, mut bs, mut text)) = belt_params.p1().iter_mut()
                 .find(|(pos, _, _)| pos.x == bx && pos.y == by)
@@ -481,14 +703,13 @@ pub fn handle_belt_placement(
             }
         }
 
-        // Spawn new belts
         for &(bx, by, dir) in &new_tiles {
             let cx = bx as f32 * tile_size;
             let cy = by as f32 * tile_size;
             let slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
             let slots = vec![None; num_slots as usize];
 
-            commands.spawn((
+            let base_components = (
                 Building { kind: def.id.clone(), name: def.name.clone() },
                 Inventory::new(),
                 OccupiedTiles(vec![(bx, by)]),
@@ -499,12 +720,34 @@ pub fn handle_belt_placement(
                 TextColor(Color::WHITE),
                 TextLayout::justify(Justify::Center),
                 Transform::from_xyz(cx, cy, 2.0),
-            ));
+            );
+
+            let mesh = shapes.get_visual(&def.visual);
+
+            if def.id == "splitter" {
+                commands.spawn((
+                    base_components,
+                    Splitter { counter: 0, outputs: 2, input_direction: None },
+                    Mesh2d(mesh),
+                    MeshMaterial2d(material_from_color(&mut materials, def.color)),
+                ));
+            } else if def.id == "sorter" {
+                commands.spawn((
+                    base_components,
+                    Sorter { filter: ResourceId::Ore, inverted: false },
+                    Mesh2d(mesh),
+                    MeshMaterial2d(material_from_color(&mut materials, def.color)),
+                ));
+            } else {
+                commands.spawn(base_components);
+            }
         }
 
         return;
     }
 }
+
+// ── Build click ──
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_build_click(
@@ -552,10 +795,19 @@ pub fn handle_build_click(
         None => return,
     };
 
-    // Belt is handled by handle_belt_placement
-    if def.id == "belt" {
+    let (tw, th) = def.tile_size;
+
+    // Belt/splitter/sorter is handled by handle_belt_placement
+    if def.id == "belt" || def.id == "splitter" || def.id == "sorter" {
         return;
     }
+
+    if tx + tw > grid_w || ty + th > grid_h {
+        toast_queue.0.push("Outside map".to_string());
+        return;
+    }
+
+    let footprint = compute_footprint(tx, ty, tw, th);
 
     if def.requires_deposit {
         let deposit_entity = deposits.iter().find(|(_, pos)| pos.x == tx && pos.y == ty).map(|(e, _)| e);
@@ -563,8 +815,7 @@ pub fn handle_build_click(
             toast_queue.0.push("No ore deposit here".to_string());
             return;
         };
-        let already_mined = occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty));
-        if already_mined {
+        if !tiles_are_free(&footprint, &occupied) {
             toast_queue.0.push("Tile already occupied".to_string());
             return;
         }
@@ -583,21 +834,23 @@ pub fn handle_build_click(
         commands.trigger(DespawnDeposit(deposit));
 
         let mesh = shapes.get_visual(&def.visual);
+        let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
+        let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
         commands.spawn((
             Miner { production_timer: 0.0, interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0) },
             Building { kind: def.id.clone(), name: def.name.clone() },
             Inventory::new(),
-            OccupiedTiles(vec![(tx, ty)]),
+            OccupiedTiles(footprint),
             Mesh2d(mesh),
             MeshMaterial2d(material_from_color(&mut materials, def.color)),
-            Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
+            Transform::from_xyz(cx, cy, 2.0),
             TilePosition { x: tx, y: ty },
-            Produces { resource: def.production.as_ref().map(|p| p.resource).unwrap_or(crate::economy::resource::ResourceId::Ore), interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0), timer: 0.0 },
+            Produces { resource: def.production.as_ref().map(|p| p.resource).unwrap_or(ResourceId::Ore), interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0), timer: 0.0 },
         ));
         return;
     }
 
-    if !tile_is_free(tx, ty, &occupied) {
+    if !tiles_are_free(&footprint, &occupied) {
         toast_queue.0.push("Tile occupied".to_string());
         return;
     }
@@ -614,28 +867,37 @@ pub fn handle_build_click(
 
     deduct_cost(&mut hq_inv, &def.cost);
 
+    let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
+    let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
+
     let base = (
         Building { kind: def.id.clone(), name: def.name.clone() },
-        Inventory::new(),
-        OccupiedTiles(vec![(tx, ty)]),
+        OccupiedTiles(footprint),
         TilePosition { x: tx, y: ty },
+        Transform::from_xyz(cx, cy, 2.0),
     );
+
+    let inv = if def.inventory_capacity > 0 {
+        Inventory::with_capacity(def.inventory_capacity)
+    } else {
+        Inventory::new()
+    };
 
     if def.id == "assembler" {
         let mesh = shapes.get_visual(&def.visual);
         commands.spawn((
             base,
             Assembler { production_timer: 0.0, interval: 2.0 },
+            inv,
             Mesh2d(mesh),
             MeshMaterial2d(material_from_color(&mut materials, def.color)),
-            Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0)
-                .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_4)),
         ));
     } else if def.id == "turret" {
         let mesh = shapes.get_visual(&def.visual);
         let stats = def.combat.as_ref().expect("turret def missing combat");
         commands.spawn((
             base,
+            inv,
             TurretCombat {
                 damage: stats.damage,
                 range_sq: stats.range,
@@ -644,15 +906,23 @@ pub fn handle_build_click(
             },
             Mesh2d(mesh),
             MeshMaterial2d(material_from_color(&mut materials, def.color)),
-            Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
+        ));
+    } else if def.id == "storage" {
+        let mesh = shapes.get_visual(&def.visual);
+        commands.spawn((
+            base,
+            inv,
+            Storage,
+            Mesh2d(mesh),
+            MeshMaterial2d(material_from_color(&mut materials, def.color)),
         ));
     } else {
         let mesh = shapes.get_visual(&def.visual);
         commands.spawn((
             base,
+            inv,
             Mesh2d(mesh),
             MeshMaterial2d(material_from_color(&mut materials, def.color)),
-            Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
         ));
     }
 }

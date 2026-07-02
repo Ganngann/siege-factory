@@ -1,6 +1,8 @@
-pub mod building;
 pub mod belt;
+pub mod build_bar;
+pub mod building;
 pub mod components;
+pub mod inspect;
 pub mod placement;
 pub mod production;
 pub mod recipe;
@@ -8,13 +10,13 @@ pub mod resource;
 pub mod setup;
 pub mod ui;
 pub mod unit_config;
-pub mod build_bar;
 
 use bevy::prelude::*;
 use crate::core::game_state::GameState;
 use crate::core::toast::{toast_system, ToastQueue};
 use crate::core::tooltip::{tooltip_ui, TooltipText};
 use building::BuildingRegistry;
+use building::DefaultSettings;
 use resource::ResourceRegistry;
 use ui::OreCountText;
 
@@ -24,12 +26,15 @@ impl Plugin for EconomyPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ResourceRegistry::load());
         app.insert_resource(BuildingRegistry::load());
+        app.insert_resource(DefaultSettings::load());
         app.insert_resource(recipe::RecipeRegistry::load());
         app.insert_resource(unit_config::UnitConfig::load());
         app.init_resource::<components::BuildMode>();
         app.init_resource::<components::BeltDirection>();
         app.init_resource::<components::BuildPreview>();
         app.init_resource::<components::BeltDrag>();
+        app.init_resource::<components::DeconstructMode>();
+        app.init_resource::<components::BuildingPopup>();
         app.init_resource::<ToastQueue>();
         app.init_resource::<TooltipText>();
         app.add_observer(belt::belt_item_placer);
@@ -42,22 +47,56 @@ impl Plugin for EconomyPlugin {
             cleanup_playing_ui,
             cleanup_ghost,
             build_bar::cleanup_build_bar,
+            inspect::cleanup_popup,
         ));
-        app.add_systems(Update, (
-            placement::build_mode_input,
-            placement::handle_belt_placement,
-            placement::handle_build_click,
-            placement::update_build_preview,
-            production::production_tick,
-            production::assembler_tick,
-            belt::advance_belt_slots,
-            belt::animate_belt_positions,
-            ui::ore_count_ui,
-            build_bar::build_bar_interaction,
-            build_bar::update_build_bar,
-            toast_system,
-            tooltip_ui,
-        ).chain().run_if(in_state(GameState::Playing)));
+        app.add_systems(Update,
+            placement::build_mode_input.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            placement::handle_belt_placement.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            placement::handle_build_click.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            placement::handle_deconstruct_click_v2.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            placement::update_build_preview.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            production::production_tick.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            production::assembler_tick.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            belt::advance_belt_slots.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            belt::animate_belt_positions.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            ui::ore_count_ui.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            build_bar::build_bar_interaction.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            build_bar::update_build_bar.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::building_inspect_click.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::sorter_toggle_click.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            toast_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            tooltip_ui.run_if(in_state(GameState::Playing)),
+        );
     }
 }
 

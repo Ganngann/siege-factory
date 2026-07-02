@@ -1,8 +1,15 @@
+[defaults]
+can_deconstruct = true
+refund_ratio = 0.5
+repair_cost_ratio = 0.5
+inventory_capacity = 0
+
 [buildings.hq]
 name = "HQ"
 hp = 100
 tile_size = { w = 2, h = 2 }
 color = "#3366CC"
+can_deconstruct = false
 
 [buildings.miner]
 name = "Miner"
@@ -48,3 +55,32 @@ tile_size = { w = 1, h = 1 }
 color = "#E63333"
 visual = "triangle"
 combat = { damage = 5, range = 4.0, fire_rate_sec = 1.0 }
+
+[buildings.storage]
+name = "Storage"
+cost = { ore = 25 }
+hp = 150
+tile_size = { w = 1, h = 1 }
+color = "#CC9900"
+visual = "pentagon"
+inventory_capacity = 64
+
+[buildings.splitter]
+name = "Splitter"
+cost = { ore = 8 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#AAAA00"
+visual = "diamond"
+slots = 2
+speed = 2.0
+
+[buildings.sorter]
+name = "Sorter"
+cost = { ore = 10 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#66AA66"
+visual = "diamond"
+slots = 2
+speed = 2.0

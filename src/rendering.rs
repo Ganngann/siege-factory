@@ -23,7 +23,7 @@ impl FromWorld for ShapeCache {
         let mut meshes = world.resource_mut::<Assets<Mesh>>();
         Self {
             square: meshes.add(Rectangle::new(s, s)),
-            diamond: meshes.add(Rectangle::new(s, s)),
+            diamond: meshes.add(RegularPolygon::new(s * 0.45, 4)),
             triangle: meshes.add(Triangle2d::new(
                 Vec2::new(0.0, s * 0.4),
                 Vec2::new(-s * 0.4, -s * 0.4),

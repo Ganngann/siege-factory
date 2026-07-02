@@ -18,6 +18,14 @@ impl ResourceId {
             _ => None,
         }
     }
+
+    pub fn display_name(&self) -> &str {
+        match self {
+            ResourceId::Ore => "Ore",
+            ResourceId::Ammo => "Ammo",
+            ResourceId::Energy => "Energy",
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -68,11 +76,16 @@ struct ResourceEntry {
 #[derive(Debug, Clone, Component)]
 pub struct Inventory {
     pub resources: HashMap<ResourceId, u32>,
+    pub capacity: u32,
 }
 
 impl Inventory {
     pub fn new() -> Self {
-        Self { resources: HashMap::new() }
+        Self { resources: HashMap::new(), capacity: 0 }
+    }
+
+    pub fn with_capacity(capacity: u32) -> Self {
+        Self { resources: HashMap::new(), capacity }
     }
 
     pub fn get(&self, resource: ResourceId) -> u32 {
@@ -82,6 +95,14 @@ impl Inventory {
     pub fn add(&mut self, resource: ResourceId, amount: u32) {
         let entry = self.resources.entry(resource).or_insert(0);
         *entry = entry.saturating_add(amount);
+    }
+
+    pub fn try_add(&mut self, resource: ResourceId, amount: u32) -> bool {
+        if self.capacity > 0 && self.total() + amount > self.capacity {
+            return false;
+        }
+        self.add(resource, amount);
+        true
     }
 
     pub fn remove(&mut self, resource: ResourceId, amount: u32) -> bool {
@@ -96,6 +117,10 @@ impl Inventory {
 
     pub fn total(&self) -> u32 {
         self.resources.values().sum()
+    }
+
+    pub fn is_full(&self) -> bool {
+        self.capacity > 0 && self.total() >= self.capacity
     }
 }
 
@@ -163,6 +188,15 @@ mod tests {
         assert_eq!(inv.get(ResourceId::Ore), 10);
         assert_eq!(inv.get(ResourceId::Ammo), 5);
         assert_eq!(inv.get(ResourceId::Energy), 0);
+    }
+
+    #[test]
+    fn capacity_limits_add() {
+        let mut inv = Inventory::with_capacity(10);
+        assert!(inv.add(ResourceId::Ore, 5));
+        assert!(inv.add(ResourceId::Ore, 5));
+        assert!(!inv.add(ResourceId::Ore, 1));
+        assert_eq!(inv.get(ResourceId::Ore), 10);
     }
 
     proptest::proptest! {
