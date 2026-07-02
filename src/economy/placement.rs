@@ -7,6 +7,7 @@ use crate::economy::components::{
     Produces, TurretCombat, Storage, Splitter, Sorter,
 };
 use crate::economy::resource::{ResourceId, Inventory};
+use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
 use crate::events::DespawnDeposit;
 use crate::map::components::{HoveredTile, TilePosition};
@@ -18,13 +19,14 @@ pub fn build_mode_input(
     mut deconstruct: ResMut<DeconstructMode>,
     mut belt_dir: ResMut<BeltDirection>,
     keys: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     cfg: Res<MapConfig>,
     mut placed_belts: Query<(&mut BeltSlots, &mut Text2d, &TilePosition)>,
     registry: Res<BuildingRegistry>,
     hovered: Res<HoveredTile>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
-    if keys.just_pressed(KeyCode::Delete) {
+    if keys.just_pressed(bindings.key("build_deconstruct")) {
         if build_mode.0.is_some() {
             build_mode.0 = None;
         }
@@ -35,8 +37,9 @@ pub fn build_mode_input(
         .filter(|b| b.id != "hq")
         .map(|b| &b.id)
         .collect();
-    for (i, key) in [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4, KeyCode::Digit5].iter().enumerate() {
-        if keys.just_pressed(*key) {
+    let slot_actions = ["build_1", "build_2", "build_3", "build_4", "build_5"];
+    for (i, action) in slot_actions.iter().enumerate() {
+        if keys.just_pressed(bindings.key(action)) {
             deconstruct.0 = false;
             if let Some(id) = build_ids.get(i) {
                 build_mode.0 = match &build_mode.0 {
@@ -47,7 +50,7 @@ pub fn build_mode_input(
         }
     }
 
-    if keys.just_pressed(KeyCode::KeyR) && build_mode.0.as_deref() == Some("belt") {
+    if keys.just_pressed(bindings.key("build_rotate")) && build_mode.0.as_deref() == Some("belt") {
         if let Some(pos) = hovered.0 {
             let mut rotated = false;
             for (mut belt, mut text, tile_pos) in placed_belts.iter_mut() {
@@ -70,7 +73,7 @@ pub fn build_mode_input(
         }
     }
 
-    if buttons.just_pressed(MouseButton::Right) {
+    if bindings.just_pressed("cancel_build", &keys, &buttons) {
         build_mode.0 = None;
         deconstruct.0 = false;
     }
@@ -586,6 +589,7 @@ pub fn handle_belt_placement(
     )>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     buttons: Res<ButtonInput<MouseButton>>,
+    bindings: Res<KeyBindings>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
     shapes: Res<ShapeCache>,
@@ -613,7 +617,7 @@ pub fn handle_belt_placement(
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
     if tile_x < 0 || tile_y < 0 || tile_x >= grid_w as i32 || tile_y >= grid_h as i32 {
-        if buttons.just_released(MouseButton::Left) {
+        if bindings.just_released("place", &buttons) {
             drag.start_coord.take();
         }
         return;
@@ -622,7 +626,7 @@ pub fn handle_belt_placement(
     let tx = tile_x as u32;
     let ty = tile_y as u32;
 
-    if buttons.just_pressed(MouseButton::Left) {
+    if bindings.just_pressed("place", &keys, &buttons) {
         let belt_data: Vec<((u32, u32), Direction)> = {
             let read = belt_params.p0();
             read.iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect()
@@ -637,7 +641,7 @@ pub fn handle_belt_placement(
         return;
     }
 
-    if buttons.just_released(MouseButton::Left) {
+    if bindings.just_released("place", &buttons) {
         let Some(start) = drag.start_coord.take() else { return };
 
         let belt_data: Vec<((u32, u32), Direction)> = {

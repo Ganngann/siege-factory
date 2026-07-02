@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 use crate::core::game_state::GameState;
+use crate::core::input::KeyBindings;
 use crate::economy::components::BuildMode;
 
 pub struct CorePlugin;
 
 impl Plugin for CorePlugin {
     fn build(&self, app: &mut App) {
+        app.insert_resource(KeyBindings::load());
         app.init_state::<GameState>();
         app.add_systems(OnEnter(GameState::Loading), spawn_loading_ui);
         app.add_systems(OnExit(GameState::Loading), despawn_loading_ui);
@@ -61,6 +63,7 @@ fn game_state_transition(
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     keys: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     mut build_mode: Option<ResMut<BuildMode>>,
 ) {
     let mode_active = build_mode
@@ -70,12 +73,12 @@ fn game_state_transition(
 
     match state.get() {
         GameState::Loading => {
-            if keys.just_pressed(KeyCode::Space) {
+            if keys.just_pressed(bindings.key("start_game")) {
                 next_state.set(GameState::Playing);
             }
         }
         GameState::Playing => {
-            if keys.just_pressed(KeyCode::Escape) {
+            if keys.just_pressed(bindings.key("cancel")) {
                 if mode_active {
                     if let Some(ref mut bm) = build_mode {
                         bm.0 = None;
@@ -86,7 +89,7 @@ fn game_state_transition(
             }
         }
         GameState::GameOver => {
-            if keys.just_pressed(KeyCode::KeyR) {
+            if keys.just_pressed(bindings.key("restart")) {
                 next_state.set(GameState::Playing);
             }
         }
@@ -99,6 +102,7 @@ mod tests {
 
     fn test_app() -> App {
         let mut app = App::new();
+        app.insert_resource(KeyBindings::load());
         app.add_plugins(bevy::state::app::StatesPlugin);
         app.init_state::<GameState>();
         app.init_resource::<ButtonInput<KeyCode>>();

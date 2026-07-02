@@ -7,6 +7,7 @@ use crate::economy::components::{HQ, OreDeposit, Unit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;
+use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
 use crate::map::config::MapConfig;
 use crate::rendering::ShapeCache;
@@ -118,6 +119,7 @@ fn spawn_unit_on_trigger(
 fn spawn_unit_input(
     mut commands: Commands,
     keys: Res<ButtonInput<KeyCode>>,
+    bindings: Res<KeyBindings>,
     unit_cfg: Res<UnitConfig>,
     mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
     shapes: Res<ShapeCache>,
@@ -131,12 +133,12 @@ fn spawn_unit_input(
     let hq_pos = hq_transform.translation;
 
     let key_units = [
-        (KeyCode::Digit6, "soldier"),
-        (KeyCode::Digit7, "worker"),
+        ("spawn_6", "soldier"),
+        ("spawn_7", "worker"),
     ];
 
-    for (key, unit_id) in key_units {
-        if keys.just_pressed(key) {
+    for (action, unit_id) in key_units {
+        if keys.just_pressed(bindings.key(action)) {
             if let Some(def) = unit_cfg.get(unit_id) {
                 let cost_ore = def.cost.iter()
                     .find(|c| c.resource == ResourceId::Ore)
