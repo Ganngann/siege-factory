@@ -4,7 +4,7 @@ use crate::economy::belt::{BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
     Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag,
-    Building, Miner, Assembler, OreDeposit, Ghost, HQ, Produces, TurretCombat,
+    Building, Miner, Assembler, OreDeposit, Ghost, HQ, OccupiedTiles, Produces, TurretCombat,
 };
 use crate::economy::resource::Inventory;
 use crate::core::toast::ToastQueue;
@@ -191,7 +191,7 @@ pub fn update_build_preview(
     cfg: Res<MapConfig>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    buildings: Query<&TilePosition, With<Building>>,
+    occupied: Query<&OccupiedTiles, With<Building>>,
     deposits: Query<&TilePosition, With<OreDeposit>>,
     producers: Query<&TilePosition, With<Produces>>,
     belts_query: Query<(&TilePosition, &BeltSlots)>,
@@ -215,7 +215,7 @@ pub fn update_build_preview(
             let line = compute_line((sx, sy), (tx, ty));
             for &(lx, ly, dir) in &line {
                 let has_belt = belts_query.iter().any(|(p, _)| p.x == lx && p.y == ly);
-                let valid = (has_belt || tile_is_free(lx, ly, &buildings)) && lx < cfg.width && ly < cfg.height;
+                let valid = (has_belt || tile_is_free(lx, ly, &occupied)) && lx < cfg.width && ly < cfg.height;
                 let angle = match dir {
                     Direction::East => 0.0,
                     Direction::North => std::f32::consts::FRAC_PI_2,
@@ -248,9 +248,9 @@ pub fn update_build_preview(
     // ── Single-tile preview ──
     let valid = if def.requires_deposit {
         deposits.iter().any(|pos| pos.x == tx && pos.y == ty)
-            && !buildings.iter().any(|pos| pos.x == tx && pos.y == ty)
+            && !occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty))
     } else {
-        tile_is_free(tx, ty, &buildings)
+        tile_is_free(tx, ty, &occupied)
     };
 
     let color = if valid {
@@ -339,8 +339,8 @@ fn deduct_cost(hq_inv: &mut Inventory, cost: &[BuildingCost]) {
     }
 }
 
-fn tile_is_free(tx: u32, ty: u32, buildings: &Query<&TilePosition, With<Building>>) -> bool {
-    !buildings.iter().any(|pos| pos.x == tx && pos.y == ty)
+fn tile_is_free(tx: u32, ty: u32, occupied: &Query<&OccupiedTiles, With<Building>>) -> bool {
+    !occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty))
 }
 
 // ── Belt click/drag ──
@@ -354,7 +354,7 @@ pub fn handle_belt_placement(
     cfg: Res<MapConfig>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
-    buildings: Query<&TilePosition, With<Building>>,
+    occupied: Query<&OccupiedTiles, With<Building>>,
     producers: Query<&TilePosition, With<Produces>>,
     mut belt_params: ParamSet<(
         Query<(&TilePosition, &BeltSlots)>,
@@ -402,7 +402,7 @@ pub fn handle_belt_placement(
             read.iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect()
         };
         let has_belt = belt_data.iter().any(|&((px, py), _)| px == tx && py == ty);
-        let is_free = tile_is_free(tx, ty, &buildings);
+        let is_free = tile_is_free(tx, ty, &occupied);
         if has_belt || is_free {
             drag.start_coord = Some((tx, ty));
         } else {
@@ -491,6 +491,7 @@ pub fn handle_belt_placement(
             commands.spawn((
                 Building { kind: def.id.clone(), name: def.name.clone() },
                 Inventory::new(),
+                OccupiedTiles(vec![(bx, by)]),
                 TilePosition { x: bx, y: by },
                 BeltSlots { direction: dir, slots, slot_positions, speed },
                 Text2d::new(direction_arrow(dir).to_string()),
@@ -515,7 +516,7 @@ pub fn handle_build_click(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     deposits: Query<(Entity, &TilePosition), With<OreDeposit>>,
-    buildings: Query<&TilePosition, With<Building>>,
+    occupied: Query<&OccupiedTiles, With<Building>>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     buttons: Res<ButtonInput<MouseButton>>,
     registry: Res<BuildingRegistry>,
@@ -562,7 +563,7 @@ pub fn handle_build_click(
             toast_queue.0.push("No ore deposit here".to_string());
             return;
         };
-        let already_mined = buildings.iter().any(|pos| pos.x == tx && pos.y == ty);
+        let already_mined = occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty));
         if already_mined {
             toast_queue.0.push("Tile already occupied".to_string());
             return;
@@ -586,6 +587,7 @@ pub fn handle_build_click(
             Miner { production_timer: 0.0, interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0) },
             Building { kind: def.id.clone(), name: def.name.clone() },
             Inventory::new(),
+            OccupiedTiles(vec![(tx, ty)]),
             Mesh2d(mesh),
             MeshMaterial2d(material_from_color(&mut materials, def.color)),
             Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
@@ -595,7 +597,7 @@ pub fn handle_build_click(
         return;
     }
 
-    if !tile_is_free(tx, ty, &buildings) {
+    if !tile_is_free(tx, ty, &occupied) {
         toast_queue.0.push("Tile occupied".to_string());
         return;
     }
@@ -615,6 +617,7 @@ pub fn handle_build_click(
     let base = (
         Building { kind: def.id.clone(), name: def.name.clone() },
         Inventory::new(),
+        OccupiedTiles(vec![(tx, ty)]),
         TilePosition { x: tx, y: ty },
     );
 

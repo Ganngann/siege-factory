@@ -118,5 +118,8 @@ pub struct HpBarChild;
 #[derive(Component)]
 pub struct HasHpBar;
 
+#[derive(Component)]
+pub struct OccupiedTiles(pub Vec<(u32, u32)>);
+
 #[derive(Event)]
 pub struct SetBuildModeEvent(pub Option<String>);

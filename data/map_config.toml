@@ -18,6 +18,7 @@ positions = [
 [hq]
 start_ore = 200
 hp = 100
+position = { x = 9, y = 7 }
 
 [spawners]
 min = 1

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use bevy::prelude::*;
 
-use crate::economy::resource::ResourceId;
-use crate::economy::components::Direction;
+use crate::economy::resource::{ResourceId, Inventory};
+use crate::economy::components::{Building, Direction, OccupiedTiles};
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
@@ -91,8 +91,10 @@ pub fn belt_item_placer(
 
 pub fn advance_belt_slots(
     time: Res<Time>,
+    mut commands: Commands,
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
     mut item_query: Query<&mut BeltItem>,
+    mut inventory_query: Query<(Entity, &OccupiedTiles, &mut Inventory), (With<Building>, Without<BeltSlots>)>,
 ) {
     let dt = time.delta_secs();
     let belt_map: HashMap<(u32, u32), Entity> =
@@ -134,7 +136,13 @@ pub fn advance_belt_slots(
         }
     }
 
-    // Cross-belt transfers: last slot → next belt's first slot
+    // Build inventory map from OccupiedTiles
+    let inv_map: HashMap<(u32, u32), Entity> =
+        inventory_query.iter()
+            .flat_map(|(e, tiles, _)| tiles.0.iter().map(move |&(x, y)| ((x, y), e)))
+            .collect();
+
+    // Cross-belt transfers: last slot → next belt's first slot + building deposit
     for (belt_entity, belt_pos, dir, speed, n_slots) in &belt_data {
         let slot_duration = 1.0 / (speed * *n_slots as f32);
         let (dx, dy) = dir.offset();
@@ -154,6 +162,22 @@ pub fn advance_belt_slots(
                             if item.acc >= slot_duration {
                                 next_bs.slots[0] = bs.slots[last].take();
                                 item.acc -= slot_duration;
+                            }
+                        }
+                    }
+                }
+            }
+        } else if let Some(&inv_entity) = inv_map.get(&(nx, ny)) {
+            if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
+                let last = n_slots - 1;
+                if let Some(item_entity) = bs.slots[last] {
+                    if let Ok(item) = item_query.get(item_entity) {
+                        if item.acc >= slot_duration {
+                            bs.slots[last].take();
+                            let resource = item.resource;
+                            commands.entity(item_entity).despawn();
+                            if let Ok((_, _, mut inv)) = inventory_query.get_mut(inv_entity) {
+                                inv.add(resource, 1);
                             }
                         }
                     }

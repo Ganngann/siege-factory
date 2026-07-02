@@ -9,6 +9,7 @@ pub struct MapConfig {
     pub deposit_positions: Vec<(u32, u32)>,
     pub deposit_min_amount: u32,
     pub deposit_max_amount: u32,
+    pub hq_position: (u32, u32),
     pub hq_start_ore: u32,
     pub hq_hp: u32,
 }
@@ -27,6 +28,7 @@ impl MapConfig {
             deposit_positions: deposits,
             deposit_min_amount: parsed.deposits.min_amount,
             deposit_max_amount: parsed.deposits.max_amount,
+            hq_position: (parsed.hq.position.x, parsed.hq.position.y),
             hq_start_ore: parsed.hq.start_ore,
             hq_hp: parsed.hq.hp,
         }
@@ -64,4 +66,5 @@ struct PosEntry {
 struct HqEntry {
     start_ore: u32,
     hp: u32,
+    position: PosEntry,
 }
