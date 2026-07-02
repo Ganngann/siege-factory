@@ -11,6 +11,25 @@ use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::rendering::ShapeCache;
 
+pub fn find_closest_enemy(
+    turret_pos: Vec3,
+    enemies: &[(Entity, Vec3)],
+    range_sq: f32,
+) -> Option<Entity> {
+    let mut target = None;
+    let mut closest_dist = range_sq;
+
+    for (entity, enemy_pos) in enemies {
+        let dist = enemy_pos.distance_squared(turret_pos);
+        if dist < closest_dist {
+            closest_dist = dist;
+            target = Some(*entity);
+        }
+    }
+
+    target
+}
+
 pub fn enemies_damage_hq(
     enemies: Query<(Entity, &TilePosition), With<Enemy>>,
     mut hq: Query<(&mut Health, &mut Inventory), With<HQ>>,
@@ -57,18 +76,11 @@ pub fn turret_shoot(
             continue;
         }
 
-        let mut target = None;
-        let mut closest_dist = combat.range_sq;
+        let enemy_positions: Vec<(Entity, Vec3)> = enemies.iter()
+            .map(|(e, t)| (e, t.translation))
+            .collect();
 
-        for (entity, enemy_pos) in enemies.iter() {
-            let dist = enemy_pos.translation.distance_squared(turret_pos.translation);
-            if dist < closest_dist {
-                closest_dist = dist;
-                target = Some(entity);
-            }
-        }
-
-        if let Some(entity) = target {
+        if let Some(entity) = find_closest_enemy(turret_pos.translation, &enemy_positions, combat.range_sq) {
             combat.timer -= combat.fire_interval;
             commands.spawn((
                 Projectile {
