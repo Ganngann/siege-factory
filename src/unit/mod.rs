@@ -7,6 +7,7 @@ use crate::economy::components::{HQ, OreDeposit, Unit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;
+use crate::core::toast::ToastQueue;
 use crate::map::config::MapConfig;
 use crate::rendering::ShapeCache;
 
@@ -121,6 +122,7 @@ fn spawn_unit_input(
     mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut toast_queue: ResMut<ToastQueue>,
 ) {
     let (hq_transform, mut inv) = match hq_query.single_mut() {
         Ok(q) => q,
@@ -143,6 +145,8 @@ fn spawn_unit_input(
                 if inv.get(ResourceId::Ore) >= cost_ore {
                     inv.remove(ResourceId::Ore, cost_ore);
                     spawn_unit_by_id(&mut commands, &unit_cfg, unit_id, hq_pos, &shapes, &mut materials);
+                } else {
+                    toast_queue.0.push("Not enough ore for unit".to_string());
                 }
             }
         }

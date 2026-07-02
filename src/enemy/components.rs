@@ -33,3 +33,6 @@ pub struct WaveCounterText;
 
 #[derive(Component)]
 pub struct GameOverUi;
+
+#[derive(Resource)]
+pub struct LastWave(pub u32);

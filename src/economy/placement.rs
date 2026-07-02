@@ -6,37 +6,21 @@ use crate::economy::components::{
     Building, Miner, Assembler, OreDeposit, Ghost, HQ, Produces, TurretCombat,
 };
 use crate::economy::resource::Inventory;
+use crate::core::toast::ToastQueue;
 use crate::events::DespawnDeposit;
-use crate::map::components::TilePosition;
+use crate::map::components::{HoveredTile, TilePosition};
 use crate::map::config::MapConfig;
 use crate::rendering::{direction_arrow, material_from_color, ShapeCache};
-
-fn cursor_tile(
-    windows: &Query<&Window>,
-    camera: &Query<(&Camera, &GlobalTransform)>,
-    cfg: &MapConfig,
-) -> Option<(u32, u32)> {
-    let window = windows.iter().next()?;
-    let cursor = window.cursor_position()?;
-    let (cam, cam_transform) = camera.iter().next()?;
-    let world_pos = cam.viewport_to_world_2d(cam_transform, cursor).ok()?;
-    let tile_x = ((world_pos.x + cfg.tile_size / 2.0) / cfg.tile_size).floor() as i32;
-    let tile_y = ((world_pos.y + cfg.tile_size / 2.0) / cfg.tile_size).floor() as i32;
-    if tile_x < 0 || tile_y < 0 || tile_x >= cfg.width as i32 || tile_y >= cfg.height as i32 {
-        return None;
-    }
-    Some((tile_x as u32, tile_y as u32))
-}
 
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
     mut belt_dir: ResMut<BeltDirection>,
     keys: Res<ButtonInput<KeyCode>>,
-    windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
     mut placed_belts: Query<(&mut BeltSlots, &mut Text2d, &TilePosition)>,
     registry: Res<BuildingRegistry>,
+    hovered: Res<HoveredTile>,
+    buttons: Res<ButtonInput<MouseButton>>,
 ) {
     let build_ids: Vec<&String> = registry.buildings.iter()
         .filter(|b| b.id != "hq")
@@ -54,13 +38,13 @@ pub fn build_mode_input(
     }
 
     if keys.just_pressed(KeyCode::KeyR) && build_mode.0.as_deref() == Some("belt") {
-        if let Some((tx, ty)) = cursor_tile(&windows, &camera, &cfg) {
+        if let Some(pos) = hovered.0 {
             let mut rotated = false;
-            for (mut belt, mut text, pos) in placed_belts.iter_mut() {
-                if pos.x == tx && pos.y == ty {
+            for (mut belt, mut text, tile_pos) in placed_belts.iter_mut() {
+                if tile_pos.x == pos.x && tile_pos.y == pos.y {
                     belt.direction = belt.direction.next();
                     belt.slot_positions = compute_slot_positions(
-                        pos.x, pos.y, belt.direction,
+                        tile_pos.x, tile_pos.y, belt.direction,
                         belt.slots.len() as u32, cfg.tile_size,
                     );
                     text.0 = direction_arrow(belt.direction).to_string();
@@ -76,7 +60,8 @@ pub fn build_mode_input(
         }
     }
 
-    if keys.just_pressed(KeyCode::Escape) {
+    // Right-click cancel
+    if buttons.just_pressed(MouseButton::Right) {
         build_mode.0 = None;
     }
 }
@@ -90,11 +75,10 @@ pub fn update_build_preview(
     cfg: Res<MapConfig>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
     buildings: Query<&TilePosition, With<Building>>,
     deposits: Query<&TilePosition, With<OreDeposit>>,
     registry: Res<BuildingRegistry>,
+    hovered: Res<HoveredTile>,
 ) {
     let Some(ref kind) = build_mode.0 else {
         despawn_ghost(&mut commands, &mut preview);
@@ -106,7 +90,7 @@ pub fn update_build_preview(
         return;
     };
 
-    let Some((tx, ty)) = cursor_tile(&windows, &camera, &cfg) else {
+    let Some(TilePosition { x: tx, y: ty }) = hovered.0 else {
         despawn_ghost(&mut commands, &mut preview);
         return;
     };
@@ -197,6 +181,7 @@ pub fn handle_build_click(
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     buttons: Res<ButtonInput<MouseButton>>,
     registry: Res<BuildingRegistry>,
+    mut toast_queue: ResMut<ToastQueue>,
 ) {
     let tile_size = cfg.tile_size;
     let grid_w = cfg.width;
@@ -216,6 +201,7 @@ pub fn handle_build_click(
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
     if tile_x < 0 || tile_y < 0 || tile_x >= grid_w as i32 || tile_y >= grid_h as i32 {
+        toast_queue.0.push("Outside map".to_string());
         return;
     }
 
@@ -229,9 +215,13 @@ pub fn handle_build_click(
 
     if def.requires_deposit {
         let deposit_entity = deposits.iter().find(|(_, pos)| pos.x == tx && pos.y == ty).map(|(e, _)| e);
-        let Some(deposit) = deposit_entity else { return };
+        let Some(deposit) = deposit_entity else {
+            toast_queue.0.push("No ore deposit here".to_string());
+            return;
+        };
         let already_mined = buildings.iter().any(|pos| pos.x == tx && pos.y == ty);
         if already_mined {
+            toast_queue.0.push("Tile already occupied".to_string());
             return;
         }
 
@@ -241,6 +231,7 @@ pub fn handle_build_click(
         };
 
         if !can_afford(&hq_inv, &def.cost) {
+            toast_queue.0.push("Not enough ore".to_string());
             return;
         }
 
@@ -262,6 +253,7 @@ pub fn handle_build_click(
     }
 
     if !tile_is_free(tx, ty, &buildings) {
+        toast_queue.0.push("Tile occupied".to_string());
         return;
     }
 
@@ -271,6 +263,7 @@ pub fn handle_build_click(
     };
 
     if !can_afford(&hq_inv, &def.cost) {
+        toast_queue.0.push("Not enough ore".to_string());
         return;
     }
 

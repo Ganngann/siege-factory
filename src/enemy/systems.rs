@@ -1,8 +1,9 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::GameState;
+use crate::core::toast::ToastMessage;
 use crate::economy::components::HQ;
-use crate::enemy::components::{Enemy, WaveState, WaveCounterText, GameOverUi, Health};
+use crate::enemy::components::{Enemy, WaveState, WaveCounterText, GameOverUi, Health, LastWave};
 use crate::enemy::registry::EnemyRegistry;
 use crate::enemy::wave_config::WaveConfig;
 use crate::map::components::TilePosition;
@@ -186,5 +187,29 @@ pub fn reset_wave(
     *wave = WaveState::default();
     if let Ok(entity) = hq.single() {
         commands.entity(entity).insert(Health { current: cfg.hq_hp, max: cfg.hq_hp });
+    }
+}
+
+pub fn wave_announcement(
+    wave: Res<WaveState>,
+    mut last_wave: ResMut<LastWave>,
+    mut commands: Commands,
+) {
+    if wave.wave != last_wave.0 && wave.wave > 1 {
+        commands.spawn((
+            ToastMessage { timer: 2.0 },
+            Text::new(format!("Wave {}", wave.wave)),
+            TextFont::from_font_size(32.0),
+            TextColor(Color::srgb(1.0, 0.6, 0.2)),
+            TextLayout::justify(Justify::Center),
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(40.0),
+                left: Val::Percent(50.0),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+        ));
+        last_wave.0 = wave.wave;
     }
 }

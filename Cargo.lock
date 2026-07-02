@@ -1163,6 +1163,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bff34eb29ff4b8a8688bc7299f14fb6b597461ca80fec03ed7d22939ab33e48f"
 
 [[package]]
+name = "bevy_pancam"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9c9fdc31b063621c0afed16beac6dda0a785d7634a3daa3d57a33cb460ab19c"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_pbr"
 version = "0.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4676,6 +4685,7 @@ name = "siege-factory"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_pancam",
  "getrandom 0.2.17",
  "getrandom 0.3.4",
  "getrandom 0.4.3",

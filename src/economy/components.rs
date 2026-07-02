@@ -96,3 +96,9 @@ pub struct TurretCombat {
 
 #[derive(Component)]
 pub struct Unit;
+
+#[derive(Component)]
+pub struct HpBarChild;
+
+#[derive(Event)]
+pub struct SetBuildModeEvent(pub Option<String>);

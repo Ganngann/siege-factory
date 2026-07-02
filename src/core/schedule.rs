@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::core::game_state::GameState;
+use crate::economy::components::BuildMode;
 
 pub struct CorePlugin;
 
@@ -56,22 +57,39 @@ fn despawn_loading_ui(mut commands: Commands, query: Query<Entity, With<LoadingU
     }
 }
 
-fn compute_next_state(state: &GameState, keys: &ButtonInput<KeyCode>) -> Option<GameState> {
-    match state {
-        GameState::Loading if keys.just_pressed(KeyCode::Space) => Some(GameState::Playing),
-        GameState::Playing if keys.just_pressed(KeyCode::Escape) => Some(GameState::GameOver),
-        GameState::GameOver if keys.just_pressed(KeyCode::KeyR) => Some(GameState::Playing),
-        _ => None,
-    }
-}
-
 fn game_state_transition(
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     keys: Res<ButtonInput<KeyCode>>,
+    mut build_mode: Option<ResMut<BuildMode>>,
 ) {
-    if let Some(next) = compute_next_state(&state, &keys) {
-        next_state.set(next);
+    let mode_active = build_mode
+        .as_ref()
+        .map(|m| m.0.is_some())
+        .unwrap_or(false);
+
+    match state.get() {
+        GameState::Loading => {
+            if keys.just_pressed(KeyCode::Space) {
+                next_state.set(GameState::Playing);
+            }
+        }
+        GameState::Playing => {
+            if keys.just_pressed(KeyCode::Escape) {
+                if mode_active {
+                    if let Some(ref mut bm) = build_mode {
+                        bm.0 = None;
+                    }
+                } else {
+                    next_state.set(GameState::GameOver);
+                }
+            }
+        }
+        GameState::GameOver => {
+            if keys.just_pressed(KeyCode::KeyR) {
+                next_state.set(GameState::Playing);
+            }
+        }
     }
 }
 
@@ -79,49 +97,49 @@ fn game_state_transition(
 mod tests {
     use super::*;
 
-    #[test]
-    fn initial_state_is_loading() {
+    fn test_app() -> App {
         let mut app = App::new();
         app.add_plugins(bevy::state::app::StatesPlugin);
         app.init_state::<GameState>();
+        app.init_resource::<ButtonInput<KeyCode>>();
+        app.init_resource::<BuildMode>();
+        app.add_systems(Update, game_state_transition);
+        app
+    }
+
+    #[test]
+    fn initial_state_is_loading() {
+        let mut app = test_app();
         app.update();
         assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Loading);
     }
 
     #[test]
-    fn compute_space_transitions_loading_to_playing() {
-        let mut keys = ButtonInput::<KeyCode>::default();
-        keys.press(KeyCode::Space);
-        assert_eq!(compute_next_state(&GameState::Loading, &keys), Some(GameState::Playing));
+    fn no_keypress_no_transition() {
+        let mut app = test_app();
+        app.update();
+
+        app.update();
+        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Loading);
     }
 
     #[test]
-    fn compute_escape_transitions_playing_to_gameover() {
-        let mut keys = ButtonInput::<KeyCode>::default();
-        keys.press(KeyCode::Escape);
-        assert_eq!(compute_next_state(&GameState::Playing, &keys), Some(GameState::GameOver));
-    }
+    fn escape_cancels_build_mode_before_forfeit() {
+        let mut app = test_app();
+        app.world_mut().resource_mut::<NextState<GameState>>().set(GameState::Playing);
+        app.update();
 
-    #[test]
-    fn compute_r_transitions_gameover_to_playing() {
-        let mut keys = ButtonInput::<KeyCode>::default();
-        keys.press(KeyCode::KeyR);
-        assert_eq!(compute_next_state(&GameState::GameOver, &keys), Some(GameState::Playing));
-    }
-
-    #[test]
-    fn compute_no_match_returns_none() {
-        let keys = ButtonInput::<KeyCode>::default();
-        assert_eq!(compute_next_state(&GameState::Loading, &keys), None);
-        assert_eq!(compute_next_state(&GameState::Playing, &keys), None);
-        assert_eq!(compute_next_state(&GameState::GameOver, &keys), None);
+        app.world_mut().resource_mut::<BuildMode>().0 = Some("wall".to_string());
+        app.world_mut().resource_mut::<ButtonInput<KeyCode>>().press(KeyCode::Escape);
+        app.update();
+        // Build mode cancelled, still Playing
+        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Playing);
+        assert!(app.world().resource::<BuildMode>().0.is_none());
     }
 
     #[test]
     fn nextstate_set_triggers_transition() {
-        let mut app = App::new();
-        app.add_plugins(bevy::state::app::StatesPlugin);
-        app.init_state::<GameState>();
+        let mut app = test_app();
         app.update();
         app.world_mut().resource_mut::<NextState<GameState>>().set(GameState::Playing);
         app.update();

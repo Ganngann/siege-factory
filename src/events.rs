@@ -20,6 +20,9 @@ pub struct BuildOrderEvent {
     pub pos: TilePosition,
 }
 
+#[derive(Event)]
+pub struct ToastEvent(pub String);
+
 pub struct CleanupPlugin;
 
 impl Plugin for CleanupPlugin {

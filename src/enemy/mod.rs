@@ -9,7 +9,7 @@ pub use components::{Health, Enemy};
 
 use bevy::prelude::*;
 use crate::core::game_state::GameState;
-use crate::enemy::components::WaveState;
+use crate::enemy::components::{WaveState, LastWave};
 use registry::EnemyRegistry;
 use wave_config::WaveConfig;
 
@@ -20,6 +20,7 @@ impl Plugin for EnemyPlugin {
         app.insert_resource(WaveState::default());
         app.insert_resource(EnemyRegistry::load());
         app.insert_resource(WaveConfig::load());
+        app.insert_resource(LastWave(1));
         app.add_systems(OnEnter(GameState::Playing), systems::reset_wave);
         app.add_systems(OnExit(GameState::Playing), systems::cleanup_game_entities);
         app.add_systems(OnEnter(GameState::GameOver), systems::spawn_game_over_ui);
@@ -31,6 +32,7 @@ impl Plugin for EnemyPlugin {
             combat::enemies_damage_hq,
             combat::turret_shoot,
             systems::wave_counter_ui,
+            systems::wave_announcement,
         ).run_if(in_state(GameState::Playing)));
     }
 }
