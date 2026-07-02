@@ -29,6 +29,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::BuildMode>();
         app.init_resource::<components::BeltDirection>();
         app.init_resource::<components::BuildPreview>();
+        app.init_resource::<components::BeltDrag>();
         app.init_resource::<ToastQueue>();
         app.init_resource::<TooltipText>();
         app.add_observer(belt::belt_item_placer);
@@ -44,6 +45,7 @@ impl Plugin for EconomyPlugin {
         ));
         app.add_systems(Update, (
             placement::build_mode_input,
+            placement::handle_belt_placement,
             placement::handle_build_click,
             placement::update_build_preview,
             production::production_tick,
@@ -55,7 +57,7 @@ impl Plugin for EconomyPlugin {
             build_bar::update_build_bar,
             toast_system,
             tooltip_ui,
-        ).run_if(in_state(GameState::Playing)));
+        ).chain().run_if(in_state(GameState::Playing)));
     }
 }
 

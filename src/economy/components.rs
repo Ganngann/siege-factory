@@ -66,6 +66,16 @@ impl Direction {
             Direction::South => Color::srgb(0.5, 0.4, 0.6),
         }
     }
+
+    pub fn from_offset(dx: i32, dy: i32) -> Self {
+        match (dx, dy) {
+            (1, 0) => Direction::East,
+            (0, 1) => Direction::North,
+            (-1, 0) => Direction::West,
+            (0, -1) => Direction::South,
+            _ => Direction::East,
+        }
+    }
 }
 
 #[derive(Resource, Default)]
@@ -76,6 +86,11 @@ pub struct BeltDirection(pub Direction);
 
 #[derive(Resource, Default)]
 pub struct BuildPreview(pub Option<Entity>);
+
+#[derive(Resource, Default)]
+pub struct BeltDrag {
+    pub start_coord: Option<(u32, u32)>,
+}
 
 // ── Generic behavior components ──
 

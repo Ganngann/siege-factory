@@ -2,7 +2,7 @@
 rustflags = ["--cfg=getrandom_backend=\"wasm_js\""]
 
 [target.x86_64-pc-windows-msvc]
-rustflags = ["-C", "link-arg=/OPT:REF"]
+rustflags = ["-C", "link-arg=/OPT:REF", "-C", "link-arg=-fuse-ld=lld-link"]
 
 [env]
 RUSTC_WRAPPER = "sccache"
