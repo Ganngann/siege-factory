@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::economy::components::Direction;
 use crate::economy::resource::ResourceId;
 use crate::map::components::TilePosition;
 
@@ -22,6 +23,15 @@ pub struct BuildOrderEvent {
 
 #[derive(Event)]
 pub struct ToastEvent(pub String);
+
+/// Emitted when a belt/splitter/sorter drag is completed.
+/// The observer handles cost deduction + entity spawn/update.
+#[derive(Event)]
+pub struct BeltDragCompleted {
+    pub kind: String,
+    pub new_tiles: Vec<(u32, u32, Direction)>,
+    pub existing: Vec<(u32, u32, Direction)>,
+}
 
 pub struct CleanupPlugin;
 

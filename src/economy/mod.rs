@@ -38,6 +38,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<ToastQueue>();
         app.init_resource::<TooltipText>();
         app.add_observer(belt::belt_item_placer);
+        app.add_observer(placement::on_belt_drag_completed);
         app.add_systems(OnEnter(GameState::Playing), (
             setup::setup_hq,
             setup::place_ore_deposits,
@@ -53,7 +54,7 @@ impl Plugin for EconomyPlugin {
             placement::build_mode_input.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            placement::handle_belt_placement.run_if(in_state(GameState::Playing)),
+            placement::track_belt_drag.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             placement::handle_build_click.run_if(in_state(GameState::Playing)),

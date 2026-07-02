@@ -9,7 +9,7 @@ use crate::economy::components::{
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
-use crate::events::DespawnDeposit;
+use crate::events::{BeltDragCompleted, DespawnDeposit};
 use crate::map::components::{HoveredTile, TilePosition};
 use crate::map::config::MapConfig;
 use crate::rendering::{direction_arrow, material_from_color, ShapeCache};
@@ -574,8 +574,10 @@ fn deduct_cost(hq_inv: &mut Inventory, cost: &[BuildingCost]) {
 
 // ── Belt click/drag ──
 
+/// Tracks belt/splitter/sorter drag start/end and emits `BeltDragCompleted`
+/// on release. No entity spawning — that happens in the observer.
 #[allow(clippy::too_many_arguments)]
-pub fn handle_belt_placement(
+pub fn track_belt_drag(
     mut commands: Commands,
     mut drag: ResMut<BeltDrag>,
     build_mode: Res<BuildMode>,
@@ -584,17 +586,11 @@ pub fn handle_belt_placement(
     camera: Query<(&Camera, &GlobalTransform)>,
     occupied: Query<&OccupiedTiles, With<Building>>,
     producers: Query<&TilePosition, With<Produces>>,
-    mut belt_params: ParamSet<(
-        Query<(&TilePosition, &BeltSlots)>,
-        Query<(&TilePosition, &mut BeltSlots, &mut Text2d)>,
-    )>,
-    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    belt_read: Query<(&TilePosition, &BeltSlots)>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let Some(ref kind) = build_mode.0 else {
         drag.start_coord = None;
@@ -604,7 +600,7 @@ pub fn handle_belt_placement(
         drag.start_coord = None;
         return;
     }
-    let Some(def) = registry.get(kind) else { return };
+    let Some(_def) = registry.get(kind) else { return };
     let tile_size = cfg.tile_size;
     let grid_w = cfg.width;
     let grid_h = cfg.height;
@@ -628,10 +624,8 @@ pub fn handle_belt_placement(
     let ty = tile_y as u32;
 
     if buttons.just_pressed(bindings.mouse("place")) {
-        let belt_data: Vec<((u32, u32), Direction)> = {
-            let read = belt_params.p0();
-            read.iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect()
-        };
+        let belt_data: Vec<((u32, u32), Direction)> = belt_read
+            .iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect();
         let has_belt = belt_data.iter().any(|&((px, py), _)| px == tx && py == ty);
         let is_free = tile_is_free(tx, ty, &occupied);
         if has_belt || is_free {
@@ -645,10 +639,8 @@ pub fn handle_belt_placement(
     if buttons.just_released(bindings.mouse("place")) {
         let Some(start) = drag.start_coord.take() else { return };
 
-        let belt_data: Vec<((u32, u32), Direction)> = {
-            let read = belt_params.p0();
-            read.iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect()
-        };
+        let belt_data: Vec<((u32, u32), Direction)> = belt_read
+            .iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect();
 
         let line = compute_line(start, (tx, ty));
         let single = line.len() == 1;
@@ -675,80 +667,103 @@ pub fn handle_belt_placement(
             return;
         }
 
-        if !new_tiles.is_empty() {
-            let mut hq_inv = match hq_query.single_mut() {
-                Ok(inv) => inv,
-                Err(_) => return,
-            };
+        commands.trigger(BeltDragCompleted {
+            kind: kind.clone(),
+            new_tiles,
+            existing,
+        });
+    }
+}
 
-            let scaled_cost: Vec<BuildingCost> = def.cost.iter()
-                .map(|c| BuildingCost { resource: c.resource, amount: c.amount * new_tiles.len() as u32 })
-                .collect();
+/// Observer for `BeltDragCompleted`. Handles cost deduction, existing belt
+/// direction updates, and spawning new belt/splitter/sorter entities.
+pub fn on_belt_drag_completed(
+    on: On<BeltDragCompleted>,
+    mut commands: Commands,
+    mut belt_write: Query<(&TilePosition, &mut BeltSlots, &mut Text2d)>,
+    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    shapes: Res<ShapeCache>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    registry: Res<BuildingRegistry>,
+    cfg: Res<MapConfig>,
+    mut toast_queue: ResMut<ToastQueue>,
+) {
+    let ev = on.event();
+    let Some(def) = registry.get(&ev.kind) else { return };
+    let tile_size = cfg.tile_size;
 
-            if !can_afford(&hq_inv, &scaled_cost) {
-                toast_queue.0.push("Not enough resources".to_string());
-                return;
-            }
-
-            deduct_cost(&mut hq_inv, &scaled_cost);
+    if !ev.new_tiles.is_empty() {
+        let mut hq_inv = match hq_query.single_mut() {
+            Ok(inv) => inv,
+            Err(_) => return,
+        };
+        let scaled_cost: Vec<BuildingCost> = def.cost.iter()
+            .map(|c| BuildingCost { resource: c.resource, amount: c.amount * ev.new_tiles.len() as u32 })
+            .collect();
+        if !can_afford(&hq_inv, &scaled_cost) {
+            toast_queue.0.push("Not enough resources".to_string());
+            return;
         }
+        deduct_cost(&mut hq_inv, &scaled_cost);
+    }
 
-        let num_slots = def.belt.as_ref().map_or(2, |b| b.slots);
-        let speed = def.belt.as_ref().map_or(2.0, |b| b.speed);
-
-        for &(bx, by, dir) in &existing {
-            if let Some((_, mut bs, mut text)) = belt_params.p1().iter_mut()
-                .find(|(pos, _, _)| pos.x == bx && pos.y == by)
-            {
-                if bs.direction != dir {
-                    bs.direction = dir;
-                    bs.slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
-                    text.0 = direction_arrow(dir).to_string();
-                }
-            }
-        }
-
-        for &(bx, by, dir) in &new_tiles {
-            let cx = bx as f32 * tile_size;
-            let cy = by as f32 * tile_size;
-            let slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
-            let slots = vec![None; num_slots as usize];
-
-            let base_components = (
-                Building { kind: def.id.clone(), name: def.name.clone() },
-                Inventory::new(),
-                OccupiedTiles(vec![(bx, by)]),
-                TilePosition { x: bx, y: by },
-                BeltSlots { direction: dir, slots, slot_positions, speed },
-                Text2d::new(direction_arrow(dir).to_string()),
-                TextFont::from_font_size(24.0),
-                TextColor(Color::WHITE),
-                TextLayout::justify(Justify::Center),
-                Transform::from_xyz(cx, cy, 2.0),
-            );
-
-            let mesh = shapes.get_visual(&def.visual);
-
-            if def.id == "splitter" {
-                commands.spawn((
-                    base_components,
-                    Splitter { counter: 0, outputs: 2, input_direction: None },
-                    Mesh2d(mesh),
-                    MeshMaterial2d(material_from_color(&mut materials, def.color)),
-                ));
-            } else if def.id == "sorter" {
-                commands.spawn((
-                    base_components,
-                    Sorter { filter: ResourceId::Ore, inverted: false },
-                    Mesh2d(mesh),
-                    MeshMaterial2d(material_from_color(&mut materials, def.color)),
-                ));
-            } else {
-                commands.spawn(base_components);
-            }
-        }
-
+    if ev.new_tiles.is_empty() && ev.existing.is_empty() {
         return;
+    }
+
+    let num_slots = def.belt.as_ref().map_or(2, |b| b.slots);
+    let speed = def.belt.as_ref().map_or(2.0, |b| b.speed);
+
+    for &(bx, by, dir) in &ev.existing {
+        if let Some((_, mut bs, mut text)) = belt_write.iter_mut()
+            .find(|(pos, _, _)| pos.x == bx && pos.y == by)
+        {
+            if bs.direction != dir {
+                bs.direction = dir;
+                bs.slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
+                text.0 = direction_arrow(dir).to_string();
+            }
+        }
+    }
+
+    for &(bx, by, dir) in &ev.new_tiles {
+        let cx = bx as f32 * tile_size;
+        let cy = by as f32 * tile_size;
+        let slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
+        let slots = vec![None; num_slots as usize];
+
+        let base_components = (
+            Building { kind: def.id.clone(), name: def.name.clone() },
+            Inventory::new(),
+            OccupiedTiles(vec![(bx, by)]),
+            TilePosition { x: bx, y: by },
+            BeltSlots { direction: dir, slots, slot_positions, speed },
+            Text2d::new(direction_arrow(dir).to_string()),
+            TextFont::from_font_size(24.0),
+            TextColor(Color::WHITE),
+            TextLayout::justify(Justify::Center),
+            Transform::from_xyz(cx, cy, 2.0),
+        );
+
+        let mesh = shapes.get_visual(&def.visual);
+
+        if def.id == "splitter" {
+            commands.spawn((
+                base_components,
+                Splitter { counter: 0, outputs: 2, input_direction: None },
+                Mesh2d(mesh),
+                MeshMaterial2d(material_from_color(&mut materials, def.color)),
+            ));
+        } else if def.id == "sorter" {
+            commands.spawn((
+                base_components,
+                Sorter { filter: ResourceId::Ore, inverted: false },
+                Mesh2d(mesh),
+                MeshMaterial2d(material_from_color(&mut materials, def.color)),
+            ));
+        } else {
+            commands.spawn(base_components);
+        }
     }
 }
 
@@ -804,7 +819,7 @@ pub fn handle_build_click(
 
     let (tw, th) = def.tile_size;
 
-    // Belt/splitter/sorter is handled by handle_belt_placement
+    // Belt/splitter/sorter is handled by track_belt_drag → BeltDragCompleted
     if def.id == "belt" || def.id == "splitter" || def.id == "sorter" {
         return;
     }
