@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::core::tooltip::TooltipText;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::resource::Inventory;
 use crate::economy::components::{BuildMode, HQ};
@@ -148,20 +149,79 @@ pub fn build_bar_interaction(
     query: Query<(&Interaction, &BuildBarEntry), Changed<Interaction>>,
     mut build_mode: ResMut<BuildMode>,
     mut commands: Commands,
+    mut tooltip: ResMut<TooltipText>,
+    registry: Res<BuildingRegistry>,
+    unit_cfg: Res<UnitConfig>,
 ) {
     for (interaction, entry) in &query {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
-        match &entry.kind {
-            BuildBarEntryKind::Building(kind) => {
-                build_mode.0 = match &build_mode.0 {
-                    Some(current) if current == kind => None,
-                    _ => Some(kind.clone()),
-                };
+        match *interaction {
+            Interaction::Pressed => {
+                match &entry.kind {
+                    BuildBarEntryKind::Building(kind) => {
+                        build_mode.0 = match &build_mode.0 {
+                            Some(current) if current == kind => None,
+                            _ => Some(kind.clone()),
+                        };
+                    }
+                    BuildBarEntryKind::Unit(kind) => {
+                        commands.trigger(SpawnUnitEvent(kind.clone()));
+                    }
+                }
             }
-            BuildBarEntryKind::Unit(kind) => {
-                commands.trigger(SpawnUnitEvent(kind.clone()));
+            Interaction::Hovered => {
+                match &entry.kind {
+                    BuildBarEntryKind::Building(kind) => {
+                        let key = registry.buildings.iter()
+                            .filter(|b| b.id != "hq")
+                            .position(|b| &b.id == kind)
+                            .map(|i| format!("[{}]", i + 1))
+                            .unwrap_or_default();
+                        let def = registry.buildings.iter()
+                            .find(|def| &def.id == kind);
+                        if let Some(d) = def {
+                            let cost = format_building_cost(&d.cost);
+                            let mut parts = vec![
+                                format!("{} {}  HP:{}  Cost:{}", key, d.name, d.hp, cost)
+                            ];
+                            if d.requires_deposit {
+                                parts.push("Requires ore deposit".to_string());
+                            }
+                            if let Some(ref p) = d.production {
+                                parts.push(format!("Produces {:?} every {:.1}s", p.resource, p.interval_sec));
+                            }
+                            if let Some(ref b) = d.belt {
+                                parts.push(format!("{} slots, speed {:.1}", b.slots, b.speed));
+                            }
+                            if let Some(ref c) = d.combat {
+                                parts.push(format!("Dmg {}  Range {:.0}  Rate {:.1}s", c.damage, c.range.sqrt(), c.fire_rate_sec));
+                            }
+                            tooltip.0 = Some(parts.join("  |  "));
+                        }
+                    }
+                    BuildBarEntryKind::Unit(kind) => {
+                        let keys: Vec<&String> = unit_cfg.units.keys().collect();
+                        let key = keys.iter()
+                            .position(|k| *k == kind)
+                            .map(|i| format!("[{}]", i + 6))
+                            .unwrap_or_default();
+                        let def = unit_cfg.get(kind);
+                        if let Some(d) = def {
+                            let cost = format_unit_cost(&d.cost);
+                            let mut parts = vec![
+                                format!("{} {}  HP:{}  Cost:{}", key, d.name, d.hp, cost)
+                            ];
+                            if d.kind == "combat" {
+                                parts.push(format!("Dmg {}  Range {:.0}  Rate {:.1}s", d.damage, d.range_tiles, d.fire_rate_sec));
+                            } else if d.kind == "harvester" {
+                                parts.push(format!("Speed {:.0}  Mine interval {:.1}s", d.speed, d.mine_interval_sec));
+                            }
+                            tooltip.0 = Some(parts.join("  |  "));
+                        }
+                    }
+                }
+            }
+            Interaction::None => {
+                tooltip.0 = None;
             }
         }
     }

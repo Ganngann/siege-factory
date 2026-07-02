@@ -100,5 +100,8 @@ pub struct Unit;
 #[derive(Component)]
 pub struct HpBarChild;
 
+#[derive(Component)]
+pub struct HasHpBar;
+
 #[derive(Event)]
 pub struct SetBuildModeEvent(pub Option<String>);

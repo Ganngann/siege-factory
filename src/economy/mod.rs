@@ -13,6 +13,7 @@ pub mod build_bar;
 use bevy::prelude::*;
 use crate::core::game_state::GameState;
 use crate::core::toast::{toast_system, ToastQueue};
+use crate::core::tooltip::{tooltip_ui, TooltipText};
 use building::BuildingRegistry;
 use resource::ResourceRegistry;
 use ui::OreCountText;
@@ -29,6 +30,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::BeltDirection>();
         app.init_resource::<components::BuildPreview>();
         app.init_resource::<ToastQueue>();
+        app.init_resource::<TooltipText>();
         app.add_observer(belt::belt_item_placer);
         app.add_systems(OnEnter(GameState::Playing), (
             setup::setup_hq,
@@ -52,6 +54,7 @@ impl Plugin for EconomyPlugin {
             build_bar::build_bar_interaction,
             build_bar::update_build_bar,
             toast_system,
+            tooltip_ui,
         ).run_if(in_state(GameState::Playing)));
     }
 }
