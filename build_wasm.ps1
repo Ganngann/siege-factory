@@ -7,10 +7,10 @@ $ErrorActionPreference = "Stop"
 Write-Host "Building for wasm32-unknown-unknown ($Profile)..." -ForegroundColor Cyan
 
 if ($Profile -eq "release") {
-  cargo build --target wasm32-unknown-unknown --release
+  cargo build --target wasm32-unknown-unknown --release --config 'lib.crate-type=["cdylib","rlib"]'
   $target_dir = "target\wasm32-unknown-unknown\release"
 } else {
-  cargo build --target wasm32-unknown-unknown
+  cargo build --target wasm32-unknown-unknown --config 'lib.crate-type=["cdylib","rlib"]'
   $target_dir = "target\wasm32-unknown-unknown\debug"
 }
 
