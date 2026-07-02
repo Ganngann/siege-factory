@@ -579,7 +579,6 @@ pub fn handle_belt_placement(
     mut commands: Commands,
     mut drag: ResMut<BeltDrag>,
     build_mode: Res<BuildMode>,
-    belt_dir: Res<BeltDirection>,
     cfg: Res<MapConfig>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
@@ -590,7 +589,6 @@ pub fn handle_belt_placement(
         Query<(&TilePosition, &mut BeltSlots, &mut Text2d)>,
     )>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
-    keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
     registry: Res<BuildingRegistry>,
@@ -620,7 +618,7 @@ pub fn handle_belt_placement(
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
     if tile_x < 0 || tile_y < 0 || tile_x >= grid_w as i32 || tile_y >= grid_h as i32 {
-        if bindings.just_released("place", &buttons) {
+        if buttons.just_released(bindings.mouse("place")) {
             drag.start_coord.take();
         }
         return;
@@ -629,7 +627,7 @@ pub fn handle_belt_placement(
     let tx = tile_x as u32;
     let ty = tile_y as u32;
 
-    if bindings.just_pressed("place", &keys, &buttons) {
+    if buttons.just_pressed(bindings.mouse("place")) {
         let belt_data: Vec<((u32, u32), Direction)> = {
             let read = belt_params.p0();
             read.iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect()
@@ -644,7 +642,7 @@ pub fn handle_belt_placement(
         return;
     }
 
-    if bindings.just_released("place", &buttons) {
+    if buttons.just_released(bindings.mouse("place")) {
         let Some(start) = drag.start_coord.take() else { return };
 
         let belt_data: Vec<((u32, u32), Direction)> = {
@@ -660,7 +658,7 @@ pub fn handle_belt_placement(
 
         for &(bx, by, base_dir) in &line {
             let dir = if single {
-                auto_detect_direction_from_data(bx, by, &producers, &belt_data, belt_dir.0)
+                auto_detect_direction_from_data(bx, by, &producers, &belt_data, Direction::East)
             } else {
                 base_dir
             };
