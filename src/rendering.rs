@@ -60,7 +60,7 @@ pub fn material_from_color(
     materials: &mut Assets<ColorMaterial>,
     color: Color,
 ) -> Handle<ColorMaterial> {
-    materials.add(ColorMaterial::from_color(color))
+    materials.add(color)
 }
 
 pub fn direction_arrow(dir: Direction) -> &'static str {

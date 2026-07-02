@@ -1,10 +1,9 @@
 use bevy::prelude::*;
-use bevy::sprite::{Anchor, Mesh2dHandle};
 use crate::economy::belt::{BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
     BuildMode, BeltDirection, BuildPreview,
-    SetBuildModeEvent, Building, Miner, Assembler, OreDeposit, Ghost, HQ, Produces, TurretCombat,
+    Building, Miner, Assembler, OreDeposit, Ghost, HQ, Produces, TurretCombat,
 };
 use crate::economy::resource::Inventory;
 use crate::events::DespawnDeposit;
@@ -20,7 +19,7 @@ fn cursor_tile(
     let window = windows.iter().next()?;
     let cursor = window.cursor_position()?;
     let (cam, cam_transform) = camera.iter().next()?;
-    let world_pos = cam.viewport_to_world_2d(cam_transform, cursor)?;
+    let world_pos = cam.viewport_to_world_2d(cam_transform, cursor).ok()?;
     let tile_x = ((world_pos.x + cfg.tile_size / 2.0) / cfg.tile_size).floor() as i32;
     let tile_y = ((world_pos.y + cfg.tile_size / 2.0) / cfg.tile_size).floor() as i32;
     if tile_x < 0 || tile_y < 0 || tile_x >= cfg.width as i32 || tile_y >= cfg.height as i32 {
@@ -36,8 +35,7 @@ pub fn build_mode_input(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
-    mut placed_belts: Query<(&mut BeltSlots, &mut Text, &TilePosition)>,
-    mut mode_events: EventReader<SetBuildModeEvent>,
+    mut placed_belts: Query<(&mut BeltSlots, &mut Text2d, &TilePosition)>,
     registry: Res<BuildingRegistry>,
 ) {
     let build_ids: Vec<&String> = registry.buildings.iter()
@@ -65,7 +63,7 @@ pub fn build_mode_input(
                         pos.x, pos.y, belt.direction,
                         belt.slots.len() as u32, cfg.tile_size,
                     );
-                    text.sections[0].value = direction_arrow(belt.direction).to_string();
+                    text.0 = direction_arrow(belt.direction).to_string();
                     rotated = true;
                     break;
                 }
@@ -76,10 +74,6 @@ pub fn build_mode_input(
         } else {
             belt_dir.0 = belt_dir.0.next();
         }
-    }
-
-    for ev in mode_events.read() {
-        build_mode.0 = ev.0.clone();
     }
 
     if keys.just_pressed(KeyCode::Escape) {
@@ -129,7 +123,8 @@ pub fn update_build_preview(
     } else {
         Color::srgba(0.8, 0.0, 0.0, 0.3)
     };
-    let material = materials.add(ColorMaterial::from_color(color));
+    let mat_handle = materials.add(color);
+    let material = MeshMaterial2d(mat_handle);
 
     if let Some(entity) = preview.0.take() {
         commands.entity(entity).despawn();
@@ -148,27 +143,19 @@ pub fn update_build_preview(
         };
         commands.spawn((
             Ghost,
-            Text2dBundle {
-                text: Text::from_section(direction_arrow(dir), TextStyle {
-                    font_size: 24.0,
-                    color: text_color,
-                    ..default()
-                }),
-                text_anchor: Anchor::Center,
-                transform: Transform::from_xyz(cx, cy, z),
-                ..default()
-            },
+            Text2d::new(direction_arrow(dir).to_string()),
+            TextFont::from_font_size(24.0),
+            TextColor(text_color),
+            TextLayout::justify(Justify::Center),
+            Transform::from_xyz(cx, cy, z),
         )).id()
     } else {
         let mesh = shapes.get_visual(&def.visual);
         commands.spawn((
             Ghost,
-            ColorMesh2dBundle {
-                mesh: Mesh2dHandle(mesh),
-                material,
-                transform: Transform::from_xyz(cx, cy, z),
-                ..default()
-            },
+            Mesh2d(mesh),
+            material,
+            Transform::from_xyz(cx, cy, z),
         )).id()
     };
 
@@ -210,7 +197,6 @@ pub fn handle_build_click(
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     buttons: Res<ButtonInput<MouseButton>>,
     registry: Res<BuildingRegistry>,
-    mut deposit_events: EventWriter<DespawnDeposit>,
 ) {
     let tile_size = cfg.tile_size;
     let grid_w = cfg.width;
@@ -221,10 +207,10 @@ pub fn handle_build_click(
         return;
     }
 
-    let window = windows.single();
-    let (cam, cam_transform) = camera.single();
+    let Ok(window) = windows.single() else { return };
+    let Ok((cam, cam_transform)) = camera.single() else { return };
     let Some(cursor) = window.cursor_position() else { return };
-    let Some(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
+    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
 
     let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
@@ -249,7 +235,7 @@ pub fn handle_build_click(
             return;
         }
 
-        let mut hq_inv = match hq_query.get_single_mut() {
+        let mut hq_inv = match hq_query.single_mut() {
             Ok(inv) => inv,
             Err(_) => return,
         };
@@ -259,19 +245,16 @@ pub fn handle_build_click(
         }
 
         deduct_cost(&mut hq_inv, &def.cost);
-        deposit_events.send(DespawnDeposit(deposit));
+        commands.trigger(DespawnDeposit(deposit));
 
         let mesh = shapes.get_visual(&def.visual);
         commands.spawn((
             Miner { production_timer: 0.0, interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0) },
             Building { kind: def.id.clone(), name: def.name.clone() },
             Inventory::new(),
-            ColorMesh2dBundle {
-                mesh: Mesh2dHandle(mesh),
-                material: material_from_color(&mut materials, def.color),
-                transform: Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
-                ..default()
-            },
+            Mesh2d(mesh),
+            MeshMaterial2d(material_from_color(&mut materials, def.color)),
+            Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
             TilePosition { x: tx, y: ty },
             Produces { resource: def.production.as_ref().map(|p| p.resource).unwrap_or(crate::economy::resource::ResourceId::Ore), interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0), timer: 0.0 },
         ));
@@ -282,7 +265,7 @@ pub fn handle_build_click(
         return;
     }
 
-    let mut hq_inv = match hq_query.get_single_mut() {
+    let mut hq_inv = match hq_query.single_mut() {
         Ok(inv) => inv,
         Err(_) => return,
     };
@@ -310,31 +293,21 @@ pub fn handle_build_click(
         commands.spawn((
             base,
             BeltSlots { direction: dir, slots, slot_positions, speed },
-            Text2dBundle {
-                text: Text::from_section(direction_arrow(dir), TextStyle { font_size: 24.0, color: Color::WHITE, ..default() }),
-                text_anchor: Anchor::Center,
-                transform: Transform::from_xyz(cx, cy, 2.0),
-                ..default()
-            },
-            ColorMesh2dBundle {
-                mesh: Mesh2dHandle(shapes.get_visual(&def.visual)),
-                material: material_from_color(&mut materials, def.color),
-                transform: Transform::from_xyz(cx, cy, 2.0),
-                ..default()
-            },
+            Text2d::new(direction_arrow(dir).to_string()),
+            TextFont::from_font_size(24.0),
+            TextColor(Color::WHITE),
+            TextLayout::justify(Justify::Center),
+            Transform::from_xyz(cx, cy, 2.0),
         ));
     } else if def.id == "assembler" {
         let mesh = shapes.get_visual(&def.visual);
         commands.spawn((
             base,
             Assembler { production_timer: 0.0, interval: 2.0 },
-            ColorMesh2dBundle {
-                mesh: Mesh2dHandle(mesh),
-                material: material_from_color(&mut materials, def.color),
-                transform: Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0)
-                    .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_4)),
-                ..default()
-            },
+            Mesh2d(mesh),
+            MeshMaterial2d(material_from_color(&mut materials, def.color)),
+            Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0)
+                .with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_4)),
         ));
     } else if def.id == "turret" {
         let mesh = shapes.get_visual(&def.visual);
@@ -347,23 +320,17 @@ pub fn handle_build_click(
                 fire_interval: stats.fire_rate_sec,
                 timer: 0.0,
             },
-            ColorMesh2dBundle {
-                mesh: Mesh2dHandle(mesh),
-                material: material_from_color(&mut materials, def.color),
-                transform: Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
-                ..default()
-            },
+            Mesh2d(mesh),
+            MeshMaterial2d(material_from_color(&mut materials, def.color)),
+            Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
         ));
     } else {
         let mesh = shapes.get_visual(&def.visual);
         commands.spawn((
             base,
-            ColorMesh2dBundle {
-                mesh: Mesh2dHandle(mesh),
-                material: material_from_color(&mut materials, def.color),
-                transform: Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
-                ..default()
-            },
+            Mesh2d(mesh),
+            MeshMaterial2d(material_from_color(&mut materials, def.color)),
+            Transform::from_xyz(tx as f32 * tile_size, ty as f32 * tile_size, 2.0),
         ));
     }
 }

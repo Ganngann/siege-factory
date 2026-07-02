@@ -7,16 +7,7 @@ edition = "2024"
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
-bevy = { version = "0.14", default-features = false, features = [
-    "bevy_winit",
-    "bevy_core_pipeline",
-    "bevy_sprite",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_state",
-    "default_font",
-    "x11",
-] }
+bevy = "0.19"
 rand = "0.8"
 wasm-bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
@@ -34,7 +25,7 @@ web-sys = { version = "0.3", features = ["console"] }
 proptest = "1"
 
 [profile.dev]
-codegen-units = 256
+codegen-units = 1
 
 [profile.release]
 opt-level = 2

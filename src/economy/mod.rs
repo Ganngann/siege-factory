@@ -27,7 +27,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::BuildMode>();
         app.init_resource::<components::BeltDirection>();
         app.init_resource::<components::BuildPreview>();
-        app.add_event::<components::SetBuildModeEvent>();
+        app.add_observer(belt::belt_item_placer);
         app.add_systems(OnEnter(GameState::Playing), (
             setup::setup_hq,
             setup::place_ore_deposits,
@@ -43,7 +43,6 @@ impl Plugin for EconomyPlugin {
             placement::handle_build_click,
             placement::update_build_preview,
             production::production_tick,
-            belt::belt_item_placer,
             production::assembler_tick,
             belt::advance_belt_slots,
             belt::animate_belt_positions,

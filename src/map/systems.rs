@@ -17,14 +17,14 @@ fn setup_map(
     mut commands: Commands,
     cfg: Res<MapConfig>,
 ) {
-    commands.spawn(Camera2dBundle {
-        transform: Transform::from_xyz(
+    commands.spawn((
+        Camera2d,
+        Transform::from_xyz(
             cfg.width as f32 * cfg.tile_size / 2.0,
             cfg.height as f32 * cfg.tile_size / 2.0,
             100.0,
         ),
-        ..default()
-    });
+    ));
 
     for y in 0..cfg.height {
         for x in 0..cfg.width {
@@ -35,15 +35,8 @@ fn setup_map(
             };
 
             commands.spawn((
-                SpriteBundle {
-                    sprite: Sprite {
-                        color,
-                        custom_size: Some(Vec2::new(cfg.tile_size, cfg.tile_size)),
-                        ..default()
-                    },
-                    transform: Transform::from_xyz(x as f32 * cfg.tile_size, y as f32 * cfg.tile_size, 0.0),
-                    ..default()
-                },
+                Sprite::from_color(color, Vec2::new(cfg.tile_size, cfg.tile_size)),
+                Transform::from_xyz(x as f32 * cfg.tile_size, y as f32 * cfg.tile_size, 0.0),
                 TilePosition { x, y },
             ));
         }

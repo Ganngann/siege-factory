@@ -23,7 +23,6 @@ fn move_and_hit_projectiles(
     mut commands: Commands,
     mut projectiles: Query<(Entity, &mut Transform, &Projectile), Without<EnemyComponent>>,
     mut targets: Query<(&mut Health, &Transform), (With<EnemyComponent>, Without<Projectile>)>,
-    mut enemy_events: EventWriter<DespawnEnemy>,
 ) {
     let hit_dist = 10.0;
     let mut to_despawn = Vec::new();
@@ -36,11 +35,11 @@ fn move_and_hit_projectiles(
             if dist < hit_dist {
                 health.current = health.current.saturating_sub(projectile.damage);
                 if health.current == 0 {
-                    enemy_events.send(DespawnEnemy(projectile.target));
+                    commands.trigger(DespawnEnemy(projectile.target));
                 }
                 to_despawn.push(proj_entity);
             } else {
-                let step = (projectile.speed * time.delta_seconds()).min(dist);
+                let step = (projectile.speed * time.delta_secs()).min(dist);
                 transform.translation += dir / dist * step;
             }
         } else {

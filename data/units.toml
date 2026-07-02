@@ -10,6 +10,7 @@ visual = "pentagon"
 
 [worker]
 name = "Worker"
+kind = "harvester"
 cost = { ore = 5 }
 hp = 15
 speed = 80.0

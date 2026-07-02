@@ -16,37 +16,37 @@ impl Plugin for CorePlugin {
 struct LoadingUi;
 
 fn spawn_loading_ui(mut commands: Commands) {
-    commands.spawn((Camera2dBundle::default(), LoadingUi));
+    commands.spawn((Camera2d, LoadingUi));
     commands
-        .spawn((NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
+        .spawn((LoadingUi, Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            display: Display::Flex,
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
             ..default()
-        }, LoadingUi))
+        }))
         .with_children(|parent| {
-            parent.spawn((TextBundle::from_section(
-                "SIEGE FACTORY",
-                TextStyle { font_size: 48.0, color: Color::srgb(0.8, 0.8, 1.0), ..default() },
-            ), LoadingUi));
-            parent.spawn((TextBundle::from_section(
-                "Build defenses  |  Survive waves  |  Automate everything",
-                TextStyle { font_size: 16.0, color: Color::srgb(0.6, 0.6, 0.8), ..default() },
-            ), LoadingUi));
-            parent.spawn((TextBundle::from_section(
-                "",
-                TextStyle::default(),
-            ), LoadingUi));
-            parent.spawn((TextBundle::from_section(
-                "Press SPACE to start",
-                TextStyle { font_size: 20.0, color: Color::WHITE, ..default() },
-            ), LoadingUi));
+            parent.spawn((
+                LoadingUi,
+                Text::new("SIEGE FACTORY"),
+                TextFont::from_font_size(48.0),
+                TextColor(Color::srgb(0.8, 0.8, 1.0)),
+            ));
+            parent.spawn((
+                LoadingUi,
+                Text::new("Build defenses  |  Survive waves  |  Automate everything"),
+                TextFont::from_font_size(16.0),
+                TextColor(Color::srgb(0.6, 0.6, 0.8)),
+            ));
+            parent.spawn((LoadingUi, Text::new(""), TextFont::default(), TextColor(Color::WHITE)));
+            parent.spawn((
+                LoadingUi,
+                Text::new("Press SPACE to start"),
+                TextFont::from_font_size(20.0),
+                TextColor(Color::WHITE),
+            ));
         });
 }
 

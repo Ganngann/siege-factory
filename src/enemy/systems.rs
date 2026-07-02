@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy::sprite::Mesh2dHandle;
+
 use crate::core::game_state::GameState;
 use crate::economy::components::HQ;
 use crate::enemy::components::{Enemy, WaveState, WaveCounterText, GameOverUi, Health};
@@ -16,7 +16,7 @@ pub fn wave_timer(
     mut next_state: ResMut<NextState<GameState>>,
     cfg: Res<WaveConfig>,
 ) {
-    wave.timer -= time.delta_seconds();
+    wave.timer -= time.delta_secs();
     if wave.timer <= 0.0 && existing.iter().len() == 0 {
         wave.wave += 1;
         wave.timer = cfg.wave_interval_sec;
@@ -47,13 +47,13 @@ pub fn spawn_enemies(
         return;
     }
 
-    wave.spawn_timer -= time.delta_seconds();
+    wave.spawn_timer -= time.delta_secs();
     if wave.spawn_timer > 0.0 {
         return;
     }
     wave.spawn_timer = (cfg.spawn_interval_sec / wave.wave as f32).max(cfg.spawn_timer_min);
 
-    let hq_pos = match hq.get_single() {
+    let hq_pos = match hq.single() {
         Ok(p) => p,
         Err(_) => return,
     };
@@ -81,16 +81,13 @@ pub fn spawn_enemies(
     commands.spawn((
         Enemy,
         Health { current: enemy_hp, max: enemy_hp },
-        ColorMesh2dBundle {
-            mesh: Mesh2dHandle(shapes.circle.clone()),
-            material: material_from_color(&mut materials, def.color),
-            transform: Transform::from_xyz(
-                sx as f32 * tile_size + tile_size / 2.0,
-                sy as f32 * tile_size + tile_size / 2.0,
-                3.0,
-            ),
-            ..default()
-        },
+        Mesh2d(shapes.circle.clone()),
+        MeshMaterial2d(material_from_color(&mut materials, def.color)),
+        Transform::from_xyz(
+            sx as f32 * tile_size + tile_size / 2.0,
+            sy as f32 * tile_size + tile_size / 2.0,
+            3.0,
+        ),
         TilePosition { x: sx, y: sy },
     ));
 }
@@ -105,22 +102,18 @@ pub fn wave_counter_ui(
     let count = enemies.iter().len();
     let msg = format!("Wave {}/{}  |  Enemies: {}", wave.wave, cfg.win_waves, count);
 
-    if let Ok((_, mut text)) = text_query.get_single_mut() {
-        text.sections[0].value = msg;
+    if let Ok((_, mut text)) = text_query.single_mut() {
+        text.0 = msg;
     } else {
         commands.spawn((
             WaveCounterText,
-            TextBundle {
-                text: Text::from_sections([TextSection::new(
-                    msg,
-                    TextStyle { font_size: 16.0, color: Color::srgb(1.0, 0.6, 0.2), ..default() },
-                )]),
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    top: Val::Px(10.0),
-                    right: Val::Px(10.0),
-                    ..default()
-                },
+            Text::new(msg),
+            TextFont::from_font_size(16.0),
+            TextColor(Color::srgb(1.0, 0.6, 0.2)),
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(10.0),
+                right: Val::Px(10.0),
                 ..default()
             },
         ));
@@ -133,42 +126,38 @@ pub fn spawn_game_over_ui(
     cfg: Res<WaveConfig>,
 ) {
     let won = wave.wave > cfg.win_waves;
-    commands.spawn((Camera2dBundle::default(), GameOverUi));
+    commands.spawn((Camera2d, GameOverUi));
     commands
-        .spawn((NodeBundle {
-            style: Style {
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                display: Display::Flex,
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
+        .spawn((GameOverUi, Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            display: Display::Flex,
+            flex_direction: FlexDirection::Column,
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
             ..default()
-        }, GameOverUi))
+        }))
         .with_children(|parent| {
-            parent.spawn((TextBundle::from_section(
-                if won { "VICTORY" } else { "GAME OVER" },
-                TextStyle {
-                    font_size: 48.0,
-                    color: if won { Color::srgb(0.3, 1.0, 0.3) } else { Color::srgb(1.0, 0.3, 0.3) },
-                    ..default()
-                },
-            ), GameOverUi));
-            parent.spawn((TextBundle::from_section(
-                if won { format!("Survived {} waves!", wave.wave - 1) }
-                    else { format!("Waves survived: {}", wave.wave - 1) },
-                TextStyle { font_size: 24.0, color: Color::WHITE, ..default() },
-            ), GameOverUi));
-            parent.spawn((TextBundle::from_section(
-                "",
-                TextStyle::default(),
-            ), GameOverUi));
-            parent.spawn((TextBundle::from_section(
-                "Press R to restart",
-                TextStyle { font_size: 20.0, color: Color::srgb(0.8, 0.8, 1.0), ..default() },
-            ), GameOverUi));
+            parent.spawn((
+                GameOverUi,
+                Text::new(if won { "VICTORY" } else { "GAME OVER" }),
+                TextFont::from_font_size(48.0),
+                TextColor(if won { Color::srgb(0.3, 1.0, 0.3) } else { Color::srgb(1.0, 0.3, 0.3) }),
+            ));
+            parent.spawn((
+                GameOverUi,
+                Text::new(if won { format!("Survived {} waves!", wave.wave - 1) }
+                    else { format!("Waves survived: {}", wave.wave - 1) }),
+                TextFont::from_font_size(24.0),
+                TextColor(Color::WHITE),
+            ));
+            parent.spawn((GameOverUi, Text::new(""), TextFont::default(), TextColor(Color::WHITE)));
+            parent.spawn((
+                GameOverUi,
+                Text::new("Press R to restart"),
+                TextFont::from_font_size(20.0),
+                TextColor(Color::srgb(0.8, 0.8, 1.0)),
+            ));
         });
 }
 
@@ -195,7 +184,7 @@ pub fn reset_wave(
     cfg: Res<MapConfig>,
 ) {
     *wave = WaveState::default();
-    if let Ok(entity) = hq.get_single() {
+    if let Ok(entity) = hq.single() {
         commands.entity(entity).insert(Health { current: cfg.hq_hp, max: cfg.hq_hp });
     }
 }

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy::sprite::Mesh2dHandle;
+
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::economy::unit_config::UnitConfig;
@@ -8,7 +8,8 @@ use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;
 use crate::map::config::MapConfig;
-use crate::rendering::{material_from_color, ShapeCache};
+use crate::rendering::ShapeCache;
+
 
 #[derive(Event)]
 pub struct SpawnUnitEvent(pub String);
@@ -17,7 +18,7 @@ pub struct UnitPlugin;
 
 impl Plugin for UnitPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<SpawnUnitEvent>();
+        app.add_observer(spawn_unit_on_trigger);
         app.add_systems(Update, (
             spawn_unit_input,
             soldier_auto_attack,
@@ -44,63 +45,6 @@ pub enum WorkerState {
     Mining(Entity),
 }
 
-fn spawn_combat_unit(
-    commands: &mut Commands,
-    def: &crate::economy::unit_config::UnitDef,
-    pos: Vec3,
-    shapes: &ShapeCache,
-    materials: &mut Assets<ColorMaterial>,
-    offset: Vec3,
-) {
-    let hp = def.hp;
-    let color = def.color;
-    let mesh_name = &def.visual;
-    let mesh = match mesh_name.as_str() {
-        "pentagon" => shapes.pentagon.clone(),
-        "circle" => shapes.circle.clone(),
-        _ => shapes.pentagon.clone(),
-    };
-    commands.spawn((
-        Soldier { attack_cooldown: 0.0 },
-        Unit,
-        Health { current: hp, max: hp },
-        ColorMesh2dBundle {
-            mesh: Mesh2dHandle(mesh),
-            material: material_from_color(materials, color),
-            transform: Transform::from_translation(pos + offset),
-            ..default()
-        },
-    ));
-}
-
-fn spawn_harvester_unit(
-    commands: &mut Commands,
-    def: &crate::economy::unit_config::UnitDef,
-    pos: Vec3,
-    shapes: &ShapeCache,
-    materials: &mut Assets<ColorMaterial>,
-    offset: Vec3,
-) {
-    let hp = def.hp;
-    let color = def.color;
-    let mesh_name = &def.visual;
-    let mesh = match mesh_name.as_str() {
-        "circle" => shapes.circle.clone(),
-        _ => shapes.circle.clone(),
-    };
-    commands.spawn((
-        Worker { state: WorkerState::Idle, mining_timer: 0.0 },
-        Unit,
-        Health { current: hp, max: hp },
-        ColorMesh2dBundle {
-            mesh: Mesh2dHandle(mesh),
-            material: material_from_color(materials, color),
-            transform: Transform::from_translation(pos + offset),
-            ..default()
-        },
-    ));
-}
-
 fn spawn_unit_by_id(
     commands: &mut Commands,
     unit_cfg: &UnitConfig,
@@ -113,16 +57,61 @@ fn spawn_unit_by_id(
         Some(d) => d,
         None => return false,
     };
+    let hp = def.hp;
+    let color = def.color;
+    let mesh_name = &def.visual;
+    let mesh_handle = match mesh_name.as_str() {
+        "pentagon" => shapes.pentagon.clone(),
+        "circle" => shapes.circle.clone(),
+        _ => shapes.pentagon.clone(),
+    };
     let offset = if def.kind == "harvester" {
         Vec3::new(-40.0, 0.0, 2.5)
     } else {
         Vec3::new(40.0, 0.0, 2.5)
     };
-    match def.kind.as_str() {
-        "harvester" => spawn_harvester_unit(commands, def, hq_pos, shapes, materials, offset),
-        _ => spawn_combat_unit(commands, def, hq_pos, shapes, materials, offset),
+    let mesh_mat = MeshMaterial2d(materials.add(color));
+    if def.kind == "harvester" {
+        commands.spawn((
+            Worker { state: WorkerState::Idle, mining_timer: 0.0 },
+            Unit, Health { current: hp, max: hp },
+            Mesh2d(mesh_handle), mesh_mat,
+            Transform::from_translation(hq_pos + offset),
+        ));
+    } else {
+        commands.spawn((
+            Soldier { attack_cooldown: 0.0 },
+            Unit, Health { current: hp, max: hp },
+            Mesh2d(mesh_handle), mesh_mat,
+            Transform::from_translation(hq_pos + offset),
+        ));
     }
     true
+}
+
+fn spawn_unit_on_trigger(
+    on: On<SpawnUnitEvent>,
+    unit_cfg: Res<UnitConfig>,
+    mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
+    shapes: Res<ShapeCache>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut commands: Commands,
+) {
+    let (hq_transform, mut inv) = match hq_query.single_mut() {
+        Ok(q) => q,
+        Err(_) => return,
+    };
+    let id = &on.event().0;
+    if let Some(def) = unit_cfg.get(id) {
+        let cost_ore = def.cost.iter()
+            .find(|c| c.resource == ResourceId::Ore)
+            .map(|c| c.amount)
+            .unwrap_or(0);
+        if inv.get(ResourceId::Ore) >= cost_ore {
+            inv.remove(ResourceId::Ore, cost_ore);
+            spawn_unit_by_id(&mut commands, &unit_cfg, id, hq_transform.translation, &shapes, &mut materials);
+        }
+    }
 }
 
 fn spawn_unit_input(
@@ -132,9 +121,8 @@ fn spawn_unit_input(
     mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut spawn_events: EventReader<SpawnUnitEvent>,
 ) {
-    let (hq_transform, mut inv) = match hq_query.get_single_mut() {
+    let (hq_transform, mut inv) = match hq_query.single_mut() {
         Ok(q) => q,
         Err(_) => return,
     };
@@ -156,19 +144,6 @@ fn spawn_unit_input(
                     inv.remove(ResourceId::Ore, cost_ore);
                     spawn_unit_by_id(&mut commands, &unit_cfg, unit_id, hq_pos, &shapes, &mut materials);
                 }
-            }
-        }
-    }
-
-    for ev in spawn_events.read() {
-        if let Some(def) = unit_cfg.get(&ev.0) {
-            let cost_ore = def.cost.iter()
-                .find(|c| c.resource == ResourceId::Ore)
-                .map(|c| c.amount)
-                .unwrap_or(0);
-            if inv.get(ResourceId::Ore) >= cost_ore {
-                inv.remove(ResourceId::Ore, cost_ore);
-                spawn_unit_by_id(&mut commands, &unit_cfg, &ev.0, hq_pos, &shapes, &mut materials);
             }
         }
     }
@@ -195,7 +170,7 @@ fn soldier_auto_attack(
     let fire_rate = soldier_def.fire_rate_sec;
 
     for (soldier_pos, mut soldier) in soldiers.iter_mut() {
-        soldier.attack_cooldown -= time.delta_seconds();
+        soldier.attack_cooldown -= time.delta_secs();
         if soldier.attack_cooldown > 0.0 {
             continue;
         }
@@ -219,12 +194,9 @@ fn soldier_auto_attack(
                     speed: 300.0,
                     damage,
                 },
-                ColorMesh2dBundle {
-                    mesh: Mesh2dHandle(shapes.circle.clone()),
-                    material: material_from_color(&mut materials, Color::srgb(0.3, 1.0, 0.3)),
-                    transform: Transform::from_translation(soldier_pos.translation).with_scale(Vec3::splat(0.3)),
-                    ..default()
-                },
+                Mesh2d(shapes.circle.clone()),
+                MeshMaterial2d(materials.add(Color::srgb(0.3, 1.0, 0.3))),
+                Transform::from_translation(soldier_pos.translation).with_scale(Vec3::splat(0.3)),
             ));
         }
     }
@@ -237,7 +209,7 @@ fn worker_harvest(
     mut workers: Query<(Entity, &mut Transform, &mut Worker)>,
     mut deposits: Query<(Entity, &mut OreDeposit, &Transform), Without<Worker>>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
-    mut deposit_events: EventWriter<DespawnDeposit>,
+    mut commands: Commands,
 ) {
     let tile_size = cfg.tile_size;
     let worker_def = match unit_cfg.get("worker") {
@@ -247,7 +219,7 @@ fn worker_harvest(
     let speed = worker_def.speed;
     let mine_interval = worker_def.mine_interval_sec;
 
-    let mut hq_inv = match hq_query.get_single_mut() {
+    let mut hq_inv = match hq_query.single_mut() {
         Ok(inv) => inv,
         Err(_) => return,
     };
@@ -284,7 +256,7 @@ fn worker_harvest(
                     if dist < tile_size * 0.5 {
                         worker.state = WorkerState::Mining(target_dep);
                     } else {
-                        let step = (speed * time.delta_seconds()).min(dist);
+                        let step = (speed * time.delta_secs()).min(dist);
                         transform.translation.x += dx / dist * step;
                         transform.translation.y += dy / dist * step;
                     }
@@ -295,7 +267,7 @@ fn worker_harvest(
             WorkerState::Mining(target_dep) => {
                 if let Ok((_dep_entity, mut deposit, _)) = deposits.get_mut(target_dep) {
                     if deposit.amount > 0 {
-                        worker.mining_timer += time.delta_seconds();
+                        worker.mining_timer += time.delta_secs();
                         while worker.mining_timer >= mine_interval && deposit.amount > 0 {
                             worker.mining_timer -= mine_interval;
                             deposit.amount -= 1;
@@ -314,7 +286,7 @@ fn worker_harvest(
 
     for (entity, deposit, _) in deposits.iter() {
         if deposit.amount == 0 {
-            deposit_events.send(DespawnDeposit(entity));
+            commands.trigger(DespawnDeposit(entity));
         }
     }
 }

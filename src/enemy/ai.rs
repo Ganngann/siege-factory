@@ -75,7 +75,7 @@ pub fn move_enemies(
         .map(|d| d.speed)
         .unwrap_or(60.0);
 
-    let hq_pos = match set.p1().get_single() {
+    let hq_pos = match set.p1().single() {
         Ok(p) => *p,
         Err(_) => return,
     };
@@ -110,7 +110,7 @@ pub fn move_enemies(
             transform.translation.x = target_wx;
             transform.translation.y = target_wy;
         } else {
-            let step = enemy_speed * time.delta_seconds();
+            let step = enemy_speed * time.delta_secs();
             let ratio = (step / dist).min(1.0);
             transform.translation.x += dx * ratio;
             transform.translation.y += dy * ratio;

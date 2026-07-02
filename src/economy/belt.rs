@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use bevy::prelude::*;
-use bevy::sprite::Mesh2dHandle;
+
 use crate::economy::resource::ResourceId;
 use crate::economy::components::Direction;
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
-use crate::rendering::{material_from_color, ShapeCache};
+use crate::rendering::ShapeCache;
 
 #[derive(Component)]
 pub struct BeltSlots {
@@ -42,7 +42,7 @@ pub fn compute_slot_positions(
 }
 
 pub fn belt_item_placer(
-    mut events: EventReader<SpawnBeltItemEvent>,
+    on: On<SpawnBeltItemEvent>,
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
     mut commands: Commands,
     shapes: Res<ShapeCache>,
@@ -52,45 +52,40 @@ pub fn belt_item_placer(
     let tile_size = cfg.tile_size;
     let belt_map: HashMap<(u32, u32), Entity> =
         belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
+    let ev = on.event();
 
-    for ev in events.read() {
-        let mut placed = false;
-        for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-            let ax = ev.source_tile.x.wrapping_add_signed(dx);
-            let ay = ev.source_tile.y.wrapping_add_signed(dy);
-            if let Some(&belt_entity) = belt_map.get(&(ax, ay)) {
-                if let Ok((_, _, mut bs)) = belt_query.get_mut(belt_entity) {
-                    if let Some(free_idx) = bs.slots.iter().position(|s| s.is_none()) {
-                        let spawn_pos = Vec3::new(
-                            ev.source_tile.x as f32 * tile_size,
-                            ev.source_tile.y as f32 * tile_size,
-                            2.5,
-                        );
-                        let color = match ev.resource {
-                            ResourceId::Ore => Color::srgb(0.7, 0.5, 0.1),
-                            ResourceId::Ammo => Color::srgb(0.8, 0.2, 0.2),
-                            ResourceId::Energy => Color::srgb(0.2, 0.6, 0.8),
-                        };
-                        let item_entity = commands.spawn((
-                            BeltItem { resource: ev.resource, acc: 0.0 },
-                            ColorMesh2dBundle {
-                                mesh: Mesh2dHandle(shapes.circle.clone()),
-                                material: material_from_color(&mut materials, color),
-                                transform: Transform::from_translation(spawn_pos)
-                                    .with_scale(Vec3::splat(0.25)),
-                                ..default()
-                            },
-                        )).id();
-                        bs.slots[free_idx] = Some(item_entity);
-                        placed = true;
-                        break;
-                    }
+    let mut placed = false;
+    for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
+        let ax = ev.source_tile.x.wrapping_add_signed(dx);
+        let ay = ev.source_tile.y.wrapping_add_signed(dy);
+        if let Some(&belt_entity) = belt_map.get(&(ax, ay)) {
+            if let Ok((_, _, mut bs)) = belt_query.get_mut(belt_entity) {
+                if let Some(free_idx) = bs.slots.iter().position(|s| s.is_none()) {
+                    let spawn_pos = Vec3::new(
+                        ev.source_tile.x as f32 * tile_size,
+                        ev.source_tile.y as f32 * tile_size,
+                        2.5,
+                    );
+                    let color = match ev.resource {
+                        ResourceId::Ore => Color::srgb(0.7, 0.5, 0.1),
+                        ResourceId::Ammo => Color::srgb(0.8, 0.2, 0.2),
+                        ResourceId::Energy => Color::srgb(0.2, 0.6, 0.8),
+                    };
+                    let item_entity = commands.spawn((
+                        BeltItem { resource: ev.resource, acc: 0.0 },
+                        Mesh2d(shapes.circle.clone()),
+                        MeshMaterial2d(materials.add(color)),
+                        Transform::from_translation(spawn_pos).with_scale(Vec3::splat(0.25)),
+                    )).id();
+                    bs.slots[free_idx] = Some(item_entity);
+                    placed = true;
+                    break;
                 }
             }
         }
-        if !placed {
-            // No free belt slot — item is backed up (no visual spawned)
-        }
+    }
+    if !placed {
+        // No free belt slot — item is backed up (no visual spawned)
     }
 }
 
@@ -99,7 +94,7 @@ pub fn advance_belt_slots(
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
     mut item_query: Query<&mut BeltItem>,
 ) {
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
     let belt_map: HashMap<(u32, u32), Entity> =
         belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
 
@@ -174,7 +169,7 @@ pub fn animate_belt_positions(
     belt_query: Query<&BeltSlots>,
     mut item_query: Query<&mut Transform, With<BeltItem>>,
 ) {
-    let dt = time.delta_seconds();
+    let dt = time.delta_secs();
     let tile_size = cfg.tile_size;
 
     for bs in belt_query.iter() {

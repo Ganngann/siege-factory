@@ -77,9 +77,6 @@ pub struct BeltDirection(pub Direction);
 #[derive(Resource, Default)]
 pub struct BuildPreview(pub Option<Entity>);
 
-#[derive(Event)]
-pub struct SetBuildModeEvent(pub Option<String>);
-
 // ── Generic behavior components ──
 
 #[derive(Component)]

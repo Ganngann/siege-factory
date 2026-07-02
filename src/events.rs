@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use bevy::prelude::*;
 use crate::economy::resource::ResourceId;
 use crate::map::components::TilePosition;
@@ -25,34 +24,15 @@ pub struct CleanupPlugin;
 
 impl Plugin for CleanupPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<DespawnDeposit>();
-        app.add_event::<DespawnEnemy>();
-        app.add_event::<SpawnBeltItemEvent>();
-        app.add_systems(Last, cleanup_deposits);
-        app.add_systems(Last, cleanup_enemies);
+        app.add_observer(cleanup_deposits);
+        app.add_observer(cleanup_enemies);
     }
 }
 
-fn cleanup_deposits(
-    mut commands: Commands,
-    mut events: EventReader<DespawnDeposit>,
-) {
-    let mut seen = HashSet::new();
-    for ev in events.read() {
-        if seen.insert(ev.0) {
-            commands.entity(ev.0).despawn();
-        }
-    }
+fn cleanup_deposits(on: On<DespawnDeposit>, mut commands: Commands) {
+    commands.entity(on.event().0).despawn();
 }
 
-fn cleanup_enemies(
-    mut commands: Commands,
-    mut events: EventReader<DespawnEnemy>,
-) {
-    let mut seen = HashSet::new();
-    for ev in events.read() {
-        if seen.insert(ev.0) {
-            commands.entity(ev.0).despawn();
-        }
-    }
+fn cleanup_enemies(on: On<DespawnEnemy>, mut commands: Commands) {
+    commands.entity(on.event().0).despawn();
 }

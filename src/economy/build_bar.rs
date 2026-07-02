@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::resource::Inventory;
-use crate::economy::components::{BuildMode, HQ, SetBuildModeEvent};
+use crate::economy::components::{BuildMode, HQ};
 use crate::economy::unit_config::UnitConfig;
 use crate::unit::SpawnUnitEvent;
 
@@ -49,24 +49,21 @@ pub fn spawn_build_bar(
     commands
         .spawn((
             BuildBarPanel,
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(80.0),
-                    position_type: PositionType::Absolute,
-                    bottom: Val::Px(0.0),
-                    left: Val::Px(0.0),
-                    display: Display::Flex,
-                    flex_direction: FlexDirection::Row,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    column_gap: Val::Px(6.0),
-                    padding: UiRect::all(Val::Px(6.0)),
-                    ..default()
-                },
-                background_color: BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.85)),
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(80.0),
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(0.0),
+                left: Val::Px(0.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                column_gap: Val::Px(6.0),
+                padding: UiRect::all(Val::Px(6.0)),
                 ..default()
             },
+            BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.85)),
         ))
         .with_children(|parent| {
             for def in &registry.buildings {
@@ -78,40 +75,38 @@ pub fn spawn_build_bar(
                 let cost_str = format_building_cost(&def.cost);
                 parent
                     .spawn((
-                        BuildBarEntry {
-                            kind: BuildBarEntryKind::Building(kind),
-                            original_color: bg_color,
-                        },
-                        ButtonBundle {
-                            style: Style {
-                                width: Val::Px(100.0),
-                                height: Val::Px(64.0),
-                                flex_direction: FlexDirection::Column,
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-                                border: UiRect::all(Val::Px(2.0)),
-                                ..default()
-                            },
-                            background_color: BackgroundColor(bg_color),
-                            border_color: BorderColor(Color::srgba(1.0, 1.0, 1.0, 0.2)),
+                        BuildBarEntry { kind: BuildBarEntryKind::Building(kind), original_color: bg_color },
+                        Button,
+                        Node {
+                            width: Val::Px(100.0),
+                            height: Val::Px(64.0),
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            border: UiRect::all(Val::Px(2.0)),
                             ..default()
                         },
+                        BackgroundColor(bg_color),
+                        BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.2)),
                     ))
                     .with_children(|b| {
-                        b.spawn(TextBundle::from_section(
-                            &def.name,
-                            TextStyle { font_size: 13.0, color: Color::WHITE, ..default() },
+                        b.spawn((
+                            Text::new(&def.name),
+                            TextFont::from_font_size(13.0),
+                            TextColor(Color::WHITE),
                         ));
-                        b.spawn(TextBundle::from_section(
-                            cost_str,
-                            TextStyle { font_size: 10.0, color: Color::srgb(1.0, 0.85, 0.3), ..default() },
+                        b.spawn((
+                            Text::new(cost_str),
+                            TextFont::from_font_size(10.0),
+                            TextColor(Color::srgb(1.0, 0.85, 0.3)),
                         ));
                     });
             }
 
-            parent.spawn(TextBundle::from_section(
-                "|",
-                TextStyle { font_size: 20.0, color: Color::srgba(1.0, 1.0, 1.0, 0.3), ..default() },
+            parent.spawn((
+                Text::new("|"),
+                TextFont::from_font_size(20.0),
+                TextColor(Color::srgba(1.0, 1.0, 1.0, 0.3)),
             ));
 
             for (id, def) in &unit_cfg.units {
@@ -119,33 +114,30 @@ pub fn spawn_build_bar(
                 let cost_str = format_unit_cost(&def.cost);
                 parent
                     .spawn((
-                        BuildBarEntry {
-                            kind: BuildBarEntryKind::Unit(id.clone()),
-                            original_color: bg_color,
-                        },
-                        ButtonBundle {
-                            style: Style {
-                                width: Val::Px(100.0),
-                                height: Val::Px(64.0),
-                                flex_direction: FlexDirection::Column,
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-                                border: UiRect::all(Val::Px(2.0)),
-                                ..default()
-                            },
-                            background_color: BackgroundColor(bg_color),
-                            border_color: BorderColor(Color::srgba(1.0, 1.0, 1.0, 0.2)),
+                        BuildBarEntry { kind: BuildBarEntryKind::Unit(id.clone()), original_color: bg_color },
+                        Button,
+                        Node {
+                            width: Val::Px(100.0),
+                            height: Val::Px(64.0),
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::Center,
+                            justify_content: JustifyContent::Center,
+                            border: UiRect::all(Val::Px(2.0)),
                             ..default()
                         },
+                        BackgroundColor(bg_color),
+                        BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.2)),
                     ))
                     .with_children(|b| {
-                        b.spawn(TextBundle::from_section(
-                            &def.name,
-                            TextStyle { font_size: 13.0, color: Color::WHITE, ..default() },
+                        b.spawn((
+                            Text::new(&def.name),
+                            TextFont::from_font_size(13.0),
+                            TextColor(Color::WHITE),
                         ));
-                        b.spawn(TextBundle::from_section(
-                            &cost_str,
-                            TextStyle { font_size: 10.0, color: Color::srgb(1.0, 0.85, 0.3), ..default() },
+                        b.spawn((
+                            Text::new(cost_str),
+                            TextFont::from_font_size(10.0),
+                            TextColor(Color::srgb(1.0, 0.85, 0.3)),
                         ));
                     });
             }
@@ -154,8 +146,8 @@ pub fn spawn_build_bar(
 
 pub fn build_bar_interaction(
     query: Query<(&Interaction, &BuildBarEntry), Changed<Interaction>>,
-    mut build_events: EventWriter<SetBuildModeEvent>,
-    mut unit_events: EventWriter<SpawnUnitEvent>,
+    mut build_mode: ResMut<BuildMode>,
+    mut commands: Commands,
 ) {
     for (interaction, entry) in &query {
         if *interaction != Interaction::Pressed {
@@ -163,10 +155,13 @@ pub fn build_bar_interaction(
         }
         match &entry.kind {
             BuildBarEntryKind::Building(kind) => {
-                build_events.send(SetBuildModeEvent(Some(kind.clone())));
+                build_mode.0 = match &build_mode.0 {
+                    Some(current) if current == kind => None,
+                    _ => Some(kind.clone()),
+                };
             }
             BuildBarEntryKind::Unit(kind) => {
-                unit_events.send(SpawnUnitEvent(kind.clone()));
+                commands.trigger(SpawnUnitEvent(kind.clone()));
             }
         }
     }
@@ -180,7 +175,7 @@ pub fn update_build_bar(
     unit_cfg: Res<UnitConfig>,
     mut button_query: Query<(&BuildBarEntry, &mut BackgroundColor, &mut BorderColor)>,
 ) {
-    let hq_inv = hq_query.get_single().ok();
+    let hq_inv = hq_query.single().ok();
 
     for (entry, mut bg, mut border) in button_query.iter_mut() {
         match &entry.kind {
@@ -188,15 +183,13 @@ pub fn update_build_bar(
                 let is_active = build_mode.0.as_ref() == Some(kind);
                 let affordable = hq_inv
                     .and_then(|inv| {
-                        registry
-                            .buildings
-                            .iter()
+                        registry.buildings.iter()
                             .find(|def| &def.id == kind)
                             .map(|def| can_afford_building(inv, &def.cost))
                     })
                     .unwrap_or(false);
 
-                *border = BorderColor(if is_active {
+                *border = BorderColor::all(if is_active {
                     Color::srgb(0.3, 1.0, 0.3)
                 } else {
                     Color::srgba(1.0, 1.0, 1.0, 0.2)
@@ -210,9 +203,7 @@ pub fn update_build_bar(
             }
             BuildBarEntryKind::Unit(kind) => {
                 let affordable = hq_inv
-                    .and_then(|inv| {
-                        unit_cfg.get(kind).map(|def| can_afford_unit(inv, &def.cost))
-                    })
+                    .and_then(|inv| unit_cfg.get(kind).map(|def| can_afford_unit(inv, &def.cost)))
                     .unwrap_or(false);
 
                 bg.0 = if affordable {
