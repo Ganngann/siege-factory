@@ -55,9 +55,8 @@ pub fn building_inspect_click(
     let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
-    if tile_x < 0 || tile_y < 0 { return; }
-    let tx = tile_x as u32;
-    let ty = tile_y as u32;
+    let tx = tile_x;
+    let ty = tile_y;
 
     let Some((entity, _, building)) = building_query.iter().find(|(_, tiles, _)|
         tiles.0.iter().any(|&(x, y)| x == tx && y == ty)
@@ -176,9 +175,8 @@ pub fn sorter_toggle_click(
     let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
-    if tile_x < 0 || tile_y < 0 { return; }
-    let tx = tile_x as u32;
-    let ty = tile_y as u32;
+    let tx = tile_x;
+    let ty = tile_y;
 
     let Some((entity, _, building)) = building_query.iter().find(|(_, tiles, _)|
         tiles.0.iter().any(|&(x, y)| x == tx && y == ty)

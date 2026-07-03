@@ -8,6 +8,7 @@ pub mod rendering;
 pub mod unit;
 
 use bevy::prelude::*;
+use bevy_pancam::PanCamPlugin;
 use combat::CombatPlugin;
 use core::schedule::CorePlugin;
 use economy::EconomyPlugin;
@@ -18,6 +19,7 @@ use rendering::RenderPlugin;
 pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(PanCamPlugin::default())
         .add_plugins(CorePlugin)
         .add_plugins(MapPlugin)
         .add_plugins(EconomyPlugin)

@@ -251,11 +251,11 @@ fn turret_empty_enemies_returns_none() {
 #[test]
 fn map_config_is_valid() {
     let cfg = MapConfig::load();
-    assert!(cfg.width > 0, "Map width must be > 0");
-    assert!(cfg.height > 0, "Map height must be > 0");
     assert!(cfg.tile_size > 0.0, "Tile size must be > 0");
+    assert!(cfg.chunk_size > 0, "Chunk size must be > 0");
     assert!(cfg.hq_start_ore > 0, "HQ must start with ore");
     assert!(cfg.hq_hp > 0, "HQ must have HP");
-    assert!(!cfg.deposit_positions.is_empty(), "Must have at least 1 deposit");
     assert!(cfg.deposit_max_amount > 0, "Deposits must have amount");
+    assert!(cfg.deposit_min_amount <= cfg.deposit_max_amount,
+        "Deposit min must be <= max");
 }

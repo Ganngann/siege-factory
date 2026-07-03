@@ -40,8 +40,6 @@ pub fn spawn_enemies(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let tile_size = map_cfg.tile_size;
-    let grid_w = map_cfg.width;
-    let grid_h = map_cfg.height;
 
     let max_enemies = (wave.wave * cfg.max_enemies_base).min(cfg.max_enemies_cap);
     if existing.iter().len() >= max_enemies as usize {
@@ -61,18 +59,10 @@ pub fn spawn_enemies(
 
     use rand::Rng;
     let mut rng = rand::thread_rng();
-    let (sx, sy) = loop {
-        let edge = rng.gen_range(0..4);
-        let (x, y) = match edge {
-            0 => (rng.gen_range(0..grid_w), 0),
-            1 => (rng.gen_range(0..grid_w), grid_h - 1),
-            2 => (0, rng.gen_range(0..grid_h)),
-            _ => (grid_w - 1, rng.gen_range(0..grid_h)),
-        };
-        if x != hq_pos.x || y != hq_pos.y {
-            break (x, y);
-        }
-    };
+    let angle = rng.gen_range(0.0..std::f32::consts::TAU);
+    let spawn_dist = 25.0;
+    let sx = (hq_pos.x as f32 + angle.cos() * spawn_dist).round() as i32;
+    let sy = (hq_pos.y as f32 + angle.sin() * spawn_dist).round() as i32;
 
     let def = enemies_registry.get("runner").unwrap_or_else(|| {
         panic!("enemy 'runner' not found in registry")

@@ -5,7 +5,8 @@ use crate::economy::resource::ResourceId;
 pub struct HQ;
 
 #[derive(Component)]
-pub struct OreDeposit {
+pub struct ResourceDeposit {
+    pub resource: String,
     pub amount: u32,
 }
 
@@ -19,6 +20,7 @@ pub struct Miner {
 pub struct Assembler {
     pub production_timer: f32,
     pub interval: f32,
+    pub recipe_id: String,
 }
 
 #[derive(Component)]
@@ -105,7 +107,7 @@ pub struct BuildPreview(pub Option<Entity>);
 
 #[derive(Resource, Default)]
 pub struct BeltDrag {
-    pub start_coord: Option<(u32, u32)>,
+    pub start_coord: Option<(i32, i32)>,
 }
 
 #[derive(Resource, Default)]
@@ -113,7 +115,7 @@ pub struct DeconstructMode(pub bool);
 
 #[derive(Resource, Default)]
 pub struct DeconstructDrag {
-    pub start_coord: Option<(u32, u32)>,
+    pub start_coord: Option<(i32, i32)>,
 }
 
 #[derive(Resource)]
@@ -157,7 +159,7 @@ pub struct HpBarChild;
 pub struct HasHpBar;
 
 #[derive(Component)]
-pub struct OccupiedTiles(pub Vec<(u32, u32)>);
+pub struct OccupiedTiles(pub Vec<(i32, i32)>);
 
 #[derive(Component)]
 pub struct Storage;
@@ -174,6 +176,9 @@ pub struct Sorter {
     pub filter: ResourceId,
     pub inverted: bool,
 }
+
+#[derive(Resource, Default)]
+pub struct PeacefulMode(pub bool);
 
 #[derive(Event)]
 pub struct SetBuildModeEvent(pub Option<String>);

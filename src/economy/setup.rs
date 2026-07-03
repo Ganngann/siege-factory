@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 
 use crate::economy::building::BuildingRegistry;
-use crate::economy::components::{HQ, OreDeposit, Building, OccupiedTiles};
+use crate::economy::components::{HQ, Building, OccupiedTiles};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
-use crate::rendering::{ShapeCache, TextureCache, texture_stem};
+use crate::rendering::{TextureCache, texture_stem};
 
 pub fn setup_hq(
     mut commands: Commands,
@@ -25,7 +25,7 @@ pub fn setup_hq(
     let mut occupied = Vec::with_capacity((tw * th) as usize);
     for dx in 0..tw {
         for dy in 0..th {
-            occupied.push((bx + dx, by + dy));
+            occupied.push((bx + dx as i32, by + dy as i32));
         }
     }
 
@@ -75,28 +75,4 @@ pub fn setup_hq(
             ));
         }
     });
-}
-
-pub fn place_ore_deposits(
-    mut commands: Commands,
-    deposit_query: Query<Entity, With<OreDeposit>>,
-    cfg: Res<MapConfig>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
-    if !deposit_query.is_empty() {
-        return;
-    }
-
-    let mat = materials.add(Color::srgb(0.7, 0.5, 0.1));
-
-    for &(x, y) in &cfg.deposit_positions {
-        commands.spawn((
-            OreDeposit { amount: cfg.deposit_max_amount },
-            Mesh2d(shapes.circle.clone()),
-            MeshMaterial2d(mat.clone()),
-            Transform::from_xyz(x as f32 * cfg.tile_size, y as f32 * cfg.tile_size, 0.5),
-            TilePosition { x, y },
-        ));
-    }
 }

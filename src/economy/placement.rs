@@ -12,6 +12,7 @@ use crate::core::toast::ToastQueue;
 use crate::events::{BeltDragCompleted, DeconstructAreaEvent, DespawnDeposit};
 use crate::map::components::{HoveredTile, TilePosition};
 use crate::map::config::MapConfig;
+use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
 use crate::rendering::{direction_arrow, ShapeCache, TextureCache, texture_stem};
 
 pub fn build_mode_input(
@@ -56,7 +57,7 @@ pub fn build_mode_input(
 // ── Auto-direction ──
 
 fn auto_detect_direction(
-    tx: u32, ty: u32,
+    tx: i32, ty: i32,
     producers: &Query<&TilePosition, With<Produces>>,
     belts_query: &Query<(&TilePosition, &BeltSlots)>,
     default: Direction,
@@ -65,8 +66,8 @@ fn auto_detect_direction(
     let dirs = [Direction::East, Direction::North, Direction::West, Direction::South];
 
     for (&(dx, dy), &dir) in offsets.iter().zip(dirs.iter()) {
-        let nx = tx.wrapping_add_signed(dx);
-        let ny = ty.wrapping_add_signed(dy);
+        let nx = tx + dx;
+        let ny = ty + dy;
         if producers.iter().any(|pos| pos.x == nx && pos.y == ny) {
             return dir;
         }
@@ -74,7 +75,7 @@ fn auto_detect_direction(
 
     for (pos, slots) in belts_query.iter() {
         let (odx, ody) = slots.direction.offset();
-        if pos.x.wrapping_add_signed(odx) == tx && pos.y.wrapping_add_signed(ody) == ty {
+        if pos.x + odx == tx && pos.y + ody == ty {
             return slots.direction;
         }
     }
@@ -83,17 +84,17 @@ fn auto_detect_direction(
 }
 
 fn auto_detect_direction_from_data(
-    tx: u32, ty: u32,
+    tx: i32, ty: i32,
     producers: &Query<&TilePosition, With<Produces>>,
-    belt_data: &[((u32, u32), Direction)],
+    belt_data: &[((i32, i32), Direction)],
     default: Direction,
 ) -> Direction {
     let offsets = [(1, 0), (0, 1), (-1, 0), (0, -1)];
     let dirs = [Direction::East, Direction::North, Direction::West, Direction::South];
 
     for (&(dx, dy), &dir) in offsets.iter().zip(dirs.iter()) {
-        let nx = tx.wrapping_add_signed(dx);
-        let ny = ty.wrapping_add_signed(dy);
+        let nx = tx + dx;
+        let ny = ty + dy;
         if producers.iter().any(|pos| pos.x == nx && pos.y == ny) {
             return dir;
         }
@@ -101,7 +102,7 @@ fn auto_detect_direction_from_data(
 
     for &((px, py), dir) in belt_data {
         let (odx, ody) = dir.offset();
-        if px.wrapping_add_signed(odx) == tx && py.wrapping_add_signed(ody) == ty {
+        if px + odx == tx && py + ody == ty {
             return dir;
         }
     }
@@ -111,9 +112,9 @@ fn auto_detect_direction_from_data(
 
 // ── Click-drag helpers ──
 
-fn compute_line(start: (u32, u32), end: (u32, u32)) -> Vec<(u32, u32, Direction)> {
-    let dx = end.0 as i32 - start.0 as i32;
-    let dy = end.1 as i32 - start.1 as i32;
+fn compute_line(start: (i32, i32), end: (i32, i32)) -> Vec<(i32, i32, Direction)> {
+    let dx = end.0 - start.0;
+    let dy = end.1 - start.1;
     let adx = dx.abs();
     let ady = dy.abs();
 
@@ -131,36 +132,30 @@ fn compute_line(start: (u32, u32), end: (u32, u32)) -> Vec<(u32, u32, Direction)
 
         if adx >= ady {
             for i in 0..adx {
-                let x = (start.0 as i32 + sdx * i) as u32;
-                result.push((x, start.1, dir_x));
+                result.push((start.0 + sdx * i, start.1, dir_x));
             }
             for i in 0..=ady {
-                let y = (start.1 as i32 + sdy * i) as u32;
-                result.push((end.0, y, dir_y));
+                result.push((end.0, start.1 + sdy * i, dir_y));
             }
         } else {
             for i in 0..ady {
-                let y = (start.1 as i32 + sdy * i) as u32;
-                result.push((start.0, y, dir_y));
+                result.push((start.0, start.1 + sdy * i, dir_y));
             }
             for i in 0..=adx {
-                let x = (start.0 as i32 + sdx * i) as u32;
-                result.push((x, end.1, dir_x));
+                result.push((start.0 + sdx * i, end.1, dir_x));
             }
         }
     } else if adx > 0 {
         let sdx = dx.signum();
         let dir = if sdx > 0 { Direction::East } else { Direction::West };
         for i in 0..=adx {
-            let x = (start.0 as i32 + sdx * i) as u32;
-            result.push((x, start.1, dir));
+            result.push((start.0 + sdx * i, start.1, dir));
         }
     } else {
         let sdy = dy.signum();
         let dir = if sdy > 0 { Direction::North } else { Direction::South };
         for i in 0..=ady {
-            let y = (start.1 as i32 + sdy * i) as u32;
-            result.push((start.0, y, dir));
+            result.push((start.0, start.1 + sdy * i, dir));
         }
     }
 
@@ -169,33 +164,22 @@ fn compute_line(start: (u32, u32), end: (u32, u32)) -> Vec<(u32, u32, Direction)
 
 // ── Multi-tile helpers ──
 
-fn tile_is_free(tx: u32, ty: u32, occupied: &Query<&OccupiedTiles, With<Building>>) -> bool {
+fn tile_is_free(tx: i32, ty: i32, occupied: &Query<&OccupiedTiles, With<Building>>) -> bool {
     !occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty))
 }
 
-fn tiles_are_free(tiles: &[(u32, u32)], occupied: &Query<&OccupiedTiles, With<Building>>) -> bool {
+fn tiles_are_free(tiles: &[(i32, i32)], occupied: &Query<&OccupiedTiles, With<Building>>) -> bool {
     tiles.iter().all(|&(tx, ty)| tile_is_free(tx, ty, occupied))
 }
 
-fn compute_footprint(tx: u32, ty: u32, tw: u32, th: u32) -> Vec<(u32, u32)> {
+fn compute_footprint(tx: i32, ty: i32, tw: u32, th: u32) -> Vec<(i32, i32)> {
     let mut tiles = Vec::with_capacity((tw * th) as usize);
     for dx in 0..tw {
         for dy in 0..th {
-            tiles.push((tx + dx, ty + dy));
+            tiles.push((tx + dx as i32, ty + dy as i32));
         }
     }
     tiles
-}
-
-fn building_at_tile(tx: u32, ty: u32, occupied: &Query<&OccupiedTiles, With<Building>>) -> Option<(usize, usize)> {
-    for (idx, tiles) in occupied.iter().enumerate() {
-        for (tile_idx, &(x, y)) in tiles.0.iter().enumerate() {
-            if x == tx && y == ty {
-                return Some((idx, tile_idx));
-            }
-        }
-    }
-    None
 }
 
 // ── Deconstruction ──
@@ -222,16 +206,9 @@ pub fn handle_deconstruct_click(
     let Some(cursor) = window.cursor_position() else { return };
     let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
 
-    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
-    if tile_x < 0 || tile_y < 0 {
-        return;
-    }
-    let tx = tile_x as u32;
-    let ty = tile_y as u32;
-
-    // Find building occupying this tile
     let building_entry = occupied.iter().find(|(tiles, _, _)| {
         tiles.0.iter().any(|&(x, y)| x == tx && y == ty)
     });
@@ -250,7 +227,6 @@ pub fn handle_deconstruct_click(
         return;
     }
 
-    // Compute refund
     let mut refund_total = 0u32;
     for c in &def.cost {
         let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
@@ -265,8 +241,6 @@ pub fn handle_deconstruct_click(
     toast_queue.0.push(format!("{} dismantled (refund: {} resources)", building.name, refund_total));
 }
 
-// Actually we need entity ids. Let's use a different query approach.
-// We'll just do it directly in the system.
 pub fn handle_deconstruct_click_v2(
     mut commands: Commands,
     deconstruct: Res<DeconstructMode>,
@@ -292,16 +266,10 @@ pub fn handle_deconstruct_click_v2(
     let Some(cursor) = window.cursor_position() else { return };
     let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
 
-    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
-    if tile_x < 0 || tile_y < 0 {
-        return;
-    }
-    let tx = tile_x as u32;
-    let ty = tile_y as u32;
-
-    let Some((entity, _, building, _)) = building_query.iter().find(|(_, tiles, _, _)| {
+    let Some((entity, _tiles, building, _)) = building_query.iter().find(|(_, tiles, _, _)| {
         tiles.0.iter().any(|&(x, y)| x == tx && y == ty)
     }) else { return };
 
@@ -315,7 +283,6 @@ pub fn handle_deconstruct_click_v2(
         return;
     }
 
-    // Compute refund
     let mut refund_names = Vec::new();
     for c in &def.cost {
         let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
@@ -327,7 +294,6 @@ pub fn handle_deconstruct_click_v2(
         }
     }
 
-    // Despawn orphaned BeltItems on deconstructed belt/splitter/sorter
     if let Ok(belt_slots) = belt_slots_query.get(entity) {
         for slot in belt_slots.slots.iter() {
             if let Some(item_entity) = slot {
@@ -374,20 +340,18 @@ pub fn update_build_preview(
 
     if deconstruct.0 {
         let Some(TilePosition { x: tx, y: ty }) = hovered.0 else { return };
-        if tx < cfg.width && ty < cfg.height {
-            let occupied_here = occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty));
-            let color = if occupied_here {
-                Color::srgba(0.8, 0.0, 0.0, 0.4)
-            } else {
-                Color::srgba(0.8, 0.0, 0.0, 0.15)
-            };
-            commands.spawn((
-                Ghost,
-                Mesh2d(shapes.rectangle.clone()),
-                MeshMaterial2d(materials.add(color)),
-                Transform::from_xyz(tx as f32 * cfg.tile_size, ty as f32 * cfg.tile_size, 1.8),
-            ));
-        }
+        let occupied_here = occupied.iter().any(|tiles| tiles.0.iter().any(|&(x, y)| x == tx && y == ty));
+        let color = if occupied_here {
+            Color::srgba(0.8, 0.0, 0.0, 0.4)
+        } else {
+            Color::srgba(0.8, 0.0, 0.0, 0.15)
+        };
+        commands.spawn((
+            Ghost,
+            Mesh2d(shapes.rectangle.clone()),
+            MeshMaterial2d(materials.add(color)),
+            Transform::from_xyz(tx as f32 * cfg.tile_size, ty as f32 * cfg.tile_size, 1.8),
+        ));
         return;
     }
 
@@ -401,7 +365,7 @@ pub fn update_build_preview(
             let line = compute_line((sx, sy), (tx, ty));
             for &(lx, ly, dir) in &line {
                 let has_belt = belts_query.iter().any(|(p, _)| p.x == lx && p.y == ly);
-                let valid = (has_belt || tile_is_free(lx, ly, &occupied)) && lx < cfg.width && ly < cfg.height;
+                let valid = has_belt || tile_is_free(lx, ly, &occupied);
                 let color = if valid {
                     Color::srgba(0.0, 0.8, 0.0, 0.4)
                 } else {
@@ -443,21 +407,6 @@ pub fn update_build_preview(
     // ── Multi-tile preview ──
     let (tw, th) = def.tile_size;
     let footprint = compute_footprint(tx, ty, tw, th);
-
-    if tx + tw > cfg.width || ty + th > cfg.height {
-        // Out of bounds — show red
-        let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * cfg.tile_size;
-        let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * cfg.tile_size;
-        let mat_handle = materials.add(Color::srgba(0.8, 0.0, 0.0, 0.3));
-        let mesh = shapes.get_visual(&def.visual);
-        commands.spawn((
-            Ghost,
-            Mesh2d(mesh),
-            MeshMaterial2d(mat_handle),
-            Transform::from_xyz(cx, cy, 1.8),
-        ));
-        return;
-    }
 
     let valid = if def.requires_deposit {
         deposits.iter().any(|pos| pos.x == tx && pos.y == ty)
@@ -504,12 +453,12 @@ pub fn update_build_preview(
         let offsets = [(1, 0), (0, 1), (-1, 0), (0, -1)];
         let dirs = [Direction::East, Direction::North, Direction::West, Direction::South];
         for (&(dx, dy), &check_dir) in offsets.iter().zip(dirs.iter()) {
-            let nx = tx.wrapping_add_signed(dx);
-            let ny = ty.wrapping_add_signed(dy);
+            let nx = tx + dx;
+            let ny = ty + dy;
             let is_input = producers.iter().any(|pos| pos.x == nx && pos.y == ny)
                 || belts_query.iter().any(|(pos, slots)| {
                     let (odx, ody) = slots.direction.offset();
-                    pos.x.wrapping_add_signed(odx) == tx && pos.y.wrapping_add_signed(ody) == ty
+                    pos.x + odx == tx && pos.y + ody == ty
                 });
             if is_input || check_dir == dir {
                 let indicator_color = if is_input {
@@ -530,7 +479,6 @@ pub fn update_build_preview(
 
         ghost_entity
     } else {
-        // Multi-tile buildings — show all footprint tiles as ghost
         let mesh = shapes.get_visual(&def.visual);
         commands.spawn((
             Ghost,
@@ -584,7 +532,6 @@ pub fn deconstruct_drag_preview(
     // Subtle red grid for empty tiles in zone
     for gx in x1..=x2 {
         for gy in y1..=y2 {
-            if gx >= cfg.width || gy >= cfg.height { continue; }
             let has_building = building_query.iter().any(|(_, _, tiles)|
                 tiles.0.iter().any(|&(x, y)| x == gx && y == gy)
             );
@@ -612,8 +559,6 @@ fn deduct_cost(hq_inv: &mut Inventory, cost: &[BuildingCost]) {
 
 // ── Belt click/drag ──
 
-/// Tracks belt/splitter/sorter drag start/end and emits `BeltDragCompleted`
-/// on release. No entity spawning — that happens in the observer.
 #[allow(clippy::too_many_arguments)]
 pub fn track_belt_drag(
     mut commands: Commands,
@@ -643,29 +588,17 @@ pub fn track_belt_drag(
         return;
     }
     let tile_size = cfg.tile_size;
-    let grid_w = cfg.width;
-    let grid_h = cfg.height;
 
     let Ok(window) = windows.single() else { return };
     let Ok((cam, cam_transform)) = camera.single() else { return };
     let Some(cursor) = window.cursor_position() else { return };
     let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
 
-    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
-
-    if tile_x < 0 || tile_y < 0 || tile_x >= grid_w as i32 || tile_y >= grid_h as i32 {
-        if buttons.just_released(bindings.mouse("place")) {
-            drag.start_coord.take();
-        }
-        return;
-    }
-
-    let tx = tile_x as u32;
-    let ty = tile_y as u32;
+    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
     if buttons.just_pressed(bindings.mouse("place")) {
-        let belt_data: Vec<((u32, u32), Direction)> = belt_read
+        let belt_data: Vec<((i32, i32), Direction)> = belt_read
             .iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect();
         let has_belt = belt_data.iter().any(|&((px, py), _)| px == tx && py == ty);
         let is_free = tile_is_free(tx, ty, &occupied);
@@ -680,14 +613,14 @@ pub fn track_belt_drag(
     if buttons.just_released(bindings.mouse("place")) {
         let Some(start) = drag.start_coord.take() else { return };
 
-        let belt_data: Vec<((u32, u32), Direction)> = belt_read
+        let belt_data: Vec<((i32, i32), Direction)> = belt_read
             .iter().map(|(pos, bs)| ((pos.x, pos.y), bs.direction)).collect();
 
         let line = compute_line(start, (tx, ty));
         let single = line.len() == 1;
 
-        let mut existing: Vec<(u32, u32, Direction)> = Vec::new();
-        let mut new_tiles: Vec<(u32, u32, Direction)> = Vec::new();
+        let mut existing: Vec<(i32, i32, Direction)> = Vec::new();
+        let mut new_tiles: Vec<(i32, i32, Direction)> = Vec::new();
 
         for &(bx, by, base_dir) in &line {
             let dir = if single {
@@ -855,26 +788,14 @@ pub fn track_deconstruct_drag(
     }
 
     let tile_size = cfg.tile_size;
-    let grid_w = cfg.width;
-    let grid_h = cfg.height;
 
     let Ok(window) = windows.single() else { return };
     let Ok((cam, cam_transform)) = camera.single() else { return };
     let Some(cursor) = window.cursor_position() else { return };
     let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
 
-    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
-
-    if tile_x < 0 || tile_y < 0 || tile_x >= grid_w as i32 || tile_y >= grid_h as i32 {
-        if buttons.just_released(bindings.mouse("place")) {
-            drag.start_coord.take();
-        }
-        return;
-    }
-
-    let tx = tile_x as u32;
-    let ty = tile_y as u32;
+    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
     if bindings.just_pressed("place", &keys, &buttons) && drag.start_coord.is_none() {
         drag.start_coord = Some((tx, ty));
@@ -914,7 +835,6 @@ pub fn on_deconstruct_area(
         let in_zone = tiles.0.iter().any(|&(x, y)| x >= x1 && x <= x2 && y >= y1 && y <= y2);
         if !in_zone { continue; }
 
-        // Compute refund
         if let Some(def) = registry.get(&building.kind) {
             if def.can_deconstruct {
                 for c in &def.cost {
@@ -929,7 +849,6 @@ pub fn on_deconstruct_area(
             }
         }
 
-        // Despawn orphaned BeltItems
         if let Ok(belt_slots) = belt_slots_query.get(entity) {
             for slot in belt_slots.slots.iter() {
                 if let Some(item_entity) = slot {
@@ -971,10 +890,9 @@ pub fn handle_build_click(
     bindings: Res<KeyBindings>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
+    mut chunk_grid: ResMut<ChunkGrid>,
 ) {
     let tile_size = cfg.tile_size;
-    let grid_w = cfg.width;
-    let grid_h = cfg.height;
 
     let Some(ref kind) = build_mode.0 else { return };
     if !bindings.just_pressed("place", &keys, &buttons) {
@@ -986,16 +904,8 @@ pub fn handle_build_click(
     let Some(cursor) = window.cursor_position() else { return };
     let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
 
-    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
-
-    if tile_x < 0 || tile_y < 0 || tile_x >= grid_w as i32 || tile_y >= grid_h as i32 {
-        toast_queue.0.push("Outside map".to_string());
-        return;
-    }
-
-    let tx = tile_x as u32;
-    let ty = tile_y as u32;
+    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
     let def = match registry.get(kind) {
         Some(d) => d,
@@ -1006,11 +916,6 @@ pub fn handle_build_click(
 
     // Buildings with belt properties or drag_placement are handled by track_belt_drag
     if def.belt.is_some() || def.drag_placement {
-        return;
-    }
-
-    if tx + tw > grid_w || ty + th > grid_h {
-        toast_queue.0.push("Outside map".to_string());
         return;
     }
 
@@ -1057,6 +962,11 @@ pub fn handle_build_click(
         }
 
         deduct_cost(&mut hq_inv, &def.cost);
+        let cx = tx.div_euclid(CHUNK_SIZE as i32);
+        let cy = ty.div_euclid(CHUNK_SIZE as i32);
+        let dx = tx.rem_euclid(CHUNK_SIZE as i32) as u32;
+        let dy = ty.rem_euclid(CHUNK_SIZE as i32) as u32;
+        chunk_grid.set_deposit_amount(cx, cy, dx, dy, 0);
         commands.trigger(DespawnDeposit(deposit));
 
         let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;

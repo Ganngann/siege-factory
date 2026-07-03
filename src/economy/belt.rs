@@ -23,8 +23,8 @@ pub struct BeltItem {
 }
 
 pub fn compute_slot_positions(
-    tx: u32,
-    ty: u32,
+    tx: i32,
+    ty: i32,
     direction: Direction,
     num_slots: u32,
     tile_size: f32,
@@ -50,20 +50,20 @@ pub fn belt_item_placer(
     cfg: Res<MapConfig>,
 ) {
     let tile_size = cfg.tile_size;
-    let belt_map: HashMap<(u32, u32), Entity> =
+    let belt_map: HashMap<(i32, i32), Entity> =
         belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
     let ev = on.event();
 
     let mut placed = false;
     for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-        let ax = ev.source_tile.x.wrapping_add_signed(dx);
-        let ay = ev.source_tile.y.wrapping_add_signed(dy);
+        let ax = ev.source_tile.x + dx;
+        let ay = ev.source_tile.y + dy;
         if let Some(&belt_entity) = belt_map.get(&(ax, ay)) {
             if let Ok((_, _, mut bs)) = belt_query.get_mut(belt_entity) {
                 // Skip belts that point toward the source tile (input belts)
                 let (odx, ody) = bs.direction.offset();
-                if ax.wrapping_add_signed(odx) == ev.source_tile.x
-                    && ay.wrapping_add_signed(ody) == ev.source_tile.y
+                if ax + odx == ev.source_tile.x
+                    && ay + ody == ev.source_tile.y
                 {
                     continue;
                 }
@@ -106,11 +106,11 @@ pub fn advance_belt_slots(
     sorter_query: Query<(Entity, &TilePosition, &Sorter)>,
 ) {
     let dt = time.delta_secs();
-    let belt_map: HashMap<(u32, u32), Entity> =
+    let belt_map: HashMap<(i32, i32), Entity> =
         belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
-    let splitter_map: HashMap<(u32, u32), Entity> =
+    let splitter_map: HashMap<(i32, i32), Entity> =
         splitter_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
-    let sorter_map: HashMap<(u32, u32), Entity> =
+    let sorter_map: HashMap<(i32, i32), Entity> =
         sorter_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
 
     let belt_data: Vec<(Entity, TilePosition, Direction, f32, usize)> = belt_query
@@ -150,7 +150,7 @@ pub fn advance_belt_slots(
     }
 
     // Build inventory map from OccupiedTiles (buildings without BeltSlots)
-    let inv_map: HashMap<(u32, u32), Entity> =
+    let inv_map: HashMap<(i32, i32), Entity> =
         inventory_query.iter()
             .flat_map(|(e, tiles, _)| tiles.0.iter().map(move |&(x, y)| ((x, y), e)))
             .collect();
@@ -159,8 +159,8 @@ pub fn advance_belt_slots(
     for (belt_entity, belt_pos, dir, speed, n_slots) in &belt_data {
         let slot_duration = 1.0 / (speed * *n_slots as f32);
         let (dx, dy) = dir.offset();
-        let nx = belt_pos.x.wrapping_add_signed(dx);
-        let ny = belt_pos.y.wrapping_add_signed(dy);
+        let nx = belt_pos.x + dx;
+        let ny = belt_pos.y + dy;
         let last = n_slots - 1;
 
         // Does this belt have an item ready in its last slot?
@@ -186,8 +186,8 @@ pub fn advance_belt_slots(
             if input_dir.is_none() {
                 // Scan neighbors for a belt pointing towards us
                 for (adj_dx, adj_dy) in [(1,0), (-1,0), (0,1), (0,-1)] {
-                    let ax = belt_pos.x.wrapping_add_signed(adj_dx);
-                    let ay = belt_pos.y.wrapping_add_signed(adj_dy);
+                    let ax = belt_pos.x + adj_dx;
+                    let ay = belt_pos.y + adj_dy;
                     if let Some(&adj_entity) = belt_map.get(&(ax, ay)) {
                         if let Ok((_, _, adj_bs)) = belt_query.get(adj_entity) {
                             let (bd_x, bd_y) = adj_bs.direction.offset();
@@ -205,8 +205,8 @@ pub fn advance_belt_slots(
             for test_dir in [Direction::East, Direction::North, Direction::West, Direction::South] {
                 if Some(test_dir) == input_dir { continue; }
                 let (tdx, tdy) = test_dir.offset();
-                let tx = belt_pos.x.wrapping_add_signed(tdx);
-                let ty = belt_pos.y.wrapping_add_signed(tdy);
+                let tx = belt_pos.x + tdx;
+                let ty = belt_pos.y + tdy;
                 if belt_map.contains_key(&(tx, ty)) {
                     output_dirs.push(test_dir);
                 }
@@ -220,8 +220,8 @@ pub fn advance_belt_slots(
                 for offset in 0..output_dirs.len() {
                     let idx = (start_idx + offset) % output_dirs.len();
                     let (odx, ody) = output_dirs[idx].offset();
-                    let out_x = belt_pos.x.wrapping_add_signed(odx);
-                    let out_y = belt_pos.y.wrapping_add_signed(ody);
+                    let out_x = belt_pos.x + odx;
+                    let out_y = belt_pos.y + ody;
                     let Some(&target) = belt_map.get(&(out_x, out_y)) else { continue; };
                     let Ok([(_, _, mut bs), (_, _, mut target_bs)]) =
                         belt_query.get_many_mut([*belt_entity, target]) else { continue; };
@@ -262,8 +262,8 @@ pub fn advance_belt_slots(
                             } else {
                                 (dx, dy)
                             };
-                            let out_x = belt_pos.x.wrapping_add_signed(out_dx);
-                            let out_y = belt_pos.y.wrapping_add_signed(out_dy);
+                            let out_x = belt_pos.x + out_dx;
+                            let out_y = belt_pos.y + out_dy;
                             if belt_map.contains_key(&(out_x, out_y)) { Some((out_x, out_y)) } else { None }
                         } else { None }
                     } else { None }

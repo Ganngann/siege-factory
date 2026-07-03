@@ -2,42 +2,51 @@ use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ResourceId {
-    Ore,
-    Ammo,
-    Energy,
-}
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ResourceId(pub String);
 
 impl ResourceId {
-    pub fn from_str(s: &str) -> Option<Self> {
-        match s {
-            "ore" => Some(Self::Ore),
-            "ammo" => Some(Self::Ammo),
-            "energy" => Some(Self::Energy),
-            _ => None,
-        }
+    pub fn new<S: Into<String>>(id: S) -> Self {
+        Self(id.into())
     }
 
-    pub fn display_name(&self) -> &str {
-        match self {
-            ResourceId::Ore => "Ore",
-            ResourceId::Ammo => "Ammo",
-            ResourceId::Energy => "Energy",
-        }
+    pub fn display_name(&self) -> String {
+        self.0
+            .split('_')
+            .map(|w| {
+                let mut c = w.chars();
+                match c.next() {
+                    None => String::new(),
+                    Some(f) => f.to_uppercase().to_string() + c.as_str(),
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(" ")
     }
+}
+
+fn parse_hex_color(s: &str) -> Color {
+    let s = s.trim_start_matches('#');
+    if s.len() < 6 {
+        return Color::srgb(0.5, 0.5, 0.5);
+    }
+    let r = u8::from_str_radix(&s[0..2], 16).unwrap_or(128) as f32 / 255.0;
+    let g = u8::from_str_radix(&s[2..4], 16).unwrap_or(128) as f32 / 255.0;
+    let b = u8::from_str_radix(&s[4..6], 16).unwrap_or(128) as f32 / 255.0;
+    Color::srgb(r, g, b)
 }
 
 #[derive(Debug, Clone)]
 pub struct ResourceDef {
-    pub id: ResourceId,
+    pub id: String,
     pub name: String,
     pub max_stack: u32,
+    pub color: Color,
 }
 
 #[derive(Debug, Clone, Resource)]
 pub struct ResourceRegistry {
-    pub resources: HashMap<ResourceId, ResourceDef>,
+    pub resources: HashMap<String, ResourceDef>,
 }
 
 impl ResourceRegistry {
@@ -46,19 +55,22 @@ impl ResourceRegistry {
         let parsed: ResourcesToml = toml::from_str(toml_str).expect("failed to parse resources.toml");
         let mut resources = HashMap::new();
         for (key, entry) in parsed.resources {
-            if let Some(id) = ResourceId::from_str(&key) {
-                resources.insert(id, ResourceDef {
-                    id,
-                    name: entry.name,
-                    max_stack: entry.max_stack,
-                });
-            }
+            resources.insert(key.clone(), ResourceDef {
+                id: key,
+                name: entry.name,
+                max_stack: entry.max_stack,
+                color: entry.color.as_deref().map(parse_hex_color).unwrap_or(Color::srgb(0.5, 0.5, 0.5)),
+            });
         }
         Self { resources }
     }
 
-    pub fn get(&self, id: ResourceId) -> &ResourceDef {
-        &self.resources[&id]
+    pub fn get(&self, id: &str) -> &ResourceDef {
+        &self.resources[id]
+    }
+
+    pub fn get_opt(&self, id: &str) -> Option<&ResourceDef> {
+        self.resources.get(id)
     }
 }
 
@@ -71,6 +83,7 @@ struct ResourcesToml {
 struct ResourceEntry {
     name: String,
     max_stack: u32,
+    color: Option<String>,
 }
 
 #[derive(Debug, Clone, Component)]
@@ -88,16 +101,16 @@ impl Inventory {
         Self { resources: HashMap::new(), capacity }
     }
 
-    pub fn get(&self, resource: ResourceId) -> u32 {
-        *self.resources.get(&resource).unwrap_or(&0)
+    pub fn get(&self, resource: &ResourceId) -> u32 {
+        *self.resources.get(resource).unwrap_or(&0)
     }
 
-    pub fn add(&mut self, resource: ResourceId, amount: u32) {
-        let entry = self.resources.entry(resource).or_insert(0);
+    pub fn add(&mut self, resource: &ResourceId, amount: u32) {
+        let entry = self.resources.entry(resource.clone()).or_insert(0);
         *entry = entry.saturating_add(amount);
     }
 
-    pub fn try_add(&mut self, resource: ResourceId, amount: u32) -> bool {
+    pub fn try_add(&mut self, resource: &ResourceId, amount: u32) -> bool {
         if self.capacity > 0 && self.total() + amount > self.capacity {
             return false;
         }
@@ -105,8 +118,8 @@ impl Inventory {
         true
     }
 
-    pub fn remove(&mut self, resource: ResourceId, amount: u32) -> bool {
-        let entry = self.resources.entry(resource).or_insert(0);
+    pub fn remove(&mut self, resource: &ResourceId, amount: u32) -> bool {
+        let entry = self.resources.entry(resource.clone()).or_insert(0);
         if *entry >= amount {
             *entry -= amount;
             true
@@ -137,66 +150,66 @@ mod tests {
     #[test]
     fn new_inventory_is_empty() {
         let inv = Inventory::new();
-        assert_eq!(inv.get(ResourceId::Ore), 0);
-        assert_eq!(inv.get(ResourceId::Ammo), 0);
+        assert_eq!(inv.get(&ResourceId("ore".to_string())), 0);
+        assert_eq!(inv.get(&ResourceId("ammo".to_string())), 0);
     }
 
     #[test]
     fn add_increases_amount() {
         let mut inv = Inventory::new();
-        inv.add(ResourceId::Ore, 10);
-        assert_eq!(inv.get(ResourceId::Ore), 10);
+        inv.add(&ResourceId("ore".to_string()), 10);
+        assert_eq!(inv.get(&ResourceId("ore".to_string())), 10);
     }
 
     #[test]
     fn add_stacks_multiple_times() {
         let mut inv = Inventory::new();
-        inv.add(ResourceId::Ore, 5);
-        inv.add(ResourceId::Ore, 7);
-        assert_eq!(inv.get(ResourceId::Ore), 12);
+        inv.add(&ResourceId("ore".to_string()), 5);
+        inv.add(&ResourceId("ore".to_string()), 7);
+        assert_eq!(inv.get(&ResourceId("ore".to_string())), 12);
     }
 
     #[test]
     fn remove_reduces_amount() {
         let mut inv = Inventory::new();
-        inv.add(ResourceId::Ore, 10);
-        assert!(inv.remove(ResourceId::Ore, 4));
-        assert_eq!(inv.get(ResourceId::Ore), 6);
+        inv.add(&ResourceId("ore".to_string()), 10);
+        assert!(inv.remove(&ResourceId("ore".to_string()), 4));
+        assert_eq!(inv.get(&ResourceId("ore".to_string())), 6);
     }
 
     #[test]
     fn remove_returns_false_if_not_enough() {
         let mut inv = Inventory::new();
-        inv.add(ResourceId::Ore, 3);
-        assert!(!inv.remove(ResourceId::Ore, 5));
-        assert_eq!(inv.get(ResourceId::Ore), 3);
+        inv.add(&ResourceId("ore".to_string()), 3);
+        assert!(!inv.remove(&ResourceId("ore".to_string()), 5));
+        assert_eq!(inv.get(&ResourceId("ore".to_string())), 3);
     }
 
     #[test]
     fn add_never_overflows() {
         let mut inv = Inventory::new();
-        inv.add(ResourceId::Ore, u32::MAX);
-        inv.add(ResourceId::Ore, 1);
-        assert_eq!(inv.get(ResourceId::Ore), u32::MAX);
+        inv.add(&ResourceId("ore".to_string()), u32::MAX);
+        inv.add(&ResourceId("ore".to_string()), 1);
+        assert_eq!(inv.get(&ResourceId("ore".to_string())), u32::MAX);
     }
 
     #[test]
     fn different_resources_independent() {
         let mut inv = Inventory::new();
-        inv.add(ResourceId::Ore, 10);
-        inv.add(ResourceId::Ammo, 5);
-        assert_eq!(inv.get(ResourceId::Ore), 10);
-        assert_eq!(inv.get(ResourceId::Ammo), 5);
-        assert_eq!(inv.get(ResourceId::Energy), 0);
+        inv.add(&ResourceId("ore".to_string()), 10);
+        inv.add(&ResourceId("ammo".to_string()), 5);
+        assert_eq!(inv.get(&ResourceId("ore".to_string())), 10);
+        assert_eq!(inv.get(&ResourceId("ammo".to_string())), 5);
+        assert_eq!(inv.get(&ResourceId("energy".to_string())), 0);
     }
 
     #[test]
     fn capacity_limits_add() {
         let mut inv = Inventory::with_capacity(10);
-        assert!(inv.add(ResourceId::Ore, 5));
-        assert!(inv.add(ResourceId::Ore, 5));
-        assert!(!inv.add(ResourceId::Ore, 1));
-        assert_eq!(inv.get(ResourceId::Ore), 10);
+        assert!(inv.try_add(&ResourceId("ore".to_string()), 5));
+        assert!(inv.try_add(&ResourceId("ore".to_string()), 5));
+        assert!(!inv.try_add(&ResourceId("ore".to_string()), 1));
+        assert_eq!(inv.get(&ResourceId("ore".to_string())), 10);
     }
 
     proptest::proptest! {
@@ -206,12 +219,13 @@ mod tests {
             add2 in 0..1000u32,
             remove in 0..2000u32,
         ) {
+            let ore_id = ResourceId("ore".to_string());
             let mut inv = Inventory::new();
-            inv.add(ResourceId::Ore, add1);
-            inv.add(ResourceId::Ore, add2);
-            let before = inv.get(ResourceId::Ore);
-            inv.remove(ResourceId::Ore, remove);
-            assert!(inv.get(ResourceId::Ore) <= before);
+            inv.add(&ore_id, add1);
+            inv.add(&ore_id, add2);
+            let before = inv.get(&ore_id);
+            inv.remove(&ore_id, remove);
+            assert!(inv.get(&ore_id) <= before);
         }
     }
 }

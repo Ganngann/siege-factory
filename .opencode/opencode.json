@@ -21,7 +21,9 @@
       "cargo run*": "allow",
       "cargo test*": "allow",
       "cargo fmt*": "allow",
-      "cargo doc*": "allow"
+      "cargo doc*": "allow",
+      "cargo metadata*": "allow",
+      "find *": "allow"
     },
     "edit": "allow"
   },
@@ -35,11 +37,11 @@
       "mode": "primary"
     },
     "explore": {
-      "model": "opencode-go/deepseek-v4-flash",
+      "model": "opencode-go/mimo-v2.5",
       "mode": "subagent"
     },
     "general": {
-      "model": "opencode-go/qwen3.7-plus",
+      "model": "opencode-go/mimo-v2.5",
       "mode": "subagent"
     }
   }

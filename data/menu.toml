@@ -1,6 +1,6 @@
 [[menu]]
 label = "Production"
-items = ["miner", "assembler"]
+items = ["miner", "furnace", "assembler"]
 
 [[menu]]
 label = "Logistique"

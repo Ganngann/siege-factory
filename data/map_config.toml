@@ -1,25 +1,13 @@
 [map]
 tile_size = 32.0
-width = 20
-height = 15
+seed = 42
+chunk_size = 32
 
 [deposits]
 min_amount = 50
 max_amount = 150
-positions = [
-  { x = 3, y = 3 },
-  { x = 3, y = 11 },
-  { x = 8, y = 6 },
-  { x = 12, y = 10 },
-  { x = 16, y = 4 },
-  { x = 16, y = 11 },
-]
 
 [hq]
 start_ore = 200
 hp = 100
-position = { x = 9, y = 7 }
-
-[spawners]
-min = 1
-max = 4
+position = { x = 0, y = 0 }

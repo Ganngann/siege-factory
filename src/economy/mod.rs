@@ -53,7 +53,6 @@ impl Plugin for EconomyPlugin {
         app.add_observer(placement::on_deconstruct_area);
         app.add_systems(OnEnter(GameState::Playing), (
             setup::setup_hq,
-            setup::place_ore_deposits,
             build_bar::spawn_menu_bar,
         ));
         app.add_systems(OnExit(GameState::Playing), (

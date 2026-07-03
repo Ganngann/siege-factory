@@ -7,7 +7,9 @@ use crate::economy::components::{HQ, OreDeposit, Unit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;
+use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
+use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
 use crate::rendering::{ShapeCache, TextureCache, texture_stem};
 
 
@@ -180,8 +182,9 @@ fn worker_harvest(
     time: Res<Time>,
     unit_cfg: Res<UnitConfig>,
     cfg: Res<MapConfig>,
+    mut chunk_grid: ResMut<ChunkGrid>,
     mut workers: Query<(Entity, &mut Transform, &mut Worker)>,
-    mut deposits: Query<(Entity, &mut OreDeposit, &Transform), Without<Worker>>,
+    mut deposits: Query<(Entity, &mut OreDeposit, &Transform, &TilePosition), Without<Worker>>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     mut commands: Commands,
 ) {
@@ -204,7 +207,7 @@ fn worker_harvest(
                 let worker_pos = transform.translation;
                 let mut nearest = None;
                 let mut nearest_dist = f32::MAX;
-                for (dep_entity, deposit, dep_transform) in deposits.iter() {
+                for (dep_entity, deposit, dep_transform, _) in deposits.iter() {
                     if deposit.amount > 0 {
                         let dist = worker_pos.distance(dep_transform.translation);
                         if dist < nearest_dist {
@@ -218,7 +221,7 @@ fn worker_harvest(
                 }
             }
             WorkerState::MovingToDeposit(target_dep) => {
-                if let Ok((_, deposit, dep_transform)) = deposits.get(target_dep) {
+                if let Ok((_, deposit, dep_transform, _)) = deposits.get(target_dep) {
                     if deposit.amount == 0 {
                         worker.state = WorkerState::Idle;
                         continue;
@@ -239,7 +242,7 @@ fn worker_harvest(
                 }
             }
             WorkerState::Mining(target_dep) => {
-                if let Ok((_dep_entity, mut deposit, _)) = deposits.get_mut(target_dep) {
+                if let Ok((_dep_entity, mut deposit, _, _)) = deposits.get_mut(target_dep) {
                     if deposit.amount > 0 {
                         worker.mining_timer += time.delta_secs();
                         while worker.mining_timer >= mine_interval && deposit.amount > 0 {
@@ -258,8 +261,13 @@ fn worker_harvest(
         }
     }
 
-    for (entity, deposit, _) in deposits.iter() {
+    for (entity, deposit, _, tile_pos) in deposits.iter() {
         if deposit.amount == 0 {
+            let cx = tile_pos.x.div_euclid(CHUNK_SIZE as i32);
+            let cy = tile_pos.y.div_euclid(CHUNK_SIZE as i32);
+            let dx = tile_pos.x.rem_euclid(CHUNK_SIZE as i32) as u32;
+            let dy = tile_pos.y.rem_euclid(CHUNK_SIZE as i32) as u32;
+            chunk_grid.set_deposit_amount(cx, cy, dx, dy, 0);
             commands.trigger(DespawnDeposit(entity));
         }
     }

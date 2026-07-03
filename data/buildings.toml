@@ -22,6 +22,14 @@ visual = "square"
 requires_deposit = true
 production = { resource = "ore", interval_sec = 2.0 }
 
+[buildings.furnace]
+name = "Furnace"
+cost = { ore = 12 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#884422"
+visual = "diamond"
+
 [buildings.assembler]
 name = "Assembler"
 cost = { ore = 15 }

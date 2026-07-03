@@ -35,8 +35,8 @@ pub struct ToastEvent(pub String);
 #[derive(Event)]
 pub struct BeltDragCompleted {
     pub kind: String,
-    pub new_tiles: Vec<(u32, u32, Direction)>,
-    pub existing: Vec<(u32, u32, Direction)>,
+    pub new_tiles: Vec<(i32, i32, Direction)>,
+    pub existing: Vec<(i32, i32, Direction)>,
 }
 
 pub struct CleanupPlugin;

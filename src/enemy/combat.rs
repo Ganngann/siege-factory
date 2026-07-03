@@ -3,12 +3,10 @@ use bevy::prelude::*;
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::economy::components::{HQ, TurretCombat};
-use crate::economy::resource::Inventory;
 use crate::enemy::components::{Enemy, Health};
 use crate::enemy::registry::EnemyRegistry;
 use crate::events::DespawnEnemy;
 use crate::map::components::TilePosition;
-use crate::map::config::MapConfig;
 use crate::rendering::ShapeCache;
 
 pub fn find_closest_enemy(
@@ -32,26 +30,22 @@ pub fn find_closest_enemy(
 
 pub fn enemies_damage_hq(
     enemies: Query<(Entity, &TilePosition), With<Enemy>>,
-    mut hq: Query<(&mut Health, &mut Inventory), With<HQ>>,
+    mut hq: Query<(&mut Health, &TilePosition), With<HQ>>,
     mut next_state: ResMut<NextState<GameState>>,
     enemies_registry: Res<EnemyRegistry>,
-    cfg: Res<MapConfig>,
     mut commands: Commands,
 ) {
     let enemy_damage = enemies_registry.get("runner")
         .map(|d| d.damage)
         .unwrap_or(10);
 
-    let (mut hq_health, _inv) = match hq.single_mut() {
+    let (mut hq_health, hq_pos) = match hq.single_mut() {
         Ok(h) => h,
         Err(_) => return,
     };
 
-    let hq_tx = cfg.width / 2;
-    let hq_ty = cfg.height / 2;
-
     for (entity, pos) in enemies.iter() {
-        if pos.x == hq_tx && pos.y == hq_ty {
+        if pos.x == hq_pos.x && pos.y == hq_pos.y {
             commands.trigger(DespawnEnemy(entity));
             hq_health.current = hq_health.current.saturating_sub(enemy_damage);
         }

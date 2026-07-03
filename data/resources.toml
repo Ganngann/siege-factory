@@ -1,14 +1,57 @@
 [resources.ore]
 name = "Ore"
 max_stack = 999
+color = "#B35F33"
 icon = "textures/ui/icons/icon_ore.png"
 
 [resources.ammo]
 name = "Ammo"
 max_stack = 999
+color = "#CC3333"
 icon = "textures/ui/icons/icon_ammo.png"
 
 [resources.energy]
 name = "Energy"
 max_stack = 9999
+color = "#3399DD"
 icon = "textures/ui/icons/icon_energy.png"
+
+[resources.iron_ore]
+name = "Iron Ore"
+max_stack = 999
+color = "#B35F33"
+
+[resources.copper_ore]
+name = "Copper Ore"
+max_stack = 999
+color = "#D68A4C"
+
+[resources.coal]
+name = "Coal"
+max_stack = 999
+color = "#444444"
+
+[resources.iron_plate]
+name = "Iron Plate"
+max_stack = 999
+color = "#999999"
+
+[resources.copper_plate]
+name = "Copper Plate"
+max_stack = 999
+color = "#CC8844"
+
+[resources.steel]
+name = "Steel"
+max_stack = 999
+color = "#666688"
+
+[resources.gear]
+name = "Gear"
+max_stack = 999
+color = "#887766"
+
+[resources.circuit]
+name = "Circuit"
+max_stack = 999
+color = "#44AA44"

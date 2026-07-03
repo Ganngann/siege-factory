@@ -36,7 +36,7 @@ pub fn assembler_tick(
         None => return,
     };
 
-    let belt_map: HashMap<(u32, u32), Entity> =
+    let belt_map: HashMap<(i32, i32), Entity> =
         belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
 
     for (mut assembler, tile_pos) in assembler_query.iter_mut() {
@@ -51,8 +51,8 @@ pub fn assembler_tick(
 
             let mut consumed = false;
             for (dx, dy, expected_dir) in input_dirs {
-                let ax = tile_pos.x.wrapping_add_signed(dx);
-                let ay = tile_pos.y.wrapping_add_signed(dy);
+                let ax = tile_pos.x + dx;
+                let ay = tile_pos.y + dy;
                 if let Some(&belt_entity) = belt_map.get(&(ax, ay)) {
                     if let Ok((_, _, mut bs)) = belt_query.get_mut(belt_entity) {
                         if bs.direction == expected_dir {
