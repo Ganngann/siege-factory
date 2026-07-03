@@ -23,8 +23,7 @@
       "cargo fmt*": "allow",
       "cargo doc*": "allow"
     },
-    "edit": "ask",
-    "write": "ask"
+    "edit": "allow"
   },
   "agent": {
     "build": {
