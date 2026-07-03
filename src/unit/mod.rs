@@ -8,7 +8,7 @@ use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;
 use crate::map::config::MapConfig;
-use crate::rendering::ShapeCache;
+use crate::rendering::{ShapeCache, TextureCache, texture_stem};
 
 
 #[derive(Event)]
@@ -47,43 +47,54 @@ pub enum WorkerState {
 fn spawn_unit_by_id(
     commands: &mut Commands,
     unit_cfg: &UnitConfig,
+    textures: &TextureCache,
     id: &str,
     hq_pos: Vec3,
-    shapes: &ShapeCache,
-    materials: &mut Assets<ColorMaterial>,
 ) -> bool {
     let def = match unit_cfg.get(id) {
         Some(d) => d,
         None => return false,
     };
     let hp = def.hp;
-    let color = def.color;
-    let mesh_name = &def.visual;
-    let mesh_handle = match mesh_name.as_str() {
-        "pentagon" => shapes.pentagon.clone(),
-        "circle" => shapes.circle.clone(),
-        _ => shapes.pentagon.clone(),
-    };
     let offset = if def.kind == "harvester" {
         Vec3::new(-40.0, 0.0, 2.5)
     } else {
         Vec3::new(40.0, 0.0, 2.5)
     };
-    let mesh_mat = MeshMaterial2d(materials.add(color));
+    let stem = texture_stem(id);
+    let img = textures.base(stem);
+    let size = Vec2::new(48.0, 48.0);
+
     if def.kind == "harvester" {
         commands.spawn((
             Worker { state: WorkerState::Idle, mining_timer: 0.0 },
             Unit, Health { current: hp, max: hp },
-            Mesh2d(mesh_handle), mesh_mat,
+            Sprite { image: img, custom_size: Some(size), ..default() },
             Transform::from_translation(hq_pos + offset),
-        ));
+            Visibility::default(),
+        )).with_children(|parent| {
+            if let Some(tex) = textures.owner(stem) {
+                parent.spawn((
+                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() },
+                    Transform::default(),
+                ));
+            }
+        });
     } else {
         commands.spawn((
             Soldier { attack_cooldown: 0.0 },
             Unit, Health { current: hp, max: hp },
-            Mesh2d(mesh_handle), mesh_mat,
+            Sprite { image: img, custom_size: Some(size), ..default() },
             Transform::from_translation(hq_pos + offset),
-        ));
+            Visibility::default(),
+        )).with_children(|parent| {
+            if let Some(tex) = textures.owner(stem) {
+                parent.spawn((
+                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() },
+                    Transform::default(),
+                ));
+            }
+        });
     }
     true
 }
@@ -92,8 +103,7 @@ fn spawn_unit_on_trigger(
     on: On<SpawnUnitEvent>,
     unit_cfg: Res<UnitConfig>,
     mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    textures: Res<TextureCache>,
     mut commands: Commands,
 ) {
     let (hq_transform, mut inv) = match hq_query.single_mut() {
@@ -108,7 +118,7 @@ fn spawn_unit_on_trigger(
             .unwrap_or(0);
         if inv.get(ResourceId::Ore) >= cost_ore {
             inv.remove(ResourceId::Ore, cost_ore);
-            spawn_unit_by_id(&mut commands, &unit_cfg, id, hq_transform.translation, &shapes, &mut materials);
+            spawn_unit_by_id(&mut commands, &unit_cfg, &textures, id, hq_transform.translation);
         }
     }
 }

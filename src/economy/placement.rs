@@ -12,7 +12,7 @@ use crate::core::toast::ToastQueue;
 use crate::events::{BeltDragCompleted, DespawnDeposit};
 use crate::map::components::{HoveredTile, TilePosition};
 use crate::map::config::MapConfig;
-use crate::rendering::{direction_arrow, material_from_color, ShapeCache};
+use crate::rendering::{direction_arrow, ShapeCache, TextureCache, texture_stem};
 
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
@@ -657,8 +657,7 @@ pub fn on_belt_drag_completed(
     mut commands: Commands,
     mut belt_write: Query<(&TilePosition, &mut BeltSlots, &mut Text2d)>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    textures: Res<TextureCache>,
     registry: Res<BuildingRegistry>,
     cfg: Res<MapConfig>,
     mut toast_queue: ResMut<ToastQueue>,
@@ -706,6 +705,12 @@ pub fn on_belt_drag_completed(
         let cy = by as f32 * tile_size;
         let slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
         let slots = vec![None; num_slots as usize];
+        let angle = match dir {
+            Direction::East => 0.0,
+            Direction::North => std::f32::consts::FRAC_PI_2,
+            Direction::West => std::f32::consts::PI,
+            Direction::South => -std::f32::consts::FRAC_PI_2,
+        };
 
         let base_components = (
             Building { kind: def.id.clone(), name: def.name.clone() },
@@ -717,27 +722,34 @@ pub fn on_belt_drag_completed(
             TextFont::from_font_size(24.0),
             TextColor(Color::WHITE),
             TextLayout::justify(Justify::Center),
-            Transform::from_xyz(cx, cy, 2.0),
+            Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle)),
+            Visibility::default(),
         );
 
-        let mesh = shapes.get_visual(&def.visual);
+        let stem = texture_stem(&def.id);
+        let sprite = Sprite {
+            image: textures.base(stem),
+            custom_size: Some(Vec2::splat(tile_size)),
+            ..default()
+        };
 
         if def.id == "splitter" {
             commands.spawn((
                 base_components,
                 Splitter { counter: 0, outputs: 2, input_direction: None },
-                Mesh2d(mesh),
-                MeshMaterial2d(material_from_color(&mut materials, def.color)),
+                sprite,
             ));
         } else if def.id == "sorter" {
             commands.spawn((
                 base_components,
                 Sorter { filter: ResourceId::Ore, inverted: false },
-                Mesh2d(mesh),
-                MeshMaterial2d(material_from_color(&mut materials, def.color)),
+                sprite,
             ));
         } else {
-            commands.spawn(base_components);
+            commands.spawn((
+                base_components,
+                sprite,
+            ));
         }
     }
 }
@@ -749,8 +761,7 @@ pub fn handle_build_click(
     mut commands: Commands,
     build_mode: Res<BuildMode>,
     cfg: Res<MapConfig>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    textures: Res<TextureCache>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     deposits: Query<(Entity, &TilePosition), With<OreDeposit>>,
@@ -806,6 +817,25 @@ pub fn handle_build_click(
 
     let footprint = compute_footprint(tx, ty, tw, th);
 
+    let attach_children = |commands: &mut Commands, entity: Entity, stem: &str, size: Vec2| {
+        if let Some(tex) = textures.owner(stem) {
+            commands.entity(entity).with_children(|parent| {
+                parent.spawn((
+                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() },
+                    Transform::default(),
+                ));
+            });
+        }
+        if let Some(tex) = textures.level(stem) {
+            commands.entity(entity).with_children(|parent| {
+                parent.spawn((
+                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.8, 0.2), ..default() },
+                    Transform::default(),
+                ));
+            });
+        }
+    };
+
     if def.requires_deposit {
         let deposit_entity = deposits.iter().find(|(_, pos)| pos.x == tx && pos.y == ty).map(|(e, _)| e);
         let Some(deposit) = deposit_entity else {
@@ -830,20 +860,22 @@ pub fn handle_build_click(
         deduct_cost(&mut hq_inv, &def.cost);
         commands.trigger(DespawnDeposit(deposit));
 
-        let mesh = shapes.get_visual(&def.visual);
         let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
         let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
-        commands.spawn((
+        let stem = texture_stem(&def.id);
+        let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
+        let entity = commands.spawn((
             Miner { production_timer: 0.0, interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0) },
             Building { kind: def.id.clone(), name: def.name.clone() },
             Inventory::new(),
             OccupiedTiles(footprint),
-            Mesh2d(mesh),
-            MeshMaterial2d(material_from_color(&mut materials, def.color)),
+            Sprite { image: textures.base(stem), custom_size: Some(size), ..default() },
             Transform::from_xyz(cx, cy, 2.0),
+            Visibility::default(),
             TilePosition { x: tx, y: ty },
             Produces { resource: def.production.as_ref().map(|p| p.resource).unwrap_or(ResourceId::Ore), interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0), timer: 0.0 },
-        ));
+        )).id();
+        attach_children(&mut commands, entity, stem, size);
         return;
     }
 
@@ -866,12 +898,16 @@ pub fn handle_build_click(
 
     let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
     let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
+    let stem = texture_stem(&def.id);
+    let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
 
     let base = (
         Building { kind: def.id.clone(), name: def.name.clone() },
         OccupiedTiles(footprint),
         TilePosition { x: tx, y: ty },
         Transform::from_xyz(cx, cy, 2.0),
+        Visibility::default(),
+        Sprite { image: textures.base(stem), custom_size: Some(size), ..default() },
     );
 
     let inv = if def.inventory_capacity > 0 {
@@ -881,18 +917,15 @@ pub fn handle_build_click(
     };
 
     if def.id == "assembler" {
-        let mesh = shapes.get_visual(&def.visual);
-        commands.spawn((
+        let entity = commands.spawn((
             base,
             Assembler { production_timer: 0.0, interval: 2.0 },
             inv,
-            Mesh2d(mesh),
-            MeshMaterial2d(material_from_color(&mut materials, def.color)),
-        ));
+        )).id();
+        attach_children(&mut commands, entity, stem, size);
     } else if def.id == "turret" {
-        let mesh = shapes.get_visual(&def.visual);
         let stats = def.combat.as_ref().expect("turret def missing combat");
-        commands.spawn((
+        let entity = commands.spawn((
             base,
             inv,
             TurretCombat {
@@ -901,25 +934,20 @@ pub fn handle_build_click(
                 fire_interval: stats.fire_rate_sec,
                 timer: 0.0,
             },
-            Mesh2d(mesh),
-            MeshMaterial2d(material_from_color(&mut materials, def.color)),
-        ));
+        )).id();
+        attach_children(&mut commands, entity, stem, size);
     } else if def.id == "storage" {
-        let mesh = shapes.get_visual(&def.visual);
-        commands.spawn((
+        let entity = commands.spawn((
             base,
             inv,
             Storage,
-            Mesh2d(mesh),
-            MeshMaterial2d(material_from_color(&mut materials, def.color)),
-        ));
+        )).id();
+        attach_children(&mut commands, entity, stem, size);
     } else {
-        let mesh = shapes.get_visual(&def.visual);
-        commands.spawn((
+        let entity = commands.spawn((
             base,
             inv,
-            Mesh2d(mesh),
-            MeshMaterial2d(material_from_color(&mut materials, def.color)),
-        ));
+        )).id();
+        attach_children(&mut commands, entity, stem, size);
     }
 }

@@ -1,8 +1,11 @@
+use std::collections::HashMap;
 use bevy::prelude::*;
 use crate::economy::components::{BuildMode, Direction, HpBarChild, HasHpBar};
 use crate::enemy::components::Health;
 use crate::map::components::HoveredTile;
 use crate::map::config::MapConfig;
+
+// ── Shape cache (Mesh2d fallback for ghosts, projectiles, etc.) ──
 
 #[derive(Resource)]
 pub struct ShapeCache {
@@ -50,11 +53,107 @@ impl ShapeCache {
     }
 }
 
+// ── Texture cache (Sprite-based rendering for buildings/units) ──
+
+#[derive(Resource, Default)]
+pub struct TextureCache {
+    pub base: HashMap<String, Handle<Image>>,
+    pub owner: HashMap<String, Option<Handle<Image>>>,
+    pub level: HashMap<String, Option<Handle<Image>>>,
+}
+
+impl TextureCache {
+    pub fn base(&self, stem: &str) -> Handle<Image> {
+        self.base.get(stem).cloned().unwrap_or_default()
+    }
+    pub fn owner(&self, stem: &str) -> Option<Handle<Image>> {
+        self.owner.get(stem).and_then(|h| h.clone())
+    }
+    pub fn level(&self, stem: &str) -> Option<Handle<Image>> {
+        self.level.get(stem).and_then(|h| h.clone())
+    }
+}
+
+fn setup_texture_cache(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+) {
+    let stems = all_texture_stems();
+    let mut base = HashMap::with_capacity(stems.len());
+    let mut owner = HashMap::with_capacity(stems.len());
+    let mut level = HashMap::with_capacity(stems.len());
+
+    for stem in &stems {
+        let s = stem.as_str();
+        base.insert(stem.clone(), load_png(&mut images, s, "base").unwrap_or_default());
+        owner.insert(stem.clone(), load_png(&mut images, s, "owner"));
+        level.insert(stem.clone(), load_png(&mut images, s, "level"));
+    }
+
+    commands.insert_resource(TextureCache { base, owner, level });
+}
+
+fn load_png(
+    images: &mut Assets<Image>,
+    stem: &str,
+    layer: &str,
+) -> Option<Handle<Image>> {
+    let path = format!("assets/textures/{}_{}.png", stem, layer);
+    let data = std::fs::read(&path).ok()?;
+    match Image::from_buffer(
+        &data,
+        bevy::image::ImageType::Format(bevy::image::ImageFormat::Png),
+        bevy::image::CompressedImageFormats::NONE,
+        true,
+        bevy::image::ImageSampler::Default,
+        bevy::asset::RenderAssetUsages::MAIN_WORLD
+            | bevy::asset::RenderAssetUsages::RENDER_WORLD,
+    ) {
+        Ok(img) => Some(images.add(img)),
+        Err(e) => {
+            bevy::log::error!("Failed to decode {}: {}", path, e);
+            None
+        }
+    }
+}
+
+pub fn all_texture_stems() -> Vec<String> {
+    vec![
+        "belt_east", "belt_north", "belt_turn_en",
+        "miner_east", "miner_east_tall", "miner_east_2x2", "miner_east_3x2", "miner_east_3x3",
+        "assembler_east", "turret_east", "storage",
+        "splitter_east", "sorter_east",
+        "wall_h", "wall_v", "hq_east",
+        "soldier", "worker",
+    ].into_iter().map(String::from).collect()
+}
+
+/// Map a BuildingDef id to its texture stem.
+pub fn texture_stem(id: &str) -> &str {
+    match id {
+        "storage" => "storage",
+        "belt" => "belt_east",
+        "splitter" => "splitter_east",
+        "sorter" => "sorter_east",
+        "miner" => "miner_east",
+        "assembler" => "assembler_east",
+        "turret" => "turret_east",
+        "wall" => "wall_h",
+        "hq" => "hq_east",
+        "soldier" => "soldier",
+        "worker" => "worker",
+        _ => id,
+    }
+}
+
+// ── RenderPlugin ──
+
 pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ShapeCache>();
+        app.add_systems(Startup, setup_texture_cache);
         app.add_systems(Update, (
             tile_highlight,
             ensure_hp_bars,

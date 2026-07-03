@@ -5,15 +5,14 @@ use crate::economy::components::{HQ, OreDeposit, Building, OccupiedTiles};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
-use crate::rendering::ShapeCache;
+use crate::rendering::{ShapeCache, TextureCache, texture_stem};
 
 pub fn setup_hq(
     mut commands: Commands,
     hq_query: Query<Entity, With<HQ>>,
     cfg: Res<MapConfig>,
     registry: Res<BuildingRegistry>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    textures: Res<TextureCache>,
 ) {
     if !hq_query.is_empty() {
         return;
@@ -35,20 +34,47 @@ pub fn setup_hq(
 
     let mut inv = Inventory::new();
     inv.add(ResourceId::Ore, cfg.hq_start_ore);
-    let mesh = meshes.add(Rectangle::new(
-        cfg.tile_size * tw as f32 - 4.0,
-        cfg.tile_size * th as f32 - 4.0,
-    ));
+
+    let stem = texture_stem("hq");
+    let size = Vec2::new(cfg.tile_size * tw as f32, cfg.tile_size * th as f32);
+
     commands.spawn((
         HQ,
         Building { kind: "hq".to_string(), name: "HQ".to_string() },
         inv,
         OccupiedTiles(occupied),
-        Mesh2d(mesh),
-        MeshMaterial2d(materials.add(Color::srgb(0.2, 0.5, 0.8))),
+        Sprite {
+            image: textures.base(stem),
+            custom_size: Some(size),
+            ..default()
+        },
         Transform::from_xyz(cx, cy, 1.0),
+        Visibility::default(),
         TilePosition { x: bx, y: by },
-    ));
+    )).with_children(|parent| {
+        if let Some(tex) = textures.owner(stem) {
+            parent.spawn((
+                Sprite {
+                    image: tex,
+                    custom_size: Some(size),
+                    color: Color::srgb(0.2, 0.4, 0.8),
+                    ..default()
+                },
+                Transform::default(),
+            ));
+        }
+        if let Some(tex) = textures.level(stem) {
+            parent.spawn((
+                Sprite {
+                    image: tex,
+                    custom_size: Some(size),
+                    color: Color::srgb(0.2, 0.8, 0.2),
+                    ..default()
+                },
+                Transform::default(),
+            ));
+        }
+    });
 }
 
 pub fn place_ore_deposits(
