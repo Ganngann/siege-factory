@@ -2,54 +2,61 @@
 
 ## Stack
 
-Bevy 0.14, Rust 1.96+, ECS (Entity Component System)
+Bevy 0.19, Rust 1.96, ECS (Entity Component System)
 
-## Commandes
+## Commands
 
-- `cargo run` — lancer le jeu
-- `cargo test` — tests unitaires + intégration
+- `cargo run` — run the game
+- `cargo test` — unit + integration tests
 - `cargo clippy` — lint
-- `cargo build --target wasm32-unknown-unknown` — build web (WASM)
-- `.\build_wasm.ps1` — build web + wasm-bindgen + copie index.html dans web/
+- `cargo build --target wasm32-unknown-unknown` — WASM build
+- `.\build_wasm.ps1` — WASM build + wasm-bindgen + copy index.html to web/
+
+## Vision (destination)
+
+Factorio-like: infinite map, multiplayer, deep tech tree, branching recipes, N resources.
+Current tower-defense mode is a **scaffold** to build the tech base incrementally.
 
 ## Architecture
 
-Modules: `core` (GameState/UI), `map` (grille/tuiles), `economy` (ressources/bâtiments), `enemy` (vagues/ennemis/combat), `unit` (Soldier/Worker).
-Règle : 1 système = 1 responsabilité.
+Modules: `core` (GameState/UI), `map` (grid/tiles), `economy` (resources/buildings), `enemy` (waves/pathfinding), `unit` (Soldier/Worker), `combat` (projectiles/damage), `rendering` (shapes/HP bars).
+Rule: 1 system = 1 responsibility.
 
 ## Data-driven
 
-Définitions dans `data/*.toml`, chargées via registres.
-Voir `docs/3_DATA_DESIGN.md`.
+Definitions in `data/*.toml`, loaded via registries.
+See `docs/3_DATA_DESIGN.md`.
 
 ## Conventions
 
-- Events pour actions importantes (BuildOrderEvent, SpawnWaveEvent)
-- Fonctions pures `compute_*` extraites et testées
-- Pas de logique dans le rendu
-- Components sérialisables pour save/load
-- Voir `docs/6_CODING_CONVENTIONS.md`
+- Events for important actions (BuildOrderEvent, SpawnUnitEvent, SpawnWaveEvent)
+- Pure functions `compute_*` extracted and tested
+- No logic in rendering
+- Components prepared for save/load (future)
+- See `docs/6_CODING_CONVENTIONS.md`
 
 ## Multi
 
-Simulation déterministe, seed commune, NetworkId.
-Voir `docs/4_MULTIPLAYER.md` — ne pas implémenter maintenant.
+Simulation deterministic, common seed, NetworkId.
+See `docs/4_MULTIPLAYER.md` — planned, not before solo base stable.
 
 ## Tests
 
-- `cargo test` pour le CI (22 tests — 21 unit + 1 integration)
-- `proptest` pour les invariants
-- Tests headless (App sans rendu)
-- Voir `docs/12_TESTING_STRATEGY.md`
+- `cargo test` for CI
+- `proptest` for invariants
+- Headless tests (App without rendering)
+- See `docs/12_TESTING_STRATEGY.md`
 
-## Économie
+## Economy
 
-Ne jamais lancer `cargo test`, `cargo clippy`, ou toute commande de build/test lourde sauf demande explicite de l'utilisateur.
+Never run `cargo test`, `cargo clippy`, or any heavy build/test command unless explicitly requested by the user.
 
 ## Modules
 
-- `core` — GameState (Loading/Playing/GameOver), transitions, Loading UI, `schedule.rs` tests
-- `map` — TileGrid 20×15, Tile/TileType/TilePosition, rendu checkerboard
-- `economy` — ResourceId/Inventory, BuildingDef/Registry, HQ/OreDeposit/Miner/Assembler/Belt/Wall/Turret, build palette (keys 1-5), production ticks, ore/ammo/energy UI
+- `core` — GameState (Menu/Playing/GameOver), transitions, input, settings, tooltips, main menu
+- `map` — TileGrid 20×15, Tile/TileType/TilePosition, fixed deposits + procedural generation
+- `economy` — ResourceId/Inventory, BuildingDef/Registry, HQ/OreDeposit/Miner/Assembler/Belt/Wall/Turret/Storage/Splitter/Sorter, dynamic menu tree, production ticks, ore/ammo/energy UI
 - `enemy` — Enemy/Health components, WaveState, BFS pathfinding, spawn/move/combat, turret auto-shoot, GameOver screen (waves survived)
-- `unit` — Soldier/Worker components, spawn unit input (key 6/7), soldier auto-attack
+- `unit` — Soldier/Worker components, spawn via menu
+- `combat` — Projectiles, homing, damage systems
+- `rendering` — Mesh2d shapes, HP bars, tile highlight, belt item rendering

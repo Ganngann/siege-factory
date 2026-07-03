@@ -1,18 +1,26 @@
 # Game Design — Siege Factory
 
-## Concept
+## Vision (destination)
 
-Mélange de RTS (top-down 2D), automation (Factorio-like), et tower defense. Le joueur construit une usine de production automatisée tout en repoussant des vagues d'ennemis, avec une évolution vers le PvP.
+Un jeu **Factorio-like** : carte infinie, multijoueur, arbre technologique profond, recettes en arborescence, N ressources.
 
-## Flow joueur
+Tout ce qui est fait aujourd'hui (tower defense, vagues, grille 20×15) est un **scaffold temporaire** pour construire le socle technique en itérant sur un gameplay simple mais complet.
 
-1. **Début de partie** : carte générée avec des gisements de ressources. Le joueur place son quartier général.
-2. **Phase automation** : le joueur place des mines, assembleurs, ceintures pour produire des ressources et munitions.
-3. **Phase défense** : des vagues d'ennemis spawnent et marchent vers la base via pathfinding A*.
+Le mode TD actuel restera comme un mode de jeu (défense de base) une fois la destination atteinte.
+
+---
+
+## Phase actuelle — Scaffold TD
+
+### Flow joueur
+
+1. **Début de partie** : carte 20×15 avec gisements fixes. Le joueur place son quartier général.
+2. **Phase automation** : le joueur place mines, assembleurs, ceintures pour produire ressources et munitions.
+3. **Phase défense** : des vagues d'ennemis spawnent et marchent vers la base via pathfinding BFS.
 4. **Phase RTS** : sélection d'unités, ordres de déplacement, attaque ciblée.
-5. **Win/Loss** : survivre à toutes les vagues, ou base détruite = game over.
+5. **Win/Loss** : survivre à 10 vagues, ou base détruite = game over.
 
-## Ressources
+### Ressources actuelles
 
 Définies dans `data/resources.toml`.
 
@@ -20,110 +28,90 @@ Définies dans `data/resources.toml`.
 |---|---|---|
 | Ore | Mines (automatique) | Construction, ammo |
 | Ammo | Assembleur (Ore → Ammo) | Tourelles |
-| Energy | Réacteurs | Alimentation buildings (plus tard) |
+| Energy | Réacteurs (plus tard) | Alimentation buildings (plus tard) |
 
 Principes :
 - Les ressources sont transportées par ceintures et stockées dans des inventaires.
 - Toute production est automatique une fois les buildings placés.
 
-## Buildings
+### Bâtiments actuels
 
 Définis dans `data/buildings.toml`.
 
-| Building | Rôle | Taille |
-|---|---|---|
-| HQ | Centre, HP de la base, stockage global | 2×2 |
-| Miner | Extrait Ore des gisements | 1×1 |
-| Assembler | Transforme Ore → Ammo | 1×1 |
-| Belt | Transporte les items entre buildings | 1×1 |
-| Turret | Tire automatiquement sur ennemis | 1×1 |
-| Wall | Bloque les ennemis, HP élevé | 1×1 |
+| Building | Rôle |
+|---|---|
+| HQ | Centre, HP de la base, stockage global |
+| Miner | Extrait Ore des gisements |
+| Assembler | Transforme Ore → Ammo |
+| Belt | Transporte les items entre buildings |
+| Wall | Bloque les ennemis, HP élevé |
+| Turret | Tire automatiquement sur ennemis |
+| Storage | Stockage tampon, capacité 64 |
+| Splitter | Route les items sur 2 sorties |
+| Sorter | Filtre les items par type |
 
-Extension (post-MVP) :
-- Reactor : produit Energy
-- Radar : révèle une zone de la carte
-- Repair Tower : répare les buildings proches
-- Shield Generator : bouclier temporaire base
+### Ennemis actuels
 
-## Ennemis
+Définis dans `data/enemies.toml`. Pathfinding : BFS sur grille 20×15.
 
-Définis dans `data/enemies.toml`.
+| Type | Comportement |
+|---|---|
+| Runner | Rapide, faible |
+| Tank | Lent, résistant |
 
-| Type | Comportement | Stats |
-|---|---|---|
-| Runner | Rapide, faible | Vitesse élevée, 1 HP |
-| Tank | Lent, résistant | Vitesse lente, HP haut |
-| Flier | Ignore les murs | Vitesse moyenne, HP bas (plus tard) |
-| Boss | Très résistant, apparaît en fin de vague | HP très haut, dégâts élevés |
+### Win / Loss (phase TD)
 
-Pathfinding : A* sur grille carrée. Les ennemis contournent les buildings et murs.
-
-## Vagues
-
-Définies dans `data/waves.toml`.
-
-- Chaque vague a un nombre et type d'ennemis.
-- Intervalle fixe entre vagues (ex: 60 secondes).
-- Difficulté croissante : plus d'ennemis, plus résistants, mix de types.
-- Boss tous les 5 ou 10 vagues.
-- Mode survival : vagues infinies avec difficulté progressive.
-
-## Win / Loss
-
-- **Win** : survivre à toutes les vagues (mode campagne) ou éliminer tous les ennemis.
+- **Win** : survivre à 10 vagues (WIN_WAVES = 10).
 - **Loss** : HQ détruit (HP = 0).
-- En PvP (plus tard) : détruire le HQ adverse ou accumulateur de ressources X temps.
 
-## Économie (boucle principale)
+---
 
-```
-Miner ──ore──► Belt ──ore──► Assembler ──ammo──► Belt ──ammo──► Turret
-                                                └──ammo──► HQ (stock)
-```
+## Destination — Factorio-like
 
-Chaque building a un inventaire local (entrée/sortie). Les ceintures transferent automatiquement. Le joueur place les buildings et les ceintures, ensuite le flux est automatique.
+### Carte
 
-## Anti-microgestion
+- Infinie / à étendue dynamique (chunks 32×32)
+- Génération procédurale avec seed déterministe
+- Biomes, obstacles naturels, ressources réparties
 
-### Principe
+### Économie & Craft
+
+- N ressources de base
+- Recettes en arborescence (ex: Ore → Plaques → Circuits → Modules → ...)
+- Usine automatisée, transport par ceintures/trains/drones
+
+### Technologie
+
+- Arbre de recherche débloquant bâtiments, recettes, améliorations
+- Niveaux de bâtiments (Miner II, Assembler III, etc.)
+
+### Multijoueur
+
+- Simulation déterministe (même seed, frame number)
+- Mode coop (vagues + dures) et PvP (plusieurs variantes)
+- NetworkId sur entités persistantes
+
+### Anti-microgestion
 
 Tout ce qui est répétitif doit être automatisable. Le joueur design l'usine, ne l'exploite pas manuellement.
 
-### Production
+- Production continue automatique
+- Ceintures auto
+- Tourelles auto avec priorité
+- Ghost placement, blueprints
+- Rally points, patrouilles, auto-squad
 
-- Les buildings tournent en continu tant qu'ils ont des inputs.
-- Les ceintures transportent sans intervention.
-- Les excédents sont stockés automatiquement (HQ / entrepôts).
-- Files de production infinies (pas de "craft 10 fois").
+---
 
-### Défense
+## Principe d'évolution
 
-- Tourelles auto : tir automatique, priorité au plus proche.
-- Auto-repair : un building répare les structures dans son rayon.
-- Alertes seulement : notification "Base attaquée secteur Est".
+Chaque feature implémentée dans le scaffold TD est un **investissement** qui servira dans la destination :
 
-### Construction
-
-- Placement fantôme (ghost) : suit la souris, clic = posé.
-- Blueprint / copie de patterns de buildings.
-- Drag pour murs ou lignes de ceintures.
-
-### Unités
-
-- Rally point : les unités produites marchent automatiquement vers un point.
-- Auto-squad : les unités du même type se regroupent.
-- Ordres persistants : patrouille en boucle jusqu'à nouvel ordre.
-- Smart priority : unités idle attaquent les ennemis à proximité.
-
-### Interface
-
-- Queue d'ordres : Shift+clic pour enchaîner des actions.
-- Sélection box : drag-select pour ordres groupés.
-- Vue d'ensemble : statut des usines (production, stock, arrêt) en un écran.
-
-## Difficulté progressive
-
-- Vagues 1-5 : Runners uniquement
-- Vagues 6-10 : Runners + Tanks
-- Vagues 11-15 : Mix + premier Boss
-- Vagues 16+ : Tous types, nombre croissant
+| Scaffold TD | Sert la destination |
+|---|---|
+| ECS + Events | Scale multi, determinism |
+| Data-driven TOML | N ressources, modding |
+| Menu arborescent | Tech tree, recettes |
+| BFS pathfinding | Sera remplacé par pathfinding hiérarchique (chunk A* + BFS local) |
+| Inventory component | Reste inchangé |
+| Ceintures + items | Core du transport, reste inchangé |

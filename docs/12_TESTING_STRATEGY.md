@@ -13,100 +13,17 @@
 
 Testent les fonctions isolées, sans ECS.
 
-```rust
-#[test]
-fn compute_recipe_output_empty_input() {
-    let inventory = Inventory::new();
-    let recipe = Recipe { input: vec![(Ore, 5)], output: vec![(Ammo, 1)], time_sec: 2.0 };
-    assert_eq!(compute_recipe_output(&inventory, &recipe), None);
-}
-
-#[test]
-fn compute_recipe_output_sufficient() {
-    let mut inventory = Inventory::new();
-    inventory.add(Ore, 5);
-    let recipe = Recipe { input: vec![(Ore, 5)], output: vec![(Ammo, 1)], time_sec: 2.0 };
-    let result = compute_recipe_output(&inventory, &recipe).unwrap();
-    assert_eq!(result.get(Ammo), 1);
-    assert_eq!(result.get(Ore), 0); // Consumed
-}
-```
-
-### Intégration ECS (cargo test — ECS headless)
+### Intégration ECS (cargo test — headless)
 
 Testent les systèmes avec `App::new()` sans rendu.
 
-```rust
-#[test]
-fn production_system_ticks() {
-    let mut app = App::new();
-    app.add_plugins(MinimalPlugins);
-    app.add_plugins(StatesPlugin);
-    app.add_plugins(EconomyPlugin);
-
-    app.world_mut().resource_mut::<NextState<GameState>>().set(GameState::Playing);
-    app.update();
-
-    // Arrange : ajouter un miner sur un gisement
-    let miner = app.world_mut().spawn((
-        Building { kind: BuildingKind::Miner },
-        Inventory::new(),
-        TilePosition { x: 5, y: 5 },
-    )).id();
-    app.world_mut().entity_mut(miner).insert(OnDeposit(true));
-
-    // Act : run production tick
-    app.update();
-
-    // Assert : miner a produit de l'ore
-    let inv = app.world().get::<Inventory>(miner).unwrap();
-    assert!(inv.get(ResourceId::Ore) > 0);
-}
-```
-
 ### Propriétés (proptest)
 
-Testent des invariants sur des entrées générées aléatoirement.
-
-```rust
-proptest! {
-    #[test]
-    fn inventory_never_negative(
-        resource in prop::sample::any::<ResourceId>(),
-        amount in 0..1000u32,
-        add_amount in 0..1000u32,
-        remove_amount in 0..1000u32,
-    ) {
-        let mut inv = Inventory::new();
-        inv.add(resource, amount);
-        inv.remove(resource, add_amount.min(amount)); // ne peut pas retirer plus que ce qu'on a
-        prop_assert!(inv.get(resource) >= 0); // toujours >= 0 (surflow protégé)
-    }
-}
-```
+Testent des invariants sur des entrées générées aléatoirement (pas de overflow, pas de ressources négatives).
 
 ### Intégration complète
 
 Simulation d'une partie complète avec des données mockées.
-
-```rust
-#[test]
-fn game_end_to_end() {
-    let mut app = App::new();
-    app.add_plugins((CorePlugin, MapPlugin, EconomyPlugin, EnemyPlugin, CombatPlugin));
-    app.init_state::<GameState>();
-    app.world_mut().resource_mut::<NextState<GameState>>().set(GameState::Playing);
-    app.update();
-
-    // Simuler 100 ticks
-    for _ in 0..100 {
-        app.update();
-    }
-
-    // Vérifier que le jeu tourne sans erreur
-    // L'état n'a pas crashé, les ressources ne sont pas négatives, etc.
-}
-```
 
 ## Couverture visée
 

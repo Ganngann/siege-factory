@@ -1,76 +1,27 @@
 # Save & Load — Siege Factory
 
-## Format
+## Statut
+
+Pas encore implémenté. Le save/load est prévu après la stabilisation du socle solo.
+
+## Format (planifié)
 
 Sérialisation binaire via `bincode` ou `postcard`. L'état complet du monde ECS est sérialisé :
 
-- Resources : `GameState`, `FrameNumber`, `GameSeed`
+- Resources : `GameState`, `GameSeed`
 - Ressources économiques : `Inventory` de chaque entité
 - Buildings : position, type, HP, inventaire interne
 - Ennemis : type, position, HP, path actuel
-- Vagues : état actuel, timer, prochaine vague
+- Vagues : état actuel, timer
 
 Pas de sérialisation des entités éphémères (projectiles, particules).
 
-## Structure
-
-```rust
-#[derive(Serialize, Deserialize)]
-struct SaveData {
-    version: u32,                          // Format version
-    timestamp: u64,                        // Save date
-    seed: u64,                             // Game seed
-    frame: u64,                            // Logical frame
-    state: GameState,                      // Current game state
-    entities: Vec<SerializedEntity>,       // All persistent entities
-    next_wave_index: usize,
-    wave_timer: f32,
-}
-```
-
-## Emplacement
+## Emplacement (planifié)
 
 - Windows : `%APPDATA%/siege-factory/saves/`
-- Linux : `~/.local/share/siege-factory/saves/`
-- macOS : `~/Library/Application Support/siege-factory/saves/`
+- Portable via `dirs::data_dir()`
 
-Utiliser `dirs::data_dir()` pour le chemin portable.
+## Évolution
 
-## Noms de saves
-
-- Auto-save : `autosave.{timestamp}.sav`
-- Save manuelle : `save_{index}.sav`
-- Quick save : `quicksave.sav`
-
-## Fréquence auto-save
-
-- Toutes les 60 secondes
-- Au début de chaque nouvelle vague
-- Avant une action critique (début combat de boss)
-
-## Load
-
-- Au démarrage, bouton "Continuer" si un save existe
-- Écran de sélection de save
-- Le load restore tout l'état ECS et continue la simulation
-
-## Sérialisation ECS
-
-Bevy n'a pas de sérialisation ECS intégrée. On utilise `bevy-serialize` ou une approche manuelle :
-
-```rust
-// Parcourir les Query et collecter les composants à sauvegarder
-// Les entités non-persistantes (projectiles) sont ignorées
-fn collect_save_data(
-    buildings: Query<(Entity, &Building, &TilePosition, &HP, &Inventory)>,
-    enemies: Query<(Entity, &Enemy, &Transform, &HP)>,
-) -> Vec<SerializedEntity> {
-    // ...
-}
-```
-
-## Compatibilité
-
-- `version` dans le header permet la migration si le format change.
-- Version majeure : format break, pas de compatibilité ascendante.
-- Version mineure : champs optionnels ajoutés, load possible.
+- **Phase 1** (scaffold TD) : pas de save/load nécessaire (replay rapide)
+- **Phase 2** (Factorio) : save incrémental par chunk pour carte infinie

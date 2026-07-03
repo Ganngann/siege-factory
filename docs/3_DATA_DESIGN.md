@@ -2,7 +2,7 @@
 
 ## Principe
 
-Toutes les définitions de données du jeu (ressources, buildings, ennemis, recettes, vagues) sont dans des fichiers `data/*.toml` chargés au démarrage. Le code ne contient **aucune valeur en dur** — uniquement les traits et registres qui les manipulent.
+Toutes les définitions de données du jeu (ressources, buildings, ennemis, recettes, vagues, menu, unités) sont dans des fichiers `data/*.toml` chargés au démarrage. Le code ne contient **aucune valeur en dur** — uniquement les traits et registres qui les manipulent.
 
 ## Architecture
 
@@ -10,101 +10,58 @@ Toutes les définitions de données du jeu (ressources, buildings, ennemis, rece
 data/*.toml
     │
     ▼
-AssetLoader (système startup)
+Startup systems (lecture include_str! + parsing)
     │
     ▼
 Registries (Resources ECS)
     │
-    ├── ResourceRegistry   → HashMap<ResourceId, ResourceDef>
-    ├── BuildingRegistry   → HashMap<BuildingKind, BuildingDef>
+    ├── ResourceRegistry   → ResourceId + ResourceDef
+    ├── BuildingRegistry   → Vec<BuildingDef> (String IDs)
     ├── RecipeBank         → Vec<Recipe>
-    ├── EnemyRegistry      → HashMap<EnemyKind, EnemyDef>
-    └── WaveRegistry       → Vec<WaveDefinition>
+    ├── EnemyRegistry      → Vec<EnemyDef>
+    ├── WaveConfig         → WaveDefinition
+    ├── MapConfig          → Taille grille, dépôts, HQ
+    ├── UnitConfig         → HashMap<String, UnitDef>
+    ├── MenuDef            → Arbre de menu (récursif)
+    └── KeyBindings        → HashMap<InputBinding, KeyCode>
     │
     ▼
 Systèmes de jeu (lisent les registres, ne contiennent pas de data)
 ```
 
-## Trait ResourceType
+## Identifiants
 
-```rust
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum ResourceId {
-    Ore,
-    Ammo,
-    Energy,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct ResourceDef {
-    id: ResourceId,
-    name: String,
-    max_stack: u32,
-    icon: String, // chemin sprite
-}
-
-#[derive(Resource)]
-struct ResourceRegistry {
-    resources: HashMap<ResourceId, ResourceDef>,
-}
-```
-
-## Trait BuildingKind
-
-```rust
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum BuildingKind {
-    HQ,
-    Miner,
-    Assembler,
-    Belt,
-    Turret,
-    Wall,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct BuildingDef {
-    kind: BuildingKind,
-    name: String,
-    cost: HashMap<ResourceId, u32>,
-    hp: u32,
-    tile_size: (u32, u32),
-    production: Option<ProductionDef>,
-}
-
-#[derive(Resource)]
-struct BuildingRegistry {
-    buildings: HashMap<BuildingKind, BuildingDef>,
-}
-```
-
-## Recettes
-
-Définies dans `data/recipes.toml`. Une recette transforme des inputs en outputs avec un temps donné.
-
-```toml
-[recipes.ammo]
-input = { ore = 3 }
-output = { ammo = 1 }
-time_sec = 2.0
-```
+- **ResourceId** : enum Rust (Ore, Ammo, Energy) — sera migré vers des ID dynamiques (String) plus tard
+- **Building kind** : `String` (ex: `"miner"`, `"assembler"`) — lookup par ID dans `BuildingRegistry::get(id)`
+- **Enemy kind** : `String`
+- **Unit kind** : `String`
 
 ## Structure des fichiers data/
 
 ```
 data/
-├── resources.toml      # Définitions des ressources
-├── buildings.toml      # Définitions des buildings (coûts, HP, stats)
-├── recipes.toml        # Recettes de craft
+├── resources.toml      # Définitions des ressources (nom, icône)
+├── buildings.toml      # Définitions des bâtiments (coûts, HP, stats, couleur, icône)
+├── recipes.toml        # Recettes de craft (input → output)
 ├── enemies.toml        # Types d'ennemis (HP, vitesse, dégâts)
-├── waves.toml          # Définitions des vagues
-└── upgrades.toml       # Arbre de technologies (plus tard)
+├── waves.toml          # Définitions des vagues (composition, timing)
+├── units.toml          # Unités joueur (soldier, worker)
+├── menu.toml           # Arbre du menu de construction (catégories, sous-menus)
+├── map_config.toml     # Configuration de la carte (taille, dépôts, HQ, spawners)
+├── keybindings.toml    # Touches par défaut
+└── main_menu.toml      # Configuration du menu principal (boutons, thème)
 ```
+
+## Types évolutifs
+
+Aujourd'hui les IDs de ressources sont une enum Rust à 3 variants (`ResourceId::Ore | Ammo | Energy`).
+Quand le jeu aura besoin de N ressources dynamiques, cette enum sera remplacée par un système d'IDs en String chargées depuis TOML.
+
+C'est le seul endroit où le code n'est pas encore totalement data-driven.
 
 ## Avantages
 
-1. **Ajouter une ressource** = ajouter une ligne dans `resources.toml` + un variant dans `ResourceId`
-2. **Ajouter un building** = ajouter une section dans `buildings.toml` + un plugin de 50 lignes max
-3. **Équilibrer le jeu** = modifier un fichier TOML, pas le code
-4. **Modding futur** = les moddeurs peuvent ajouter leurs propres fichiers TOML
-5. **Tests** = injecter des registres mockés sans fichiers réels
+1. **Ajouter un building** = ajouter une section dans `buildings.toml` + éventuellement l'ajouter dans `menu.toml`
+2. **Équilibrer le jeu** = modifier un fichier TOML, pas le code
+3. **Modding futur** = les moddeurs peuvent ajouter leurs propres fichiers TOML
+4. **Tests** = injecter des registres mockés sans fichiers réels

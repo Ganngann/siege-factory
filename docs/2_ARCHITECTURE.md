@@ -2,123 +2,110 @@
 
 ## Principe
 
-ECS (Entity Component System) via Bevy 0.14. Tout le jeu est construit en plugins indépendants, systèmes atomiques, communication par Events.
+ECS (Entity Component System) via Bevy 0.19. Tout le jeu est construit en plugins indépendants, systèmes atomiques, communication par Events.
 
-## Structure des modules
+## Structure des modules (actuelle)
 
 ```
 src/
 ├── main.rs                       # Entry point, appelle lib::run()
 ├── lib.rs                        # App builder, ordre des plugins
+├── events.rs                     # Nettoyage entre parties (CleanupPlugin)
 │
 ├── core/                         # Infrastructure base
 │   ├── mod.rs
-│   ├── game_state.rs             # GameState enum (Loading, Playing, GameOver)
-│   ├── schedule.rs               # SystemSets, ordre d'exécution
-│   ├── config.rs                 # Settings, constants chargées
-│   ├── asset_loader.rs           # Charge data/*.toml en registres
-│   └── debug.rs                  # Overlay FPS, inspecteur (dev)
+│   ├── game_state.rs             # GameState enum (Menu, Playing, GameOver)
+│   ├── schedule.rs               # Tests de cycle de vie
+│   ├── input.rs                  # KeyBindings, InputBinding, rebinding
+│   ├── main_menu.rs              # Écran titre (Play/Options)
+│   ├── settings.rs               # Config graphique/audio/gameplay
+│   ├── toast.rs                  # Notifications temporaires
+│   └── tooltip.rs                # Infobulles hover
 │
 ├── map/                          # Carte et tuiles
 │   ├── mod.rs
-│   ├── tile_grid.rs              # Grille de tuiles
-│   ├── components.rs             # TilePosition, TileType
+│   ├── tile_grid.rs              # Grille 20×15, Tile/TileType/TilePosition
+│   ├── components.rs             # Components de rendu map
 │   ├── generation.rs             # Génération terrain + ressources
-│   └── systems.rs                # Setup carte, rendu
+│   └── systems.rs                # Setup carte, rendu, cleanup
 │
-├── economy/                      # Ressources, inventaires, recettes
+├── economy/                      # Ressources, bâtiments, menu, placement
 │   ├── mod.rs
-│   ├── registry.rs               # ResourceRegistry, ResourceType trait
-│   ├── inventory.rs              # Inventory component
+│   ├── resource.rs               # ResourceId, Inventory, ResourceRegistry
+│   ├── building.rs               # BuildingDef, BuildingRegistry, charges données
+│   ├── menu.rs                   # MenuDef, MenuState, MenuItems, flat_items_at()
+│   ├── build_bar.rs              # UI barre de construction (affichage + interaction)
+│   ├── placement.rs              # Placement système (clic → build, ghost, rotation)
+│   ├── components.rs             # Components économie (Building, Produces, Belt, etc.)
 │   ├── recipe.rs                 # RecipeBank, craft system
-│   └── systems.rs                # Production, transport
+│   └── unit_config.rs            # UnitDef, UnitConfig (chargé depuis units.toml)
 │
-├── buildings/                    # Construction et gestion
+├── enemy/                        # Ennemis et vagues
 │   ├── mod.rs
-│   ├── registry.rs               # BuildingRegistry, BuildingDef
-│   ├── placement.rs              # Placement système (clic → build)
-│   ├── miner.rs                  # Plugin mine
-│   ├── assembler.rs              # Plugin assembleur
-│   ├── belt.rs                   # Plugin ceinture
-│   ├── turret.rs                 # Plugin tourelle
-│   ├── wall.rs                   # Plugin mur
-│   └── hq.rs                     # Quartier général
+│   ├── wave_state.rs             # Wave definitions, spawn timer, WIN_WAVES
+│   ├── ai.rs                     # BFS pathfinding sur grille
+│   ├── components.rs             # Enemy, Health, EnemyBundle
+│   ├── systems.rs                # Spawn, move, combat, game over UI
+│   └── combat.rs                 # Tir automatique des tourelles
 │
-├── enemies/                      # Ennemis et vagues
+├── unit/                         # Unités joueur
+│   ├── mod.rs                    # Systems spawn/input (menu → SpawnUnitEvent)
+│   ├── components.rs             # Soldier, Worker components
+│   └── data.rs                   # UnitConfig, stats
+│
+├── combat/                       # Projectiles et dégâts
 │   ├── mod.rs
-│   ├── registry.rs               # EnemyRegistry
-│   ├── wave_spawner.rs           # Wave definitions, spawn timer
-│   ├── ai.rs                     # Pathfinding A*
-│   └── components.rs             # EnemyBundle
+│   └── projectiles.rs            # Homing projectiles, damage system
 │
-├── combat/                       # Combat et dégâts
-│   ├── mod.rs
-│   ├── damage.rs                 # Damage system, HP
-│   ├── projectiles.rs            # Tirs, collisions
-│   └── systems.rs
-│
-├── player/                       # Contrôle joueur
-│   ├── mod.rs
-│   ├── input.rs                  # Clic, sélection, ordres
-│   ├── camera.rs                 # Scroll, zoom
-│   └── selection.rs              # Selection box, unités sélectionnées
-│
-├── ui/                           # Interface utilisateur
-│   ├── mod.rs
-│   ├── hud.rs                    # Barre ressources, infos building
-│   ├── build_menu.rs             # Palette de construction
-│   ├── tooltip.rs                # Infobulles
-│   └── game_over.rs              # Écran fin de partie
-│
-├── save/                         # Sauvegarde
-│   ├── mod.rs
-│   ├── serializer.rs             # Sérialisation ECS → binary/JSON
-│   └── systems.rs                # Auto-save, load
-│
-└── network/                      # Multi (plus tard)
-    ├── mod.rs
-    ├── p2p.rs                    # Connexion P2P
-    ├── sync.rs                   # Synchronisation d'état
-    └── anti_cheat.rs             # Hash vérification
+└── rendering.rs                  # Formes Mesh2d, HP bars, tile highlight, belt items
 ```
 
-## SystemSets — ordre d'exécution
+### Modules planifiés (destination Factorio)
 
-```rust
-#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
-enum GameStep {
-    PreUpdate,         // Input, camera, sélection
-    Placement,         // Construction placements
-    Production,        // Mines, assembleurs tournent
-    Transport,         // Ceintures bougent les items
-    SpawnEnemies,      // Vagues apparaissent
-    AI,               // Ennemis pathfind
-    Combat,           // Tourelles tirent, dégâts
-    Cleanup,          // Entités mortes supprimées
-    PostUpdate,       // UI, rendu, overlay
-}
-```
+| Module | Rôle | Quand |
+|---|---|---|
+| `save/` | Sauvegarde incrémentale par chunk | Après base solo stable |
+| `network/` | Multi déterministe (lockstep) | Après solo stable |
+| `player/` | Contrôle, sélection, ordres RTS | Progressivement |
+| `ui/` | HUD complet, minimap, infos | Progressivement |
 
 ## Communication
 
-- **Logique ↔ Logique** : Events (ex: `SpawnWaveEvent`, `BuildingPlacedEvent`)
-- **Logique ↔ UI** : Resources (ex: `Resource<SelectedEntity>`, `Resource<HoveredTile>`)
+- **Logique ↔ Logique** : Events (`BuildOrderEvent`, `SpawnUnitEvent`, `SpawnWaveEvent`)
+- **Logique ↔ UI** : Resources (`MenuItems`, `BuildMode`, `DeconstructMode`, `TooltipText`)
 - **Logique ↔ Rendu** : Query ECS (séparation naturelle en Bevy)
 
-## Dépendances entre plugins
+## Dépendances entre plugins (actuelles)
 
 ```
-CorePlugin (toujours en premier)
+DefaultPlugins
+  ├── CorePlugin
   ├── MapPlugin
   ├── EconomyPlugin
-  │     └── BuildingPlugin
-  │           ├── EnemyPlugin
-  │           └── CombatPlugin
-  ├── PlayerPlugin
-  └── UIPlugin (toujours en dernier)
-      └── SavePlugin
-NetworkPlugin (optionnel, activé plus tard)
+  ├── EnemyPlugin
+  ├── UnitPlugin
+  ├── CombatPlugin
+  ├── RenderPlugin
+  └── CleanupPlugin
 ```
+
+## Scalabilité (vers la destination)
+
+### Ce qui scale bien
+
+- **Data-driven** : ajouter un bâtiment/ennemi/recette = juste un TOML, pas de code Rust
+- **Events** : découplage total entre UI et logique, nécessaire pour le multi
+- **ECS** : composition de components, pas d'héritage
+- **String IDs** : pas d'enums Rust figés pour les types de building/ressource (prêt pour N ressources)
+
+### Ce qui changera
+
+| Aujourd'hui | Demain |
+|---|---|
+| Grille 20×15 fixe (`TileGrid::new`) | Chunks 32×32 chargés/déchargés |
+| BFS plein grille | Pathfinding hiérarchique (chunk A* + BFS local) |
+| 3 resources en enum (`ResourceId`) | N ressources via IDs dynamiques (String) |
+| Rendu Mesh2d | Sprites/atlas avec LOD |
 
 ## Règle d'or
 

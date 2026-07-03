@@ -18,7 +18,7 @@
 │                                                   │
 │                                                   │
 ├──────────────────────────────────────────────────┤
-│ [Menu construction]   [Info building]  [Minimap] │ ← Bottom panel
+│ [←1 Retour] ◀ [⛏️Miner] [🏭Assembler] ... ▶      │ ← Bottom bar (menu)
 └──────────────────────────────────────────────────┘
 ```
 
@@ -27,49 +27,48 @@
 ### Top bar (HUD)
 - Ressources courantes (icône + quantité)
 - Vague actuelle / totale
-- Timer avant prochaine vague
 - HP du HQ (barre de vie)
 
 ### Zone de jeu
-- Grille tuilée 2D
-- Buildings, ennemis, unités affichés par dessus
+- Grille tuilée 20×15
+- Buildings, ennemis, unités affichés par dessus (Mesh2d formes)
 - Highlight tuile survolée
-- Selection box (drag)
-- Fog of war (plus tard)
+- Items sur belts (billes colorées)
 
-### Bottom panel
-- **Build menu** : grille d'icônes des buildings disponibles. Coût affiché. Grisé si pas assez de ressources.
-- **Info panel** : quand un building/ennemi est sélectionné, affiche ses stats (HP, production, etc.)
-- **Minimap** : vue réduite de la carte (plus tard)
+### Bottom bar (menu construction)
+- **Barre de construction** : menu arborescent data-driven
+  - Catégories racines affichées comme boutons
+  - Navigation par clic ou touches 2-0
+  - 🔙 Retour (touche 1 ou Backspace)
+  - ◀ ▶ scroll si >9 items
+  - Tooltip au survol avec infos complètes
+- **Breadcrumb** : "Production > Tris"
+- Icônes emoji pour chaque bâtiment/unité/action
+
+### Main menu (écran titre)
+- Boutons Jouer / Options / Quitter
+- Configuré via `data/main_menu.toml`
 
 ## Events UI → Logique
 
 ```rust
-// Émis par l'UI, traités par les systèmes de logique
-BuildOrderEvent { kind: BuildingKind, pos: TilePosition }
-CancelBuildEvent { entity: Entity }
-SelectEntityEvent { entity: Entity }
-DeselectAllEvent
-OpenBuildMenuEvent
-CloseBuildMenuEvent
+BuildOrderEvent { kind: String, pos: TilePosition }
+SpawnUnitEvent { kind: String, pos: TilePosition }
 ```
 
 ## Resources partagées UI/Logique
 
 ```rust
-#[derive(Resource, Default)]
-struct SelectedEntity(Option<Entity>);
-
-#[derive(Resource, Default)]
-struct HoveredTile(Option<TilePosition>);
-
-#[derive(Resource, Default)]
-struct BuildMode(Option<BuildingKind>);
+struct MenuState { stack: Vec<usize>, scroll: usize }
+struct MenuItems { items: Vec<FlatItem>, has_back: bool, ... }
+struct BuildMode(Option<String>);
+struct DeconstructMode(bool);
+struct TooltipText(Option<String>);
 ```
 
 ## Règles
 
-- L'UI ne modifie **jamais** directement un component ECS de jeu (Invertory, HP, etc.)
+- L'UI ne modifie **jamais** directement un component ECS de jeu (Inventory, HP, etc.)
 - L'UI lit des Resources publiques, envoie des Events
 - Les systèmes de logique traitent les Events, mettent à jour les Resources si nécessaire
-- Le rendu des sprites est géré par Bevy (Query standard), pas par l'UI
+- Le rendu des formes est géré par Bevy (Query standard), pas par l'UI

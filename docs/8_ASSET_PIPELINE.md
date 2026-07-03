@@ -1,74 +1,23 @@
 # Asset Pipeline — Siege Factory
 
-## Structure
+## État actuel
 
-```
-assets/
-├── textures/
-│   ├── tiles/
-│   │   ├── ground_light.png
-│   │   ├── ground_dark.png
-│   │   ├── ore_deposit.png
-│   │   └── spawner.png
-│   ├── buildings/
-│   │   ├── hq.png
-│   │   ├── miner.png
-│   │   ├── assembler.png
-│   │   ├── belt.png
-│   │   ├── turret.png
-│   │   └── wall.png
-│   ├── units/
-│   │   ├── runner.png
-│   │   ├── tank.png
-│   │   └── boss.png
-│   ├── items/
-│   │   ├── ore.png
-│   │   └── ammo.png
-│   └── ui/
-│       ├── button_build.png
-│       ├── panel_bg.png
-│       └── icons/
-│           ├── icon_ore.png
-│           └── icon_ammo.png
-├── tilesets/
-│   └── terrain.ron          # Définition tileset (atlas)
-└── fonts/
-    └── monogram.ttf         # Police pixel-art
-```
+Placeholders générés en code (Mesh2d formes géométriques). Aucun fichier PNG/SVG dans `assets/`.
 
-## Conventions
+## Passage aux vrais assets (non décidé)
 
-- Tous les sprites en PNG. Format recommandé : 16×16 ou 32×32 pixels.
-- Les tilesets utilisent le format `.ron` (Rusty Object Notation) pour définir les régions de l'atlas.
-- Les placeholders sont des carrés colorés générés en code (aucun asset requis pour le développement).
-- Les assets sont chargés via `AssetServer` de Bevy.
+Le format n'est pas encore choisi (PNG, SVG, ou autre). Deux options :
 
-## Passage des placeholders aux vrais assets
+1. **PNG** : sprites 16×16 ou 32×32, chargés via `AssetServer`
+2. **SVG** : rendu vectoriel, plus flexible mais dépendance externe
 
-1. Pendant le prototypage : sprites générés en code (`Color::srgb(...)`).
-2. Quand le gameplay est stable : remplacer par des sprites PNG.
-3. Le code ne change pas : la logique de rendu utilise des `Handle<Image>` quel que soit le format.
+## Conventions (quand les assets arriveront)
 
-## Gestion des assets en dev
+- Tous les sprites dans `assets/textures/`
+- Sous-dossiers : `tiles/`, `buildings/`, `units/`, `items/`, `ui/icons/`
+- Police dans `assets/fonts/`
+- Atlas recommandé pour réduire les draw calls
 
-- Ajouter `assets/` au `.gitignore` ? Non. Les assets font partie du projet.
-- Les placeholders en code sont la valeur par défaut. Si un asset n'est pas trouvé, le placeholder s'affiche.
-- Format `.png` uniquement. Pas de formats compressés (WebP, etc.) pour éviter des dépendances inutiles.
+## Placeholders
 
-## Tileset définit ion (futur)
-
-```ron
-TerrainTileset(
-    tile_size: 32,
-    columns: 8,
-    rows: 8,
-    tiles: {
-        "ground_light": (0, 0),
-        "ground_dark": (1, 0),
-        "ore_deposit": (2, 0),
-        "spawner": (3, 0),
-    }
-)
-```
-
-Utilisation d'un atlas réduit le nombre de draw calls (recommandé pour 2D avec Bevy).
+Les formes Mesh2d actuelles (square, diamond, triangle, rectangle, pentagon, circle) restent la valeur par défaut si un asset n'est pas trouvé.
