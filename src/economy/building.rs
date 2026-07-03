@@ -54,6 +54,7 @@ pub struct BuildingDef {
     pub repair_cost_ratio: f32,
     pub inventory_capacity: u32,
     pub hidden: bool,
+    pub drag_placement: bool,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -105,14 +106,20 @@ impl BuildingRegistry {
                 range: c.range * c.range,
                 fire_rate_sec: c.fire_rate_sec,
             });
-            let belt = entry.belt.map(|b| BeltProperties {
-                slots: b.slots,
-                speed: b.speed,
-            });
             let production = entry.production.map(|p| ProductionDef {
                 resource: ResourceId::from_str(&p.resource).unwrap_or(ResourceId::Ore),
                 interval_sec: p.interval_sec,
             });
+
+            let belt = match entry.belt {
+                Some(b) => Some(BeltProperties { slots: b.slots, speed: b.speed }),
+                None => {
+                    let slots = entry.slots.unwrap_or(2);
+                    let speed = entry.speed.unwrap_or(2.0);
+                    (entry.slots.is_some() || entry.speed.is_some()).then_some(BeltProperties { slots, speed })
+                }
+            };
+
             buildings.push(BuildingDef {
                 id: id.clone(),
                 name: entry.name,
@@ -129,8 +136,9 @@ impl BuildingRegistry {
                 refund_ratio: entry.refund_ratio.unwrap_or(defaults.refund_ratio),
                 repair_cost_ratio: entry.repair_cost_ratio.unwrap_or(defaults.repair_cost_ratio),
                 inventory_capacity: entry.inventory_capacity.unwrap_or(defaults.inventory_capacity),
-                hidden: entry.hidden,
-            });
+            hidden: entry.hidden,
+            drag_placement: entry.drag_placement,
+        });
         }
         Self { buildings }
     }
@@ -174,6 +182,10 @@ struct BuildingEntry {
     #[serde(default)]
     belt: Option<BeltEntry>,
     #[serde(default)]
+    slots: Option<u32>,
+    #[serde(default)]
+    speed: Option<f32>,
+    #[serde(default)]
     can_deconstruct: Option<bool>,
     #[serde(default)]
     refund_ratio: Option<f32>,
@@ -183,6 +195,8 @@ struct BuildingEntry {
     inventory_capacity: Option<u32>,
     #[serde(default)]
     hidden: bool,
+    #[serde(default)]
+    drag_placement: bool,
 }
 
 #[derive(Deserialize)]

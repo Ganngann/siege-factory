@@ -6,7 +6,7 @@ use crate::economy::components::{
 };
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::BuildingRegistry;
-use crate::economy::resource::{ResourceRegistry, Inventory};
+use crate::economy::resource::{ResourceId, ResourceRegistry, Inventory};
 use crate::enemy::components::Health;
 use crate::map::config::MapConfig;
 
@@ -31,8 +31,9 @@ pub fn building_inspect_click(
 ) {
     // Escape → dismiss popup
     if keys.just_pressed(bindings.key("cancel")) {
-        if let Some(entity) = popup.0.take() {
+        if let Some(entity) = popup.popup_entity.take() {
             commands.entity(entity).despawn();
+            popup.inspected_entity = None;
         }
         return;
     }
@@ -41,7 +42,7 @@ pub fn building_inspect_click(
     if !bindings.just_pressed("place", &keys, &buttons) { return; }
 
     // If popup is already open, despawn and re-evaluate
-    if let Some(entity) = popup.0.take() {
+    if let Some(entity) = popup.popup_entity.take() {
         commands.entity(entity).despawn();
     }
 
@@ -130,7 +131,7 @@ pub fn building_inspect_click(
         BuildingPopupMarker,
     )).id();
 
-    commands.spawn((
+    let text_entity = commands.spawn((
         Text::new(text),
         TextFont::from_font_size(14.0),
         TextColor(Color::WHITE),
@@ -139,12 +140,15 @@ pub fn building_inspect_click(
             ..default()
         },
         BuildingPopupMarker,
-    )).set_parent_in_place(root);
+    )).set_parent_in_place(root).id();
 
-    popup.0 = Some(root);
+    popup.popup_entity = Some(root);
+    popup.text_entity = Some(text_entity);
+    popup.inspected_entity = Some(entity);
+    popup.update_timer = 0.0;
 }
 
-/// Click on a sorter (not in build/deconstruct) → toggle invert mode
+/// Click on a sorter (not in build/deconstruct) → cycle filter / toggle invert
 pub fn sorter_toggle_click(
     build_mode: Res<BuildMode>,
     deconstruct: Res<DeconstructMode>,
@@ -158,10 +162,10 @@ pub fn sorter_toggle_click(
     mut sorter_query: Query<&mut Sorter>,
     mut toast_queue: ResMut<ToastQueue>,
     popup: Res<BuildingPopup>,
+    resource_registry: Res<ResourceRegistry>,
 ) {
     if build_mode.0.is_some() || deconstruct.0 { return; }
     if !bindings.just_pressed("place", &keys, &buttons) { return; }
-    if popup.0.is_some() { return; } // Let the popup system handle it
 
     let tile_size = cfg.tile_size;
     let Ok(window) = windows.single() else { return };
@@ -183,13 +187,90 @@ pub fn sorter_toggle_click(
     if building.kind != "sorter" { return; }
 
     if let Ok(mut sorter) = sorter_query.get_mut(entity) {
-        sorter.inverted = !sorter.inverted;
-        let mode = if sorter.inverted {
-            "filtered → straight, others → side"
+        if popup.popup_entity.is_some() && popup.inspected_entity == Some(entity) {
+            // Popup open on this sorter → cycle filter resource
+            let resources: Vec<ResourceId> = resource_registry.resources.keys().copied().collect();
+            let current_idx = resources.iter().position(|r| *r == sorter.filter).unwrap_or(0);
+            let next_idx = (current_idx + 1) % resources.len();
+            sorter.filter = resources[next_idx];
+            toast_queue.0.push(format!("Sorter filter: {}", sorter.filter.display_name()));
         } else {
-            "filtered → side, others → straight"
-        };
-        toast_queue.0.push(format!("Sorter toggled: {}", mode));
+            // No popup → toggle invert mode
+            sorter.inverted = !sorter.inverted;
+            let mode = if sorter.inverted {
+                "filtered → straight, others → side"
+            } else {
+                "filtered → side, others → straight"
+            };
+            toast_queue.0.push(format!("Sorter toggled: {}", mode));
+        }
+    }
+}
+
+/// Refresh the popup text with live data at ~1 Hz
+pub fn update_inspect_popup(
+    time: Res<Time>,
+    mut popup: ResMut<BuildingPopup>,
+    mut text_query: Query<&mut Text>,
+    building_query: Query<&Building>,
+    sorter_query: Query<&Sorter>,
+    health_query: Query<&Health>,
+    inventory_query: Query<&Inventory>,
+    belt_query: Query<&BeltSlots>,
+    registry: Res<BuildingRegistry>,
+    resource_registry: Res<ResourceRegistry>,
+) {
+    let Some(text_entity) = popup.text_entity else { return };
+    let Some(inspected) = popup.inspected_entity else { return };
+
+    popup.update_timer += time.delta_secs();
+    if popup.update_timer < 0.5 { return; }
+    popup.update_timer = 0.0;
+
+    let mut lines = Vec::new();
+
+    if let Ok(building) = building_query.get(inspected) {
+        lines.push(format!("=== {} ===", building.name));
+        if let Some(def) = registry.get(&building.kind) {
+            lines.push(format!("Kind: {}", def.id));
+        }
+    }
+
+    if let Ok(sorter) = sorter_query.get(inspected) {
+        let mode = if sorter.inverted { "inverted" } else { "normal" };
+        lines.push(format!("Filter: {} ({})", sorter.filter.display_name(), mode));
+    }
+
+    if let Ok(health) = health_query.get(inspected) {
+        lines.push(format!("HP: {}/{}", health.current, health.max));
+    }
+
+    if let Ok(inv) = inventory_query.get(inspected) {
+        if inv.total() > 0 {
+            for (res_id, amount) in &inv.resources {
+                let def = resource_registry.get(*res_id);
+                let cap = if inv.capacity > 0 {
+                    format!(" / {}", inv.capacity)
+                } else { String::new() };
+                lines.push(format!("  {}: {}{}", def.name, amount, cap));
+            }
+        }
+        if inv.capacity > 0 {
+            lines.push(format!("Capacity: {}/{}", inv.total(), inv.capacity));
+        }
+    }
+
+    if let Ok(bs) = belt_query.get(inspected) {
+        let occupied_slots = bs.slots.iter().filter(|s| s.is_some()).count();
+        if occupied_slots > 0 {
+            lines.push(format!("Items in transit: {}/{}", occupied_slots, bs.slots.len()));
+        }
+    }
+
+    if lines.is_empty() { return; }
+
+    if let Ok(mut text) = text_query.get_mut(text_entity) {
+        text.0 = lines.join("\n");
     }
 }
 

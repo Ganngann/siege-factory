@@ -4,6 +4,12 @@ use crate::economy::resource::ResourceId;
 use crate::map::components::TilePosition;
 
 #[derive(Event)]
+pub struct DeconstructAreaEvent {
+    pub start: TilePosition,
+    pub end: TilePosition,
+}
+
+#[derive(Event)]
 pub struct DespawnDeposit(pub Entity);
 
 #[derive(Event)]

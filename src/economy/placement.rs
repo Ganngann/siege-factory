@@ -2,14 +2,14 @@ use bevy::prelude::*;
 use crate::economy::belt::{BeltItem, BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
-    Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode,
+    Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode, DeconstructDrag,
     Building, Miner, Assembler, OreDeposit, Ghost, HQ, OccupiedTiles,
     Produces, TurretCombat, Storage, Splitter, Sorter,
 };
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
-use crate::events::{BeltDragCompleted, DespawnDeposit};
+use crate::events::{BeltDragCompleted, DeconstructAreaEvent, DespawnDeposit};
 use crate::map::components::{HoveredTile, TilePosition};
 use crate::map::config::MapConfig;
 use crate::rendering::{direction_arrow, ShapeCache, TextureCache, texture_stem};
@@ -21,21 +21,20 @@ pub fn build_mode_input(
     keys: Res<ButtonInput<KeyCode>>,
     bindings: Res<KeyBindings>,
     cfg: Res<MapConfig>,
-    mut placed_belts: Query<(&mut BeltSlots, &mut Text2d, &TilePosition)>,
+    mut placed_belts: Query<(&mut BeltSlots, &TilePosition)>,
     hovered: Res<HoveredTile>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
     if keys.just_pressed(bindings.key("build_rotate")) && build_mode.0.as_deref() == Some("belt") {
         if let Some(pos) = hovered.0 {
             let mut rotated = false;
-            for (mut belt, mut text, tile_pos) in placed_belts.iter_mut() {
+            for (mut belt, tile_pos) in placed_belts.iter_mut() {
                 if tile_pos.x == pos.x && tile_pos.y == pos.y {
                     belt.direction = belt.direction.next();
                     belt.slot_positions = compute_slot_positions(
                         tile_pos.x, tile_pos.y, belt.direction,
                         belt.slots.len() as u32, cfg.tile_size,
                     );
-                    text.0 = direction_arrow(belt.direction).to_string();
                     rotated = true;
                     break;
                 }
@@ -382,13 +381,11 @@ pub fn update_build_preview(
             } else {
                 Color::srgba(0.8, 0.0, 0.0, 0.15)
             };
-            let cx = tx as f32 * cfg.tile_size;
-            let cy = ty as f32 * cfg.tile_size;
             commands.spawn((
                 Ghost,
                 Mesh2d(shapes.rectangle.clone()),
                 MeshMaterial2d(materials.add(color)),
-                Transform::from_xyz(cx, cy, 1.8),
+                Transform::from_xyz(tx as f32 * cfg.tile_size, ty as f32 * cfg.tile_size, 1.8),
             ));
         }
         return;
@@ -398,19 +395,13 @@ pub fn update_build_preview(
     let Some(def) = registry.get(kind) else { return };
     let Some(TilePosition { x: tx, y: ty }) = hovered.0 else { return };
 
-    // ── Drag line preview (belt only) ──
-    if def.id == "belt" || def.id == "splitter" || def.id == "sorter" {
+    // ── Drag line preview ──
+    if def.belt.is_some() || def.drag_placement {
         if let Some((sx, sy)) = drag.start_coord {
             let line = compute_line((sx, sy), (tx, ty));
             for &(lx, ly, dir) in &line {
                 let has_belt = belts_query.iter().any(|(p, _)| p.x == lx && p.y == ly);
                 let valid = (has_belt || tile_is_free(lx, ly, &occupied)) && lx < cfg.width && ly < cfg.height;
-                let angle = match dir {
-                    Direction::East => 0.0,
-                    Direction::North => std::f32::consts::FRAC_PI_2,
-                    Direction::West => std::f32::consts::PI,
-                    Direction::South => -std::f32::consts::FRAC_PI_2,
-                };
                 let color = if valid {
                     Color::srgba(0.0, 0.8, 0.0, 0.4)
                 } else {
@@ -419,16 +410,31 @@ pub fn update_build_preview(
                 let mat_handle = materials.add(color);
                 let cx = lx as f32 * cfg.tile_size;
                 let cy = ly as f32 * cfg.tile_size;
-                commands.spawn((
-                    Ghost,
-                    Mesh2d(shapes.rectangle.clone()),
-                    MeshMaterial2d(mat_handle),
-                    Transform::from_xyz(cx, cy, 1.8).with_rotation(Quat::from_rotation_z(angle)),
-                    Text2d::new(direction_arrow(dir).to_string()),
-                    TextFont::from_font_size(18.0),
-                    TextColor(if valid { Color::srgba(0.0, 0.8, 0.0, 0.6) } else { Color::srgba(0.8, 0.0, 0.0, 0.5) }),
-                    TextLayout::justify(Justify::Center),
-                ));
+                if def.belt.is_some() {
+                    let angle = match dir {
+                        Direction::East => 0.0,
+                        Direction::North => std::f32::consts::FRAC_PI_2,
+                        Direction::West => std::f32::consts::PI,
+                        Direction::South => -std::f32::consts::FRAC_PI_2,
+                    };
+                    commands.spawn((
+                        Ghost,
+                        Mesh2d(shapes.rectangle.clone()),
+                        MeshMaterial2d(mat_handle),
+                        Transform::from_xyz(cx, cy, 1.8).with_rotation(Quat::from_rotation_z(angle)),
+                        Text2d::new(direction_arrow(dir).to_string()),
+                        TextFont::from_font_size(18.0),
+                        TextColor(if valid { Color::srgba(0.0, 0.8, 0.0, 0.6) } else { Color::srgba(0.8, 0.0, 0.0, 0.5) }),
+                        TextLayout::justify(Justify::Center),
+                    ));
+                } else {
+                    commands.spawn((
+                        Ghost,
+                        Mesh2d(shapes.rectangle.clone()),
+                        MeshMaterial2d(mat_handle),
+                        Transform::from_xyz(cx, cy, 1.8),
+                    ));
+                }
             }
             return;
         }
@@ -470,7 +476,7 @@ pub fn update_build_preview(
     let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * cfg.tile_size;
     let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * cfg.tile_size;
 
-    let entity = if def.id == "belt" || def.id == "splitter" || def.id == "sorter" {
+    let entity = if def.belt.is_some() {
         let dir = auto_detect_direction(tx, ty, &producers, &belts_query, belt_dir.0);
         let angle = match dir {
             Direction::East => 0.0,
@@ -537,6 +543,63 @@ pub fn update_build_preview(
     preview.0 = Some(entity);
 }
 
+/// Preview the deconstruct drag zone as a red ghost overlay of actual buildings
+pub fn deconstruct_drag_preview(
+    mut commands: Commands,
+    deconstruct: Res<DeconstructMode>,
+    deconstruct_drag: Res<DeconstructDrag>,
+    cfg: Res<MapConfig>,
+    shapes: Res<ShapeCache>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    hovered: Res<HoveredTile>,
+    building_query: Query<(&Building, &TilePosition, &OccupiedTiles)>,
+    registry: Res<BuildingRegistry>,
+) {
+    if !deconstruct.0 { return; }
+    let Some((sx, sy)) = deconstruct_drag.start_coord else { return };
+    let Some(TilePosition { x: tx, y: ty }) = hovered.0 else { return };
+
+    let x1 = sx.min(tx);
+    let x2 = sx.max(tx);
+    let y1 = sy.min(ty);
+    let y2 = sy.max(ty);
+
+    for (building, pos, tiles) in building_query.iter() {
+        let in_zone = tiles.0.iter().any(|&(x, y)| x >= x1 && x <= x2 && y >= y1 && y <= y2);
+        if !in_zone { continue; }
+
+        let Some(def) = registry.get(&building.kind) else { continue; };
+        let (tw, th) = def.tile_size;
+        let cx = (pos.x as f32 + (tw as f32 - 1.0) * 0.5) * cfg.tile_size;
+        let cy = (pos.y as f32 + (th as f32 - 1.0) * 0.5) * cfg.tile_size;
+        let mesh = shapes.get_visual(&def.visual);
+        commands.spawn((
+            Ghost,
+            Mesh2d(mesh),
+            MeshMaterial2d(materials.add(Color::srgba(0.8, 0.0, 0.0, 0.45))),
+            Transform::from_xyz(cx, cy, 10.0),
+        ));
+    }
+
+    // Subtle red grid for empty tiles in zone
+    for gx in x1..=x2 {
+        for gy in y1..=y2 {
+            if gx >= cfg.width || gy >= cfg.height { continue; }
+            let has_building = building_query.iter().any(|(_, _, tiles)|
+                tiles.0.iter().any(|&(x, y)| x == gx && y == gy)
+            );
+            if !has_building {
+                commands.spawn((
+                    Ghost,
+                    Mesh2d(shapes.rectangle.clone()),
+                    MeshMaterial2d(materials.add(Color::srgba(0.8, 0.0, 0.0, 0.12))),
+                    Transform::from_xyz(gx as f32 * cfg.tile_size, gy as f32 * cfg.tile_size, 9.9),
+                ));
+            }
+        }
+    }
+}
+
 fn can_afford(hq_inv: &Inventory, cost: &[BuildingCost]) -> bool {
     cost.iter().all(|c| hq_inv.get(c.resource) >= c.amount)
 }
@@ -571,11 +634,14 @@ pub fn track_belt_drag(
         drag.start_coord = None;
         return;
     };
-    if kind != "belt" && kind != "splitter" && kind != "sorter" {
+    let Some(def) = registry.get(kind) else {
+        drag.start_coord = None;
+        return;
+    };
+    if def.belt.is_none() && !def.drag_placement {
         drag.start_coord = None;
         return;
     }
-    let Some(_def) = registry.get(kind) else { return };
     let tile_size = cfg.tile_size;
     let grid_w = cfg.width;
     let grid_h = cfg.height;
@@ -655,7 +721,7 @@ pub fn track_belt_drag(
 pub fn on_belt_drag_completed(
     on: On<BeltDragCompleted>,
     mut commands: Commands,
-    mut belt_write: Query<(&TilePosition, &mut BeltSlots, &mut Text2d)>,
+    mut belt_write: Query<(&TilePosition, &mut BeltSlots)>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     textures: Res<TextureCache>,
     registry: Res<BuildingRegistry>,
@@ -685,72 +751,205 @@ pub fn on_belt_drag_completed(
         return;
     }
 
-    let num_slots = def.belt.as_ref().map_or(2, |b| b.slots);
-    let speed = def.belt.as_ref().map_or(2.0, |b| b.speed);
+    if def.belt.is_some() {
+        let num_slots = def.belt.as_ref().map_or(2, |b| b.slots);
+        let speed = def.belt.as_ref().map_or(2.0, |b| b.speed);
 
-    for &(bx, by, dir) in &ev.existing {
-        if let Some((_, mut bs, mut text)) = belt_write.iter_mut()
-            .find(|(pos, _, _)| pos.x == bx && pos.y == by)
-        {
-            if bs.direction != dir {
-                bs.direction = dir;
-                bs.slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
-                text.0 = direction_arrow(dir).to_string();
+        for &(bx, by, dir) in &ev.existing {
+            if let Some((_, mut bs)) = belt_write.iter_mut()
+                .find(|(pos, _)| pos.x == bx && pos.y == by)
+            {
+                if bs.direction != dir {
+                    bs.direction = dir;
+                    bs.slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
+                }
             }
         }
-    }
 
-    for &(bx, by, dir) in &ev.new_tiles {
-        let cx = bx as f32 * tile_size;
-        let cy = by as f32 * tile_size;
-        let slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
-        let slots = vec![None; num_slots as usize];
-        let angle = match dir {
-            Direction::East => 0.0,
-            Direction::North => std::f32::consts::FRAC_PI_2,
-            Direction::West => std::f32::consts::PI,
-            Direction::South => -std::f32::consts::FRAC_PI_2,
-        };
+        for &(bx, by, dir) in &ev.new_tiles {
+            let cx = bx as f32 * tile_size;
+            let cy = by as f32 * tile_size;
+            let slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
+            let slots = vec![None; num_slots as usize];
+            let angle = match dir {
+                Direction::East => 0.0,
+                Direction::North => std::f32::consts::FRAC_PI_2,
+                Direction::West => std::f32::consts::PI,
+                Direction::South => -std::f32::consts::FRAC_PI_2,
+            };
 
-        let base_components = (
-            Building { kind: def.id.clone(), name: def.name.clone() },
-            Inventory::new(),
-            OccupiedTiles(vec![(bx, by)]),
-            TilePosition { x: bx, y: by },
-            BeltSlots { direction: dir, slots, slot_positions, speed },
-            Text2d::new(direction_arrow(dir).to_string()),
-            TextFont::from_font_size(24.0),
-            TextColor(Color::WHITE),
-            TextLayout::justify(Justify::Center),
-            Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle)),
-            Visibility::default(),
-        );
+            let belt_components = (
+                Building { kind: def.id.clone(), name: def.name.clone() },
+                Inventory::new(),
+                OccupiedTiles(vec![(bx, by)]),
+                TilePosition { x: bx, y: by },
+                BeltSlots { direction: dir, slots, slot_positions, speed },
+                Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle)),
+                Visibility::default(),
+            );
 
-        let stem = texture_stem(&def.id);
-        let sprite = Sprite {
-            image: textures.base(stem),
-            custom_size: Some(Vec2::splat(tile_size)),
-            ..default()
-        };
+            let stem = texture_stem(&def.id);
+            let sprite = Sprite {
+                image: textures.base(stem),
+                custom_size: Some(Vec2::splat(tile_size)),
+                ..default()
+            };
 
-        if def.id == "splitter" {
+            if def.id == "splitter" {
+                commands.spawn((
+                    belt_components,
+                    Splitter { counter: 0, outputs: 2, input_direction: None },
+                    sprite,
+                ));
+            } else if def.id == "sorter" {
+                commands.spawn((
+                    belt_components,
+                    Sorter { filter: ResourceId::Ore, inverted: false },
+                    sprite,
+                ));
+            } else {
+                commands.spawn((
+                    belt_components,
+                    sprite,
+                ));
+            }
+        }
+    } else if def.drag_placement {
+        for &(bx, by, _dir) in &ev.new_tiles {
+            let cx = bx as f32 * tile_size;
+            let cy = by as f32 * tile_size;
+            let stem = texture_stem(&def.id);
             commands.spawn((
-                base_components,
-                Splitter { counter: 0, outputs: 2, input_direction: None },
-                sprite,
-            ));
-        } else if def.id == "sorter" {
-            commands.spawn((
-                base_components,
-                Sorter { filter: ResourceId::Ore, inverted: false },
-                sprite,
-            ));
-        } else {
-            commands.spawn((
-                base_components,
-                sprite,
+                Building { kind: def.id.clone(), name: def.name.clone() },
+                Inventory::new(),
+                OccupiedTiles(vec![(bx, by)]),
+                TilePosition { x: bx, y: by },
+                Sprite {
+                    image: textures.base(stem),
+                    custom_size: Some(Vec2::splat(tile_size)),
+                    ..default()
+                },
+                Transform::from_xyz(cx, cy, 2.0),
+                Visibility::default(),
             ));
         }
+    }
+}
+
+// ── Deconstruct drag ──
+
+pub fn track_deconstruct_drag(
+    mut commands: Commands,
+    mut drag: ResMut<DeconstructDrag>,
+    deconstruct: Res<DeconstructMode>,
+    cfg: Res<MapConfig>,
+    windows: Query<&Window>,
+    camera: Query<(&Camera, &GlobalTransform)>,
+    keys: Res<ButtonInput<KeyCode>>,
+    buttons: Res<ButtonInput<MouseButton>>,
+    bindings: Res<KeyBindings>,
+) {
+    if !deconstruct.0 {
+        drag.start_coord = None;
+        return;
+    }
+
+    let tile_size = cfg.tile_size;
+    let grid_w = cfg.width;
+    let grid_h = cfg.height;
+
+    let Ok(window) = windows.single() else { return };
+    let Ok((cam, cam_transform)) = camera.single() else { return };
+    let Some(cursor) = window.cursor_position() else { return };
+    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else { return };
+
+    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+
+    if tile_x < 0 || tile_y < 0 || tile_x >= grid_w as i32 || tile_y >= grid_h as i32 {
+        if buttons.just_released(bindings.mouse("place")) {
+            drag.start_coord.take();
+        }
+        return;
+    }
+
+    let tx = tile_x as u32;
+    let ty = tile_y as u32;
+
+    if bindings.just_pressed("place", &keys, &buttons) && drag.start_coord.is_none() {
+        drag.start_coord = Some((tx, ty));
+        return;
+    }
+
+    if buttons.just_released(bindings.mouse("place")) {
+        let Some(start) = drag.start_coord.take() else { return };
+        commands.trigger(DeconstructAreaEvent {
+            start: TilePosition { x: start.0, y: start.1 },
+            end: TilePosition { x: tx, y: ty },
+        });
+    }
+}
+
+/// Observer for `DeconstructAreaEvent`. Despawns all buildings in the zone.
+pub fn on_deconstruct_area(
+    on: On<DeconstructAreaEvent>,
+    mut commands: Commands,
+    building_query: Query<(Entity, &OccupiedTiles, &Building)>,
+    belt_slots_query: Query<&BeltSlots>,
+    item_query: Query<Entity, With<BeltItem>>,
+    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    registry: Res<BuildingRegistry>,
+    mut toast_queue: ResMut<ToastQueue>,
+) {
+    let ev = on.event();
+    let x1 = ev.start.x.min(ev.end.x);
+    let x2 = ev.start.x.max(ev.end.x);
+    let y1 = ev.start.y.min(ev.end.y);
+    let y2 = ev.start.y.max(ev.end.y);
+
+    let mut count = 0u32;
+    let mut refund_names: Vec<String> = Vec::new();
+
+    for (entity, tiles, building) in building_query.iter() {
+        let in_zone = tiles.0.iter().any(|&(x, y)| x >= x1 && x <= x2 && y >= y1 && y <= y2);
+        if !in_zone { continue; }
+
+        // Compute refund
+        if let Some(def) = registry.get(&building.kind) {
+            if def.can_deconstruct {
+                for c in &def.cost {
+                    let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
+                    if refund > 0 {
+                        if let Ok(mut hq_inv) = hq_query.single_mut() {
+                            hq_inv.add(c.resource, refund);
+                        }
+                        refund_names.push(format!("{} {}", refund, c.resource.display_name()));
+                    }
+                }
+            }
+        }
+
+        // Despawn orphaned BeltItems
+        if let Ok(belt_slots) = belt_slots_query.get(entity) {
+            for slot in belt_slots.slots.iter() {
+                if let Some(item_entity) = slot {
+                    if item_query.contains(*item_entity) {
+                        commands.entity(*item_entity).despawn();
+                    }
+                }
+            }
+        }
+
+        commands.entity(entity).despawn();
+        count += 1;
+    }
+
+    if count > 0 {
+        toast_queue.0.push(format!(
+            "Zone deconstruct: {} building(s) removed (+{})",
+            count,
+            refund_names.join(", ")
+        ));
     }
 }
 
@@ -805,8 +1004,8 @@ pub fn handle_build_click(
 
     let (tw, th) = def.tile_size;
 
-    // Belt/splitter/sorter is handled by track_belt_drag → BeltDragCompleted
-    if def.id == "belt" || def.id == "splitter" || def.id == "sorter" {
+    // Buildings with belt properties or drag_placement are handled by track_belt_drag
+    if def.belt.is_some() || def.drag_placement {
         return;
     }
 

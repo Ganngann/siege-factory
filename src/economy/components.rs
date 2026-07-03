@@ -112,7 +112,23 @@ pub struct BeltDrag {
 pub struct DeconstructMode(pub bool);
 
 #[derive(Resource, Default)]
-pub struct BuildingPopup(pub Option<Entity>);
+pub struct DeconstructDrag {
+    pub start_coord: Option<(u32, u32)>,
+}
+
+#[derive(Resource)]
+pub struct BuildingPopup {
+    pub popup_entity: Option<Entity>,
+    pub text_entity: Option<Entity>,
+    pub inspected_entity: Option<Entity>,
+    pub update_timer: f32,
+}
+
+impl Default for BuildingPopup {
+    fn default() -> Self {
+        Self { popup_entity: None, text_entity: None, inspected_entity: None, update_timer: 0.0 }
+    }
+}
 
 // ── Generic behavior components ──
 

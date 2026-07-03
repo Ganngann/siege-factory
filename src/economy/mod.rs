@@ -42,6 +42,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::BuildPreview>();
         app.init_resource::<components::BeltDrag>();
         app.init_resource::<components::DeconstructMode>();
+        app.init_resource::<components::DeconstructDrag>();
         app.init_resource::<components::BuildingPopup>();
         app.init_resource::<MenuState>();
         app.init_resource::<MenuItems>();
@@ -49,6 +50,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<TooltipText>();
         app.add_observer(belt::belt_item_placer);
         app.add_observer(placement::on_belt_drag_completed);
+        app.add_observer(placement::on_deconstruct_area);
         app.add_systems(OnEnter(GameState::Playing), (
             setup::setup_hq,
             setup::place_ore_deposits,
@@ -73,7 +75,13 @@ impl Plugin for EconomyPlugin {
             placement::handle_deconstruct_click_v2.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
+            placement::track_deconstruct_drag.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
             placement::update_build_preview.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            placement::deconstruct_drag_preview.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             production::production_tick.run_if(in_state(GameState::Playing)),
@@ -107,6 +115,9 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(Update,
             inspect::sorter_toggle_click.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::update_inspect_popup.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             toast_system.run_if(in_state(GameState::Playing)),

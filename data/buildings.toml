@@ -47,6 +47,7 @@ hp = 300
 tile_size = { w = 1, h = 1 }
 color = "#4D4D4D"
 visual = "rectangle"
+drag_placement = true
 
 [buildings.turret]
 name = "Turret"

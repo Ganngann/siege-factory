@@ -60,6 +60,13 @@ pub fn belt_item_placer(
         let ay = ev.source_tile.y.wrapping_add_signed(dy);
         if let Some(&belt_entity) = belt_map.get(&(ax, ay)) {
             if let Ok((_, _, mut bs)) = belt_query.get_mut(belt_entity) {
+                // Skip belts that point toward the source tile (input belts)
+                let (odx, ody) = bs.direction.offset();
+                if ax.wrapping_add_signed(odx) == ev.source_tile.x
+                    && ay.wrapping_add_signed(ody) == ev.source_tile.y
+                {
+                    continue;
+                }
                 if let Some(free_idx) = bs.slots.iter().position(|s| s.is_none()) {
                     let spawn_pos = Vec3::new(
                         ev.source_tile.x as f32 * tile_size,

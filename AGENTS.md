@@ -6,10 +6,14 @@ Bevy 0.19, Rust 1.96, ECS (Entity Component System)
 
 ## Commands
 
-- `cargo run` — run the game
-- `cargo test` — unit + integration tests
-- `cargo clippy` — lint
-- `cargo build --target wasm32-unknown-unknown` — WASM build
+### Auto-autorisés (lecture seule / safe)
+- `ls`, `cd`, `cat`, `rg`, `fd`, `Test-Path`, `Select-String`
+- `git status`, `git diff`, `git log`
+- `cargo check`, `cargo run`, `cargo test`, `cargo fmt`, `cargo doc`
+
+### Sur demande explicite
+- `cargo clippy`
+- `cargo build --target wasm32-unknown-unknown`
 - `.\build_wasm.ps1` — WASM build + wasm-bindgen + copy index.html to web/
 
 ## Vision (destination)
@@ -46,10 +50,6 @@ See `docs/4_MULTIPLAYER.md` — planned, not before solo base stable.
 - `proptest` for invariants
 - Headless tests (App without rendering)
 - See `docs/12_TESTING_STRATEGY.md`
-
-## Economy
-
-Never run `cargo test`, `cargo clippy`, or any heavy build/test command unless explicitly requested by the user.
 
 ## Modules
 
