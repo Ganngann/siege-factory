@@ -22,34 +22,9 @@ pub fn build_mode_input(
     bindings: Res<KeyBindings>,
     cfg: Res<MapConfig>,
     mut placed_belts: Query<(&mut BeltSlots, &mut Text2d, &TilePosition)>,
-    registry: Res<BuildingRegistry>,
     hovered: Res<HoveredTile>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
-    if keys.just_pressed(bindings.key("build_deconstruct")) {
-        if build_mode.0.is_some() {
-            build_mode.0 = None;
-        }
-        deconstruct.0 = !deconstruct.0;
-    }
-
-    let build_ids: Vec<&String> = registry.buildings.iter()
-        .filter(|b| b.id != "hq")
-        .map(|b| &b.id)
-        .collect();
-    let slot_actions = ["build_1", "build_2", "build_3", "build_4", "build_5"];
-    for (i, action) in slot_actions.iter().enumerate() {
-        if keys.just_pressed(bindings.key(action)) {
-            deconstruct.0 = false;
-            if let Some(id) = build_ids.get(i) {
-                build_mode.0 = match &build_mode.0 {
-                    Some(current) if current == *id => None,
-                    _ => Some((*id).clone()),
-                };
-            }
-        }
-    }
-
     if keys.just_pressed(bindings.key("build_rotate")) && build_mode.0.as_deref() == Some("belt") {
         if let Some(pos) = hovered.0 {
             let mut rotated = false;

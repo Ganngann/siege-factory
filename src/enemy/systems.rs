@@ -155,7 +155,7 @@ pub fn spawn_game_over_ui(
             parent.spawn((GameOverUi, Text::new(""), TextFont::default(), TextColor(Color::WHITE)));
             parent.spawn((
                 GameOverUi,
-                Text::new("Press R to restart"),
+                Text::new("Press R to restart  |  ESC for main menu"),
                 TextFont::from_font_size(20.0),
                 TextColor(Color::srgb(0.8, 0.8, 1.0)),
             ));

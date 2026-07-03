@@ -63,6 +63,24 @@ impl KeyBindings {
             InputBinding::Key(_) => false,
         }
     }
+
+    pub fn all(&self) -> Vec<(String, InputBinding)> {
+        let mut pairs: Vec<_> = self.map.iter().map(|(k, v)| (k.clone(), *v)).collect();
+        pairs.sort_by(|a, b| a.0.cmp(&b.0));
+        pairs
+    }
+
+    pub fn set(&mut self, action: &str, binding: InputBinding) {
+        self.map.insert(action.to_string(), binding);
+    }
+
+    pub fn apply_overrides(&mut self, overrides: &std::collections::HashMap<String, String>) {
+        for (action, name) in overrides {
+            if let Some(binding) = parse_input_binding(name) {
+                self.map.insert(action.clone(), binding);
+            }
+        }
+    }
 }
 
 #[derive(serde::Deserialize)]

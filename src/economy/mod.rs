@@ -3,6 +3,7 @@ pub mod build_bar;
 pub mod building;
 pub mod components;
 pub mod inspect;
+pub mod menu;
 pub mod placement;
 pub mod production;
 pub mod recipe;
@@ -15,8 +16,8 @@ use bevy::prelude::*;
 use crate::core::game_state::GameState;
 use crate::core::toast::{toast_system, ToastQueue};
 use crate::core::tooltip::{tooltip_ui, TooltipText};
-use building::BuildingRegistry;
 use building::DefaultSettings;
+use menu::{MenuState, MenuItems};
 use resource::ResourceRegistry;
 use ui::OreCountText;
 
@@ -25,16 +26,25 @@ pub struct EconomyPlugin;
 impl Plugin for EconomyPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ResourceRegistry::load());
-        app.insert_resource(BuildingRegistry::load());
         app.insert_resource(DefaultSettings::load());
         app.insert_resource(recipe::RecipeRegistry::load());
-        app.insert_resource(unit_config::UnitConfig::load());
+
+        // Load registries + derive MenuDef in dependency order (avoids double-load)
+        let building_registry = building::BuildingRegistry::load();
+        let unit_cfg = unit_config::UnitConfig::load();
+        let menu_def = menu::MenuDef::load(&building_registry, &unit_cfg);
+        app.insert_resource(building_registry);
+        app.insert_resource(unit_cfg);
+        app.insert_resource(menu_def);
+
         app.init_resource::<components::BuildMode>();
         app.init_resource::<components::BeltDirection>();
         app.init_resource::<components::BuildPreview>();
         app.init_resource::<components::BeltDrag>();
         app.init_resource::<components::DeconstructMode>();
         app.init_resource::<components::BuildingPopup>();
+        app.init_resource::<MenuState>();
+        app.init_resource::<MenuItems>();
         app.init_resource::<ToastQueue>();
         app.init_resource::<TooltipText>();
         app.add_observer(belt::belt_item_placer);
@@ -42,12 +52,12 @@ impl Plugin for EconomyPlugin {
         app.add_systems(OnEnter(GameState::Playing), (
             setup::setup_hq,
             setup::place_ore_deposits,
-            build_bar::spawn_build_bar,
+            build_bar::spawn_menu_bar,
         ));
         app.add_systems(OnExit(GameState::Playing), (
             cleanup_playing_ui,
             cleanup_ghost,
-            build_bar::cleanup_build_bar,
+            build_bar::cleanup_menu_bar,
             inspect::cleanup_popup,
         ));
         app.add_systems(Update,
@@ -81,10 +91,16 @@ impl Plugin for EconomyPlugin {
             ui::ore_count_ui.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            build_bar::build_bar_interaction.run_if(in_state(GameState::Playing)),
+            build_bar::menu_navigation.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            build_bar::update_build_bar.run_if(in_state(GameState::Playing)),
+            build_bar::menu_bar_interaction.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            build_bar::refresh_menu_bar.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            build_bar::update_menu_bar.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             inspect::building_inspect_click.run_if(in_state(GameState::Playing)),

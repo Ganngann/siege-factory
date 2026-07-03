@@ -161,3 +161,22 @@ pub struct Sorter {
 
 #[derive(Event)]
 pub struct SetBuildModeEvent(pub Option<String>);
+
+// ── Menu UI components ──
+
+#[derive(Component)]
+pub struct MenuBarPanel;
+
+#[derive(Component)]
+pub struct BreadcrumbText;
+
+#[derive(Component)]
+pub struct BackButton;
+
+#[derive(Component)]
+pub struct ScrollButton(pub i32);
+
+#[derive(Component)]
+pub struct MenuItemButton {
+    pub index: usize,
+}

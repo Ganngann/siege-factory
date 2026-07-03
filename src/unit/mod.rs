@@ -7,8 +7,6 @@ use crate::economy::components::{HQ, OreDeposit, Unit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;
-use crate::core::input::KeyBindings;
-use crate::core::toast::ToastQueue;
 use crate::map::config::MapConfig;
 use crate::rendering::ShapeCache;
 
@@ -22,7 +20,6 @@ impl Plugin for UnitPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(spawn_unit_on_trigger);
         app.add_systems(Update, (
-            spawn_unit_input,
             soldier_auto_attack,
             worker_harvest,
         ).run_if(in_state(GameState::Playing)));
@@ -112,45 +109,6 @@ fn spawn_unit_on_trigger(
         if inv.get(ResourceId::Ore) >= cost_ore {
             inv.remove(ResourceId::Ore, cost_ore);
             spawn_unit_by_id(&mut commands, &unit_cfg, id, hq_transform.translation, &shapes, &mut materials);
-        }
-    }
-}
-
-fn spawn_unit_input(
-    mut commands: Commands,
-    keys: Res<ButtonInput<KeyCode>>,
-    bindings: Res<KeyBindings>,
-    unit_cfg: Res<UnitConfig>,
-    mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut toast_queue: ResMut<ToastQueue>,
-) {
-    let (hq_transform, mut inv) = match hq_query.single_mut() {
-        Ok(q) => q,
-        Err(_) => return,
-    };
-    let hq_pos = hq_transform.translation;
-
-    let key_units = [
-        ("spawn_6", "soldier"),
-        ("spawn_7", "worker"),
-    ];
-
-    for (action, unit_id) in key_units {
-        if keys.just_pressed(bindings.key(action)) {
-            if let Some(def) = unit_cfg.get(unit_id) {
-                let cost_ore = def.cost.iter()
-                    .find(|c| c.resource == ResourceId::Ore)
-                    .map(|c| c.amount)
-                    .unwrap_or(0);
-                if inv.get(ResourceId::Ore) >= cost_ore {
-                    inv.remove(ResourceId::Ore, cost_ore);
-                    spawn_unit_by_id(&mut commands, &unit_cfg, unit_id, hq_pos, &shapes, &mut materials);
-                } else {
-                    toast_queue.0.push("Not enough ore for unit".to_string());
-                }
-            }
         }
     }
 }

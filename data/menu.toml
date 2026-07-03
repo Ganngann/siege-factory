@@ -1,0 +1,23 @@
+[[menu]]
+label = "Production"
+items = ["miner", "assembler"]
+
+[[menu]]
+label = "Logistique"
+items = [
+    "belt",
+    { label = "Tris", items = ["splitter", "sorter"] },
+    "storage",
+]
+
+[[menu]]
+label = "Défense"
+items = ["wall", { label = "Tourelles", items = ["turret"] }]
+
+[[menu]]
+label = "Unités"
+items = ["soldier", "worker"]
+
+[[menu]]
+label = "Outils"
+items = [{ action = "delete", label = "Démolir" }]

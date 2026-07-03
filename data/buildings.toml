@@ -10,6 +10,7 @@ hp = 100
 tile_size = { w = 2, h = 2 }
 color = "#3366CC"
 can_deconstruct = false
+hidden = true
 
 [buildings.miner]
 name = "Miner"

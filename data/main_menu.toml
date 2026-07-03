@@ -1,0 +1,34 @@
+[screen.main_menu]
+title = "SIEGE FACTORY"
+subtitle = "Build defenses  |  Survive waves  |  Automate everything"
+
+[[screen.main_menu.items]]
+id = "play"
+label = "Play"
+action = "StartGame"
+
+[[screen.main_menu.items]]
+id = "options"
+label = "Options"
+action = "OpenScreen"
+target = "options"
+
+# "Quit" action disabled — requires bevy AppExit feature
+
+[screen.options]
+title = "Options"
+
+[[screen.options.items]]
+id = "keybindings"
+label = "Key Bindings"
+action = "OpenScreen"
+target = "keybindings"
+
+[[screen.options.items]]
+id = "back"
+label = "Back"
+action = "Back"
+
+# keybindings screen items are generated dynamically from KeyBindings resource
+[screen.keybindings]
+title = "Key Bindings"

@@ -53,6 +53,7 @@ pub struct BuildingDef {
     pub refund_ratio: f32,
     pub repair_cost_ratio: f32,
     pub inventory_capacity: u32,
+    pub hidden: bool,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -128,6 +129,7 @@ impl BuildingRegistry {
                 refund_ratio: entry.refund_ratio.unwrap_or(defaults.refund_ratio),
                 repair_cost_ratio: entry.repair_cost_ratio.unwrap_or(defaults.repair_cost_ratio),
                 inventory_capacity: entry.inventory_capacity.unwrap_or(defaults.inventory_capacity),
+                hidden: entry.hidden,
             });
         }
         Self { buildings }
@@ -179,6 +181,8 @@ struct BuildingEntry {
     repair_cost_ratio: Option<f32>,
     #[serde(default)]
     inventory_capacity: Option<u32>,
+    #[serde(default)]
+    hidden: bool,
 }
 
 #[derive(Deserialize)]

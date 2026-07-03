@@ -1,61 +1,31 @@
 use bevy::prelude::*;
 use crate::core::game_state::GameState;
 use crate::core::input::KeyBindings;
+use crate::core::main_menu::{self, MainMenuDef, MenuNav, RebindState};
+use crate::core::settings::Settings;
 use crate::economy::components::BuildMode;
 
 pub struct CorePlugin;
 
 impl Plugin for CorePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(KeyBindings::load());
+        app.insert_resource(Settings::load());
+        let mut bindings = KeyBindings::load();
+        {
+            let settings = app.world().resource::<Settings>();
+            bindings.apply_overrides(&settings.keybindings);
+        }
+        app.insert_resource(bindings);
+        app.insert_resource(MainMenuDef::load());
+        app.insert_resource(MenuNav::default());
+        app.insert_resource(RebindState::default());
         app.init_state::<GameState>();
-        app.add_systems(OnEnter(GameState::Loading), spawn_loading_ui);
-        app.add_systems(OnExit(GameState::Loading), despawn_loading_ui);
-        app.add_systems(Update, game_state_transition);
-    }
-}
-
-#[derive(Component)]
-struct LoadingUi;
-
-fn spawn_loading_ui(mut commands: Commands) {
-    commands.spawn((Camera2d, LoadingUi));
-    commands
-        .spawn((LoadingUi, Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..default()
-        }))
-        .with_children(|parent| {
-            parent.spawn((
-                LoadingUi,
-                Text::new("SIEGE FACTORY"),
-                TextFont::from_font_size(48.0),
-                TextColor(Color::srgb(0.8, 0.8, 1.0)),
-            ));
-            parent.spawn((
-                LoadingUi,
-                Text::new("Build defenses  |  Survive waves  |  Automate everything"),
-                TextFont::from_font_size(16.0),
-                TextColor(Color::srgb(0.6, 0.6, 0.8)),
-            ));
-            parent.spawn((LoadingUi, Text::new(""), TextFont::default(), TextColor(Color::WHITE)));
-            parent.spawn((
-                LoadingUi,
-                Text::new("Press SPACE to start"),
-                TextFont::from_font_size(20.0),
-                TextColor(Color::WHITE),
-            ));
-        });
-}
-
-fn despawn_loading_ui(mut commands: Commands, query: Query<Entity, With<LoadingUi>>) {
-    for entity in &query {
-        commands.entity(entity).despawn();
+        app.add_systems(OnExit(GameState::Menu), main_menu::despawn_menu_ui);
+        app.add_systems(Update, (
+            game_state_transition,
+            main_menu::menu_navigation,
+            main_menu::menu_rebind_handler,
+        ).run_if(in_state(GameState::Menu)));
     }
 }
 
@@ -72,10 +42,8 @@ fn game_state_transition(
         .unwrap_or(false);
 
     match state.get() {
-        GameState::Loading => {
-            if keys.just_pressed(bindings.key("start_game")) {
-                next_state.set(GameState::Playing);
-            }
+        GameState::Menu => {
+            // Menu → Playing is handled by menu_navigation via StartGame action
         }
         GameState::Playing => {
             if keys.just_pressed(bindings.key("cancel")) {
@@ -91,6 +59,8 @@ fn game_state_transition(
         GameState::GameOver => {
             if keys.just_pressed(bindings.key("restart")) {
                 next_state.set(GameState::Playing);
+            } else if keys.just_pressed(bindings.key("cancel")) {
+                next_state.set(GameState::Menu);
             }
         }
     }
@@ -103,6 +73,10 @@ mod tests {
     fn test_app() -> App {
         let mut app = App::new();
         app.insert_resource(KeyBindings::load());
+        app.insert_resource(Settings::load());
+        app.insert_resource(MainMenuDef::load());
+        app.insert_resource(MenuNav::default());
+        app.insert_resource(RebindState::default());
         app.add_plugins(bevy::state::app::StatesPlugin);
         app.init_state::<GameState>();
         app.init_resource::<ButtonInput<KeyCode>>();
@@ -112,10 +86,10 @@ mod tests {
     }
 
     #[test]
-    fn initial_state_is_loading() {
+    fn initial_state_is_menu() {
         let mut app = test_app();
         app.update();
-        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Loading);
+        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Menu);
     }
 
     #[test]
@@ -124,7 +98,7 @@ mod tests {
         app.update();
 
         app.update();
-        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Loading);
+        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Menu);
     }
 
     #[test]
