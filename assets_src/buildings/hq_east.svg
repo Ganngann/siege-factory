@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5e5e5e"/>
+      <stop offset="50%" stop-color="#4a4a4a"/>
+      <stop offset="100%" stop-color="#525252"/>
+    </linearGradient>
+    <linearGradient id="towerGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#626262"/>
+      <stop offset="50%" stop-color="#525252"/>
+      <stop offset="100%" stop-color="#484848"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- === FOUNDATION === -->
+    <rect x="4" y="108" width="120" height="16" rx="2" fill="#444" stroke="#3e3e3e" stroke-width="1"/>
+    <line x1="4" y1="108" x2="124" y2="108" stroke="#5a5a5a" stroke-width="0.5"/>
+
+    <!-- Anchoring feet -->
+    <rect x="10" y="122" width="8" height="4" rx="1" fill="#555"/>
+    <rect x="40" y="122" width="8" height="4" rx="1" fill="#555"/>
+    <rect x="80" y="122" width="8" height="4" rx="1" fill="#555"/>
+    <rect x="110" y="122" width="8" height="4" rx="1" fill="#555"/>
+
+    <!-- === LEFT WING (x=8..44) === -->
+    <rect x="8" y="52" width="36" height="56" rx="2" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="8" y="52" width="36" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Windows on left wing -->
+    <rect x="12" y="60" width="28" height="8" rx="1" fill="#3c3c3c" stroke="#4a4a4a" stroke-width="0.5"/>
+    <rect x="12" y="76" width="28" height="8" rx="1" fill="#3c3c3c" stroke="#4a4a4a" stroke-width="0.5"/>
+    <rect x="12" y="92" width="28" height="8" rx="1" fill="#3c3c3c" stroke="#4a4a4a" stroke-width="0.5"/>
+
+    <!-- Window glow -->
+    <rect x="14" y="62" width="10" height="4" rx="1" fill="#aad4ff" opacity="0.15"/>
+    <rect x="14" y="78" width="10" height="4" rx="1" fill="#aad4ff" opacity="0.15"/>
+    <rect x="14" y="94" width="10" height="4" rx="1" fill="#aad4ff" opacity="0.15"/>
+
+    <!-- === RIGHT WING (x=76..120) === -->
+    <rect x="76" y="52" width="44" height="56" rx="2" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="76" y="52" width="44" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Garage door on right wing -->
+    <rect x="80" y="62" width="36" height="20" rx="1" fill="#3a3a3a" stroke="#4a4a4a" stroke-width="1"/>
+    <rect x="80" y="62" width="36" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+    <line x1="80" y1="72" x2="116" y2="72" stroke="#4a4a4a" stroke-width="0.5"/>
+    <circle cx="110" cy="72" r="1.5" fill="#7a7a7a"/>
+
+    <!-- Ventilation on right wing -->
+    <rect x="84" y="88" width="28" height="6" rx="1" fill="#484848" stroke="#4a4a4a" stroke-width="0.5"/>
+    <line x1="88" y1="91" x2="108" y2="91" stroke="#3c3c3c" stroke-width="0.5"/>
+    <line x1="92" y1="88" x2="92" y2="94" stroke="#3c3c3c" stroke-width="0.5"/>
+    <line x1="104" y1="88" x2="104" y2="94" stroke="#3c3c3c" stroke-width="0.5"/>
+
+    <!-- === CENTRAL TOWER (x=44..76) === -->
+    <rect x="44" y="8" width="40" height="100" rx="2" fill="url(#towerGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="44" y="8" width="40" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Tower top cap -->
+    <rect x="42" y="8" width="44" height="4" rx="1" fill="#555" stroke="#3e3e3e" stroke-width="1"/>
+    <line x1="42" y1="8" x2="86" y2="8" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Command windows (large) -->
+    <rect x="48" y="16" width="32" height="16" rx="1" fill="#3c3c3c" stroke="#4a4a4a" stroke-width="1"/>
+    <rect x="48" y="16" width="32" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+    <line x1="54" y1="16" x2="54" y2="32" stroke="#4a4a4a" stroke-width="0.5"/>
+    <line x1="64" y1="16" x2="64" y2="32" stroke="#4a4a4a" stroke-width="0.5"/>
+    <line x1="74" y1="16" x2="74" y2="32" stroke="#4a4a4a" stroke-width="0.5"/>
+    <rect x="50" y="18" width="3" height="3" fill="#aad4ff" opacity="0.15"/>
+    <rect x="60" y="18" width="3" height="3" fill="#aad4ff" opacity="0.15"/>
+    <rect x="70" y="18" width="3" height="3" fill="#aad4ff" opacity="0.15"/>
+
+    <!-- Tower body details -->
+    <line x1="46" y1="40" x2="82" y2="40" stroke="#585858" stroke-width="1"/>
+    <line x1="46" y1="60" x2="82" y2="60" stroke="#585858" stroke-width="1"/>
+    <line x1="46" y1="80" x2="82" y2="80" stroke="#585858" stroke-width="1"/>
+
+    <!-- Main entrance -->
+    <rect x="54" y="88" width="20" height="20" rx="2" fill="#3c3c3c" stroke="#4a4a4a" stroke-width="1"/>
+    <rect x="54" y="88" width="20" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+    <circle cx="68" cy="98" r="1.5" fill="#7a7a7a"/>
+
+    <!-- === ANTENNA / RADAR === -->
+    <!-- Antenna mast -->
+    <line x1="64" y1="0" x2="64" y2="-8" stroke="#666" stroke-width="2"/>
+    <rect x="62" y="-10" width="4" height="4" rx="1" fill="#555" stroke="#444" stroke-width="0.5"/>
+
+    <!-- Radar dish -->
+    <path d="M 52 -12 Q 64 -20 76 -12" fill="none" stroke="#666" stroke-width="1.5"/>
+    <line x1="64" y1="-10" x2="74" y2="-16" stroke="#555" stroke-width="1"/>
+    <circle cx="74" cy="-16" r="1.5" fill="#888"/>
+
+    <!-- Signal waves -->
+    <path d="M 48 -8 Q 44 -4 48 0" fill="none" stroke="#aaa" stroke-width="0.8" opacity="0.25"/>
+    <path d="M 44 -10 Q 38 -4 44 2" fill="none" stroke="#aaa" stroke-width="0.8" opacity="0.15"/>
+
+    <!-- === CONNECTING STRUCTURE between wings and tower === -->
+    <rect x="44" y="52" width="40" height="6" fill="#505050" stroke="#444" stroke-width="0.5"/>
+
+    <!-- === OUTPUT PORTS === -->
+    <!-- Port on right wing -->
+    <rect x="120" y="72" width="8" height="20" rx="1" fill="#2e2e2e"/>
+    <rect x="122" y="74" width="6" height="16" fill="#3a3a3a"/>
+    <line x1="120" y1="72" x2="120" y2="92" stroke="#5a5a5a" stroke-width="0.5"/>
+    <line x1="120" y1="72" x2="124" y2="72" stroke="#666" stroke-width="0.5"/>
+
+    <!-- Port on left side (input) -->
+    <rect x="0" y="72" width="6" height="20" rx="1" fill="#2e2e2e"/>
+    <rect x="0" y="74" width="4" height="16" fill="#3a3a3a"/>
+    <line x1="6" y1="72" x2="6" y2="92" stroke="#5a5a5a" stroke-width="0.5"/>
+  </g>
+
+  <g id="owner_color">
+    <!-- Large emblem on tower -->
+    <rect x="52" y="44" width="24" height="14" rx="2" fill="white"/>
+  </g>
+
+  <g id="level_color">
+    <!-- Level rings on antenna mast -->
+    <rect x="60" y="-6" width="8" height="2" rx="0.5" fill="white"/>
+    <!-- Level badge on tower -->
+    <rect x="82" y="10" width="6" height="8" rx="1" fill="white"/>
+  </g>
+</svg>

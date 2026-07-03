@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="beltBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5e5e5e"/>
+      <stop offset="50%" stop-color="#4a4a4a"/>
+      <stop offset="100%" stop-color="#525252"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- Main body — 3-way junction shape -->
+    <path d="M 10 20 L 8 8 L 56 8 L 56 20 Q 56 32 48 32 L 32 32 L 32 56 L 20 56 L 20 32 L 8 32 Z"
+          fill="url(#beltBg)" stroke="#3e3e3e" stroke-width="1" stroke-linejoin="round"/>
+
+    <!-- Central hub (round junction) -->
+    <circle cx="32" cy="32" r="12" fill="#4e4e4e" stroke="#3e3e3e" stroke-width="1"/>
+    <circle cx="32" cy="32" r="10" fill="none" stroke="#585858" stroke-width="0.5"/>
+
+    <!-- Belt surface: left arm (input) -->
+    <rect x="0" y="20" width="20" height="24" rx="1" fill="#505050" stroke="#444" stroke-width="0.5"/>
+    <line x1="4" y1="24" x2="20" y2="24" stroke="#555" stroke-width="0.5"/>
+    <line x1="4" y1="40" x2="20" y2="40" stroke="#555" stroke-width="0.5"/>
+
+    <!-- Belt surface: right arm (straight output) -->
+    <rect x="44" y="20" width="20" height="24" rx="1" fill="#505050" stroke="#444" stroke-width="0.5"/>
+    <line x1="44" y1="24" x2="60" y2="24" stroke="#555" stroke-width="0.5"/>
+    <line x1="44" y1="40" x2="60" y2="40" stroke="#555" stroke-width="0.5"/>
+
+    <!-- Belt surface: top arm (lateral output) -->
+    <rect x="20" y="0" width="24" height="20" rx="1" fill="#505050" stroke="#444" stroke-width="0.5"/>
+    <line x1="24" y1="4" x2="24" y2="20" stroke="#555" stroke-width="0.5"/>
+    <line x1="40" y1="4" x2="40" y2="20" stroke="#555" stroke-width="0.5"/>
+
+    <!-- Rollers on left arm -->
+    <line x1="8" y1="22" x2="8" y2="42" stroke="#777" stroke-width="1.5"/>
+    <line x1="14" y1="22" x2="14" y2="42" stroke="#777" stroke-width="1.5"/>
+
+    <!-- Rollers on right arm -->
+    <line x1="50" y1="22" x2="50" y2="42" stroke="#777" stroke-width="1.5"/>
+    <line x1="56" y1="22" x2="56" y2="42" stroke="#777" stroke-width="1.5"/>
+
+    <!-- Rollers on top arm -->
+    <line x1="28" y1="6" x2="36" y2="6" stroke="#777" stroke-width="1.5"/>
+    <line x1="28" y1="14" x2="36" y2="14" stroke="#777" stroke-width="1.5"/>
+
+    <!-- Direction arrow: left → center -->
+    <polygon points="18,32 12,27 12,30 2,30 2,34 12,34 12,37" fill="#aaa" opacity="0.6"/>
+    <line x1="18" y1="32" x2="22" y2="32" stroke="#aaa" stroke-width="2" opacity="0.6"/>
+
+    <!-- Direction arrow: center → right -->
+    <polygon points="46,32 52,27 52,30 60,30 60,34 52,34 52,37" fill="#aaa" opacity="0.6"/>
+
+    <!-- Direction arrow: center → top -->
+    <polygon points="32,18 27,12 30,12 30,2 34,2 34,12 37,12" fill="#aaa" opacity="0.6"/>
+
+    <!-- Central gear mechanism -->
+    <circle cx="32" cy="32" r="5" fill="none" stroke="#666" stroke-width="1.5"/>
+    <circle cx="32" cy="32" r="2" fill="#777"/>
+    <line x1="28" y1="32" x2="36" y2="32" stroke="#666" stroke-width="1"/>
+    <line x1="32" y1="28" x2="32" y2="36" stroke="#666" stroke-width="1"/>
+
+    <!-- Edge connectors: left -->
+    <rect x="0" y="24" width="2" height="16" fill="#444"/>
+    <!-- Edge connectors: right -->
+    <rect x="62" y="24" width="2" height="16" fill="#444"/>
+    <!-- Edge connectors: top -->
+    <rect x="24" y="0" width="16" height="2" fill="#444"/>
+  </g>
+
+  <g id="owner_color">
+    <!-- Central hub ring -->
+    <circle cx="32" cy="32" r="8" fill="none" stroke="white" stroke-width="2"/>
+  </g>
+
+  <g id="level_color">
+    <!-- Level indicator on hub -->
+    <rect x="28" y="40" width="8" height="4" rx="1" fill="white"/>
+  </g>
+</svg>

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5e5e5e"/>
+      <stop offset="50%" stop-color="#4a4a4a"/>
+      <stop offset="100%" stop-color="#525252"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- Legs -->
+    <rect x="26" y="44" width="6" height="12" rx="1.5" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="36" y="44" width="6" height="12" rx="1.5" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Feet -->
+    <rect x="24" y="54" width="10" height="4" rx="1" fill="#4a4a4a" stroke="#3e3e3e" stroke-width="0.5"/>
+    <rect x="34" y="54" width="10" height="4" rx="1" fill="#4a4a4a" stroke="#3e3e3e" stroke-width="0.5"/>
+
+    <!-- Body / torso -->
+    <rect x="24" y="24" width="20" height="22" rx="3" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="24" y="24" width="20" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Chest armor plate -->
+    <rect x="26" y="28" width="16" height="10" rx="1" fill="#505050" stroke="#444" stroke-width="0.5"/>
+
+    <!-- Belt -->
+    <rect x="24" y="42" width="20" height="3" rx="0.5" fill="#555" stroke="#444" stroke-width="0.5"/>
+
+    <!-- Arms -->
+    <!-- Left arm (holding weapon) -->
+    <rect x="14" y="26" width="7" height="18" rx="2" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="14" y="26" width="7" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Right arm -->
+    <rect x="47" y="28" width="7" height="16" rx="2" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Hands -->
+    <circle cx="17" cy="44" r="3" fill="#5a5a5a" stroke="#444" stroke-width="0.5"/>
+    <circle cx="50" cy="44" r="3" fill="#5a5a5a" stroke="#444" stroke-width="0.5"/>
+
+    <!-- Weapon (rifle) -->
+    <rect x="8" y="36" width="14" height="4" rx="1" fill="#555" stroke="#3e3e3e" stroke-width="0.5"/>
+    <rect x="8" y="34" width="4" height="8" rx="1" fill="#555" stroke="#3e3e3e" stroke-width="0.5"/>
+    <rect x="4" y="37" width="4" height="2" rx="0.5" fill="#666"/>
+
+    <!-- Head -->
+    <circle cx="34" cy="18" r="8" fill="#525252" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Helmet -->
+    <path d="M 26 18 Q 26 10 34 10 Q 42 10 42 18" fill="#4a4a4a" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="28" y="12" width="12" height="2" rx="0.5" fill="#6a6a6a" opacity="0.5"/>
+
+    <!-- Visor -->
+    <rect x="30" y="16" width="10" height="3" rx="1" fill="#3c3c3c" stroke="#555" stroke-width="0.5"/>
+    <rect x="32" y="17" width="6" height="1" fill="#88ccff" opacity="0.3"/>
+
+    <!-- Shoulder pads -->
+    <circle cx="24" cy="26" r="4" fill="#555" stroke="#444" stroke-width="0.5"/>
+    <circle cx="48" cy="26" r="4" fill="#555" stroke="#444" stroke-width="0.5"/>
+
+    <!-- Knee joints -->
+    <circle cx="29" cy="46" r="1.5" fill="#777"/>
+    <circle cx="39" cy="46" r="1.5" fill="#777"/>
+  </g>
+
+  <g id="owner_color">
+    <!-- Stripe on torso -->
+    <rect x="28" y="30" width="12" height="6" fill="white"/>
+    <!-- Shoulder accent -->
+    <circle cx="24" cy="26" r="2" fill="white"/>
+  </g>
+
+  <g id="level_color">
+    <!-- Level badge on helmet -->
+    <rect x="36" y="12" width="4" height="3" rx="0.5" fill="white"/>
+  </g>
+</svg>

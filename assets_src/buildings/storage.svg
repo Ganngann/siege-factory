@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5e5e5e"/>
+      <stop offset="50%" stop-color="#4a4a4a"/>
+      <stop offset="100%" stop-color="#525252"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- Pentagonal container body — flat top, angled sides, flat bottom -->
+    <path d="M 20 8 L 44 8 L 56 24 L 56 48 L 8 48 L 8 24 Z"
+          fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1" stroke-linejoin="round"/>
+
+    <!-- Top face / lid -->
+    <path d="M 20 8 L 44 8 L 54 20 L 10 20 Z"
+          fill="#585858" stroke="#4a4a4a" stroke-width="0.5" stroke-linejoin="round"/>
+
+    <!-- Lid seam -->
+    <line x1="12" y1="20" x2="52" y2="20" stroke="#444" stroke-width="1"/>
+
+    <!-- Corner reinforcements -->
+    <line x1="8" y1="26" x2="8" y2="46" stroke="#5a5a5a" stroke-width="2"/>
+    <line x1="56" y1="26" x2="56" y2="46" stroke="#5a5a5a" stroke-width="2"/>
+
+    <!-- Horizontal reinforcement bands -->
+    <line x1="10" y1="30" x2="54" y2="30" stroke="#545454" stroke-width="1"/>
+    <line x1="10" y1="40" x2="54" y2="40" stroke="#545454" stroke-width="1"/>
+
+    <!-- Center panel / door -->
+    <rect x="20" y="22" width="24" height="24" rx="2" fill="#4a4a4a" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="20" y="22" width="24" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Door handle -->
+    <circle cx="36" cy="34" r="2" fill="#7a7a7a" stroke="#555" stroke-width="0.5"/>
+
+    <!-- Hinges -->
+    <rect x="20" y="26" width="2" height="4" fill="#666"/>
+    <rect x="20" y="38" width="2" height="4" fill="#666"/>
+
+    <!-- Ventilation slots -->
+    <rect x="42" y="24" width="8" height="2" rx="0.5" fill="#3c3c3c"/>
+    <rect x="42" y="28" width="8" height="2" rx="0.5" fill="#3c3c3c"/>
+    <rect x="42" y="32" width="8" height="2" rx="0.5" fill="#3c3c3c"/>
+
+    <!-- Output port (right edge) -->
+    <rect x="60" y="28" width="4" height="16" rx="1" fill="#2e2e2e"/>
+    <rect x="61" y="30" width="3" height="12" fill="#3a3a3a"/>
+    <line x1="60" y1="28" x2="60" y2="44" stroke="#5a5a5a" stroke-width="0.5"/>
+
+    <!-- Input port hint (left edge) -->
+    <rect x="0" y="28" width="4" height="16" rx="1" fill="#2e2e2e"/>
+    <rect x="0" y="30" width="3" height="12" fill="#3a3a3a"/>
+    <line x1="4" y1="28" x2="4" y2="44" stroke="#5a5a5a" stroke-width="0.5"/>
+
+    <!-- Anchoring feet -->
+    <rect x="10" y="48" width="4" height="2" rx="0.5" fill="#555"/>
+    <rect x="50" y="48" width="4" height="2" rx="0.5" fill="#555"/>
+  </g>
+
+  <g id="owner_color">
+    <!-- Stripe across the door -->
+    <rect x="24" y="24" width="4" height="20" fill="white"/>
+  </g>
+
+  <g id="level_color">
+    <!-- Level badge on top-right corner -->
+    <rect x="48" y="10" width="6" height="6" rx="1" fill="white"/>
+  </g>
+</svg>

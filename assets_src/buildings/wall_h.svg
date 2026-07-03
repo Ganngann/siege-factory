@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a5a5a"/>
+      <stop offset="60%" stop-color="#484848"/>
+      <stop offset="100%" stop-color="#505050"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- Wall body — full width, centered vertically -->
+    <rect x="0" y="28" width="64" height="28" rx="1" fill="url(#wallGrad)" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Stone texture lines (horizontal) -->
+    <line x1="0" y1="36" x2="64" y2="36" stroke="#424242" stroke-width="0.5"/>
+    <line x1="0" y1="44" x2="64" y2="44" stroke="#424242" stroke-width="0.5"/>
+
+    <!-- Stone block divisions (vertical) -->
+    <line x1="12" y1="28" x2="12" y2="36" stroke="#424242" stroke-width="0.5"/>
+    <line x1="24" y1="28" x2="24" y2="36" stroke="#424242" stroke-width="0.5"/>
+    <line x1="36" y1="28" x2="36" y2="36" stroke="#424242" stroke-width="0.5"/>
+    <line x1="48" y1="28" x2="48" y2="36" stroke="#424242" stroke-width="0.5"/>
+    <line x1="6" y1="36" x2="6" y2="44" stroke="#424242" stroke-width="0.5"/>
+    <line x1="18" y1="36" x2="18" y2="44" stroke="#424242" stroke-width="0.5"/>
+    <line x1="30" y1="36" x2="30" y2="44" stroke="#424242" stroke-width="0.5"/>
+    <line x1="42" y1="36" x2="42" y2="44" stroke="#424242" stroke-width="0.5"/>
+    <line x1="54" y1="36" x2="54" y2="44" stroke="#424242" stroke-width="0.5"/>
+
+    <!-- Bottom row block divisions -->
+    <line x1="12" y1="44" x2="12" y2="56" stroke="#424242" stroke-width="0.5"/>
+    <line x1="24" y1="44" x2="24" y2="56" stroke="#424242" stroke-width="0.5"/>
+    <line x1="36" y1="44" x2="36" y2="56" stroke="#424242" stroke-width="0.5"/>
+    <line x1="48" y1="44" x2="48" y2="56" stroke="#424242" stroke-width="0.5"/>
+
+    <!-- Top highlight -->
+    <line x1="0" y1="28" x2="64" y2="28" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Battlements / crenellations -->
+    <rect x="0" y="20" width="10" height="8" rx="1" fill="url(#wallGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="16" y="20" width="10" height="8" rx="1" fill="url(#wallGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="32" y="20" width="10" height="8" rx="1" fill="url(#wallGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="48" y="20" width="10" height="8" rx="1" fill="url(#wallGrad)" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Battlement top highlights -->
+    <line x1="0" y1="20" x2="10" y2="20" stroke="#6a6a6a" stroke-width="0.5"/>
+    <line x1="16" y1="20" x2="26" y2="20" stroke="#6a6a6a" stroke-width="0.5"/>
+    <line x1="32" y1="20" x2="42" y2="20" stroke="#6a6a6a" stroke-width="0.5"/>
+    <line x1="48" y1="20" x2="58" y2="20" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Wall base shadow -->
+    <line x1="0" y1="54" x2="64" y2="54" stroke="#3a3a3a" stroke-width="1"/>
+
+    <!-- Connection points (left/right edges) -->
+    <rect x="0" y="32" width="2" height="24" fill="#444"/>
+    <rect x="62" y="32" width="2" height="24" fill="#444"/>
+  </g>
+
+  <g id="owner_color">
+    <!-- Stripe on wall body -->
+    <rect x="6" y="36" width="52" height="4" fill="white"/>
+  </g>
+
+  <g id="level_color">
+    <!-- Level badge on wall -->
+    <rect x="28" y="22" width="8" height="4" rx="1" fill="white"/>
+  </g>
+</svg>

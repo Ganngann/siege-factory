@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#6a6a6a"/>
+      <stop offset="50%" stop-color="#4e4e4e"/>
+      <stop offset="100%" stop-color="#5a5a5a"/>
+    </linearGradient>
+    <linearGradient id="mastGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#525252"/>
+      <stop offset="50%" stop-color="#626262"/>
+      <stop offset="100%" stop-color="#4e4e4e"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- === TOP SECTION (y=4..60) === -->
+
+    <!-- Large headframe structure spanning top half -->
+    <rect x="20" y="4" width="88" height="56" rx="3" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="20" y="4" width="88" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Headframe left column -->
+    <rect x="22" y="6" width="8" height="52" rx="1" fill="url(#mastGrad)" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Headframe right column -->
+    <rect x="98" y="6" width="8" height="52" rx="1" fill="url(#mastGrad)" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Headframe center column -->
+    <rect x="60" y="6" width="8" height="52" rx="1" fill="url(#mastGrad)" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Top beam -->
+    <rect x="20" y="6" width="88" height="6" rx="1" fill="#555555" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="20" y="6" width="88" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Cross-bracing panels between columns -->
+    <line x1="30" y1="18" x2="60" y2="30" stroke="#5c5c5c" stroke-width="1"/>
+    <line x1="30" y1="30" x2="60" y2="18" stroke="#5c5c5c" stroke-width="1"/>
+    <line x1="30" y1="36" x2="60" y2="48" stroke="#5c5c5c" stroke-width="1"/>
+    <line x1="30" y1="48" x2="60" y2="36" stroke="#5c5c5c" stroke-width="1"/>
+
+    <line x1="68" y1="18" x2="98" y2="30" stroke="#5c5c5c" stroke-width="1"/>
+    <line x1="68" y1="30" x2="98" y2="18" stroke="#5c5c5c" stroke-width="1"/>
+    <line x1="68" y1="36" x2="98" y2="48" stroke="#5c5c5c" stroke-width="1"/>
+    <line x1="68" y1="48" x2="98" y2="36" stroke="#5c5c5c" stroke-width="1"/>
+
+    <!-- Left drill shaft -->
+    <line x1="38" y1="14" x2="38" y2="58" stroke="#6e6e6e" stroke-width="2"/>
+    <circle cx="38" cy="14" r="2" fill="#6e6e6e"/>
+    <circle cx="38" cy="36" r="1.5" fill="#707070"/>
+    <circle cx="38" cy="58" r="2" fill="#6e6e6e"/>
+
+    <!-- Right drill shaft -->
+    <line x1="90" y1="14" x2="90" y2="58" stroke="#6e6e6e" stroke-width="2"/>
+    <circle cx="90" cy="14" r="2" fill="#6e6e6e"/>
+    <circle cx="90" cy="36" r="1.5" fill="#707070"/>
+    <circle cx="90" cy="58" r="2" fill="#6e6e6e"/>
+
+    <!-- Left drill bit housing -->
+    <rect x="32" y="0" width="12" height="6" rx="2" fill="#555555" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="32" y="0" width="12" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Left drill bit -->
+    <polygon points="35,0 41,0 38,-4" fill="#777777" stroke="#555555" stroke-width="0.5"/>
+
+    <!-- Right drill bit housing -->
+    <rect x="84" y="0" width="12" height="6" rx="2" fill="#555555" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="84" y="0" width="12" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Right drill bit -->
+    <polygon points="87,0 93,0 90,-4" fill="#777777" stroke="#555555" stroke-width="0.5"/>
+
+    <!-- === MIDDLE DECK (y=58..68) === -->
+
+    <rect x="4" y="58" width="120" height="10" rx="1" fill="#4a4a4a" stroke="#3e3e3e" stroke-width="1"/>
+    <line x1="4" y1="58" x2="124" y2="58" stroke="#5a5a5a" stroke-width="0.5"/>
+    <rect x="12" y="61" width="104" height="4" fill="#505050" rx="1"/>
+
+    <!-- Deck supports -->
+    <rect x="6" y="60" width="4" height="6" fill="#5e5e5e"/>
+    <rect x="118" y="60" width="4" height="6" fill="#5e5e5e"/>
+    <rect x="62" y="60" width="4" height="6" fill="#5e5e5e"/>
+
+    <!-- === BOTTOM SECTION (y=68..122) === -->
+
+    <!-- Main processing body -->
+    <rect x="4" y="68" width="110" height="54" rx="3" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="4" y="68" width="110" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Internal panel divisions -->
+    <line x1="6" y1="82" x2="112" y2="82" stroke="#545454" stroke-width="1"/>
+    <line x1="6" y1="104" x2="112" y2="104" stroke="#545454" stroke-width="1"/>
+
+    <!-- Left inspection window -->
+    <rect x="10" y="86" width="20" height="14" rx="1" fill="#3c3c3c" stroke="#4a4a4a" stroke-width="1"/>
+    <line x1="20" y1="86" x2="20" y2="100" stroke="#4a4a4a" stroke-width="0.5"/>
+    <line x1="10" y1="93" x2="30" y2="93" stroke="#4a4a4a" stroke-width="0.5"/>
+
+    <!-- Center panel detail -->
+    <rect x="42" y="86" width="30" height="14" rx="1" fill="#484848" stroke="#4a4a4a" stroke-width="1"/>
+    <circle cx="52" cy="93" r="2" fill="#666666"/>
+    <circle cx="62" cy="93" r="2" fill="#666666"/>
+
+    <!-- Right chute to output -->
+    <rect x="98" y="86" width="16" height="20" fill="#4c4c4c" stroke="#444444" stroke-width="0.5"/>
+
+    <!-- Motor unit (bottom-left area) -->
+    <rect x="8" y="108" width="60" height="14" rx="2" fill="url(#mastGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="8" y="108" width="60" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Motor cooling fins -->
+    <rect x="10" y="112" width="6" height="8" rx="0.5" fill="#585858"/>
+    <rect x="18" y="112" width="6" height="8" rx="0.5" fill="#585858"/>
+    <rect x="26" y="112" width="6" height="8" rx="0.5" fill="#585858"/>
+    <rect x="34" y="112" width="6" height="8" rx="0.5" fill="#585858"/>
+    <rect x="42" y="112" width="6" height="8" rx="0.5" fill="#585858"/>
+    <rect x="50" y="112" width="6" height="8" rx="0.5" fill="#585858"/>
+
+    <!-- Power indicator -->
+    <circle cx="62" cy="115" r="2" fill="#007700" stroke="#005500" stroke-width="0.5"/>
+
+    <!-- Bolts on motor -->
+    <circle cx="56" cy="115" r="1.5" fill="#7a7a7a"/>
+    <circle cx="64" cy="115" r="1.5" fill="#7a7a7a"/>
+
+    <!-- Output port (right edge, bottom-right tile area) -->
+    <rect x="124" y="84" width="4" height="24" rx="1" fill="#2e2e2e"/>
+    <rect x="125" y="86" width="3" height="20" fill="#3a3a3a"/>
+    <line x1="124" y1="84" x2="124" y2="108" stroke="#5a5a5a" stroke-width="0.5"/>
+    <line x1="124" y1="84" x2="126" y2="84" stroke="#666666" stroke-width="0.5"/>
+
+    <!-- Foundation plate -->
+    <rect x="4" y="122" width="116" height="6" rx="1" fill="#484848" stroke="#3e3e3e" stroke-width="1"/>
+    <line x1="4" y1="122" x2="120" y2="122" stroke="#5a5a5a" stroke-width="0.5"/>
+
+    <!-- Anchoring feet -->
+    <rect x="10" y="126" width="6" height="2" rx="0.5" fill="#555555"/>
+    <rect x="30" y="126" width="6" height="2" rx="0.5" fill="#555555"/>
+    <rect x="50" y="126" width="6" height="2" rx="0.5" fill="#555555"/>
+    <rect x="70" y="126" width="6" height="2" rx="0.5" fill="#555555"/>
+    <rect x="90" y="126" width="6" height="2" rx="0.5" fill="#555555"/>
+    <rect x="110" y="126" width="6" height="2" rx="0.5" fill="#555555"/>
+  </g>
+
+  <g id="owner_color">
+    <!-- Stripe on left column -->
+    <rect x="24" y="8" width="4" height="48" fill="white"/>
+    <!-- Stripe on right column -->
+    <rect x="100" y="8" width="4" height="48" fill="white"/>
+    <!-- Band on lower body -->
+    <rect x="6" y="70" width="106" height="4" fill="white"/>
+  </g>
+
+  <g id="level_color">
+    <!-- Level badge on deck (center) -->
+    <rect x="60" y="59" width="8" height="8" rx="1" fill="white"/>
+    <!-- Level badge on motor -->
+    <rect x="88" y="111" width="10" height="8" rx="1" fill="white"/>
+  </g>
+</svg>

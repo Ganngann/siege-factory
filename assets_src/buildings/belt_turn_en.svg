@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="beltBg" x1="0.2" y1="0.8" x2="0.8" y2="0.2">
+      <stop offset="0%" stop-color="#6a6a6a"/>
+      <stop offset="50%" stop-color="#505050"/>
+      <stop offset="100%" stop-color="#6a6a6a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Belt surface: quarter-annulus from right edge to top edge -->
+  <!-- Center: (8, 56). Outer arc R=73.76 (matches belt_east at y=8), inner R=56 (matches at y=56) -->
+  <path d="M 64 8 A 73.76 73.76 0 0 1 56 0 L 8 0 A 56 56 0 0 0 64 56 Z"
+        fill="url(#beltBg)" stroke="#444" stroke-width="1"/>
+
+  <!-- Outer edge highlight (top rail) -->
+  <path d="M 64 8 A 73.76 73.76 0 0 1 56 0" fill="none" stroke="#555" stroke-width="2"/>
+
+  <!-- Inner edge shadow (bottom rail) -->
+  <path d="M 8 0 A 56 56 0 0 0 64 56" fill="none" stroke="#333" stroke-width="1.5"/>
+
+  <!-- Outer highlight band -->
+  <path d="M 64 11 A 70.76 70.76 0 0 1 51 0" fill="none" stroke="#777" stroke-width="1"/>
+
+  <!-- Rollers (radial lines following the curve) -->
+  <line x1="70" y1="20" x2="58" y2="27" stroke="#888" stroke-width="1.5"/>
+  <line x1="65" y1="12" x2="54" y2="20" stroke="#888" stroke-width="1.5"/>
+  <line x1="58" y1="4" x2="48" y2="14" stroke="#888" stroke-width="1.5"/>
+  <line x1="50" y1="-2" x2="42" y2="9" stroke="#888" stroke-width="1.5"/>
+
+  <!-- Center guide line -->
+  <path d="M 64 23 A 64.88 64.88 0 0 0 41 0" fill="none" stroke="#666" stroke-width="1.5" opacity="0.35"/>
+
+  <!-- Direction arrow: curved path from entry toward exit -->
+  <path d="M 60 24 Q 50 14 42 8" fill="none" stroke="#aaa" stroke-width="2.5" stroke-linecap="round" opacity="0.65"/>
+  <polygon points="40,6 48,4 44,11" fill="#aaa" opacity="0.65"/>
+
+  <!-- Edge connectors -->
+  <rect x="62" y="12" width="2" height="40" fill="#444" rx="1" opacity="0.5"/>
+  <rect x="12" y="0" width="40" height="2" fill="#444" rx="1" opacity="0.5"/>
+</svg>
