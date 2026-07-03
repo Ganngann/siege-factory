@@ -86,10 +86,13 @@ impl Plugin for EconomyPlugin {
             placement::deconstruct_drag_preview.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
+            belt::advance_belt_slots.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
             production::assembler_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            belt::advance_belt_slots.run_if(in_state(GameState::Playing)),
+            belt::building_output_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             belt::animate_belt_positions.run_if(in_state(GameState::Playing)),

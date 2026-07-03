@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 use crate::economy::resource::{ResourceId, ResourceRegistry, Inventory};
-use crate::economy::components::{Building, Direction, OccupiedTiles, Splitter, Sorter};
+use crate::economy::components::{Assembler, Building, Direction, OccupiedTiles, Splitter, Sorter};
+use crate::economy::recipe::RecipeRegistry;
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
@@ -326,6 +327,82 @@ pub fn advance_belt_slots(
             }
         }
     }
+}
+
+pub fn building_output_tick(
+    mut belt_query: Query<(&TilePosition, &mut BeltSlots)>,
+    mut inventory_query: Query<(Entity, &OccupiedTiles, &mut Inventory), (With<Building>, Without<BeltSlots>)>,
+    assembler_query: Query<Option<&Assembler>>,
+    recipes: Res<RecipeRegistry>,
+    mut commands: Commands,
+    shapes: Res<ShapeCache>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    resources: Res<ResourceRegistry>,
+    cfg: Res<MapConfig>,
+) {
+    let tile_size = cfg.tile_size;
+    let inv_map: HashMap<(i32, i32), Entity> = 
+        inventory_query.iter()
+            .flat_map(|(e, tiles, _)| tiles.0.iter().map(move |&(x, y)| ((x, y), e)))
+            .collect();
+
+    for (belt_pos, mut bs) in belt_query.iter_mut() {
+        if bs.slots[0].is_some() { continue; }
+        let (odx, ody) = bs.direction.offset();
+        let src_x = belt_pos.x - odx;
+        let src_y = belt_pos.y - ody;
+        if let Some(&inv_entity) = inv_map.get(&(src_x, src_y)) {
+            if let Ok((_, _, mut inv)) = inventory_query.get_mut(inv_entity) {
+                // For production buildings, only extract recipe outputs
+                if let Ok(Some(asm)) = assembler_query.get(inv_entity) {
+                    if let Some(recipe) = recipes.get(&asm.recipe_id) {
+                        // Find an output resource that exists in inventory
+                        let output_res = recipe.output.iter()
+                            .find(|(r, _)| inv.get(r) > 0)
+                            .map(|(r, _)| r.clone());
+                        if let Some(res) = output_res {
+                            if inv.remove(&res, 1) {
+                                spawn_belt_item(&mut commands, &mut materials, &shapes, &resources, belt_pos, tile_size, res, &mut bs);
+                            }
+                        }
+                        continue;
+                    }
+                }
+                // Non-production building: extract any resource
+                let first_key = inv.resources.keys().next().cloned();
+                if let Some(res) = first_key {
+                    if inv.remove(&res, 1) {
+                        spawn_belt_item(&mut commands, &mut materials, &shapes, &resources, belt_pos, tile_size, res, &mut bs);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn spawn_belt_item(
+    commands: &mut Commands,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    shapes: &Res<ShapeCache>,
+    resources: &Res<ResourceRegistry>,
+    belt_pos: &TilePosition,
+    tile_size: f32,
+    resource: ResourceId,
+    bs: &mut BeltSlots,
+) {
+    let color = resources.get(&resource.0).color;
+    let spawn_pos = Vec3::new(
+        belt_pos.x as f32 * tile_size,
+        belt_pos.y as f32 * tile_size,
+        2.5,
+    );
+    let item_entity = commands.spawn((
+        BeltItem { resource, acc: 0.0 },
+        Mesh2d(shapes.circle.clone()),
+        MeshMaterial2d(materials.add(color)),
+        Transform::from_translation(spawn_pos).with_scale(Vec3::splat(0.25)),
+    )).id();
+    bs.slots[0] = Some(item_entity);
 }
 
 pub fn animate_belt_positions(

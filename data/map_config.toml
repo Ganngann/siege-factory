@@ -8,6 +8,6 @@ min_amount = 50
 max_amount = 150
 
 [hq]
-start_ore = 200
+start_ore = 20000
 hp = 100
 position = { x = 0, y = 0 }

@@ -121,7 +121,7 @@ pub fn all_texture_stems() -> Vec<String> {
     vec![
         "belt_east", "belt_north", "belt_turn_en",
         "miner_east", "miner_east_tall", "miner_east_2x2", "miner_east_3x2", "miner_east_3x3",
-        "assembler_east", "turret_east", "storage",
+        "assembler_east", "turret_east", "storage", "furnace",
         "splitter_east", "sorter_east",
         "wall_h", "wall_v", "hq_east",
         "soldier", "worker",

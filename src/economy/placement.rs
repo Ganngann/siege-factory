@@ -58,7 +58,7 @@ pub fn build_mode_input(
 
 fn auto_detect_direction(
     tx: i32, ty: i32,
-    producers: &Query<&TilePosition, Or<(With<Miner>, With<Assembler>)>>,
+    producers: &Query<&TilePosition, With<Miner>>,
     belts_query: &Query<(&TilePosition, &BeltSlots)>,
     default: Direction,
 ) -> Direction {
@@ -85,7 +85,7 @@ fn auto_detect_direction(
 
 fn auto_detect_direction_from_data(
     tx: i32, ty: i32,
-    producers: &Query<&TilePosition, Or<(With<Miner>, With<Assembler>)>>,
+    producers: &Query<&TilePosition, With<Miner>>,
     belt_data: &[((i32, i32), Direction)],
     default: Direction,
 ) -> Direction {
@@ -326,7 +326,7 @@ pub fn update_build_preview(
     mut materials: ResMut<Assets<ColorMaterial>>,
     occupied: Query<&OccupiedTiles, With<Building>>,
     deposits: Query<&TilePosition, With<ResourceDeposit>>,
-    producers: Query<&TilePosition, Or<(With<Miner>, With<Assembler>)>>,
+    producers: Query<&TilePosition, With<Miner>>,
     belts_query: Query<(&TilePosition, &BeltSlots)>,
     registry: Res<BuildingRegistry>,
     hovered: Res<HoveredTile>,
@@ -568,7 +568,7 @@ pub fn track_belt_drag(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     occupied: Query<&OccupiedTiles, With<Building>>,
-    producers: Query<&TilePosition, Or<(With<Miner>, With<Assembler>)>>,
+    producers: Query<&TilePosition, With<Miner>>,
     belt_read: Query<(&TilePosition, &BeltSlots)>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
