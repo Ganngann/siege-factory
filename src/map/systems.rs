@@ -2,9 +2,9 @@ use std::collections::HashSet;
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::asset::RenderAssetUsages;
-use bevy_pancam::PanCam;
 use crate::core::game_state::GameState;
-use crate::economy::components::OreDeposit;
+use crate::economy::components::ResourceDeposit;
+use crate::economy::components::PeacefulMode;
 use crate::map::components::*;
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
@@ -22,7 +22,7 @@ impl Plugin for MapPlugin {
         app.insert_resource(cfg);
         app.insert_resource(ChunkGrid::new(seed));
         app.insert_resource(HoveredTile::default());
-        app.add_systems(OnEnter(GameState::Playing), setup_map);
+        app.add_systems(OnEnter(GameState::Playing), setup_map.run_if(crate::save_load::is_fresh_game));
         app.add_systems(OnExit(GameState::Playing), cleanup_map);
         app.add_systems(Update, (
             update_hovered_tile,
@@ -43,23 +43,6 @@ fn setup_map(
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     let (hx, hy) = cfg.hq_position;
-    commands.spawn((
-        Camera2d,
-        Transform::from_xyz(
-            hx as f32 * cfg.tile_size + cfg.tile_size / 2.0,
-            hy as f32 * cfg.tile_size + cfg.tile_size / 2.0,
-            100.0,
-        ),
-        PanCam {
-            grab_buttons: vec![MouseButton::Middle],
-            speed: 500.0,
-            min_scale: 0.3,
-            max_scale: 3.0,
-            ..default()
-        },
-    ));
-
-    // Pre-seed chunks around HQ so the first frame is never gray
     let chunk_size = CHUNK_SIZE as i32;
     let margin_chunks = 10;
     let hq_cx = hx.div_euclid(chunk_size);
@@ -98,7 +81,7 @@ fn update_hovered_tile(
     hovered.0 = cursor_to_tile(&windows, &camera, cfg.tile_size);
 }
 
-fn build_chunk_mesh(cx: i32, cy: i32, tile_size: f32) -> (Mesh, Mesh) {
+pub fn build_chunk_mesh(cx: i32, cy: i32, tile_size: f32) -> (Mesh, Mesh) {
     let chunk_size = CHUNK_SIZE as i32;
     let world_ox = cx * chunk_size;
     let world_oy = cy * chunk_size;
@@ -157,6 +140,15 @@ fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
     mesh
 }
 
+fn deposit_color(resource: &str) -> Color {
+    match resource {
+        "iron_ore" => Color::srgb(0.7, 0.5, 0.1),
+        "copper_ore" => Color::srgb(0.84, 0.54, 0.30),
+        "coal" => Color::srgb(0.27, 0.27, 0.27),
+        _ => Color::srgb(0.5, 0.5, 0.5),
+    }
+}
+
 fn spawn_chunks_in_range(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
@@ -175,7 +167,6 @@ fn spawn_chunks_in_range(
 
     let mat_even = materials.add(Color::srgb(0.25, 0.35, 0.25));
     let mat_odd = materials.add(Color::srgb(0.18, 0.28, 0.18));
-    let ore_color = materials.add(Color::srgb(0.7, 0.5, 0.1));
 
     for cx in min_cx..=max_cx {
         for cy in min_cy..=max_cy {
@@ -204,17 +195,19 @@ fn spawn_chunks_in_range(
 
             let world_ox = cx * chunk_size;
             let world_oy = cy * chunk_size;
-            for &(dx, dy, amount) in &chunk.deposits {
+            for &(dx, dy, amount, ref resource) in &chunk.deposits {
                 if amount == 0 {
                     continue;
                 }
                 let wx = world_ox + dx as i32;
                 let wy = world_oy + dy as i32;
+                let color = deposit_color(resource);
+                let dep_color = materials.add(color);
                 commands.spawn((
                     ChunkMember(cx, cy),
-                    OreDeposit { amount },
+                    ResourceDeposit { resource: resource.clone(), amount },
                     Mesh2d(shapes.circle.clone()),
-                    MeshMaterial2d(ore_color.clone()),
+                    MeshMaterial2d(dep_color),
                     Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
                     TilePosition { x: wx, y: wy },
                 ));
@@ -231,10 +224,11 @@ fn update_visible_chunks(
     cfg: Res<MapConfig>,
     existing_markers: Query<(Entity, &ChunkMarker)>,
     existing_members: Query<(Entity, &ChunkMember)>,
-    existing_deposits: Query<(Entity, &OreDeposit, &TilePosition)>,
+    existing_deposits: Query<(Entity, &ResourceDeposit, &TilePosition)>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    _peaceful: Res<PeacefulMode>,
 ) {
     let Ok((cam, cam_transform)) = camera.single() else { return };
     let Ok(window) = window.single() else { return };
@@ -259,13 +253,11 @@ fn update_visible_chunks(
     let min_cy = min_ty.div_euclid(chunk_size);
     let max_cy = max_ty.div_euclid(chunk_size);
 
-    // Collect existing chunk coordinates
     let mut spawned: HashSet<(i32, i32)> = HashSet::new();
     for (_, marker) in existing_markers.iter() {
         spawned.insert((marker.0, marker.1));
     }
 
-    // Save deposit amounts and despawn members for out-of-range chunks
     let despawn_margin = 3;
     let mut deposit_updates: Vec<((i32, i32, u32, u32), u32)> = Vec::new();
     let mut to_despawn: Vec<Entity> = Vec::new();
@@ -290,7 +282,6 @@ fn update_visible_chunks(
         }
     }
 
-    // Also despawn members for out-of-range chunks
     for (entity, member) in existing_members.iter() {
         let (cx, cy) = (member.0, member.1);
         if cx < min_cx - despawn_margin || cx > max_cx + despawn_margin
@@ -304,7 +295,6 @@ fn update_visible_chunks(
         commands.entity(entity).despawn();
     }
 
-    // Apply deposit updates
     for ((cx, cy, dx, dy), amount) in deposit_updates {
         let chunk = chunk_grid.ensure_chunk_mut(cx, cy);
         for d in chunk.deposits.iter_mut() {
@@ -315,7 +305,6 @@ fn update_visible_chunks(
         }
     }
 
-    // Spawn new chunks
     spawn_chunks_in_range(
         &mut commands, &mut chunk_grid, &cfg, &shapes,
         &mut materials, &mut meshes,

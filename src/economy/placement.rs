@@ -3,7 +3,7 @@ use crate::economy::belt::{BeltItem, BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
     Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode, DeconstructDrag,
-    Building, Miner, Assembler, OreDeposit, Ghost, HQ, OccupiedTiles,
+    Building, Miner, Assembler, ResourceDeposit, Ghost, HQ, OccupiedTiles,
     Produces, TurretCombat, Storage, Splitter, Sorter,
 };
 use crate::economy::resource::{ResourceId, Inventory};
@@ -232,7 +232,7 @@ pub fn handle_deconstruct_click(
         let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
         if refund > 0 {
             if let Ok(mut hq_inv) = hq_query.single_mut() {
-                hq_inv.add(c.resource, refund);
+                hq_inv.add(&c.resource, refund);
             }
             refund_total += refund;
         }
@@ -288,7 +288,7 @@ pub fn handle_deconstruct_click_v2(
         let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
         if refund > 0 {
             if let Ok(mut hq_inv) = hq_query.single_mut() {
-                hq_inv.add(c.resource, refund);
+                hq_inv.add(&c.resource, refund);
             }
             refund_names.push(format!("{} {}", refund, c.resource.display_name()));
         }
@@ -325,7 +325,7 @@ pub fn update_build_preview(
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     occupied: Query<&OccupiedTiles, With<Building>>,
-    deposits: Query<&TilePosition, With<OreDeposit>>,
+    deposits: Query<&TilePosition, With<ResourceDeposit>>,
     producers: Query<&TilePosition, With<Produces>>,
     belts_query: Query<(&TilePosition, &BeltSlots)>,
     registry: Res<BuildingRegistry>,
@@ -548,12 +548,12 @@ pub fn deconstruct_drag_preview(
 }
 
 fn can_afford(hq_inv: &Inventory, cost: &[BuildingCost]) -> bool {
-    cost.iter().all(|c| hq_inv.get(c.resource) >= c.amount)
+    cost.iter().all(|c| hq_inv.get(&c.resource) >= c.amount)
 }
 
 fn deduct_cost(hq_inv: &mut Inventory, cost: &[BuildingCost]) {
     for c in cost {
-        hq_inv.remove(c.resource, c.amount);
+        hq_inv.remove(&c.resource, c.amount);
     }
 }
 
@@ -671,7 +671,7 @@ pub fn on_belt_drag_completed(
             Err(_) => return,
         };
         let scaled_cost: Vec<BuildingCost> = def.cost.iter()
-            .map(|c| BuildingCost { resource: c.resource, amount: c.amount * ev.new_tiles.len() as u32 })
+            .map(|c| BuildingCost { resource: c.resource.clone(), amount: c.amount * ev.new_tiles.len() as u32 })
             .collect();
         if !can_afford(&hq_inv, &scaled_cost) {
             toast_queue.0.push("Not enough resources".to_string());
@@ -737,7 +737,7 @@ pub fn on_belt_drag_completed(
             } else if def.id == "sorter" {
                 commands.spawn((
                     belt_components,
-                    Sorter { filter: ResourceId::Ore, inverted: false },
+                    Sorter { filter: ResourceId("iron_ore".to_string()), inverted: false },
                     sprite,
                 ));
             } else {
@@ -840,9 +840,9 @@ pub fn on_deconstruct_area(
                 for c in &def.cost {
                     let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
                     if refund > 0 {
-                        if let Ok(mut hq_inv) = hq_query.single_mut() {
-                            hq_inv.add(c.resource, refund);
-                        }
+            if let Ok(mut hq_inv) = hq_query.single_mut() {
+                hq_inv.add(&c.resource, refund);
+            }
                         refund_names.push(format!("{} {}", refund, c.resource.display_name()));
                     }
                 }
@@ -882,7 +882,7 @@ pub fn handle_build_click(
     textures: Res<TextureCache>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
-    deposits: Query<(Entity, &TilePosition), With<OreDeposit>>,
+    deposits: Query<(Entity, &TilePosition, &ResourceDeposit)>,
     occupied: Query<&OccupiedTiles, With<Building>>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -941,9 +941,9 @@ pub fn handle_build_click(
     };
 
     if def.requires_deposit {
-        let deposit_entity = deposits.iter().find(|(_, pos)| pos.x == tx && pos.y == ty).map(|(e, _)| e);
-        let Some(deposit) = deposit_entity else {
-            toast_queue.0.push("No ore deposit here".to_string());
+        let deposit_data = deposits.iter().find(|(_, pos, _)| pos.x == tx && pos.y == ty);
+        let Some((deposit_entity, _, res_dep)) = deposit_data else {
+            toast_queue.0.push("No resource deposit here".to_string());
             return;
         };
         if !tiles_are_free(&footprint, &occupied) {
@@ -967,12 +967,13 @@ pub fn handle_build_click(
         let dx = tx.rem_euclid(CHUNK_SIZE as i32) as u32;
         let dy = ty.rem_euclid(CHUNK_SIZE as i32) as u32;
         chunk_grid.set_deposit_amount(cx, cy, dx, dy, 0);
-        commands.trigger(DespawnDeposit(deposit));
+        commands.trigger(DespawnDeposit(deposit_entity));
 
         let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
         let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
         let stem = texture_stem(&def.id);
         let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
+        let deposit_resource = ResourceId(res_dep.resource.clone());
         let entity = commands.spawn((
             Miner { production_timer: 0.0, interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0) },
             Building { kind: def.id.clone(), name: def.name.clone() },
@@ -982,7 +983,7 @@ pub fn handle_build_click(
             Transform::from_xyz(cx, cy, 2.0),
             Visibility::default(),
             TilePosition { x: tx, y: ty },
-            Produces { resource: def.production.as_ref().map(|p| p.resource).unwrap_or(ResourceId::Ore), interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0), timer: 0.0 },
+            Produces { resource: deposit_resource, interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0), timer: 0.0 },
         )).id();
         attach_children(&mut commands, entity, stem, size);
         return;
@@ -1025,10 +1026,11 @@ pub fn handle_build_click(
         Inventory::new()
     };
 
-    if def.id == "assembler" {
+    if def.id == "assembler" || def.id == "furnace" {
+        let recipe_id = if def.id == "furnace" { "iron_plate" } else { "ammo_craft" };
         let entity = commands.spawn((
             base,
-            Assembler { production_timer: 0.0, interval: 2.0 },
+            Assembler { production_timer: 0.0, interval: 2.0, recipe_id: recipe_id.to_string() },
             inv,
         )).id();
         attach_children(&mut commands, entity, stem, size);

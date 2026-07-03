@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use crate::core::game_state::GameState;
 use crate::core::input::{InputBinding, KeyBindings};
 use crate::core::settings::Settings;
+use crate::save_load::{SaveManager, save_path};
 
 // ── TOML types ──
 
@@ -58,6 +59,7 @@ pub enum MenuAction {
     Back,
     Quit,
     Rebind(String),
+    LoadGame,
 }
 
 #[derive(Debug, Resource)]
@@ -82,6 +84,9 @@ pub struct RebindState(pub Option<String>);
 
 #[derive(Component)]
 pub struct MenuRoot;
+
+#[derive(Component)]
+pub struct MenuCamera;
 
 #[derive(Component)]
 pub struct MenuItemComp(pub String, pub MenuAction);
@@ -114,6 +119,7 @@ impl MainMenuDef {
                             ),
                             "Back" => MenuAction::Back,
                             "Quit" => MenuAction::Quit,
+                            "LoadGame" => MenuAction::LoadGame,
                             _ => return None,
                         };
                         Some(MenuItemDef {
@@ -165,11 +171,14 @@ fn spawn_current_screen(
     def: &MainMenuDef,
     nav: &MenuNav,
     bindings: &KeyBindings,
+    camera_exists: bool,
 ) {
     let screen_id = nav.stack.last().cloned().unwrap_or_default();
     let Some(screen) = def.screens.get(&screen_id) else { return };
 
-    commands.spawn((Camera2d, MenuRoot));
+    if !camera_exists {
+        commands.spawn((Camera2d, MenuCamera));
+    }
 
     commands
         .spawn((
@@ -254,8 +263,15 @@ fn spawn_current_screen(
 
 // ── Systems ──
 
-pub fn despawn_menu_ui(mut commands: Commands, query: Query<Entity, With<MenuRoot>>) {
+pub fn despawn_menu_ui(
+    mut commands: Commands,
+    query: Query<Entity, With<MenuRoot>>,
+    camera_query: Query<Entity, With<MenuCamera>>,
+) {
     for entity in &query {
+        commands.entity(entity).despawn();
+    }
+    for entity in &camera_query {
         commands.entity(entity).despawn();
     }
 }
@@ -270,9 +286,12 @@ pub fn menu_navigation(
     _mouse: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
     mut next_state: ResMut<NextState<GameState>>,
+    mut fresh_game: ResMut<crate::core::game_state::IsFreshGame>,
+    mut save_mgr: ResMut<SaveManager>,
     root_query: Query<Entity, With<MenuRoot>>,
     buttons: Query<(&Interaction, &MenuIndex, &MenuItemComp, &Children)>,
     mut text_colors: Query<&mut TextColor>,
+    camera_query: Query<Entity, With<MenuCamera>>,
     mut last_nav: Local<(Vec<String>, usize)>,
 ) {
     // Skip navigation while in rebind mode
@@ -287,7 +306,7 @@ pub fn menu_navigation(
         for entity in &root_query {
             commands.entity(entity).despawn();
         }
-        spawn_current_screen(&mut commands, &def, &nav, &bindings);
+        spawn_current_screen(&mut commands, &def, &nav, &bindings, !camera_query.is_empty());
         *last_nav = current_nav.clone();
         return;
     }
@@ -381,7 +400,16 @@ pub fn menu_navigation(
         let Some(item) = items.get(idx) else { return };
         match &item.action {
             MenuAction::StartGame => {
+                fresh_game.0 = true;
                 next_state.set(GameState::Playing);
+            }
+            MenuAction::LoadGame => {
+                let path = save_path();
+                if path.exists() {
+                    save_mgr.load_requested = Some(path.to_string_lossy().to_string());
+                    fresh_game.0 = false;
+                    next_state.set(GameState::Loading);
+                }
             }
             MenuAction::OpenScreen(target) => {
                 if def.screens.contains_key(target.as_str()) {

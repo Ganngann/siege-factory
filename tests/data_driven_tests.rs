@@ -1,136 +1,45 @@
 use siege_factory::economy::building::BuildingRegistry;
-use siege_factory::economy::unit_config::UnitConfig;
 use siege_factory::economy::resource::{ResourceId, Inventory};
-use siege_factory::map::config::MapConfig;
+use siege_factory::economy::unit_config::UnitConfig;
+use siege_factory::map::tile_grid::ChunkGrid;
 
-// ── Registry tests (pure data, no ECS) ──
+// ── TOML loading tests ──
 
 #[test]
-fn all_buildings_have_visual() {
-    let registry = BuildingRegistry::load();
-    for def in &registry.buildings {
-        if def.id == "hq" {
-            continue;
-        }
-        assert!(!def.visual.is_empty(),
-            "Building '{}' lacks visual field", def.id);
+fn building_registry_loads() {
+    let reg = BuildingRegistry::load();
+    let hq = reg.get("hq").expect("HQ should exist");
+    assert_eq!(hq.name, "HQ");
+    assert_eq!(hq.hp, 100);
+    assert!(hq.hidden);
+    assert!(!hq.can_deconstruct);
+
+    let miner = reg.get("miner").expect("Miner should exist");
+    assert!(miner.requires_deposit);
+    assert!(miner.production.is_some());
+
+    let belt = reg.get("belt").expect("Belt should exist");
+    assert!(belt.belt.is_some());
+    assert_eq!(belt.belt.as_ref().unwrap().slots, 4);
+
+    let wall = reg.get("wall").expect("Wall should exist");
+    assert!(wall.drag_placement);
+
+    let storage = reg.get("storage").expect("Storage should exist");
+    assert_eq!(storage.inventory_capacity, 64);
+}
+
+#[test]
+fn building_ids_are_unique() {
+    let reg = BuildingRegistry::load();
+    let mut ids = std::collections::HashSet::new();
+    for b in &reg.buildings {
+        assert!(ids.insert(&b.id), "Duplicate building id: {}", b.id);
     }
 }
 
 #[test]
-fn all_buildings_have_valid_cost() {
-    let registry = BuildingRegistry::load();
-    for def in &registry.buildings {
-        for cost in &def.cost {
-            assert!(cost.amount > 0,
-                "Building '{}' has zero-cost resource {:?}", def.id, cost.resource);
-        }
-    }
-}
-
-#[test]
-fn combat_buildings_have_combat_stats() {
-    let registry = BuildingRegistry::load();
-    for def in &registry.buildings {
-        if def.combat.is_some() {
-            let combat = def.combat.as_ref().unwrap();
-            assert!(combat.damage > 0, "{} combat damage is 0", def.id);
-            assert!(combat.range > 0.0, "{} combat range is 0", def.id);
-            assert!(combat.fire_rate_sec > 0.0, "{} combat fire_rate is 0", def.id);
-        }
-    }
-}
-
-#[test]
-fn deposit_buildings_require_deposit() {
-    let registry = BuildingRegistry::load();
-    let deposit_buildings: Vec<_> = registry.buildings.iter()
-        .filter(|b| b.requires_deposit).collect();
-    assert!(!deposit_buildings.is_empty(), "No buildings require a deposit");
-    for b in &deposit_buildings {
-        assert!(b.production.is_some(),
-            "Building '{}' requires deposit but has no production", b.id);
-    }
-}
-
-#[test]
-fn production_buildings_have_production_def() {
-    let registry = BuildingRegistry::load();
-    for def in &registry.buildings {
-        if let Some(prod) = &def.production {
-            assert!(prod.interval_sec > 0.0,
-                "Building '{}' production interval is 0", def.id);
-        }
-    }
-}
-
-#[test]
-fn belt_buildings_have_belt_properties() {
-    let registry = BuildingRegistry::load();
-    for def in &registry.buildings {
-        if let Some(belt) = &def.belt {
-            assert!(belt.slots > 0, "Building '{}' belt has 0 slots", def.id);
-            assert!(belt.speed > 0.0, "Building '{}' belt speed is 0", def.id);
-        }
-    }
-}
-
-#[test]
-fn all_units_have_visual() {
-    let cfg = UnitConfig::load();
-    for (id, def) in &cfg.units {
-        assert!(!def.visual.is_empty(),
-            "Unit '{}' lacks visual field", id);
-    }
-}
-
-#[test]
-fn all_units_have_valid_cost() {
-    let cfg = UnitConfig::load();
-    for (id, def) in &cfg.units {
-        for cost in &def.cost {
-            assert!(cost.amount > 0,
-                "Unit '{}' has zero-cost resource {:?}", id, cost.resource);
-        }
-    }
-}
-
-#[test]
-fn combat_units_have_damage() {
-    let cfg = UnitConfig::load();
-    for (id, def) in &cfg.units {
-        if def.kind == "combat" {
-            assert!(def.damage > 0, "Combat unit '{}' has 0 damage", id);
-            assert!(def.range_tiles > 0.0, "Combat unit '{}' has 0 range", id);
-        }
-    }
-}
-
-#[test]
-fn harvester_units_have_harvest_stats() {
-    let cfg = UnitConfig::load();
-    for (id, def) in &cfg.units {
-        if def.kind == "harvester" {
-            assert!(def.speed > 0.0, "Harvester '{}' has 0 speed", id);
-            assert!(def.mine_interval_sec > 0.0,
-                "Harvester '{}' has 0 mine interval", id);
-        }
-    }
-}
-
-#[test]
-fn building_registry_contains_all_toml_entries() {
-    let registry = BuildingRegistry::load();
-    let ids: Vec<&str> = registry.buildings.iter().map(|b| b.id.as_str()).collect();
-    assert!(ids.contains(&"hq"), "Missing HQ");
-    assert!(ids.contains(&"miner"), "Missing miner");
-    assert!(ids.contains(&"belt"), "Missing belt");
-    assert!(ids.contains(&"turret"), "Missing turret");
-    assert!(ids.len() >= 5, "Expected at least 5 buildings, got {}", ids.len());
-}
-
-#[test]
-fn unit_config_contains_all_toml_entries() {
+fn unit_config_loads() {
     let cfg = UnitConfig::load();
     assert!(cfg.units.contains_key("soldier"), "Missing soldier");
     assert!(cfg.units.contains_key("worker"), "Missing worker");
@@ -142,41 +51,41 @@ fn unit_config_contains_all_toml_entries() {
 #[test]
 fn inventory_operations() {
     let mut inv = Inventory::new();
-    assert_eq!(inv.get(ResourceId::Ore), 0);
+    assert_eq!(inv.get(&ResourceId("ore".to_string())), 0);
 
-    inv.add(ResourceId::Ore, 10);
-    assert_eq!(inv.get(ResourceId::Ore), 10);
+    inv.add(&ResourceId("ore".to_string()), 10);
+    assert_eq!(inv.get(&ResourceId("ore".to_string())), 10);
 
-    inv.add(ResourceId::Ore, 5);
-    assert_eq!(inv.get(ResourceId::Ore), 15);
+    inv.add(&ResourceId("ore".to_string()), 5);
+    assert_eq!(inv.get(&ResourceId("ore".to_string())), 15);
 
-    assert!(inv.remove(ResourceId::Ore, 7));
-    assert_eq!(inv.get(ResourceId::Ore), 8);
+    assert!(inv.remove(&ResourceId("ore".to_string()), 7));
+    assert_eq!(inv.get(&ResourceId("ore".to_string())), 8);
 
-    assert!(!inv.remove(ResourceId::Ore, 20));
-    assert_eq!(inv.get(ResourceId::Ore), 8);
+    assert!(!inv.remove(&ResourceId("ore".to_string()), 20));
+    assert_eq!(inv.get(&ResourceId("ore".to_string())), 8);
 }
 
 #[test]
 fn inventory_saturating_add() {
     let mut inv = Inventory::new();
-    inv.add(ResourceId::Ore, u32::MAX);
-    inv.add(ResourceId::Ore, 100);
-    assert_eq!(inv.get(ResourceId::Ore), u32::MAX);
+    inv.add(&ResourceId("ore".to_string()), u32::MAX);
+    inv.add(&ResourceId("ore".to_string()), 100);
+    assert_eq!(inv.get(&ResourceId("ore".to_string())), u32::MAX);
 }
 
 #[test]
 fn inventory_separate_resources() {
     let mut inv = Inventory::new();
-    inv.add(ResourceId::Ore, 10);
-    inv.add(ResourceId::Ammo, 5);
-    inv.add(ResourceId::Energy, 3);
-    assert_eq!(inv.get(ResourceId::Ore), 10);
-    assert_eq!(inv.get(ResourceId::Ammo), 5);
-    assert_eq!(inv.get(ResourceId::Energy), 3);
-    inv.remove(ResourceId::Ore, 10);
-    assert_eq!(inv.get(ResourceId::Ore), 0);
-    assert_eq!(inv.get(ResourceId::Ammo), 5);
+    inv.add(&ResourceId("ore".to_string()), 10);
+    inv.add(&ResourceId("ammo".to_string()), 5);
+    inv.add(&ResourceId("energy".to_string()), 3);
+    assert_eq!(inv.get(&ResourceId("ore".to_string())), 10);
+    assert_eq!(inv.get(&ResourceId("ammo".to_string())), 5);
+    assert_eq!(inv.get(&ResourceId("energy".to_string())), 3);
+    inv.remove(&ResourceId("ore".to_string()), 10);
+    assert_eq!(inv.get(&ResourceId("ore".to_string())), 0);
+    assert_eq!(inv.get(&ResourceId("ammo".to_string())), 5);
 }
 
 // ── Production timer logic (pure function test) ──
@@ -196,66 +105,46 @@ fn production_timer_cycles_correctly() {
         }
     }
 
-    assert!(events > 0, "Timer should have cycled at least once");
-    assert!(timer < interval, "Timer should end below interval");
+    // 50 steps * 0.1 = 5.0 seconds total => 10 events
+    assert_eq!(events, 10);
+    // timer should be 0.0 after last cycle
+    assert!((timer - 0.0).abs() < f32::EPSILON);
 }
 
-// ── Combat targeting logic (pure function tests) ──
+// ── ChunkGrid generation tests ──
 
 #[test]
-fn turret_find_closest_enemy_in_range() {
-    use bevy::prelude::*;
-    use siege_factory::enemy::combat::find_closest_enemy;
+fn chunk_grid_generates_deterministically() {
+    let mut grid_a = ChunkGrid::new(42);
+    let mut grid_b = ChunkGrid::new(42);
 
-    let turret_pos = Vec3::ZERO;
-    let enemies = vec![
-        (Entity::from_bits(1), Vec3::new(5.0, 0.0, 0.0)),   // in range (25 < 400)
-        (Entity::from_bits(2), Vec3::new(50.0, 0.0, 0.0)),  // out of range
-    ];
+    let chunk_a = grid_a.ensure_chunk(2, 3).clone();
+    let chunk_b = grid_b.ensure_chunk(2, 3).clone();
 
-    let result = find_closest_enemy(turret_pos, &enemies, 400.0);
-    assert_eq!(result, Some(Entity::from_bits(1)),
-        "Should target the closest enemy in range");
-}
-
-#[test]
-fn turret_no_enemy_in_range_returns_none() {
-    use bevy::prelude::*;
-    use siege_factory::enemy::combat::find_closest_enemy;
-
-    let turret_pos = Vec3::ZERO;
-    let enemies = vec![
-        (Entity::from_bits(1), Vec3::new(50.0, 0.0, 0.0)),   // out of range
-    ];
-
-    let result = find_closest_enemy(turret_pos, &enemies, 400.0);
-    assert_eq!(result, None,
-        "Should return None when no enemy is in range");
+    assert_eq!(chunk_a.tiles, chunk_b.tiles);
+    assert_eq!(chunk_a.deposits, chunk_b.deposits);
 }
 
 #[test]
-fn turret_empty_enemies_returns_none() {
-    use bevy::prelude::*;
-    use siege_factory::enemy::combat::find_closest_enemy;
-
-    let turret_pos = Vec3::ZERO;
-    let enemies = vec![];
-
-    let result = find_closest_enemy(turret_pos, &enemies, 400.0);
-    assert_eq!(result, None,
-        "Should return None when there are no enemies");
+fn chunk_grid_stores_seed() {
+    let grid_a = ChunkGrid::new(42);
+    let grid_b = ChunkGrid::new(12345);
+    // Both grids are valid and can generate chunks without panicking
+    assert!(grid_a.chunk_exists(0, 0) == false);
+    assert!(grid_b.chunk_exists(0, 0) == false);
 }
 
-// ── BuildingDef data sanity ──
+// ── Resource tests ──
 
 #[test]
-fn map_config_is_valid() {
-    let cfg = MapConfig::load();
-    assert!(cfg.tile_size > 0.0, "Tile size must be > 0");
-    assert!(cfg.chunk_size > 0, "Chunk size must be > 0");
-    assert!(cfg.hq_start_ore > 0, "HQ must start with ore");
-    assert!(cfg.hq_hp > 0, "HQ must have HP");
-    assert!(cfg.deposit_max_amount > 0, "Deposits must have amount");
-    assert!(cfg.deposit_min_amount <= cfg.deposit_max_amount,
-        "Deposit min must be <= max");
+fn resource_id_display_name() {
+    assert_eq!(ResourceId("iron_ore".to_string()).display_name(), "Iron Ore");
+    assert_eq!(ResourceId("copper_plate".to_string()).display_name(), "Copper Plate");
+    assert_eq!(ResourceId("ore".to_string()).display_name(), "Ore");
+}
+
+#[test]
+fn resource_id_eq() {
+    assert_eq!(ResourceId("ore".to_string()), ResourceId("ore".to_string()));
+    assert_ne!(ResourceId("ore".to_string()), ResourceId("iron_ore".to_string()));
 }

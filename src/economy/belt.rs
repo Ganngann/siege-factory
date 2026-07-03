@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 use bevy::prelude::*;
 
-use crate::economy::resource::{ResourceId, Inventory};
+use crate::economy::resource::{ResourceId, ResourceRegistry, Inventory};
 use crate::economy::components::{Building, Direction, OccupiedTiles, Splitter, Sorter};
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::rendering::ShapeCache;
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct BeltSlots {
     pub direction: Direction,
     pub slots: Vec<Option<Entity>>,
@@ -48,11 +48,14 @@ pub fn belt_item_placer(
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     cfg: Res<MapConfig>,
+    resources: Res<ResourceRegistry>,
 ) {
     let tile_size = cfg.tile_size;
     let belt_map: HashMap<(i32, i32), Entity> =
         belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
     let ev = on.event();
+
+    let color = resources.get(&ev.resource.0).color;
 
     let mut placed = false;
     for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
@@ -73,13 +76,8 @@ pub fn belt_item_placer(
                         ev.source_tile.y as f32 * tile_size,
                         2.5,
                     );
-                    let color = match ev.resource {
-                        ResourceId::Ore => Color::srgb(0.7, 0.5, 0.1),
-                        ResourceId::Ammo => Color::srgb(0.8, 0.2, 0.2),
-                        ResourceId::Energy => Color::srgb(0.2, 0.6, 0.8),
-                    };
                     let item_entity = commands.spawn((
-                        BeltItem { resource: ev.resource, acc: 0.0 },
+                        BeltItem { resource: ev.resource.clone(), acc: 0.0 },
                         Mesh2d(shapes.circle.clone()),
                         MeshMaterial2d(materials.add(color)),
                         Transform::from_translation(spawn_pos).with_scale(Vec3::splat(0.25)),
@@ -315,11 +313,11 @@ pub fn advance_belt_slots(
                     if let Ok(item) = item_query.get(item_entity) {
                         if item.acc >= slot_duration {
                             bs.slots[last].take();
-                            let resource = item.resource;
+                            let resource = item.resource.clone();
                             commands.entity(item_entity).despawn();
                             if let Ok((_, _, mut inv)) = inventory_query.get_mut(inv_entity) {
                                 if !inv.is_full() {
-                                    inv.add(resource, 1);
+                                    inv.add(&resource, 1);
                                 }
                             }
                         }

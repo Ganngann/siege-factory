@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Component)]
+#[derive(Component, Clone, Copy)]
 pub struct Health {
     pub current: u32,
     pub max: u32,

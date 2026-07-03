@@ -51,6 +51,22 @@ impl ChunkGrid {
         self.chunks.contains_key(&(cx, cy))
     }
 
+    pub fn seed(&self) -> u64 {
+        self.seed
+    }
+
+    pub fn set_seed(&mut self, seed: u64) {
+        self.seed = seed;
+    }
+
+    pub fn get_chunk(&self, cx: i32, cy: i32) -> Option<&Chunk> {
+        self.chunks.get(&(cx, cy))
+    }
+
+    pub fn generated_chunks_with_data(&self) -> impl Iterator<Item = (&(i32, i32), &Chunk)> {
+        self.chunks.iter()
+    }
+
     pub fn clear(&mut self) {
         self.chunks.clear();
     }
@@ -106,11 +122,11 @@ fn generate_chunk(seed: u64, cx: i32, cy: i32) -> Chunk {
         }
     }
 
-    let has_deposits = rng.next() % 100 < 15;
+    let has_deposits = rng.next() % 100 < 35;
     let mut deposits = Vec::new();
 
     if has_deposits {
-        let count = 1 + (rng.next() % 3);
+        let count = 2 + (rng.next() % 4);
         for _ in 0..count {
             let dx = (rng.next() % CHUNK_SIZE as u64) as u32;
             let dy = (rng.next() % CHUNK_SIZE as u64) as u32;

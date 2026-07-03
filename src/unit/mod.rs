@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::economy::unit_config::UnitConfig;
-use crate::economy::components::{HQ, OreDeposit, Unit};
+use crate::economy::components::{HQ, ResourceDeposit, Unit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::events::DespawnDeposit;
@@ -115,11 +115,11 @@ fn spawn_unit_on_trigger(
     let id = &on.event().0;
     if let Some(def) = unit_cfg.get(id) {
         let cost_ore = def.cost.iter()
-            .find(|c| c.resource == ResourceId::Ore)
+            .find(|c| c.resource.0 == "ore")
             .map(|c| c.amount)
             .unwrap_or(0);
-        if inv.get(ResourceId::Ore) >= cost_ore {
-            inv.remove(ResourceId::Ore, cost_ore);
+        if inv.get(&ResourceId("ore".to_string())) >= cost_ore {
+            inv.remove(&ResourceId("ore".to_string()), cost_ore);
             spawn_unit_by_id(&mut commands, &unit_cfg, &textures, id, hq_transform.translation);
         }
     }
@@ -184,7 +184,7 @@ fn worker_harvest(
     cfg: Res<MapConfig>,
     mut chunk_grid: ResMut<ChunkGrid>,
     mut workers: Query<(Entity, &mut Transform, &mut Worker)>,
-    mut deposits: Query<(Entity, &mut OreDeposit, &Transform, &TilePosition), Without<Worker>>,
+    mut deposits: Query<(Entity, &mut ResourceDeposit, &Transform, &TilePosition), Without<Worker>>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     mut commands: Commands,
 ) {
@@ -248,7 +248,7 @@ fn worker_harvest(
                         while worker.mining_timer >= mine_interval && deposit.amount > 0 {
                             worker.mining_timer -= mine_interval;
                             deposit.amount -= 1;
-                            hq_inv.add(ResourceId::Ore, 1);
+                            hq_inv.add(&ResourceId(deposit.resource.clone()), 1);
                         }
                     }
                     if deposit.amount == 0 {

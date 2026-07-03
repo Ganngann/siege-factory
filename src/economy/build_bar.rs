@@ -368,7 +368,7 @@ pub fn menu_bar_interaction(
                             registry.get(id).map(|def| {
                                 let mut parts = vec![format!("{}  HP:{}  Cost:{}", def.name, def.hp, item.cost_str)];
                                 if def.requires_deposit { parts.push("Requires ore deposit".into()); }
-                                if let Some(ref p) = def.production { parts.push(format!("Produces {:?} every {:.1}s", p.resource, p.interval_sec)); }
+                                if let Some(ref p) = def.production { parts.push(format!("Produces {} every {:.1}s", p.resource.display_name(), p.interval_sec)); }
                                 if let Some(ref b) = def.belt { parts.push(format!("{} slots, speed {:.1}", b.slots, b.speed)); }
                                 if let Some(ref c) = def.combat { parts.push(format!("Dmg {}  Range {:.0}  Rate {:.1}s", c.damage, c.range.sqrt(), c.fire_rate_sec)); }
                                 parts.join("  |  ")
@@ -477,7 +477,7 @@ pub fn update_menu_bar(
                 MenuAction::Build(id) => {
                     let is_active = build_mode.0.as_ref() == Some(id);
                     let affordable = hq_inv.and_then(|inv| {
-                        registry.get(id).map(|def| def.cost.iter().all(|c| inv.get(c.resource) >= c.amount))
+                        registry.get(id).map(|def| def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount))
                     }).unwrap_or(false);
 
                     *border = BorderColor::all(if is_active {
@@ -491,7 +491,7 @@ pub fn update_menu_bar(
                 }
                 MenuAction::Spawn(id) => {
                     let affordable = hq_inv.and_then(|inv| {
-                        unit_cfg.get(id).map(|def| def.cost.iter().all(|c| inv.get(c.resource) >= c.amount))
+                        unit_cfg.get(id).map(|def| def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount))
                     }).unwrap_or(false);
                     bg.0 = if affordable { item.color } else { Color::srgb(0.3, 0.3, 0.3) };
                 }

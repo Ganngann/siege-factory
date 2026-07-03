@@ -92,9 +92,7 @@ impl BuildingRegistry {
         for (id, entry) in parsed.buildings {
             let mut cost = Vec::new();
             for (res_key, amount) in entry.cost {
-                if let Some(resource) = ResourceId::from_str(&res_key) {
-                    cost.push(BuildingCost { resource, amount });
-                }
+                cost.push(BuildingCost { resource: ResourceId(res_key.to_lowercase()), amount });
             }
             let color = entry.color.as_deref()
                 .map(parse_hex_color)
@@ -107,7 +105,7 @@ impl BuildingRegistry {
                 fire_rate_sec: c.fire_rate_sec,
             });
             let production = entry.production.map(|p| ProductionDef {
-                resource: ResourceId::from_str(&p.resource).unwrap_or(ResourceId::Ore),
+                resource: ResourceId(p.resource.to_lowercase()),
                 interval_sec: p.interval_sec,
             });
 

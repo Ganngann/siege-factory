@@ -19,7 +19,8 @@ use crate::core::tooltip::{tooltip_ui, TooltipText};
 use building::DefaultSettings;
 use menu::{MenuState, MenuItems};
 use resource::ResourceRegistry;
-use ui::OreCountText;
+use ui::ResourceCountText;
+use components::{PeacefulMode, Building};
 
 pub struct EconomyPlugin;
 
@@ -44,6 +45,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::DeconstructMode>();
         app.init_resource::<components::DeconstructDrag>();
         app.init_resource::<components::BuildingPopup>();
+        app.init_resource::<PeacefulMode>();
         app.init_resource::<MenuState>();
         app.init_resource::<MenuItems>();
         app.init_resource::<ToastQueue>();
@@ -52,12 +54,13 @@ impl Plugin for EconomyPlugin {
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
         app.add_systems(OnEnter(GameState::Playing), (
-            setup::setup_hq,
+            setup::setup_hq.run_if(crate::save_load::is_fresh_game),
             build_bar::spawn_menu_bar,
         ));
         app.add_systems(OnExit(GameState::Playing), (
             cleanup_playing_ui,
             cleanup_ghost,
+            cleanup_buildings,
             build_bar::cleanup_menu_bar,
             inspect::cleanup_popup,
         ));
@@ -95,7 +98,7 @@ impl Plugin for EconomyPlugin {
             belt::animate_belt_positions.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            ui::ore_count_ui.run_if(in_state(GameState::Playing)),
+            ui::resource_count_ui.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             build_bar::menu_navigation.run_if(in_state(GameState::Playing)),
@@ -113,10 +116,22 @@ impl Plugin for EconomyPlugin {
             inspect::building_inspect_click.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            inspect::sorter_toggle_click.run_if(in_state(GameState::Playing)),
+            inspect::recipe_click_system.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            inspect::update_inspect_popup.run_if(in_state(GameState::Playing)),
+            inspect::sorter_resource_click_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::sorter_invert_click_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::close_button_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::close_popup_on_escape.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::update_building_popup.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             toast_system.run_if(in_state(GameState::Playing)),
@@ -133,7 +148,13 @@ fn cleanup_ghost(mut commands: Commands, query: Query<Entity, With<components::G
     }
 }
 
-fn cleanup_playing_ui(mut commands: Commands, query: Query<Entity, With<OreCountText>>) {
+fn cleanup_buildings(mut commands: Commands, query: Query<Entity, With<Building>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn cleanup_playing_ui(mut commands: Commands, query: Query<Entity, With<ResourceCountText>>) {
     for entity in &query {
         commands.entity(entity).despawn();
     }

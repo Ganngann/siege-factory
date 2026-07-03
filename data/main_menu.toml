@@ -8,6 +8,11 @@ label = "Play"
 action = "StartGame"
 
 [[screen.main_menu.items]]
+id = "load"
+label = "Load Game"
+action = "LoadGame"
+
+[[screen.main_menu.items]]
 id = "options"
 label = "Options"
 action = "OpenScreen"

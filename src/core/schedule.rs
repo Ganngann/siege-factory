@@ -56,6 +56,9 @@ fn game_state_transition(
                 }
             }
         }
+        GameState::Loading => {
+            // Transitional state — no key handling needed
+        }
         GameState::GameOver => {
             if keys.just_pressed(bindings.key("restart")) {
                 next_state.set(GameState::Playing);

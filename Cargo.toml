@@ -26,6 +26,7 @@ wasm-bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 bevy_pancam = "0.21"
+ron = "0.8"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2", features = ["js"] }

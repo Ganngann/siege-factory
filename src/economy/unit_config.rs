@@ -41,9 +41,7 @@ fn parse_hex_color(s: &str) -> Color {
 fn parse_cost(cost: &HashMap<String, u32>) -> Vec<UnitCost> {
     let mut result = Vec::new();
     for (key, amount) in cost {
-        if let Some(resource) = ResourceId::from_str(key) {
-            result.push(UnitCost { resource, amount: *amount });
-        }
+        result.push(UnitCost { resource: ResourceId(key.to_lowercase()), amount: *amount });
     }
     result
 }

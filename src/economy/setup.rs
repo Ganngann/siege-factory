@@ -33,7 +33,7 @@ pub fn setup_hq(
     let cy = (by as f32 + (th as f32 - 1.0) * 0.5) * cfg.tile_size;
 
     let mut inv = Inventory::new();
-    inv.add(ResourceId::Ore, cfg.hq_start_ore);
+    inv.add(&ResourceId("ore".to_string()), cfg.hq_start_ore);
 
     let stem = texture_stem("hq");
     let size = Vec2::new(cfg.tile_size * tw as f32, cfg.tile_size * th as f32);

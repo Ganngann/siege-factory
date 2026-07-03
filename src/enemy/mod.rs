@@ -21,7 +21,7 @@ impl Plugin for EnemyPlugin {
         app.insert_resource(EnemyRegistry::load());
         app.insert_resource(WaveConfig::load());
         app.insert_resource(LastWave(1));
-        app.add_systems(OnEnter(GameState::Playing), systems::reset_wave);
+        app.add_systems(OnEnter(GameState::Playing), systems::reset_wave.run_if(crate::save_load::is_fresh_game));
         app.add_systems(OnExit(GameState::Playing), systems::cleanup_game_entities);
         app.add_systems(OnEnter(GameState::GameOver), systems::spawn_game_over_ui);
         app.add_systems(OnExit(GameState::GameOver), systems::despawn_game_over_ui);

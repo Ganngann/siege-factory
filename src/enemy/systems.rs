@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::core::game_state::GameState;
 use crate::core::toast::ToastMessage;
-use crate::economy::components::HQ;
+use crate::economy::components::{HQ, PeacefulMode};
 use crate::enemy::components::{Enemy, WaveState, WaveCounterText, GameOverUi, Health, LastWave};
 use crate::enemy::registry::EnemyRegistry;
 use crate::enemy::wave_config::WaveConfig;
@@ -38,7 +38,9 @@ pub fn spawn_enemies(
     map_cfg: Res<MapConfig>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    peaceful: Res<PeacefulMode>,
 ) {
+    if peaceful.0 { return; }
     let tile_size = map_cfg.tile_size;
 
     let max_enemies = (wave.wave * cfg.max_enemies_base).min(cfg.max_enemies_cap);
@@ -160,7 +162,7 @@ pub fn despawn_game_over_ui(mut commands: Commands, query: Query<Entity, With<Ga
 
 pub fn cleanup_game_entities(
     mut commands: Commands,
-    enemies: Query<Entity, (With<Enemy>, Without<TilePosition>)>,
+    enemies: Query<Entity, With<Enemy>>,
     units: Query<Entity, With<crate::economy::components::Unit>>,
 ) {
     for entity in enemies.iter().chain(units.iter()) {

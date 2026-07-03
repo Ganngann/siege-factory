@@ -5,6 +5,7 @@ pub mod enemy;
 pub mod events;
 pub mod map;
 pub mod rendering;
+pub mod save_load;
 pub mod unit;
 
 use bevy::prelude::*;
@@ -15,6 +16,7 @@ use economy::EconomyPlugin;
 use events::CleanupPlugin;
 use map::systems::MapPlugin;
 use rendering::RenderPlugin;
+use save_load::SaveLoadPlugin;
 
 pub fn run() {
     App::new()
@@ -28,5 +30,6 @@ pub fn run() {
         .add_plugins(CombatPlugin)
         .add_plugins(RenderPlugin)
         .add_plugins(CleanupPlugin)
+        .add_plugins(SaveLoadPlugin)
         .run();
 }

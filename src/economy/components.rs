@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 use crate::economy::resource::ResourceId;
 
 #[derive(Component)]
@@ -16,7 +17,7 @@ pub struct Miner {
     pub interval: f32,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Assembler {
     pub production_timer: f32,
     pub interval: f32,
@@ -32,7 +33,7 @@ pub struct Building {
 #[derive(Component)]
 pub struct Ghost;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum Direction {
     #[default]
     East,
@@ -124,11 +125,12 @@ pub struct BuildingPopup {
     pub text_entity: Option<Entity>,
     pub inspected_entity: Option<Entity>,
     pub update_timer: f32,
+    pub dirty: bool,
 }
 
 impl Default for BuildingPopup {
     fn default() -> Self {
-        Self { popup_entity: None, text_entity: None, inspected_entity: None, update_timer: 0.0 }
+        Self { popup_entity: None, text_entity: None, inspected_entity: None, update_timer: 0.0, dirty: false }
     }
 }
 
@@ -171,7 +173,7 @@ pub struct Splitter {
     pub input_direction: Option<Direction>,
 }
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 pub struct Sorter {
     pub filter: ResourceId,
     pub inverted: bool,
@@ -201,3 +203,25 @@ pub struct ScrollButton(pub i32);
 pub struct MenuItemButton {
     pub index: usize,
 }
+
+// ── Building popup UI ──
+
+#[derive(Component)]
+pub struct BuildingPopupRoot;
+
+#[derive(Component)]
+pub struct RecipeButton {
+    pub recipe_id: String,
+}
+
+#[derive(Component)]
+pub struct SorterResourceButton {
+    pub resource: ResourceId,
+}
+
+#[derive(Component)]
+pub struct CloseButton;
+
+#[derive(Component)]
+pub struct SorterInvertButton;
+
