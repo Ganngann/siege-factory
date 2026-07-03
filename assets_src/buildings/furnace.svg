@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a5a5a"/>
+      <stop offset="100%" stop-color="#4a4a4a"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- Main body — fills the tile -->
+    <rect x="2" y="2" width="60" height="60" rx="3" fill="url(#bodyGrad)" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="2" y="2" width="60" height="2" fill="none" stroke="#6a6a6a" stroke-width="0.5"/>
+
+    <!-- Refractory brick frame -->
+    <rect x="10" y="10" width="44" height="44" rx="2" fill="#4e4e4e" stroke="#444444" stroke-width="1"/>
+    <rect x="12" y="12" width="40" height="40" rx="2" fill="none" stroke="#555555" stroke-width="0.5"/>
+
+    <!-- Furnace chamber (dark opening) -->
+    <rect x="16" y="16" width="32" height="32" rx="2" fill="#2e2e2e" stroke="#1a1a1a" stroke-width="1"/>
+
+    <!-- Glowing hearth — simple orange center -->
+    <rect x="20" y="20" width="24" height="24" rx="1" fill="#cc4400" opacity="0.6"/>
+    <rect x="24" y="24" width="16" height="16" rx="1" fill="#ee5500" opacity="0.5"/>
+
+    <!-- Heat grate bars -->
+    <line x1="20" y1="26" x2="44" y2="26" stroke="#aa3300" stroke-width="0.5" opacity="0.4"/>
+    <line x1="20" y1="30" x2="44" y2="30" stroke="#aa3300" stroke-width="0.5" opacity="0.4"/>
+    <line x1="20" y1="34" x2="44" y2="34" stroke="#aa3300" stroke-width="0.5" opacity="0.4"/>
+    <line x1="20" y1="38" x2="44" y2="38" stroke="#aa3300" stroke-width="0.5" opacity="0.4"/>
+
+    <!-- Corner bolts -->
+    <circle cx="6" cy="6" r="1.5" fill="#6e6e6e"/>
+    <circle cx="58" cy="6" r="1.5" fill="#6e6e6e"/>
+    <circle cx="6" cy="58" r="1.5" fill="#6e6e6e"/>
+    <circle cx="58" cy="58" r="1.5" fill="#6e6e6e"/>
+
+    <!-- Yellow belt input port (left edge) -->
+    <rect x="0" y="24" width="4" height="16" rx="1" fill="#ffcc00" stroke="#cc9900" stroke-width="0.5"/>
+    <line x1="4" y1="24" x2="4" y2="40" stroke="#ffe066" stroke-width="0.5"/>
+
+    <!-- Yellow belt output port (right edge) -->
+    <rect x="60" y="24" width="4" height="16" rx="1" fill="#ffcc00" stroke="#cc9900" stroke-width="0.5"/>
+    <line x1="60" y1="24" x2="60" y2="40" stroke="#ffe066" stroke-width="0.5"/>
+  </g>
+
+  <g id="owner_color">
+    <!-- Stripe across top -->
+    <rect x="14" y="14" width="36" height="3" fill="white"/>
+  </g>
+
+  <g id="level_color">
+    <!-- Level badge top-left -->
+    <rect x="6" y="48" width="10" height="6" rx="1" fill="white"/>
+  </g>
+</svg>

@@ -31,45 +31,36 @@ Since every SVG is rendered at ×2 scale, a 1 px stroke in SVG =
 | Highlight / shadow | 0.5 px |
 | Fine detail (bolts) | 0.5 px |
 
-## 2. Output Ports
+## 2. Belt Ports
 
-Every production building has an **output port** : a dark recess on the tile
-edge where a belt connects.
+Every building has **belt ports** on tile edges where belts connect.
+In top-down view, ports are bright yellow rectangles for visibility.
 
 ### Port position
 
-The port is always at the **center of the output face**, aligned with the
-belt's edge connector area:
+The port is always at the **center of the tile edge**, aligned with the
+belt lane:
 
 ```
-  belt surface y=8..56    belt connector y=20..44 (h=24)
+  port y=24..40, h=16    centered on the tile edge
 ```
-
-⇒ Port SVG rect: `y=20..44, h=24` **relative to the tile containing the port**.
 
 ### Port alignment table
 
 | Building size | Port Y (in SVG) | Port H | Notes |
 |---|---|---|---|---|
-| 1×1 | 20–44 | 24 | Single port, center-right |
-| 1×2 (tall) | 84–108 (bottom tile) | 24 | Single port, bottom tile |
-| 2×2 | 84–108 (bottom-right tile) | 24 | Single port, bottom-right tile |
-| 3×2 | 20–44 (top-right tile) | 24 | 2 ports (top + bottom) |
-| 3×2 | 84–108 (bottom-right tile) | 24 | |
-| 3×3 | 84–108 (middle-right tile) | 24 | 2 ports (middle + bottom) |
-| 3×3 | 148–172 (bottom-right tile) | 24 | |
-
-From 6 tiles onward, buildings may have **multiple ports** on different faces.
+| 1×1 | 24–40 | 16 | Single port, centered per face |
+| 2×2 | 24–40, 88–104 | 16 | 2 ports per face (one per tile) |
 
 ### Visual design of a port
 
 ```svg
-<rect x="W-4" y="20" width="4" height="24" rx="1" fill="#2e2e2e"/>   <!-- deep recess -->
-<rect x="W-3" y="22" width="3" height="20" fill="#3a3a3a"/>          <!-- inner shadow -->
-<line x1="W-4" y1="20" x2="W-4" y2="44" stroke="#5a5a5a" stroke-width="0.5"/>  <!-- top highlight -->
+<rect x="W-4" y="24" width="4" height="16" rx="1" fill="#ffcc00" stroke="#cc9900" stroke-width="0.5"/>
+<line x1="W-4" y1="24" x2="W-4" y2="40" stroke="#ffe066" stroke-width="0.5"/>  <!-- highlight -->
 ```
 
 Where `W` = SVG canvas width (64 for 1×1, 128 for 2×2, etc.).
+Ports on the left edge use `x="0"` ; top edge uses `y="0"` with `width="16"` and `height="4"`.
 
 ## 3. Color Palette
 
@@ -85,6 +76,7 @@ Where `W` = SVG canvas width (64 for 1×1, 128 for 2×2, etc.).
 | Direction indicators (arrows) | `#aaa` | 60–70 % |
 | Belt surface active band | `#5a5a5a` | 100 % |
 | Port recess | `#2e2e2e`–`#3a3a3a` | 100 % |
+| **Belt port (top-down)** | **`#ffcc00`** | **100 %** |
 
 ## 4. Layering
 
@@ -150,16 +142,17 @@ Examples:
 
 | Type | Orientations | Notes |
 |---|---|---|
-| Straight belt | 4 (or 1 + code rotation) | Symmetrical, rotation is fine |
+| Straight belt | 1 + code rotation | Texture rotated via `Transform` |
 | Curved belt | 1 + code rotation | Same shape, just arrow direction |
-| Miner | 4 (east done) | Distinct front face (output) + multi-tile variants |
-| Assembler | 4 (east done) | Industrial unit, input left / output right |
-| Turret | 4 (east done) | Barrel direction, base + rotating body |
+| Miner | 1 + code rotation (east) | Output direction = rotation |
+| Assembler | 1 + code rotation (east) | Input left / output right |
+| Furnace | 1 (static) | Symmetrical, no orientation |
+| Turret | 4 (east done) | Barrel direction |
 | Wall | 2 (h, v) | Rectangle, 90° rotation |
-| Storage | 1 | No front face, pentagonal container |
-| Splitter / Sorter | 4 (east done) | 3-way junction, input left / output right + up |
-| HQ | 4 (east done) | 128×128 (2×2), command center |
-| Soldier / Worker | 1 | Small entity, ~30-40px
+| Storage | 1 (static) | No orientation, symmetrical |
+| Splitter / Sorter | 1 + code rotation (east) | 3-way junction, rotation handles direction |
+| HQ | 1 + code rotation (east) | 128×128 (2×2), symmetrical enough to rotate |
+| Soldier / Worker | 1 | Small entity, ~48×48
 
 ## 7. Rules
 
@@ -172,9 +165,20 @@ Examples:
 
 ### Don't
 - No game data (items, ore, ammo, HP bars, labels) — those are separate entities in code
-- No direction arrows on non-transport buildings (miner, assembler, turret — the front face IS the direction)
 - No gradients in `owner_color` or `level_color` layers
 - No SVG animations (Bevy renders SVGs as static textures)
+
+### Top-Down Conventions (nouveau design system)
+
+All SVGs now use a **top-down (bird's eye) view**:
+
+| Rule | Detail |
+|---|---|
+| **Fill the tile** | Building body must fill the entire tile with 2–4 px padding. No empty space inside the footprint. |
+| **Simple shapes** | Minimal details. A building must be identifiable by **silhouette + color** alone. |
+| **Ports = yellow (#ffcc00)** | Belt connection ports are bright yellow rectangles, centered on the tile edge. One port per face. |
+| **Depth = dark circles** | Holes/pits (e.g. drill shaft) are dark circles `#2e2e2e`–`#1a1a1a`. |
+| **No profile** | No side/front views. Everything is seen from above. No vertical walls, no visible doors on fronts. |
 
 ## 8. Belt Reference
 
@@ -218,236 +222,152 @@ Examples:
 
 - Central rig, motor on foundation, port on right edge.
 
-### Miner 1×2 (`miner_east_tall.svg`)
+> **Note:** Multi-tile miner variants (`tall`, `2x2`, `3x2`, `3x3`) still use the
+> legacy profile view and will be redesigned in top-down later.
+
+## 10. Building Catalog — Top-Down Designs
+
+All buildings use **top-down view** unless noted. Ports are bright yellow (`#ffcc00`).
+
+### Miner 1×1 (`miner_east.svg`)
 
 ```
 ┌──────────────────┐
-│    ╔══════╗      │  ← upper mast (1 tile)
-│    ║ ▓▓▓▓ ║      │
-│    ║ ▓▓▓▓ ║      │
-│    ║  ○   ║      │
-│    ║ ▓▓▓▓ ║      │
-│    ╚══════╝      │
-│  ╔══════════╗     │  ← deck (seam)
-│  ║ ▓▓▓▓▓▓▓ ║ ▐▐▐│  ← lower processing + port
-│  ║ ╔══════╗║     │  ← motor
-│  ╚══════════╝    │
+│ ● ┌──────────┐ ● │
+│   │   ╭──╮   │   │
+│   │   │◉◉│   │   │  ← drill shaft hole (concentric circles)
+│   │   ╰──╯   │   │
+│   │ ██ ██ ██ │   │  ← motor blocks (3)
+│   └──────────┘   │
+│██              ██│  ← yellow ports (left/right)
 └──────────────────┘
 ```
 
-- Taller mast (more cross-bracing), processing unit below deck, port in bottom tile.
+- Square body filling the tile. Large dark circle = drill hole into ground.
+- 3 motor blocks below the hole. Yellow ports on left (input) and right (output).
+- `owner_color`: stripe across motor. `level_color`: badge top-right.
 
-### Miner 2×2 (`miner_east_2x2.svg`)
-
-```
-┌──────────────────────────────────────┐
-│  ║ ▓▓ ▓▓ ║    ║ ▓▓ ▓▓ ║            │  ← dual-column headframe
-│  ║  ○    ║    ║    ○  ║            │  ← 2 drill bits
-│  ║ ▓▓ ▓▓ ║    ║ ▓▓ ▓▓ ║            │
-│  ╚══════════════════════╝           │
-│  ╔══════════════════════════╗ ▐▐▐▐▐▐│  ← deck + processing + port
-│  ║ ▓▓ ▓▓ ▓▓ ┃ ▓▓ ▓▓ ▓▓ ▓▓ ║       │
-│  ║ ╔══════════════════╗    ║       │  ← motor
-│  ╚══════════════════════════╝       │
-└──────────────────────────────────────┘
-```
-
-- Dual drill columns, wide processing, port at bottom-right tile.
-
-### Miner 3×2 (`miner_east_3x2.svg`)
+### Furnace 1×1 (`furnace.svg`)
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│  ┌──────┐   ┌──────┐   ┌──────┐                                 │
-│  │ ▓▓▓▓ │   │ ▓▓▓▓ │   │ ▓▓▓▓ │  ← 3 drill columns             │
-│  │  ○   │   │  ○   │   │  ○   │                                 │
-│  └──────┘   └──────┘   └──────┘                                 │
-│  ╔═══════════════════════════════════════╗ ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐    │
-│  ║          CONVOYEUR PRINCIPAL          ║  ← conveyor + port 1 │
-│  ╚═══════════════════════════════════════╝                       │
-│  ┌──────────────────────────────────────┐                        │
-│  │      ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓              │                        │
-│  │      ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓              │  ← processing          │
-│  │      ╔══════════════════╗            │                        │
-│  └──────────────────────────────────────┘ ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐    │
-│  ╔═══════════════════════════════════════╗  ← motor + port 2     │
-└──────────────────────────────────────────────────────────────────┘
+┌──────────────────┐
+│ ● ┌──────────┐ ● │
+│   │  ▓▓ ▓▓   │   │
+│   │  ▓ ██ ▓  │   │  ← refractory frame + glowing hearth
+│   │  ▓ ██ ▓  │   │
+│   │  ▓▓ ▓▓   │   │
+│   └──────────┘   │
+│██              ██│  ← yellow ports (left/right)
+└──────────────────┘
 ```
 
-- 3 drill columns across top, conveyor, processing body, motor.
-- **2 output ports** (from 6 tiles onward): top-right tile and bottom-right tile.
-
-### Miner 3×3 (`miner_east_3x3.svg`)
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  ┌──────┐   ┌──────┐   ┌──────┐                                 │
-│  │ ▓▓▓▓ │   │ ▓▓▓▓ │   │ ▓▓▓▓ │  ← 3 drill columns             │
-│  │  ○   │   │  ○   │   │  ○   │                                 │
-│  └──────┘   └──────┘   └──────┘                                 │
-│  ╔═══════════════════════════════════════╗                       │
-│  ║          CONVOYEUR PRINCIPAL          ║  ← conveyor deck      │
-│  ╚═══════════════════════════════════════╝                       │
-│  ┌────────┐ ┌──────────────────┐ ┌────────┐                      │
-│  │ ▓ ▓ ▓  │ │  ▓▓ ▓▓ ▓▓ ▓▓   │ │ ▓ ▓ ▓  │  ← processing hall   │
-│  │  ○○○   │ │  ▓▓ ▓▓ ▓▓ ▓▓   │ │  ○○○   │  with 3 units        │
-│  └────────┘ └──────────────────┘ └────────┘ ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐   │
-│  ╔══════════════════════════════╗           ← deck + port 1      │
-│  ║   ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓    ║                                 │
-│  ║   ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓ ▓▓    ║  ← motor hall (3 blocks)        │
-│  ║   ╔════════════════════════╗║                                 │
-│  ╚══════════════════════════════╝ ▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐▐              │
-│  ╔═══════════════════════════════════════╗  ← foundation + port 2│
-└──────────────────────────────────────────────────────────────────┘
-```
-
-- 3 drill columns, processing hall with 3 units (crushers + control panel),
-  motor hall with 3 large motor blocks.
-- **2 output ports**: middle-right tile and bottom-right tile.
-- External pipes connect the decks vertically.
-
-## 10. Building Catalog — Other Types
-
-### HQ 2×2 (`hq_east.svg`)
-
-```
-┌──────────────────────────────────────────────────┐
-│   ╔═══════════════════╗  ┌─ radar ─┐             │
-│   ║  COMMAND TOWER    ║  │         │             │
-│   ║  [■■■] [■■■]     ║  └─────────┘             │
-│   ╚═══════════════════╝                          │
-│  ┌──────────┐   ┌────────────┐                   │
-│  │ WINDOWS  │   │  GARAGE    │  ▐▐▐▐▐▐▐▐        │
-│  │ WINDOWS  │   │  DOOR      │  ← output port    │
-│  │ WINDOWS  │   │  VENTS     │                   │
-│  └──────────┘   └────────────┘                   │
-│  ═══════════════════════════════════════════════  │
-│   ●       ●       ●       ●       ●       ●      │
-└──────────────────────────────────────────────────┘
-```
-
-- Central tower with command windows + radar dish.
-- Left wing (admin, 3 window rows), right wing (garage + vents).
-- Output port on right wing, input port on left.
-- 128×128 SVG (2×2 tiles).
+- Square body with refractory inner frame. Orange center = glowing furnace hearth.
+- Grate bars across the opening. Yellow ports left (input ore) and right (output plates).
+- `owner_color`: stripe top. `level_color`: badge bottom-left.
 
 ### Assembler 1×1 (`assembler_east.svg`)
 
 ```
 ┌──────────────────┐
-│    ┌──┐          │  ← chimney + exhaust puff
-│    │  │          │
-│   ╔══════════╗   │
-│   ║ ┌──────┐ ║   │  ← assembly window + robot arm
-│   ║ │  ◇   │ ║   │
-│   ║ └──────┘ ║   │
-│   ║ ● ● ●   ║   │  ← status lights on panel
-│   ╚══════════╝   │
-│  ▐▐▐▐▐    ▐▐▐▐▐│  ← input port / output port
+│ ● ┌──────────┐ ● │
+│   │  ◯ ╪ ◯  │   │
+│   │  ═ ● ═  │   │  ← rotating carousel + cross arm
+│   │  ◯ ╪ ◯  │   │
+│   └──────────┘   │
+│██              ██│  ← yellow ports (left/right)
 └──────────────────┘
 ```
 
-- Factory body with chimney, viewport showing internal arm, control panel.
-- Input port on left edge, output port on right edge.
-
-### Turret 1×1 (`turret_east.svg`)
-
-```
-┌──────────────────┐
-│    ┌────┐        │
-│    │ ◎  │        │  ← targeting camera / sensor
-│    ╔══════╗      │
-│    ║ ▓▓▓▓ ║ ▐▐▐▐│  ← rotating turret body + barrel →
-│    ╚══════╝      │
-│   ╔══════════╗   │  ← hexagonal base
-│   ╚══════════╝   │
-│  ▐▐▐▐  ●  ▐▐▐▐  │  ← ammo feed (left) + bolts
-└──────────────────┘
-```
-
-- Hexagonal fixed base, rotating upper body, long barrel pointing east.
-- Targeting sensor on top, ammo feed on left.
+- Square body with central circular assembly platform.
+- Concentric rings + cross pattern = robotic arm/carousel mechanism.
+- 4 end-effector dots at N/S/E/W. Yellow ports left (input) and right (output).
+- `owner_color`: ring highlight. `level_color`: badge bottom-left.
 
 ### Storage 1×1 (`storage.svg`)
 
 ```
 ┌──────────────────┐
-│    ╔══════╗      │
-│    ║  lid  ║      │  ← pentagonal container
-│   ╔══════════╗   │
-│   ║ ┌──────┐ ║   │
-│   ║ │ DOOR │ ║   │  ← access door with handle
-│   ║ │      │ ║   │
-│   ║ └──────┘ ║   │
-│   ╚══════════╝   │
-│  ▐▐          ▐▐  │  ← input / output ports
+│██  ┌──────────┐ ██│
+│    │ ▓ ▓ ▓ ▓  │   │
+│██  │ ▓ ▓ ▓ ▓  │ ██│  ← 4×4 grid of storage cells
+│    │ ▓ ▓ ▓ ▓  │   │
+│    │ ▓ ▓ ▓ ▓  │   │
+│    └──────────┘   │
+│██              ██│  ← yellow ports on all 4 sides
 └──────────────────┘
 ```
 
-- Pentagonal container with lid seam, reinforced corners, center door.
-- Input port on left, output port on right.
-- Ventilation slots on right side.
-
-### Wall 1×1 (`wall_h.svg`, `wall_v.svg`)
-
-```
-Horizontal (H):           Vertical (V):
-┌──────────────────┐     ┌──────────────────┐
-│ ▓▓  ▓▓  ▓▓  ▓▓  │     │ ▓▓               │
-│ ▓▓  ▓▓  ▓▓  ▓▓  │     │ ▓▓               │
-│ ════════════════ │     │ ▓▓   battlements  │
-│ ■■■■■■■■■■■■■■ │     │ ▓▓               │
-│ ■■■■■■■■■■■■■■ │     │ ▓▓               │
-│                  │     │ ▓▓               │
-│                  │     │ ▓▓   wall body   │
-│                  │     │ ▓▓               │
-│                  │     │ ▓▓               │
-│                  │     │ ▓▓               │
-│                  │     │ ▓▓               │
-└──────────────────┘     │ ▓▓               │
-                          │ ▓▓               │
-                          └──────────────────┘
-```
-
-- Stone/concrete wall with battlements on top.
-- Horizontal (full width, short) and vertical (full height, narrow).
-- Stone block texture lines.
+- Square body with recessed storage chamber. 4×4 grid of cells visible from above.
+- Yellow ports on **all 4 edges** (N/S/E/W) — one per face.
+- `owner_color`: stripe across top cells. `level_color`: badge bottom-left.
 
 ### Splitter 1×1 (`splitter_east.svg`)
 
 ```
 ┌──────────────────┐
-│          ↑       │  ← lateral output (to top)
-│          ▐▐      │
-│          ▐▐      │
-│  → → → ● ● → → →│  ← input left, straight output right
-│  ▐▐     ●●   ▐▐  │
-│          ▲       │
-│          │       │
+│        ██        │  ← yellow top port
+│   ═══════        │
+│   ═══ ● ════     │  ← T-junction + central gear
+│   ═══════        │
+│        ●         │
+│██              ██│  ← yellow side ports (left/right)
 └──────────────────┘
 ```
 
-- 3-way conveyor junction: input left, output right (straight) + output up (lateral).
-- Belt rollers on all 3 arms, direction arrows, central gear hub.
-- Edge connectors on left, right, and top edges.
+- Square body with T-shaped belt surface (horizontal + branch to top).
+- Central gear hub with rollers on all 3 arms. Direction arrows.
+- Yellow ports on left, right, and top edges. 3-way junction.
+- `owner_color`: ring around hub. `level_color`: badge top-right.
 
 ### Sorter 1×1 (`sorter_east.svg`)
 
 ```
 ┌──────────────────┐
-│          ↑       │  ← lateral output
-│          ▐▐      │
-│   ═══════════    │  ← scanner beam across belt
-│  → → → [◎] → →  │  ← filter sensor (blue glow)
-│  ▐▐     ●●   ▐▐  │
-│          ▲       │
-│          │       │
+│        ██        │  ← yellow top port
+│   ═════ ╪ ═══    │
+│   ═════ ╪ ═══    │  ← scanner/filter bar (blue)
+│   ═════ ╪ ═══    │
+│         ●        │
+│██              ██│  ← yellow side ports (left/right)
 └──────────────────┘
 ```
 
-- Same 3-way layout as splitter.
-- Additional filter sensor/scanner unit across the belt path.
-- Blue indicator lights and selection dial.
+- Same T-junction layout as splitter + **scanner/filter bar** across center.
+- Blue sensor dots and scanner beam (distinctive sorter feature).
+- Yellow ports on left, right, and top edges.
+- `owner_color`: stripe on scanner housing. `level_color`: badge top-right.
+
+### HQ 2×2 (`hq_east.svg`)
+
+```
+┌──────────────────────────────────────┐
+│  ┌────────┐  ┌────────┐             │
+│  │  ╭──╮  │  │  ║     │             │
+│  │  ╰──╯  │  │  ║     │  ← 4 modules + central dome
+│  └────────┘  └────────┘             │
+│  ┌────────────────────────────────┐ │
+│  │       ◯   ◯                   │ │  ← command dome (center)
+│  └────────────────────────────────┘ │
+│  ┌────────┐  ┌────────┐  ██████████│
+│  │        │  │        │  ← yellow ports
+│  │        │  │        │             │
+│  └────────┘  └────────┘             │
+│██                                ██│  ← yellow ports (left/right)
+└──────────────────────────────────────┘
+```
+
+- 128×128 SVG (2×2 tiles). Large square body filling all 4 tiles.
+- Central command dome (concentric circles). 4 corner modules.
+- Radar dish arc in top-left module. Yellow ports: 2 per side (left and right).
+- `owner_color`: wide stripe across right half. `level_color`: badge top-right.
+
+### Turret 1×1 (`turret_east.svg`)
+
+*Design not yet updated to top-down — currently profile view.*
+
+### Wall 1×1 (`wall_h.svg`, `wall_v.svg`)
+
+*Design not yet updated to top-down — currently profile view.*
 
 ## 11. Units
 
