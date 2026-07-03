@@ -12,10 +12,7 @@ pub struct ResourceDeposit {
 }
 
 #[derive(Component)]
-pub struct Miner {
-    pub production_timer: f32,
-    pub interval: f32,
-}
+pub struct Miner;
 
 #[derive(Component, Clone)]
 pub struct Assembler {
@@ -120,28 +117,21 @@ pub struct DeconstructDrag {
 }
 
 #[derive(Resource)]
-pub struct BuildingPopup {
-    pub popup_entity: Option<Entity>,
-    pub text_entity: Option<Entity>,
-    pub inspected_entity: Option<Entity>,
-    pub update_timer: f32,
+pub struct BuildingPanel {
+    pub inspected: Option<Entity>,
+    pub root: Option<Entity>,
+    pub overlay: Option<Entity>,
+    pub recipe_selector: Option<Entity>,
     pub dirty: bool,
 }
 
-impl Default for BuildingPopup {
+impl Default for BuildingPanel {
     fn default() -> Self {
-        Self { popup_entity: None, text_entity: None, inspected_entity: None, update_timer: 0.0, dirty: false }
+        Self { inspected: None, root: None, overlay: None, recipe_selector: None, dirty: false }
     }
 }
 
 // ── Generic behavior components ──
-
-#[derive(Component)]
-pub struct Produces {
-    pub resource: ResourceId,
-    pub interval: f32,
-    pub timer: f32,
-}
 
 #[derive(Component, Clone)]
 pub struct TurretCombat {
@@ -179,6 +169,9 @@ pub struct Sorter {
     pub inverted: bool,
 }
 
+#[derive(Component)]
+pub struct Active(pub bool);
+
 #[derive(Resource, Default)]
 pub struct PeacefulMode(pub bool);
 
@@ -204,24 +197,67 @@ pub struct MenuItemButton {
     pub index: usize,
 }
 
-// ── Building popup UI ──
+// ── Building panel UI ──
 
 #[derive(Component)]
-pub struct BuildingPopupRoot;
+pub struct PanelOverlay;
+#[derive(Component)]
+pub struct PanelModal;
 
 #[derive(Component)]
-pub struct RecipeButton {
-    pub recipe_id: String,
-}
+pub struct BuildingTitleText;
+#[derive(Component)]
+pub struct ActiveToggleButton;
+#[derive(Component)]
+pub struct CloseButton;
+#[derive(Component)]
+pub struct ProgressBarBg;
+#[derive(Component)]
+pub struct ProgressBarFill;
+#[derive(Component)]
+pub struct StatusText;
+#[derive(Component)]
+pub struct FlowInputText;
+#[derive(Component)]
+pub struct FlowOutputText;
+#[derive(Component)]
+pub struct CapacityBarFill;
+#[derive(Component)]
+pub struct CapacityBarText;
+#[derive(Component)]
+pub struct InventoryRow { pub resource: ResourceId }
+#[derive(Component)]
+pub struct ConnectionRowText;
+#[derive(Component)]
+pub struct StatRowText;
+#[derive(Component)]
+pub struct RecipeNameText;
+#[derive(Component)]
+pub struct RecipeChangeButton;
+#[derive(Component)]
+pub struct HpBarFill;
+#[derive(Component)]
+pub struct HpText;
+#[derive(Component)]
+pub struct AlertText;
+
+// ── Recipe selector sub-window ──
+
+#[derive(Component)]
+pub struct RecipeSelectorRoot;
+#[derive(Component)]
+pub struct RecipeSelectorItem { pub recipe_id: String }
+#[derive(Component)]
+pub struct RecipeCategoryLabel;
+#[derive(Component)]
+pub struct RecipePreviewText;
+
+// ── Sorter settings (kept from old UI) ──
 
 #[derive(Component)]
 pub struct SorterResourceButton {
     pub resource: ResourceId,
 }
-
-#[derive(Component)]
-pub struct CloseButton;
-
 #[derive(Component)]
 pub struct SorterInvertButton;
 

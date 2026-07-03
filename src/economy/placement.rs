@@ -4,7 +4,7 @@ use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
     Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode, DeconstructDrag,
     Building, Miner, Assembler, ResourceDeposit, Ghost, HQ, OccupiedTiles,
-    Produces, TurretCombat, Storage, Splitter, Sorter,
+    TurretCombat, Storage, Splitter, Sorter, Active,
 };
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::core::input::KeyBindings;
@@ -58,7 +58,7 @@ pub fn build_mode_input(
 
 fn auto_detect_direction(
     tx: i32, ty: i32,
-    producers: &Query<&TilePosition, With<Produces>>,
+    producers: &Query<&TilePosition, Or<(With<Miner>, With<Assembler>)>>,
     belts_query: &Query<(&TilePosition, &BeltSlots)>,
     default: Direction,
 ) -> Direction {
@@ -85,7 +85,7 @@ fn auto_detect_direction(
 
 fn auto_detect_direction_from_data(
     tx: i32, ty: i32,
-    producers: &Query<&TilePosition, With<Produces>>,
+    producers: &Query<&TilePosition, Or<(With<Miner>, With<Assembler>)>>,
     belt_data: &[((i32, i32), Direction)],
     default: Direction,
 ) -> Direction {
@@ -326,7 +326,7 @@ pub fn update_build_preview(
     mut materials: ResMut<Assets<ColorMaterial>>,
     occupied: Query<&OccupiedTiles, With<Building>>,
     deposits: Query<&TilePosition, With<ResourceDeposit>>,
-    producers: Query<&TilePosition, With<Produces>>,
+    producers: Query<&TilePosition, Or<(With<Miner>, With<Assembler>)>>,
     belts_query: Query<(&TilePosition, &BeltSlots)>,
     registry: Res<BuildingRegistry>,
     hovered: Res<HoveredTile>,
@@ -568,7 +568,7 @@ pub fn track_belt_drag(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     occupied: Query<&OccupiedTiles, With<Building>>,
-    producers: Query<&TilePosition, With<Produces>>,
+    producers: Query<&TilePosition, Or<(With<Miner>, With<Assembler>)>>,
     belt_read: Query<(&TilePosition, &BeltSlots)>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
@@ -733,17 +733,20 @@ pub fn on_belt_drag_completed(
                     belt_components,
                     Splitter { counter: 0, outputs: 2, input_direction: None },
                     sprite,
+                    Active(true),
                 ));
             } else if def.id == "sorter" {
                 commands.spawn((
                     belt_components,
                     Sorter { filter: ResourceId("iron_ore".to_string()), inverted: false },
                     sprite,
+                    Active(true),
                 ));
             } else {
                 commands.spawn((
                     belt_components,
                     sprite,
+                    Active(true),
                 ));
             }
         }
@@ -764,6 +767,7 @@ pub fn on_belt_drag_completed(
                 },
                 Transform::from_xyz(cx, cy, 2.0),
                 Visibility::default(),
+                Active(true),
             ));
         }
     }
@@ -973,9 +977,9 @@ pub fn handle_build_click(
         let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
         let stem = texture_stem(&def.id);
         let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
-        let deposit_resource = ResourceId(res_dep.resource.clone());
+        let deposit_resource = res_dep.resource.clone();
         let entity = commands.spawn((
-            Miner { production_timer: 0.0, interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0) },
+            Miner,
             Building { kind: def.id.clone(), name: def.name.clone() },
             Inventory::new(),
             OccupiedTiles(footprint),
@@ -983,7 +987,8 @@ pub fn handle_build_click(
             Transform::from_xyz(cx, cy, 2.0),
             Visibility::default(),
             TilePosition { x: tx, y: ty },
-            Produces { resource: deposit_resource, interval: def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0), timer: 0.0 },
+            Assembler { production_timer: 0.0, interval: 2.0, recipe_id: format!("mine_{}", deposit_resource) },
+            Active(true),
         )).id();
         attach_children(&mut commands, entity, stem, size);
         return;
@@ -1018,6 +1023,7 @@ pub fn handle_build_click(
         Transform::from_xyz(cx, cy, 2.0),
         Visibility::default(),
         Sprite { image: textures.base(stem), custom_size: Some(size), ..default() },
+        Active(true),
     );
 
     let inv = if def.inventory_capacity > 0 {

@@ -6,6 +6,7 @@ use crate::economy::resource::ResourceId;
 #[derive(Debug, Clone)]
 pub struct RecipeDef {
     pub id: String,
+    pub category: String,
     pub input: Vec<(ResourceId, u32)>,
     pub output: Vec<(ResourceId, u32)>,
     pub time_sec: f32,
@@ -30,6 +31,7 @@ impl RecipeRegistry {
                 .collect();
             recipes.insert(id.clone(), RecipeDef {
                 id,
+                category: entry.category,
                 input,
                 output,
                 time_sec: entry.time_sec,
@@ -50,6 +52,7 @@ struct RecipesToml {
 
 #[derive(Deserialize)]
 struct RecipeEntry {
+    category: String,
     input: HashMap<String, u32>,
     output: HashMap<String, u32>,
     time_sec: f32,

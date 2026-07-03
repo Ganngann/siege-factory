@@ -9,8 +9,8 @@ use crate::core::toast::ToastQueue;
 use crate::economy::belt::{BeltItem, BeltSlots};
 use crate::economy::components::{
     Assembler, Building, Direction, Ghost, HQ, Miner, OccupiedTiles,
-    Produces, ResourceDeposit, Splitter, Storage, Sorter, TurretCombat,
-    Unit, HpBarChild, PeacefulMode, BuildingPopupRoot,
+    ResourceDeposit, Splitter, Storage, Sorter, TurretCombat,
+    Unit, HpBarChild, PeacefulMode, PanelModal, Active,
 };
 use crate::economy::resource::{ResourceId, Inventory, ResourceRegistry};
 use crate::economy::ui::ResourceCountText;
@@ -82,17 +82,10 @@ pub struct BuildingSave {
     pub occupied: Vec<(i32, i32)>,
     pub hp: Option<(u32, u32)>,
     pub inventory: Option<Vec<(String, u32)>>, pub inventory_capacity: u32,
-    pub miner: Option<MinerSave>, pub produces: Option<ProducesSave>,
     pub assembler: Option<AssemblerSave>, pub turret: Option<TurretSave>,
     pub belt: Option<BeltSave>, pub storage: bool,
     pub splitter: Option<SplitterSave>, pub sorter: Option<SorterSave>,
 }
-
-#[derive(Serialize, Deserialize)]
-pub struct MinerSave { pub production_timer: f32, pub interval: f32 }
-
-#[derive(Serialize, Deserialize)]
-pub struct ProducesSave { pub resource: String, pub interval: f32, pub timer: f32 }
 
 #[derive(Serialize, Deserialize)]
 pub struct AssemblerSave { pub production_timer: f32, pub interval: f32, pub recipe_id: String }
@@ -171,7 +164,6 @@ fn save_game(
     buildings: Query<(
         &Building, &TilePosition, &OccupiedTiles,
         Option<&Health>, Option<&Inventory>,
-        Option<&Miner>, Option<&Produces>,
         Option<&Assembler>, Option<&TurretCombat>,
         Option<&BeltSlots>, Option<&Storage>,
         Option<&Splitter>, Option<&Sorter>,
@@ -211,7 +203,7 @@ fn save_game(
         }
     }
 
-    for (building, pos, occupied, hp, inventory, miner, produces, assembler,
+    for (building, pos, occupied, hp, inventory, assembler,
          turret, belt, storage, splitter, sorter) in buildings.iter() {
         let belt_save = belt.map(|b| {
             let slots: Vec<Option<BeltItemSave>> = b.slots.iter().map(|slot| {
@@ -231,8 +223,6 @@ fn save_game(
             hp: hp.map(|h| (h.current, h.max)),
             inventory: inventory.map(|inv| inv.resources.iter().map(|(r, a)| (r.0.clone(), *a)).collect()),
             inventory_capacity: inventory.map(|inv| inv.capacity).unwrap_or(0),
-            miner: miner.map(|m| MinerSave { production_timer: m.production_timer, interval: m.interval }),
-            produces: produces.map(|p| ProducesSave { resource: p.resource.0.clone(), interval: p.interval, timer: p.timer }),
             assembler: assembler.map(|a| AssemblerSave { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() }),
             turret: turret.map(|t| TurretSave { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer }),
             belt: belt_save, storage: storage.is_some(),
@@ -288,6 +278,10 @@ fn save_game(
 
 // ── Cleanup world ──
 
+fn silent_despawn(commands: &mut Commands, entity: Entity) {
+    commands.entity(entity).try_despawn();
+}
+
 fn cleanup_world(
     mut commands: Commands,
     buildings: Query<Entity, With<Building>>,
@@ -301,7 +295,7 @@ fn cleanup_world(
     ghosts: Query<Entity, With<Ghost>>,
     hp_bars: Query<Entity, With<HpBarChild>>,
     menus: Query<Entity, With<crate::economy::components::MenuBarPanel>>,
-    popups: Query<Entity, With<BuildingPopupRoot>>,
+    popups: Query<Entity, With<PanelModal>>,
     ui_texts: Query<Entity, With<ResourceCountText>>,
     pause_menus: Query<Entity, With<PauseMenuRoot>>,
     projectiles: Query<Entity, With<Projectile>>,
@@ -312,7 +306,7 @@ fn cleanup_world(
         .chain(hp_bars.iter()).chain(menus.iter()).chain(popups.iter())
         .chain(ui_texts.iter()).chain(pause_menus.iter()).chain(projectiles.iter())
     {
-        commands.entity(e).despawn();
+        silent_despawn(&mut commands, e);
     }
 }
 
@@ -463,7 +457,7 @@ fn load_buildings(
 
         if bs.kind == "hq" {
             let entity = commands.spawn((
-                HQ, building, inv, occupied, sprite, tf, Visibility::default(), tile_pos,
+                HQ, building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
             )).id();
             commands.entity(entity).with_children(|parent| {
                 if let Some(tex) = textures.owner(stem) {
@@ -474,19 +468,18 @@ fn load_buildings(
                 }
             });
         } else if bs.kind == "miner" {
-            let m = bs.miner.as_ref().unwrap();
-            let p = bs.produces.as_ref().unwrap();
+            let a = bs.assembler.as_ref().unwrap();
             let entity = commands.spawn((
-                Miner { production_timer: m.production_timer, interval: m.interval },
-                Produces { resource: ResourceId(p.resource.clone()), interval: p.interval, timer: p.timer },
-                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos,
+                Miner,
+                Assembler { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() },
+                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
             )).id();
             attach_children(&mut commands, entity, stem, size, &textures);
         } else if bs.kind == "assembler" || bs.kind == "furnace" {
             let a = bs.assembler.as_ref().unwrap();
             let entity = commands.spawn((
                 Assembler { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() },
-                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos,
+                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
             )).id();
             attach_children(&mut commands, entity, stem, size, &textures);
         } else if bs.belt.is_some() || bs.splitter.is_some() || bs.sorter.is_some() {
@@ -520,32 +513,35 @@ fn load_buildings(
                 commands.spawn((
                     belt_comp, building, inv, occupied, sprite, belt_tf, Visibility::default(), tile_pos,
                     Splitter { counter: sp.counter, outputs: sp.outputs, input_direction: sp.input_direction },
+                    Active(true),
                 ));
             } else if let Some(so) = &bs.sorter {
                 commands.spawn((
                     belt_comp, building, inv, occupied, sprite, belt_tf, Visibility::default(), tile_pos,
                     Sorter { filter: ResourceId(so.filter.clone()), inverted: so.inverted },
+                    Active(true),
                 ));
             } else {
                 commands.spawn((
                     belt_comp, building, inv, occupied, sprite, belt_tf, Visibility::default(), tile_pos,
+                    Active(true),
                 ));
             }
         } else if bs.kind == "turret" {
             let t = bs.turret.as_ref().unwrap();
             let entity = commands.spawn((
                 TurretCombat { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer },
-                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos,
+                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
             )).id();
             attach_children(&mut commands, entity, stem, size, &textures);
         } else if bs.storage {
             let entity = commands.spawn((
-                Storage, building, inv, occupied, sprite, tf, Visibility::default(), tile_pos,
+                Storage, building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
             )).id();
             attach_children(&mut commands, entity, stem, size, &textures);
         } else {
             let entity = commands.spawn((
-                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos,
+                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
             )).id();
             attach_children(&mut commands, entity, stem, size, &textures);
         }
@@ -744,7 +740,7 @@ fn spawn_pause_menu(
         });
     } else if !show.0 {
         for entity in &panel_query {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
     }
 }
@@ -801,7 +797,7 @@ fn load_interaction(
 
 fn cleanup_pause_menu(mut commands: Commands, query: Query<Entity, With<PauseMenuRoot>>) {
     for e in &query {
-        commands.entity(e).despawn();
+        silent_despawn(&mut commands, e);
     }
 }
 

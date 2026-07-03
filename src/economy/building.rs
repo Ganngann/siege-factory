@@ -55,6 +55,7 @@ pub struct BuildingDef {
     pub inventory_capacity: u32,
     pub hidden: bool,
     pub drag_placement: bool,
+    pub recipe_categories: Vec<String>,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -109,6 +110,8 @@ impl BuildingRegistry {
                 interval_sec: p.interval_sec,
             });
 
+            let recipe_categories = entry.recipe_categories.clone();
+
             let belt = match entry.belt {
                 Some(b) => Some(BeltProperties { slots: b.slots, speed: b.speed }),
                 None => {
@@ -134,9 +137,10 @@ impl BuildingRegistry {
                 refund_ratio: entry.refund_ratio.unwrap_or(defaults.refund_ratio),
                 repair_cost_ratio: entry.repair_cost_ratio.unwrap_or(defaults.repair_cost_ratio),
                 inventory_capacity: entry.inventory_capacity.unwrap_or(defaults.inventory_capacity),
-            hidden: entry.hidden,
-            drag_placement: entry.drag_placement,
-        });
+                hidden: entry.hidden,
+                drag_placement: entry.drag_placement,
+                recipe_categories,
+            });
         }
         Self { buildings }
     }
@@ -195,6 +199,8 @@ struct BuildingEntry {
     hidden: bool,
     #[serde(default)]
     drag_placement: bool,
+    #[serde(default)]
+    recipe_categories: Vec<String>,
 }
 
 #[derive(Deserialize)]

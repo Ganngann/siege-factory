@@ -263,16 +263,20 @@ fn spawn_current_screen(
 
 // ── Systems ──
 
+fn silent_despawn(commands: &mut Commands, entity: Entity) {
+    commands.entity(entity).try_despawn();
+}
+
 pub fn despawn_menu_ui(
     mut commands: Commands,
     query: Query<Entity, With<MenuRoot>>,
     camera_query: Query<Entity, With<MenuCamera>>,
 ) {
     for entity in &query {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
     for entity in &camera_query {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 }
 
@@ -292,22 +296,20 @@ pub fn menu_navigation(
     buttons: Query<(&Interaction, &MenuIndex, &MenuItemComp, &Children)>,
     mut text_colors: Query<&mut TextColor>,
     camera_query: Query<Entity, With<MenuCamera>>,
-    mut last_nav: Local<(Vec<String>, usize)>,
+    mut last_nav: Local<Vec<String>>,
 ) {
     // Skip navigation while in rebind mode
     if rebind.0.is_some() {
         return;
     }
 
-    let current_nav = (nav.stack.clone(), nav.selection);
-
-    // Rebuild UI if nav state changed
-    if *last_nav != current_nav {
+    // Rebuild UI if nav stack changed (ignore selection changes from hover)
+    if *last_nav != nav.stack {
         for entity in &root_query {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         spawn_current_screen(&mut commands, &def, &nav, &bindings, !camera_query.is_empty());
-        *last_nav = current_nav.clone();
+        *last_nav = nav.stack.clone();
         return;
     }
 

@@ -1,257 +1,724 @@
 use bevy::prelude::*;
 use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
+use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    Building, BuildMode, DeconstructMode, OccupiedTiles, Sorter, Assembler, BuildingPopup,
-    BuildingPopupRoot, RecipeButton, SorterResourceButton, CloseButton, SorterInvertButton,
+    Building, BuildMode, DeconstructMode, OccupiedTiles, Sorter, Assembler, Active,
+    BuildingPanel, PanelOverlay, PanelModal, BuildingTitleText, ActiveToggleButton,
+    CloseButton, ProgressBarBg, ProgressBarFill, StatusText, FlowInputText, FlowOutputText,
+    CapacityBarFill, CapacityBarText, ConnectionRowText, StatRowText,
+    RecipeNameText, RecipeChangeButton, HpBarFill, HpText, AlertText,
+    RecipeSelectorRoot, RecipeSelectorItem, RecipeCategoryLabel,
+    SorterResourceButton, SorterInvertButton,
 };
 use crate::economy::belt::BeltSlots;
 use crate::economy::recipe::RecipeRegistry;
-use crate::economy::resource::{ResourceId, ResourceRegistry, Inventory};
+use crate::economy::resource::{ResourceRegistry, Inventory};
 use crate::enemy::components::Health;
 use crate::map::config::MapConfig;
 
-fn spawn_popup(
-    commands: &mut Commands,
-    popup: &mut BuildingPopup,
-    entity: Entity,
-    building_name: &str,
-    building_kind: &str,
-    hp: Option<Health>,
-    inventory: Option<Inventory>,
-    belt: Option<BeltSlots>,
-    assembler: Option<Assembler>,
-    sorter: Option<Sorter>,
-    resource_registry: &ResourceRegistry,
-    recipes: &RecipeRegistry,
-) {
-    let active_color = Color::srgb(0.3, 0.6, 0.3);
-    let inactive_color = Color::srgb(0.2, 0.2, 0.25);
-    let panel_bg = Color::srgba(0.08, 0.08, 0.12, 0.95);
+// ── Colors ──
 
-    let root = commands.spawn((
-        BuildingPopupRoot,
-        BuildingPopupMarker,
+const BG_SECTION: Color = Color::srgb(0.10, 0.10, 0.18);
+const BG_MODAL: Color = Color::srgba(0.08, 0.08, 0.16, 0.97);
+const ACCENT: Color = Color::srgb(0.30, 0.55, 1.00);
+const TEXT_PRIMARY: Color = Color::srgb(0.90, 0.90, 1.00);
+const TEXT_SECONDARY: Color = Color::srgb(0.60, 0.60, 0.75);
+const TEXT_GREEN: Color = Color::srgb(0.40, 0.85, 0.40);
+const TEXT_YELLOW: Color = Color::srgb(0.85, 0.85, 0.35);
+const BTN_CLOSE: Color = Color::srgb(0.50, 0.12, 0.12);
+const BTN_ACTIVE: Color = Color::srgb(0.15, 0.45, 0.15);
+const BTN_INACTIVE: Color = Color::srgb(0.30, 0.15, 0.15);
+const HP_GREEN: Color = Color::srgb(0.20, 0.65, 0.20);
+const BAR_BG: Color = Color::srgb(0.15, 0.15, 0.22);
+const SEPARATOR: Color = Color::srgb(0.20, 0.20, 0.30);
+
+// ── Open / close panel ──
+
+fn close_panel_impl(commands: &mut Commands, panel: &mut BuildingPanel) {
+    if let Some(e) = panel.root.take() { commands.entity(e).try_despawn(); }
+    if let Some(e) = panel.overlay.take() { commands.entity(e).try_despawn(); }
+    if let Some(e) = panel.recipe_selector.take() { commands.entity(e).try_despawn(); }
+    panel.inspected = None;
+    panel.dirty = false;
+}
+
+pub fn close_panel(mut commands: Commands, mut panel: ResMut<BuildingPanel>) {
+    close_panel_impl(&mut commands, &mut panel);
+}
+
+fn open_panel(
+    mut commands: Commands,
+    mut panel: ResMut<BuildingPanel>,
+    entity: Entity,
+    building: &Building,
+    kind: &str,
+    resource_registry: &ResourceRegistry,
+) {
+    // Close existing panel first
+    if let Some(e) = panel.root.take() { commands.entity(e).try_despawn(); }
+    if let Some(e) = panel.overlay.take() { commands.entity(e).try_despawn(); }
+    if let Some(e) = panel.recipe_selector.take() { commands.entity(e).try_despawn(); }
+    panel.inspected = None;
+    panel.dirty = false;
+
+    let modal_size = Vec2::new(800.0, 560.0);
+    let show_recipes = kind == "assembler" || kind == "furnace";
+
+    let overlay = commands.spawn((
+        PanelOverlay,
         Node {
             position_type: PositionType::Absolute,
-            left: Val::Px(120.0),
-            top: Val::Px(80.0),
-            flex_direction: FlexDirection::Column,
-            padding: UiRect::all(Val::Px(10.0)),
-            width: Val::Px(300.0),
+            left: Val::ZERO,
+            right: Val::ZERO,
+            top: Val::ZERO,
+            bottom: Val::ZERO,
+            display: Display::Flex,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
             ..default()
         },
-        BackgroundColor(panel_bg),
-        Outline { width: Val::Px(1.0), offset: Val::ZERO, color: Color::srgb(0.4, 0.4, 0.5) },
+        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
+        ZIndex(100),
     )).id();
 
-    let title_text = format!("=== {} ===", building_name);
-    commands.entity(root).with_children(|parent| {
-        // Header
+    let root = spawn_panel_ui(&mut commands, modal_size, entity, building, kind, show_recipes, &resource_registry);
+
+    commands.entity(overlay).add_child(root);
+    panel.overlay = Some(overlay);
+    panel.root = Some(root);
+    panel.inspected = Some(entity);
+    panel.dirty = true;
+}
+
+fn spawn_panel_ui(
+    commands: &mut Commands,
+    modal_size: Vec2,
+    entity: Entity,
+    building: &Building,
+    kind: &str,
+    show_recipes: bool,
+    resource_registry: &ResourceRegistry,
+) -> Entity {
+    let panel_w = modal_size.x;
+    let col_w = panel_w * 0.58;
+    let right_w = panel_w * 0.38;
+    let show_sorter = kind == "sorter";
+
+    commands.spawn((
+        PanelModal,
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px((1280.0 - modal_size.x) / 2.0),
+            top: Val::Px((720.0 - modal_size.y) / 2.0),
+            flex_direction: FlexDirection::Column,
+            width: Val::Px(modal_size.x),
+            height: Val::Px(modal_size.y),
+            overflow: Overflow::clip(),
+            ..default()
+        },
+        BackgroundColor(BG_MODAL),
+        Outline { width: Val::Px(1.0), offset: Val::ZERO, color: Color::srgb(0.30, 0.30, 0.45) },
+        ZIndex(101),
+    )).with_children(|parent| {
+        // ── Header ──
         parent.spawn((
             Node {
-                display: Display::Flex,
-                flex_direction: FlexDirection::Row,
-                justify_content: JustifyContent::SpaceBetween,
-                align_items: AlignItems::Center,
                 width: Val::Percent(100.0),
+                height: Val::Px(40.0),
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
+                padding: UiRect::horizontal(Val::Px(14.0)),
+                border: UiRect::bottom(Val::Px(1.0)),
                 ..default()
             },
+            BackgroundColor(BG_SECTION),
+            BorderColor { top: SEPARATOR, bottom: SEPARATOR, left: SEPARATOR, right: SEPARATOR },
         )).with_children(|header| {
             header.spawn((
-                Text::new(title_text),
-                TextFont::from_font_size(16.0),
-                TextColor(Color::srgb(0.8, 0.8, 1.0)),
+                BuildingTitleText,
+                Text::new(format!("{}  #{}", building.name, entity.to_bits() % 1000)),
+                TextFont::from_font_size(18.0),
+                TextColor(TEXT_PRIMARY),
             ));
+            header.spawn((
+                ActiveToggleButton,
+                Button,
+                Node {
+                    width: Val::Px(60.0),
+                    height: Val::Px(26.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    margin: UiRect::right(Val::Px(8.0)),
+                    ..default()
+                },
+                BackgroundColor(BTN_ACTIVE),
+            )).with_children(|btn| {
+                btn.spawn((
+                    Text::new("● ON"),
+                    TextFont::from_font_size(12.0),
+                    TextColor(TEXT_GREEN),
+                ));
+            });
             header.spawn((
                 CloseButton,
                 Button,
                 Node {
-                    width: Val::Px(24.0),
-                    height: Val::Px(24.0),
+                    width: Val::Px(28.0),
+                    height: Val::Px(28.0),
                     align_items: AlignItems::Center,
                     justify_content: JustifyContent::Center,
                     ..default()
                 },
-                BackgroundColor(Color::srgb(0.4, 0.15, 0.15)),
+                BackgroundColor(BTN_CLOSE),
             )).with_children(|btn| {
                 btn.spawn((
                     Text::new("✕"),
-                    TextFont::from_font_size(14.0),
+                    TextFont::from_font_size(16.0),
                     TextColor(Color::WHITE),
                 ));
             });
         });
 
-        // Separator
-        parent.spawn((Node {
-            width: Val::Percent(100.0),
-            height: Val::Px(1.0),
-            margin: UiRect::vertical(Val::Px(6.0)),
-            ..default()
-        }, BackgroundColor(Color::srgb(0.3, 0.3, 0.4))));
-
-        // Recipe section
-        if (building_kind == "assembler" || building_kind == "furnace") && assembler.is_some() {
-            let asm = assembler.as_ref().unwrap();
-            parent.spawn((
-                Text::new(format!("Recipe: {}", &asm.recipe_id)),
-                TextFont::from_font_size(14.0),
-                TextColor(Color::srgb(0.9, 0.9, 0.5)),
-                Node { margin: UiRect::bottom(Val::Px(4.0)), ..default() },
-            ));
-
-            let mut recipe_ids: Vec<String> = recipes.recipes.keys().cloned().collect();
-            recipe_ids.sort();
-            for recipe_id in &recipe_ids {
-                let is_active = *recipe_id == asm.recipe_id;
-                let bg = if is_active { active_color } else { inactive_color };
-                parent.spawn((
-                    RecipeButton { recipe_id: recipe_id.clone() },
-                    Button,
-                    Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Px(26.0),
-                        align_items: AlignItems::Center,
-                        padding: UiRect::horizontal(Val::Px(8.0)),
-                        margin: UiRect::vertical(Val::Px(1.0)),
-                        ..default()
-                    },
-                    BackgroundColor(bg),
-                )).with_children(|btn| {
-                    let prefix = if is_active { "▶ " } else { "  " };
-                    btn.spawn((
-                        Text::new(format!("{}{}", prefix, recipe_id)),
-                        TextFont::from_font_size(13.0),
-                        TextColor(if is_active { Color::srgb(0.6, 1.0, 0.6) } else { Color::srgb(0.7, 0.7, 0.8) }),
-                    ));
-                });
-            }
-        }
-
-        // Sorter section
-        if building_kind == "sorter" && sorter.is_some() {
-            let s = sorter.as_ref().unwrap();
-            let invert_label = if s.inverted { "Invert: ON" } else { "Invert: OFF" };
-            parent.spawn((
-                SorterInvertButton,
-                Button,
+        // ── Status bar ──
+        parent.spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(50.0),
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(8.0)),
+                ..default()
+            },
+            BackgroundColor(BG_SECTION),
+        )).with_children(|status| {
+            status.spawn((
+                ProgressBarBg,
                 Node {
                     width: Val::Percent(100.0),
-                    height: Val::Px(26.0),
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    margin: UiRect::bottom(Val::Px(4.0)),
+                    height: Val::Px(14.0),
+                    position_type: PositionType::Relative,
                     ..default()
                 },
-                BackgroundColor(if s.inverted { Color::srgb(0.4, 0.4, 0.15) } else { inactive_color }),
-            )).with_children(|btn| {
-                btn.spawn((
-                    Text::new(invert_label),
-                    TextFont::from_font_size(13.0),
-                    TextColor(Color::WHITE),
-                ));
-            });
-
-            let mut resources: Vec<ResourceId> = resource_registry.resources.keys()
-                .map(|k| ResourceId(k.clone())).collect();
-            resources.sort_by(|a, b| a.0.cmp(&b.0));
-            for res in &resources {
-                let is_active = res.0 == s.filter.0;
-                let bg = if is_active { active_color } else { inactive_color };
-                parent.spawn((
-                    SorterResourceButton { resource: res.clone() },
-                    Button,
+                BackgroundColor(BAR_BG),
+            )).with_children(|bg| {
+                bg.spawn((
+                    ProgressBarFill,
                     Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Px(24.0),
-                        align_items: AlignItems::Center,
-                        padding: UiRect::horizontal(Val::Px(8.0)),
-                        margin: UiRect::vertical(Val::Px(1.0)),
+                        width: Val::Percent(0.0),
+                        height: Val::Percent(100.0),
                         ..default()
                     },
-                    BackgroundColor(bg),
-                )).with_children(|btn| {
-                    let prefix = if is_active { "▶ " } else { "  " };
-                    btn.spawn((
-                        Text::new(format!("{}{}", prefix, res.display_name())),
-                        TextFont::from_font_size(12.0),
-                        TextColor(if is_active { Color::srgb(0.6, 1.0, 0.6) } else { Color::srgb(0.7, 0.7, 0.8) }),
-                    ));
-                });
-            }
-        }
-
-        // Separator
-        parent.spawn((Node {
-            width: Val::Percent(100.0),
-            height: Val::Px(1.0),
-            margin: UiRect::vertical(Val::Px(6.0)),
-            ..default()
-        }, BackgroundColor(Color::srgb(0.3, 0.3, 0.4))));
-
-        // HP
-        if let Some(h) = hp {
-            parent.spawn((
-                Text::new(format!("HP: {}/{}", h.current, h.max)),
-                TextFont::from_font_size(13.0),
-                TextColor(Color::WHITE),
-                Node { margin: UiRect::bottom(Val::Px(2.0)), ..default() },
+                    BackgroundColor(ACCENT),
+                ));
+            });
+            status.spawn((
+                StatusText,
+                Text::new("Idle"),
+                TextFont::from_font_size(12.0),
+                TextColor(TEXT_SECONDARY),
+                Node { margin: UiRect::top(Val::Px(4.0)), ..default() },
             ));
-        }
+        });
 
-        // Inventory
-        if let Some(inv) = inventory {
-            if inv.total() > 0 {
-                let mut parts = Vec::new();
-                for (res_id, amount) in &inv.resources {
-                    if let Some(def) = resource_registry.get_opt(&res_id.0) {
-                        parts.push(format!("{}: {}", def.name, amount));
-                    }
-                }
-                if !parts.is_empty() {
-                    parent.spawn((
-                        Text::new(parts.join("  ")),
+        // ── Content row (left | right) ──
+        parent.spawn((
+            Node {
+                width: Val::Percent(100.0),
+                flex_grow: 1.0,
+                flex_direction: FlexDirection::Row,
+                padding: UiRect::all(Val::Px(8.0)),
+                ..default()
+            },
+        )).with_children(|row| {
+            // ── Left column (Flow + Inventory + Connections) ──
+            row.spawn((
+                Node {
+                    width: Val::Px(col_w),
+                    flex_direction: FlexDirection::Column,
+                    margin: UiRect::right(Val::Px(10.0)),
+                    ..default()
+                },
+            )).with_children(|left| {
+                spawn_section(left, "FLOW", |sec| {
+                    sec.spawn((
+                        FlowInputText,
+                        Text::new("Inputs: --"),
                         TextFont::from_font_size(12.0),
-                        TextColor(Color::srgb(0.8, 0.8, 0.6)),
+                        TextColor(TEXT_SECONDARY),
                         Node { margin: UiRect::bottom(Val::Px(2.0)), ..default() },
                     ));
+                    sec.spawn((
+                        FlowOutputText,
+                        Text::new("Outputs: --"),
+                        TextFont::from_font_size(12.0),
+                        TextColor(TEXT_SECONDARY),
+                    ));
+                });
+
+                spawn_section(left, "INVENTORY", |sec| {
+                    sec.spawn((
+                        Node {
+                            width: Val::Percent(100.0),
+                            height: Val::Px(12.0),
+                            flex_direction: FlexDirection::Row,
+                            ..default()
+                        },
+                        BackgroundColor(BAR_BG),
+                    )).with_children(|bar| {
+                        bar.spawn((
+                            CapacityBarFill,
+                            Node {
+                                width: Val::Percent(0.0),
+                                height: Val::Percent(100.0),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.30, 0.55, 0.30)),
+                        ));
+                    });
+                    sec.spawn((
+                        CapacityBarText,
+                        Text::new("Capacity: 0/0"),
+                        TextFont::from_font_size(11.0),
+                        TextColor(TEXT_SECONDARY),
+                        Node { margin: UiRect::vertical(Val::Px(4.0)), ..default() },
+                    ));
+                });
+
+                spawn_section(left, "CONNECTIONS", |sec| {
+                    sec.spawn((
+                        ConnectionRowText,
+                        Text::new("No connections"),
+                        TextFont::from_font_size(11.0),
+                        TextColor(TEXT_SECONDARY),
+                    ));
+                });
+            });
+
+            // ── Right column (Stats + Settings + HP + Alerts) ──
+            row.spawn((
+                Node {
+                    width: Val::Px(right_w),
+                    flex_direction: FlexDirection::Column,
+                    ..default()
+                },
+            )).with_children(|right| {
+                spawn_section(right, "STATS", |sec| {
+                    for line in [
+                        "Produced/min:  --",
+                        "Consumed/min:  --",
+                        "Uptime:        --",
+                        "Efficiency:    --",
+                        "Total output:  0",
+                    ] {
+                        sec.spawn((
+                            StatRowText,
+                            Text::new(line),
+                            TextFont::from_font_size(11.0),
+                            TextColor(TEXT_SECONDARY),
+                            Node { margin: UiRect::bottom(Val::Px(1.0)), ..default() },
+                        ));
+                    }
+                });
+
+                if show_recipes {
+                    spawn_section(right, "SETTINGS", |sec| {
+                        sec.spawn((
+                            RecipeNameText,
+                            Text::new("Recipe: --"),
+                            TextFont::from_font_size(12.0),
+                            TextColor(TEXT_PRIMARY),
+                            Node { margin: UiRect::bottom(Val::Px(4.0)), ..default() },
+                        ));
+                        sec.spawn((
+                            RecipeChangeButton,
+                            Button,
+                            Node {
+                                width: Val::Px(120.0),
+                                height: Val::Px(24.0),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.18, 0.25, 0.40)),
+                        )).with_children(|btn| {
+                            btn.spawn((
+                                Text::new("[Change Recipe]"),
+                                TextFont::from_font_size(11.0),
+                                TextColor(ACCENT),
+                            ));
+                        });
+                    });
                 }
-            }
-            if inv.capacity > 0 {
-                parent.spawn((
-                    Text::new(format!("Capacity: {}/{}", inv.total(), inv.capacity)),
-                    TextFont::from_font_size(12.0),
-                    TextColor(Color::srgb(0.6, 0.6, 0.8)),
-                    Node { margin: UiRect::bottom(Val::Px(2.0)), ..default() },
-                ));
-            }
-        }
 
-        // Belt
-        if let Some(ref bs) = belt {
-            let occupied = bs.slots.iter().filter(|s| s.is_some()).count();
-            if occupied > 0 {
-                parent.spawn((
-                    Text::new(format!("Items in transit: {}/{}", occupied, bs.slots.len())),
-                    TextFont::from_font_size(12.0),
-                    TextColor(Color::srgb(0.6, 0.8, 0.6)),
-                    Node { margin: UiRect::bottom(Val::Px(2.0)), ..default() },
-                ));
-            }
-        }
-    });
+                if show_sorter {
+                    spawn_section(right, "FILTER", |sec| {
+                        sec.spawn((
+                            SorterInvertButton,
+                            Button,
+                            Node {
+                                width: Val::Percent(100.0),
+                                height: Val::Px(26.0),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                margin: UiRect::bottom(Val::Px(4.0)),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.30, 0.30, 0.15)),
+                        )).with_children(|btn| {
+                            btn.spawn((
+                                Text::new("Invert: OFF"),
+                                TextFont::from_font_size(12.0),
+                                TextColor(TEXT_PRIMARY),
+                            ));
+                        });
 
-    popup.popup_entity = Some(root);
-    popup.inspected_entity = Some(entity);
-    popup.text_entity = None;
-    popup.update_timer = 0.0;
+                        let mut resources: Vec<String> = resource_registry.resources.keys()
+                            .map(|k| k.clone()).collect();
+                        resources.sort();
+                        for res in &resources {
+                            sec.spawn((
+                                SorterResourceButton { resource: crate::economy::resource::ResourceId(res.clone()) },
+                                Button,
+                                Node {
+                                    width: Val::Percent(100.0),
+                                    height: Val::Px(22.0),
+                                    align_items: AlignItems::Center,
+                                    padding: UiRect::horizontal(Val::Px(8.0)),
+                                    margin: UiRect::vertical(Val::Px(1.0)),
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgb(0.15, 0.15, 0.22)),
+                            )).with_children(|btn| {
+                                btn.spawn((
+                                    Text::new(res),
+                                    TextFont::from_font_size(11.0),
+                                    TextColor(TEXT_SECONDARY),
+                                ));
+                            });
+                        }
+                    });
+                }
+
+                spawn_section(right, "HP", |sec| {
+                    sec.spawn((
+                        Node {
+                            width: Val::Percent(100.0),
+                            height: Val::Px(12.0),
+                            ..default()
+                        },
+                        BackgroundColor(BAR_BG),
+                    )).with_children(|bar| {
+                        bar.spawn((
+                            HpBarFill,
+                            Node {
+                                width: Val::Percent(100.0),
+                                height: Val::Percent(100.0),
+                                ..default()
+                            },
+                            BackgroundColor(HP_GREEN),
+                        ));
+                    });
+                    sec.spawn((
+                        HpText,
+                        Text::new("HP: --/--"),
+                        TextFont::from_font_size(11.0),
+                        TextColor(TEXT_SECONDARY),
+                        Node { margin: UiRect::top(Val::Px(4.0)), ..default() },
+                    ));
+                });
+
+                spawn_section(right, "ALERTS", |sec| {
+                    sec.spawn((
+                        AlertText,
+                        Text::new("No alerts"),
+                        TextFont::from_font_size(11.0),
+                        TextColor(TEXT_SECONDARY),
+                    ));
+                });
+            });
+        });
+    }).id()
 }
 
-/// Detect click on building → mark popup as dirty
+fn spawn_section(
+    parent: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
+    title: &str,
+    content: impl FnOnce(&mut bevy::ecs::hierarchy::ChildSpawnerCommands),
+) {
+    parent.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            flex_direction: FlexDirection::Column,
+            padding: UiRect::all(Val::Px(8.0)),
+            margin: UiRect::bottom(Val::Px(6.0)),
+            ..default()
+        },
+        BackgroundColor(BG_SECTION),
+    )).with_children(|sec| {
+        sec.spawn((
+            Text::new(title),
+            TextFont::from_font_size(10.0),
+            TextColor(TEXT_SECONDARY),
+            Node { margin: UiRect::bottom(Val::Px(6.0)), ..default() },
+        ));
+        content(sec);
+    });
+}
+
+// ── Update panel content (separate systems for each section) ──
+
+pub fn update_panel_header(
+    panel: Res<BuildingPanel>,
+    building_query: Query<(&Building, Option<&Active>)>,
+    mut title_text: Query<&mut Text, (With<BuildingTitleText>, Without<ActiveToggleButton>)>,
+    mut toggle_btn: Query<(&mut BackgroundColor, &mut Text), (With<ActiveToggleButton>, Without<BuildingTitleText>)>,
+) {
+    let Some(inspected) = panel.inspected else { return };
+    if panel.root.is_none() { return; }
+    let Ok((building, active)) = building_query.get(inspected) else { return };
+    let is_active = active.and_then(|a| Some(a.0)).unwrap_or(true);
+
+    if let Ok(mut t) = title_text.single_mut() {
+        t.0 = format!("{}  #{}", building.name, inspected.to_bits() % 1000);
+    }
+    if let Ok((mut bg, mut text)) = toggle_btn.single_mut() {
+        if is_active {
+            *bg = BackgroundColor(BTN_ACTIVE);
+            text.0 = "\u{25cf} ON".to_string();
+        } else {
+            *bg = BackgroundColor(BTN_INACTIVE);
+            text.0 = "\u{25cb} OFF".to_string();
+        }
+    }
+}
+
+pub fn update_panel_production(
+    panel: Res<BuildingPanel>,
+    building_query: Query<(&Building, Option<&Assembler>, Option<&Active>)>,
+    recipes: Res<RecipeRegistry>,
+    resource_registry: Res<ResourceRegistry>,
+    mut progress_fill: Query<&mut Node, With<ProgressBarFill>>,
+    mut status_text: Query<&mut Text, (With<StatusText>, Without<FlowInputText>, Without<FlowOutputText>)>,
+    mut flow_input: Query<&mut Text, (With<FlowInputText>, Without<StatusText>, Without<FlowOutputText>)>,
+    mut flow_output: Query<&mut Text, (With<FlowOutputText>, Without<StatusText>, Without<FlowInputText>)>,
+) {
+    let Some(inspected) = panel.inspected else { return };
+    let Ok((_building, assembler, active)) = building_query.get(inspected) else { return };
+    let is_active = active.and_then(|a| Some(a.0)).unwrap_or(true);
+
+    let progress_pct: f32;
+    let status_str: String;
+
+    if let Some(asm) = assembler {
+        let is_mining = asm.recipe_id.starts_with("mine_");
+        let display_name = if is_mining {
+            let resource = &asm.recipe_id[5..];
+            resource_registry.get_opt(resource).map_or(resource.to_string(), |r| r.name.clone())
+        } else {
+            asm.recipe_id.clone()
+        };
+
+        if let Some(def) = recipes.get(&asm.recipe_id) {
+            let pct = if asm.production_timer >= def.time_sec {
+                100.0
+            } else {
+                (asm.production_timer / def.time_sec * 100.0).min(100.0)
+            };
+            progress_pct = pct;
+            if is_active && asm.production_timer > 0.0 {
+                status_str = if is_mining {
+                    format!("Mining: {}  \u{b7}  {:.1}s / {:.1}s",
+                        display_name, asm.production_timer, def.time_sec)
+                } else {
+                    format!("Producing: {}  \u{b7}  {:.1}s / {:.1}s",
+                        display_name, asm.production_timer, def.time_sec)
+                };
+            } else if !is_active {
+                status_str = "Paused".to_string();
+            } else {
+                status_str = format!("Ready: {}", display_name);
+            }
+
+            if let Ok(mut inp) = flow_input.single_mut() {
+                if is_mining || def.input.is_empty() {
+                    inp.0 = "Inputs:  (raw material)".to_string();
+                } else {
+                    let parts: Vec<String> = def.input.iter().map(|(rid, amt)| {
+                        let name = resource_registry.get_opt(&rid.0).map_or(rid.0.as_str(), |r| &r.name);
+                        format!("{}  \u{d7}{}", name, amt)
+                    }).collect();
+                    inp.0 = format!("Inputs:  {}", parts.join("  "));
+                }
+            }
+            if let Ok(mut out) = flow_output.single_mut() {
+                let parts: Vec<String> = def.output.iter().map(|(rid, amt)| {
+                    let name = resource_registry.get_opt(&rid.0).map_or(rid.0.as_str(), |r| &r.name);
+                    format!("{}  \u{d7}{}", name, amt)
+                }).collect();
+                out.0 = format!("Outputs:  {}", parts.join("  "));
+            }
+        } else {
+            progress_pct = 0.0;
+            status_str = format!("Active: {}", display_name);
+        }
+    } else {
+        progress_pct = 0.0;
+        status_str = "Idle".to_string();
+        if let Ok(mut inp) = flow_input.single_mut() { inp.0 = "Inputs:  --".to_string(); }
+        if let Ok(mut out) = flow_output.single_mut() { out.0 = "Outputs:  --".to_string(); }
+    }
+
+    if let Ok(mut fill) = progress_fill.single_mut() {
+        fill.width = Val::Percent(progress_pct);
+    }
+    if let Ok(mut st) = status_text.single_mut() {
+        st.0 = status_str;
+    }
+}
+
+pub fn update_panel_inventory(
+    panel: Res<BuildingPanel>,
+    inventory_query: Query<Option<&Inventory>>,
+    resource_registry: Res<ResourceRegistry>,
+    mut cap_bar: Query<&mut Node, With<CapacityBarFill>>,
+    mut cap_text: Query<&mut Text, With<CapacityBarText>>,
+) {
+    let Some(inspected) = panel.inspected else { return };
+    let Ok(inventory) = inventory_query.get(inspected) else { return };
+    let Some(inv) = inventory else { return };
+
+    if let Ok(mut cap) = cap_bar.single_mut() {
+        let pct = if inv.capacity > 0 {
+            (inv.total() as f32 / inv.capacity as f32 * 100.0).min(100.0)
+        } else {
+            0.0
+        };
+        cap.width = Val::Percent(pct);
+    }
+    if let Ok(mut ct) = cap_text.single_mut() {
+        if inv.capacity > 0 {
+            ct.0 = format!("Capacity:  {}/{}", inv.total(), inv.capacity);
+        } else if inv.total() > 0 {
+            let mut lines: Vec<String> = Vec::new();
+            let mut sorted: Vec<_> = inv.resources.iter().collect();
+            sorted.sort_by(|a, b| b.1.cmp(a.1));
+            for (rid, amount) in sorted.iter().take(5) {
+                let name = resource_registry.get_opt(&rid.0).map_or(rid.0.as_str(), |r| &r.name);
+                lines.push(format!("{}: {}", name, amount));
+            }
+            if inv.resources.len() > 5 {
+                lines.push(format!("... +{} more", inv.resources.len() - 5));
+            }
+            ct.0 = lines.join("  |  ");
+        } else {
+            ct.0 = format!("Items:  {}", inv.total());
+        }
+    }
+}
+
+pub fn update_panel_connections(
+    panel: Res<BuildingPanel>,
+    belt_query: Query<Option<&BeltSlots>>,
+    mut conn_text: Query<&mut Text, With<ConnectionRowText>>,
+) {
+    let Some(inspected) = panel.inspected else { return };
+    let Ok(belt) = belt_query.get(inspected) else { return };
+
+    if let Some(bs) = belt {
+        if let Ok(mut ct) = conn_text.single_mut() {
+            let occupied = bs.slots.iter().filter(|s| s.is_some()).count();
+            ct.0 = format!("Items in transit:  {}/{}  |  {:?}",
+                occupied, bs.slots.len(), bs.direction);
+        }
+    } else {
+        if let Ok(mut ct) = conn_text.single_mut() {
+            ct.0 = "No connections".to_string();
+        }
+    }
+}
+
+pub fn update_panel_stats(
+    panel: Res<BuildingPanel>,
+    assembler_query: Query<Option<&Assembler>>,
+    mut stat_rows: Query<&mut Text, (With<StatRowText>, Without<RecipeNameText>)>,
+    mut recipe_name: Query<&mut Text, (With<RecipeNameText>, Without<StatRowText>)>,
+) {
+    let Some(inspected) = panel.inspected else { return };
+    let Ok(assembler) = assembler_query.get(inspected) else { return };
+
+    for (i, mut text) in stat_rows.iter_mut().enumerate() {
+        if i > 4 { break; }
+        let stats = [
+            format!("Produced/min:  --"),
+            format!("Consumed/min:  --"),
+            format!("Uptime:        --"),
+            format!("Efficiency:    --"),
+            format!("Total output:  0"),
+        ];
+        text.0 = stats[i].clone();
+    }
+
+    if let Some(asm) = assembler {
+        if let Ok(mut rn) = recipe_name.single_mut() {
+            let display = if asm.recipe_id.starts_with("mine_") {
+                let resource = &asm.recipe_id[5..];
+                format!("Mining: {}", resource)
+            } else {
+                format!("Recipe:  {}", asm.recipe_id)
+            };
+            rn.0 = display;
+        }
+    }
+}
+
+pub fn update_panel_hp(
+    panel: Res<BuildingPanel>,
+    health_query: Query<Option<&Health>>,
+    mut hp_fill: Query<&mut Node, With<HpBarFill>>,
+    mut hp_text: Query<&mut Text, With<HpText>>,
+) {
+    let Some(inspected) = panel.inspected else { return };
+    let Ok(health) = health_query.get(inspected) else { return };
+
+    if let Some(h) = health {
+        if let Ok(mut fill) = hp_fill.single_mut() {
+            let pct = if h.max > 0 { (h.current as f32 / h.max as f32 * 100.0).min(100.0) } else { 0.0 };
+            fill.width = Val::Percent(pct);
+        }
+        if let Ok(mut ht) = hp_text.single_mut() {
+            ht.0 = format!("HP:  {}/{}", h.current, h.max);
+        }
+    }
+}
+
+pub fn update_panel_alerts(
+    panel: Res<BuildingPanel>,
+    active_query: Query<Option<&Active>>,
+    mut alert_text: Query<&mut Text, With<AlertText>>,
+) {
+    let Some(inspected) = panel.inspected else { return };
+    let Ok(active) = active_query.get(inspected) else { return };
+
+    let is_active = active.and_then(|a| Some(a.0)).unwrap_or(true);
+    let mut alerts: Vec<String> = Vec::new();
+    if !is_active {
+        alerts.push("\u{26a0}  Building paused".to_string());
+    }
+    if let Ok(mut at) = alert_text.single_mut() {
+        if alerts.is_empty() {
+            at.0 = "No alerts".to_string();
+        } else {
+            at.0 = alerts.join("\n");
+        }
+    }
+}
+
+// ── Click detection ──
+
 pub fn building_inspect_click(
-    mut commands: Commands,
-    mut popup: ResMut<BuildingPopup>,
+    commands: Commands,
+    panel: ResMut<BuildingPanel>,
     build_mode: Res<BuildMode>,
     deconstruct: Res<DeconstructMode>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -261,6 +728,7 @@ pub fn building_inspect_click(
     camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
     building_query: Query<(Entity, &OccupiedTiles, &Building)>,
+    resource_registry: Res<ResourceRegistry>,
 ) {
     if build_mode.0.is_some() || deconstruct.0 { return; }
     if !bindings.just_pressed("place", &keys, &buttons) { return; }
@@ -278,75 +746,32 @@ pub fn building_inspect_click(
         tiles.0.iter().any(|&(x, y)| x == tile_x && y == tile_y)
     );
 
-    if let Some((entity, _, _)) = clicked {
-        if popup.inspected_entity == Some(entity) {
+    if let Some((entity, _, building)) = clicked {
+        if panel.inspected == Some(entity) {
+            close_panel(commands, panel);
             return;
         }
-        if let Some(old) = popup.popup_entity.take() {
-            commands.entity(old).despawn();
-        }
-        popup.inspected_entity = Some(entity);
-        popup.dirty = true;
-    } else if popup.popup_entity.is_some() {
-        if let Some(old) = popup.popup_entity.take() {
-            commands.entity(old).despawn();
-        }
-        popup.inspected_entity = None;
+        open_panel(commands, panel, entity, building, &building.kind, &resource_registry);
     }
 }
 
-// ── Recipe button click ──
+// ── Overlay click to close ──
 
-pub fn recipe_click_system(
-    mut popup: ResMut<BuildingPopup>,
-    query: Query<(&Interaction, &RecipeButton), Changed<Interaction>>,
-    mut assembler_query: Query<&mut Assembler>,
-) {
-    for (interaction, btn) in &query {
-        if *interaction != Interaction::Pressed { continue; }
-        let Some(inspected) = popup.inspected_entity else { continue; };
-        if let Ok(mut asm) = assembler_query.get_mut(inspected) {
-            asm.recipe_id = btn.recipe_id.clone();
-            popup.dirty = true;
-        }
-    }
-}
-
-// ── Sorter resource button click ──
-
-pub fn sorter_resource_click_system(
-    mut popup: ResMut<BuildingPopup>,
-    query: Query<(&Interaction, &SorterResourceButton), Changed<Interaction>>,
-    mut sorter_query: Query<&mut Sorter>,
-    mut toast_queue: ResMut<ToastQueue>,
-) {
-    for (interaction, btn) in &query {
-        if *interaction != Interaction::Pressed { continue; }
-        let Some(inspected) = popup.inspected_entity else { continue; };
-        if let Ok(mut sorter) = sorter_query.get_mut(inspected) {
-            sorter.filter = btn.resource.clone();
-            toast_queue.0.push(format!("Sorter filter: {}", btn.resource.display_name()));
-            popup.dirty = true;
-        }
-    }
-}
-
-// ── Sorter invert button click ──
-
-pub fn sorter_invert_click_system(
-    mut popup: ResMut<BuildingPopup>,
-    query: Query<&Interaction, (Changed<Interaction>, With<SorterInvertButton>)>,
-    mut sorter_query: Query<&mut Sorter>,
-    mut toast_queue: ResMut<ToastQueue>,
+pub fn overlay_click_system(
+    mut commands: Commands,
+    mut panel: ResMut<BuildingPanel>,
+    query: Query<&Interaction, (Changed<Interaction>, With<PanelOverlay>)>,
 ) {
     for interaction in &query {
-        if *interaction != Interaction::Pressed { continue; }
-        let Some(inspected) = popup.inspected_entity else { continue; };
-        if let Ok(mut sorter) = sorter_query.get_mut(inspected) {
-            sorter.inverted = !sorter.inverted;
-            let mode = if sorter.inverted { "inverted" } else { "normal" };
-            toast_queue.0.push(format!("Sorter: {}", mode));
-            popup.dirty = true;
+        if *interaction == Interaction::Pressed {
+            if panel.recipe_selector.is_some() {
+                if let Some(e) = panel.recipe_selector.take() {
+                    commands.entity(e).try_despawn();
+                }
+            } else {
+                close_panel(commands, panel);
+                return;
+            }
         }
     }
 }
@@ -355,15 +780,18 @@ pub fn sorter_invert_click_system(
 
 pub fn close_button_system(
     mut commands: Commands,
-    mut popup: ResMut<BuildingPopup>,
+    mut panel: ResMut<BuildingPanel>,
     query: Query<&Interaction, (Changed<Interaction>, With<CloseButton>)>,
 ) {
     for interaction in &query {
         if *interaction != Interaction::Pressed { continue; }
-        if let Some(old) = popup.popup_entity.take() {
-            commands.entity(old).despawn();
+        if panel.recipe_selector.is_some() {
+            if let Some(e) = panel.recipe_selector.take() {
+                commands.entity(e).try_despawn();
+            }
+        } else {
+            close_panel(commands, panel);
         }
-        popup.inspected_entity = None;
         return;
     }
 }
@@ -372,75 +800,263 @@ pub fn close_button_system(
 
 pub fn close_popup_on_escape(
     mut commands: Commands,
-    mut popup: ResMut<BuildingPopup>,
+    mut panel: ResMut<BuildingPanel>,
     keys: Res<ButtonInput<KeyCode>>,
     bindings: Res<KeyBindings>,
 ) {
     if !keys.just_pressed(bindings.key("cancel")) { return; }
-    if let Some(old) = popup.popup_entity.take() {
-        commands.entity(old).despawn();
+    if panel.recipe_selector.is_some() {
+        if let Some(e) = panel.recipe_selector.take() {
+            commands.entity(e).try_despawn();
+        }
+    } else if panel.overlay.is_some() {
+        close_panel(commands, panel);
     }
-    popup.inspected_entity = None;
 }
 
-// ── Spawn/refresh popup with latest data ──
+// ── Active toggle ──
 
-pub fn update_building_popup(
-    time: Res<Time>,
-    mut popup: ResMut<BuildingPopup>,
+pub fn active_toggle_system(
+    panel: ResMut<BuildingPanel>,
+    query: Query<&Interaction, (Changed<Interaction>, With<ActiveToggleButton>)>,
+    mut active_query: Query<&mut Active>,
+) {
+    for interaction in &query {
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
+        if let Ok(mut active) = active_query.get_mut(inspected) {
+            active.0 = !active.0;
+        }
+    }
+}
+
+// ── Recipe change button → open selector ──
+
+pub fn recipe_change_system(
+    mut commands: Commands,
+    mut panel: ResMut<BuildingPanel>,
+    query: Query<&Interaction, (Changed<Interaction>, With<RecipeChangeButton>)>,
     building_query: Query<&Building>,
     assembler_query: Query<&Assembler>,
-    sorter_query: Query<&Sorter>,
-    health_query: Query<&Health>,
-    inventory_query: Query<&Inventory>,
-    belt_query: Query<&BeltSlots>,
-    resource_registry: Res<ResourceRegistry>,
     recipes: Res<RecipeRegistry>,
-    mut commands: Commands,
+    resource_registry: Res<ResourceRegistry>,
+    reg: Res<BuildingRegistry>,
 ) {
-    let Some(inspected) = popup.inspected_entity else { return };
+    for interaction in &query {
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
+        let Ok(building) = building_query.get(inspected) else { continue; };
+        let Ok(asm) = assembler_query.get(inspected) else { continue; };
 
-    // Handle dirty flag (immediate refresh needed after button click)
-    if popup.dirty {
-        popup.dirty = false;
-    } else {
-        popup.update_timer += time.delta_secs();
-        if popup.update_timer < 0.5 { return; }
-    }
-    popup.update_timer = 0.0;
-
-    let Ok(building) = building_query.get(inspected) else {
-        // Building was destroyed
-        if let Some(old) = popup.popup_entity.take() {
-            commands.entity(old).despawn();
+        if let Some(e) = panel.recipe_selector.take() {
+            commands.entity(e).try_despawn();
         }
-        popup.inspected_entity = None;
-        return;
-    };
 
-    if let Some(old) = popup.popup_entity.take() {
-        commands.entity(old).despawn();
+        let categories = reg.get(&building.kind)
+            .map(|def| def.recipe_categories.clone())
+            .unwrap_or_default();
+
+        let sel = spawn_recipe_selector(&mut commands, &asm.recipe_id, &categories, &recipes, &resource_registry);
+        if let Some(root) = panel.root {
+            commands.entity(root).add_child(sel);
+        }
+        panel.recipe_selector = Some(sel);
     }
-
-    let hp = health_query.get(inspected).ok().copied();
-    let inventory = inventory_query.get(inspected).ok().cloned();
-    let belt = belt_query.get(inspected).ok().cloned();
-    let assembler = assembler_query.get(inspected).ok().cloned();
-    let sorter = sorter_query.get(inspected).ok().cloned();
-
-    spawn_popup(
-        &mut commands, &mut popup, inspected,
-        &building.name, &building.kind,
-        hp, inventory, belt, assembler, sorter,
-        &resource_registry, &recipes,
-    );
 }
 
-/// Marker for cleanup on state exit
-#[derive(Component)]
-pub struct BuildingPopupMarker;
+fn spawn_recipe_selector(
+    commands: &mut Commands,
+    current_id: &str,
+    categories: &[String],
+    recipes: &RecipeRegistry,
+    resource_registry: &ResourceRegistry,
+) -> Entity {
+    commands.spawn((
+        RecipeSelectorRoot,
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px(420.0),
+            top: Val::Px(20.0),
+            flex_direction: FlexDirection::Column,
+            width: Val::Px(360.0),
+            height: Val::Px(300.0),
+            padding: UiRect::all(Val::Px(10.0)),
+            overflow: Overflow::clip(),
+            ..default()
+        },
+        BackgroundColor(Color::srgba(0.10, 0.10, 0.20, 0.98)),
+        Outline { width: Val::Px(1.0), offset: Val::ZERO, color: Color::srgb(0.40, 0.40, 0.55) },
+        ZIndex(102),
+    )).with_children(|parent| {
+        parent.spawn((
+            Node {
+                width: Val::Percent(100.0),
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::Center,
+                margin: UiRect::bottom(Val::Px(8.0)),
+                ..default()
+            },
+        )).with_children(|title| {
+            title.spawn((
+                Text::new("Select Recipe"),
+                TextFont::from_font_size(14.0),
+                TextColor(TEXT_PRIMARY),
+            ));
+            title.spawn((
+                CloseButton,
+                Button,
+                Node {
+                    width: Val::Px(20.0),
+                    height: Val::Px(20.0),
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                BackgroundColor(BTN_CLOSE),
+            )).with_children(|btn| {
+                btn.spawn((
+                    Text::new("✕"),
+                    TextFont::from_font_size(12.0),
+                    TextColor(Color::WHITE),
+                ));
+            });
+        });
 
-pub fn cleanup_popup(mut commands: Commands, query: Query<Entity, With<BuildingPopupMarker>>) {
+        let mut seen_categories: Vec<(String, Vec<&crate::economy::recipe::RecipeDef>)> = Vec::new();
+        for cat in categories {
+            let mut cat_recipes: Vec<&crate::economy::recipe::RecipeDef> = recipes.recipes.values()
+                .filter(|r| r.category == *cat)
+                .collect();
+            cat_recipes.sort_by(|a, b| a.id.cmp(&b.id));
+            if !cat_recipes.is_empty() {
+                seen_categories.push((cat.clone(), cat_recipes));
+            }
+        }
+
+        for (cat_name, cat_recipes) in &seen_categories {
+            parent.spawn((
+                RecipeCategoryLabel,
+                Text::new(format!("\u{2500}\u{2500} {} \u{2500}\u{2500}", cat_name.to_uppercase())),
+                TextFont::from_font_size(11.0),
+                TextColor(TEXT_YELLOW),
+                Node { margin: UiRect::vertical(Val::Px(4.0)), ..default() },
+            ));
+
+            for recipe in cat_recipes {
+                let is_active = recipe.id == current_id;
+                let bg = if is_active { Color::srgb(0.18, 0.35, 0.18) } else { Color::srgb(0.12, 0.12, 0.20) };
+                let prefix = if is_active { "\u{25b6} " } else { "  " };
+
+                let input_str: String = recipe.input.iter()
+                    .map(|(rid, amt)| {
+                        let name = resource_registry.get_opt(&rid.0).map_or(rid.0.as_str(), |r| &r.name);
+                        format!("{}\u{d7}{}", name, amt)
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" + ");
+                let output_str: String = recipe.output.iter()
+                    .map(|(rid, amt)| {
+                        let name = resource_registry.get_opt(&rid.0).map_or(rid.0.as_str(), |r| &r.name);
+                        format!("{}\u{d7}{}", name, amt)
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" + ");
+
+                parent.spawn((
+                    RecipeSelectorItem { recipe_id: recipe.id.clone() },
+                    Button,
+                    Node {
+                        width: Val::Percent(100.0),
+                        height: Val::Px(34.0),
+                        flex_direction: FlexDirection::Column,
+                        padding: UiRect::all(Val::Px(6.0)),
+                        margin: UiRect::vertical(Val::Px(1.0)),
+                        ..default()
+                    },
+                    BackgroundColor(bg),
+                )).with_children(|btn| {
+                    let recipe_name = resource_registry.get_opt(&recipe.id).map_or(recipe.id.as_str(), |r| &r.name);
+                    btn.spawn((
+                        Text::new(format!("{}{}", prefix, recipe_name)),
+                        TextFont::from_font_size(12.0),
+                        TextColor(if is_active { TEXT_GREEN } else { TEXT_PRIMARY }),
+                    ));
+                    btn.spawn((
+                        Text::new(format!("    {}  \u{2192}  {}  |  {:.1}s", input_str, output_str, recipe.time_sec)),
+                        TextFont::from_font_size(10.0),
+                        TextColor(TEXT_SECONDARY),
+                    ));
+                });
+            }
+        }
+    }).id()
+}
+
+// ── Recipe selector item click ──
+
+pub fn recipe_selector_click(
+    mut commands: Commands,
+    mut panel: ResMut<BuildingPanel>,
+    query: Query<(&Interaction, &RecipeSelectorItem), Changed<Interaction>>,
+    mut assembler_query: Query<&mut Assembler>,
+) {
+    for (interaction, item) in &query {
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
+        if let Ok(mut asm) = assembler_query.get_mut(inspected) {
+            asm.recipe_id = item.recipe_id.clone();
+            panel.dirty = true;
+        }
+        if let Some(e) = panel.recipe_selector.take() {
+            commands.entity(e).try_despawn();
+        }
+        return;
+    }
+}
+
+// ── Sorter resource button click ──
+
+pub fn sorter_resource_click_system(
+    mut panel: ResMut<BuildingPanel>,
+    query: Query<(&Interaction, &SorterResourceButton), Changed<Interaction>>,
+    mut sorter_query: Query<&mut Sorter>,
+    mut toast_queue: ResMut<ToastQueue>,
+) {
+    for (interaction, btn) in &query {
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
+        if let Ok(mut sorter) = sorter_query.get_mut(inspected) {
+            sorter.filter = btn.resource.clone();
+            toast_queue.0.push(format!("Sorter filter: {}", btn.resource.display_name()));
+            panel.dirty = true;
+        }
+    }
+}
+
+// ── Sorter invert button click ──
+
+pub fn sorter_invert_click_system(
+    mut panel: ResMut<BuildingPanel>,
+    query: Query<&Interaction, (Changed<Interaction>, With<SorterInvertButton>)>,
+    mut sorter_query: Query<&mut Sorter>,
+    mut toast_queue: ResMut<ToastQueue>,
+) {
+    for interaction in &query {
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
+        if let Ok(mut sorter) = sorter_query.get_mut(inspected) {
+            sorter.inverted = !sorter.inverted;
+            let mode = if sorter.inverted { "inverted" } else { "normal" };
+            toast_queue.0.push(format!("Sorter: {}", mode));
+            panel.dirty = true;
+        }
+    }
+}
+
+// ── Cleanup on state exit ──
+
+pub fn cleanup_popup(mut commands: Commands, query: Query<Entity, With<PanelModal>>) {
     for entity in &query {
         commands.entity(entity).despawn();
     }

@@ -29,6 +29,7 @@ hp = 80
 tile_size = { w = 1, h = 1 }
 color = "#884422"
 visual = "diamond"
+recipe_categories = ["smelting"]
 
 [buildings.assembler]
 name = "Assembler"
@@ -37,6 +38,7 @@ hp = 80
 tile_size = { w = 1, h = 1 }
 color = "#4D99CC"
 visual = "diamond"
+recipe_categories = ["crafting"]
 
 [buildings.belt]
 name = "Belt"

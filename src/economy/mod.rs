@@ -44,7 +44,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::BeltDrag>();
         app.init_resource::<components::DeconstructMode>();
         app.init_resource::<components::DeconstructDrag>();
-        app.init_resource::<components::BuildingPopup>();
+        app.init_resource::<components::BuildingPanel>();
         app.init_resource::<PeacefulMode>();
         app.init_resource::<MenuState>();
         app.init_resource::<MenuItems>();
@@ -86,9 +86,6 @@ impl Plugin for EconomyPlugin {
             placement::deconstruct_drag_preview.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            production::production_tick.run_if(in_state(GameState::Playing)),
-        );
-        app.add_systems(Update,
             production::assembler_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
@@ -116,13 +113,7 @@ impl Plugin for EconomyPlugin {
             inspect::building_inspect_click.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            inspect::recipe_click_system.run_if(in_state(GameState::Playing)),
-        );
-        app.add_systems(Update,
-            inspect::sorter_resource_click_system.run_if(in_state(GameState::Playing)),
-        );
-        app.add_systems(Update,
-            inspect::sorter_invert_click_system.run_if(in_state(GameState::Playing)),
+            inspect::overlay_click_system.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             inspect::close_button_system.run_if(in_state(GameState::Playing)),
@@ -131,8 +122,29 @@ impl Plugin for EconomyPlugin {
             inspect::close_popup_on_escape.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            inspect::update_building_popup.run_if(in_state(GameState::Playing)),
+            inspect::active_toggle_system.run_if(in_state(GameState::Playing)),
         );
+        app.add_systems(Update,
+            inspect::recipe_change_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::recipe_selector_click.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::sorter_resource_click_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            inspect::sorter_invert_click_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update, (
+            inspect::update_panel_header,
+            inspect::update_panel_production,
+            inspect::update_panel_inventory,
+            inspect::update_panel_connections,
+            inspect::update_panel_stats,
+            inspect::update_panel_hp,
+            inspect::update_panel_alerts,
+        ).run_if(in_state(GameState::Playing)));
         app.add_systems(Update,
             toast_system.run_if(in_state(GameState::Playing)),
         );

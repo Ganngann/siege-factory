@@ -2,27 +2,10 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 use crate::economy::belt::{BeltItem, BeltSlots};
-use crate::economy::components::{Assembler, Direction, Produces};
+use crate::economy::components::{Assembler, Direction, Active};
 use crate::economy::recipe::RecipeRegistry;
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
-
-pub fn production_tick(
-    time: Res<Time>,
-    mut producers: Query<(&mut Produces, &TilePosition)>,
-    mut commands: Commands,
-) {
-    for (mut prod, tile_pos) in producers.iter_mut() {
-        prod.timer += time.delta_secs();
-        while prod.timer >= prod.interval {
-            prod.timer -= prod.interval;
-            commands.trigger(SpawnBeltItemEvent {
-                source_tile: *tile_pos,
-                resource: prod.resource.clone(),
-            });
-        }
-    }
-}
 
 const INPUT_DIRS: [(i32, i32, Direction); 4] = [
     (1, 0, Direction::West),
@@ -34,7 +17,7 @@ const INPUT_DIRS: [(i32, i32, Direction); 4] = [
 pub fn assembler_tick(
     time: Res<Time>,
     recipes: Res<RecipeRegistry>,
-    mut assembler_query: Query<(&mut Assembler, &TilePosition)>,
+    mut assembler_query: Query<(&mut Assembler, &TilePosition, &Active)>,
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
     item_query: Query<&BeltItem>,
     mut commands: Commands,
@@ -42,7 +25,8 @@ pub fn assembler_tick(
     let belt_map: HashMap<(i32, i32), Entity> =
         belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
 
-    for (mut assembler, tile_pos) in assembler_query.iter_mut() {
+    for (mut assembler, tile_pos, active) in assembler_query.iter_mut() {
+        if !active.0 { continue; }
         let recipe = match recipes.get(&assembler.recipe_id) {
             Some(r) => r,
             None => continue,

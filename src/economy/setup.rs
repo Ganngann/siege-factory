@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::economy::building::BuildingRegistry;
-use crate::economy::components::{HQ, Building, OccupiedTiles};
+use crate::economy::components::{HQ, Building, OccupiedTiles, Active};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
@@ -43,6 +43,7 @@ pub fn setup_hq(
         Building { kind: "hq".to_string(), name: "HQ".to_string() },
         inv,
         OccupiedTiles(occupied),
+        Active(true),
         Sprite {
             image: textures.base(stem),
             custom_size: Some(size),
