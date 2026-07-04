@@ -6,6 +6,7 @@ pub mod inspect;
 pub mod menu;
 pub mod placement;
 pub mod production;
+pub mod spatial;
 pub mod recipe;
 pub mod resource;
 pub mod setup;
@@ -20,6 +21,7 @@ use crate::core::toast::{toast_system, ToastQueue};
 use crate::core::tooltip::{tooltip_ui, TooltipText};
 use building::DefaultSettings;
 use menu::{MenuState, MenuItems};
+use spatial::SpatialRegistry;
 use resource::ResourceRegistry;
 use ui::ResourceCountText;
 use components::{PeacefulMode, Building, UiIsBlocking};
@@ -62,6 +64,7 @@ impl Plugin for EconomyPlugin {
         app.insert_resource(unit_cfg);
         app.insert_resource(menu_def);
 
+        app.init_resource::<SpatialRegistry>();
         app.init_resource::<components::BuildMode>();
         app.init_resource::<components::BeltDirection>();
         app.init_resource::<components::BuildPreview>();
@@ -92,6 +95,9 @@ impl Plugin for EconomyPlugin {
             build_bar::cleanup_menu_bar,
             inspect::cleanup_popup,
         ));
+        app.add_systems(PreUpdate,
+            spatial::sync_spatial_registry.run_if(in_state(GameState::Playing)),
+        );
         app.add_systems(Update,
             placement::build_mode_input.run_if(in_state(GameState::Playing)),
         );

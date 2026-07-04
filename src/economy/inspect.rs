@@ -3,7 +3,7 @@ use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    Building, BuildMode, DeconstructMode, OccupiedTiles, Sorter, Assembler, Active,
+    Building, BuildMode, DeconstructMode, Sorter, Assembler, Active,
     BuildingPanel, PanelOverlay, PanelModal, BuildingTitleText, ActiveToggleButton,
     CloseButton, ProgressBarBg, ProgressBarFill, StatusText, FlowInputText, FlowOutputText,
     CapacityBarFill, CapacityBarText, ConnectionRowText, StatRowText,
@@ -14,6 +14,7 @@ use crate::economy::components::{
 use crate::economy::belt::BeltSlots;
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::{ResourceRegistry, Inventory};
+use crate::economy::spatial::SpatialRegistry;
 use crate::enemy::components::Health;
 use crate::map::config::MapConfig;
 
@@ -728,7 +729,8 @@ pub fn building_inspect_click(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
-    building_query: Query<(Entity, &OccupiedTiles, &Building)>,
+    spatial: Res<SpatialRegistry>,
+    building_query: Query<&Building>,
     resource_registry: Res<ResourceRegistry>,
     ui_blocking: Res<UiIsBlocking>,
 ) {
@@ -745,11 +747,8 @@ pub fn building_inspect_click(
     let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
-    let clicked = building_query.iter().find(|(_, tiles, _)|
-        tiles.0.iter().any(|&(x, y)| x == tile_x && y == tile_y)
-    );
-
-    if let Some((entity, _, building)) = clicked {
+    if let Some(entity) = spatial.at(tile_x, tile_y) {
+        let Ok(building) = building_query.get(entity) else { return };
         if panel.inspected == Some(entity) {
             close_panel(commands, panel);
             return;

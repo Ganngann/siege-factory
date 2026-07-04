@@ -53,6 +53,32 @@ impl ShapeCache {
     }
 }
 
+// ── Preview materials cache (shared handles, no per-frame allocation) ──
+
+#[derive(Resource)]
+pub struct PreviewMaterials {
+    pub deconstruct_building: Handle<ColorMaterial>,
+    pub deconstruct_zone: Handle<ColorMaterial>,
+    pub build_valid: Handle<ColorMaterial>,
+    pub build_invalid: Handle<ColorMaterial>,
+    pub indicator_input: Handle<ColorMaterial>,
+    pub indicator_output: Handle<ColorMaterial>,
+}
+
+impl FromWorld for PreviewMaterials {
+    fn from_world(world: &mut World) -> Self {
+        let mut materials = world.resource_mut::<Assets<ColorMaterial>>();
+        Self {
+            deconstruct_building: materials.add(Color::srgba(0.8, 0.0, 0.0, 0.45)),
+            deconstruct_zone: materials.add(Color::srgba(0.8, 0.0, 0.0, 0.12)),
+            build_valid: materials.add(Color::srgba(0.0, 0.8, 0.0, 0.4)),
+            build_invalid: materials.add(Color::srgba(0.8, 0.0, 0.0, 0.3)),
+            indicator_input: materials.add(Color::srgba(0.0, 1.0, 0.0, 0.7)),
+            indicator_output: materials.add(Color::srgba(0.3, 0.6, 1.0, 0.7)),
+        }
+    }
+}
+
 // ── Texture cache (Sprite-based rendering for buildings/units) ──
 
 #[derive(Resource, Default)]
@@ -174,6 +200,7 @@ pub struct RenderPlugin;
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<ShapeCache>();
+        app.init_resource::<PreviewMaterials>();
         app.add_systems(Startup, setup_texture_cache);
         app.add_systems(Update, (
             tile_highlight,

@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 
 use crate::economy::resource::{ResourceId, Inventory};
-use crate::economy::components::{Assembler, Building, Direction, OccupiedTiles, Splitter, Sorter};
+use crate::economy::components::{Assembler, Building, Direction, Splitter, Sorter};
 use crate::economy::recipe::RecipeRegistry;
+use crate::economy::spatial::SpatialRegistry;
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
@@ -100,9 +101,10 @@ pub fn belt_item_placer(
 pub fn advance_belt_slots(
     time: Res<Time>,
     mut commands: Commands,
+    spatial: Res<SpatialRegistry>,
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
     mut item_query: Query<&mut BeltItem>,
-    mut inventory_query: Query<(Entity, &OccupiedTiles, &mut Inventory), (With<Building>, Without<BeltSlots>)>,
+    mut inventory_query: Query<(Entity, &mut Inventory), (With<Building>, Without<BeltSlots>)>,
     mut splitter_query: Query<(Entity, &TilePosition, &mut Splitter)>,
     sorter_query: Query<(Entity, &TilePosition, &Sorter)>,
 ) {
@@ -149,12 +151,6 @@ pub fn advance_belt_slots(
             }
         }
     }
-
-    // Build inventory map from OccupiedTiles (buildings without BeltSlots)
-    let inv_map: HashMap<(i32, i32), Entity> =
-        inventory_query.iter()
-            .flat_map(|(e, tiles, _)| tiles.0.iter().map(move |&(x, y)| ((x, y), e)))
-            .collect();
 
     // Cross-belt transfers (belt→belt + belt→splitter/sorter + belt→building)
     for (belt_entity, belt_pos, dir, speed, n_slots) in &belt_data {
@@ -309,7 +305,7 @@ pub fn advance_belt_slots(
                     }
                 }
             }
-        } else if let Some(&inv_entity) = inv_map.get(&(nx, ny)) {
+        } else if let Some(inv_entity) = spatial.at(nx, ny) {
             // Building deposit (belt→building inventory)
             if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
                 if let Some(item_entity) = bs.slots[last] {
@@ -318,7 +314,7 @@ pub fn advance_belt_slots(
                             bs.slots[last].take();
                             let resource = item.resource.clone();
                             commands.entity(item_entity).despawn();
-                            if let Ok((_, _, mut inv)) = inventory_query.get_mut(inv_entity) {
+                            if let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity) {
                                 if !inv.is_full() {
                                     inv.add(&resource, 1);
                                 }
@@ -332,8 +328,9 @@ pub fn advance_belt_slots(
 }
 
 pub fn building_output_tick(
+    spatial: Res<SpatialRegistry>,
     mut belt_query: Query<(&TilePosition, &mut BeltSlots)>,
-    mut inventory_query: Query<(Entity, &OccupiedTiles, &mut Inventory), (With<Building>, Without<BeltSlots>)>,
+    mut inventory_query: Query<(Entity, &mut Inventory), (With<Building>, Without<BeltSlots>)>,
     assembler_query: Query<Option<&Assembler>>,
     recipes: Res<RecipeRegistry>,
     mut commands: Commands,
@@ -341,18 +338,14 @@ pub fn building_output_tick(
     cfg: Res<MapConfig>,
 ) {
     let tile_size = cfg.tile_size;
-    let inv_map: HashMap<(i32, i32), Entity> = 
-        inventory_query.iter()
-            .flat_map(|(e, tiles, _)| tiles.0.iter().map(move |&(x, y)| ((x, y), e)))
-            .collect();
 
     for (belt_pos, mut bs) in belt_query.iter_mut() {
         if bs.slots[0].is_some() { continue; }
         let (odx, ody) = bs.direction.offset();
         let src_x = belt_pos.x - odx;
         let src_y = belt_pos.y - ody;
-        if let Some(&inv_entity) = inv_map.get(&(src_x, src_y)) {
-            if let Ok((_, _, mut inv)) = inventory_query.get_mut(inv_entity) {
+        if let Some(inv_entity) = spatial.at(src_x, src_y) {
+            if let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity) {
                 // For production buildings, only extract recipe outputs
                 if let Ok(Some(asm)) = assembler_query.get(inv_entity) {
                     if let Some(recipe) = recipes.get(&asm.recipe_id) {

@@ -2,7 +2,8 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use bevy::prelude::*;
 use crate::enemy::components::Enemy;
 use crate::enemy::registry::EnemyRegistry;
-use crate::economy::components::{HQ, Building};
+use crate::economy::components::{HQ, OccupiedTiles};
+use crate::economy::spatial::SpatialRegistry;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 
@@ -53,9 +54,10 @@ pub fn move_enemies(
     mut set: ParamSet<(
         Query<(Entity, &mut Transform, &mut TilePosition), With<Enemy>>,
         Query<&TilePosition, With<HQ>>,
-        Query<&TilePosition, (With<Building>, Without<HQ>)>,
     )>,
     time: Res<Time>,
+    spatial: Res<SpatialRegistry>,
+    hq_tiles_query: Query<&OccupiedTiles, With<HQ>>,
     enemies_registry: Res<EnemyRegistry>,
     cfg: Res<MapConfig>,
 ) {
@@ -69,9 +71,14 @@ pub fn move_enemies(
         Err(_) => return,
     };
     let goal = (hq_pos.x, hq_pos.y);
-    let mut blocked = HashSet::new();
-    for pos in set.p2().iter() {
-        blocked.insert((pos.x, pos.y));
+
+    // Build blocked set from spatial registry, excluding HQ tiles
+    let hq_tiles: HashSet<(i32, i32)> = hq_tiles_query.iter()
+        .flat_map(|t| t.0.iter().copied())
+        .collect();
+    let mut blocked: HashSet<(i32, i32)> = spatial.occupied_tiles().copied().collect();
+    for tile in &hq_tiles {
+        blocked.remove(tile);
     }
 
     for (_entity, mut transform, mut pos) in set.p0().iter_mut() {
