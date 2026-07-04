@@ -7,7 +7,7 @@ use crate::economy::recipe::RecipeRegistry;
 use crate::economy::spatial::SpatialRegistry;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
-use crate::rendering::{TextureCache, item_stem};
+use crate::rendering::TextureCache;
 
 #[derive(Component, Clone)]
 pub struct BeltSlots {
@@ -327,7 +327,7 @@ fn spawn_belt_item(
     resource: ResourceId,
     bs: &mut BeltSlots,
 ) {
-    let stem = item_stem(&resource.0);
+    let stem = &resource.0;
     let tex = textures.base(stem);
     let spawn_pos = Vec3::new(
         bs.slot_positions[0].x,

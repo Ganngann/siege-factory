@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use crate::core::utils::config_dir;
 
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -58,21 +59,4 @@ impl Settings {
     }
 }
 
-fn config_dir() -> PathBuf {
-    #[cfg(target_os = "windows")]
-    {
-        if let Ok(appdata) = std::env::var("APPDATA") {
-            return PathBuf::from(appdata).join("siege-factory");
-        }
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
-            return PathBuf::from(xdg).join("siege-factory");
-        }
-        if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home).join(".config").join("siege-factory");
-        }
-    }
-    PathBuf::from(".").join("config")
-}
+

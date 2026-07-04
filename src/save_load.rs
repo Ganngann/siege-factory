@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use crate::combat::Projectile;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
+use crate::core::utils::{config_dir, silent_despawn};
 use crate::economy::belt::{BeltItem, BeltSlots};
 use crate::economy::components::{
     Assembler, Building, Direction, Ghost, HQ, Miner, OccupiedTiles,
@@ -35,25 +36,6 @@ pub fn save_path() -> PathBuf {
     let mut dir = save_dir();
     dir.push("quicksave.sf_save");
     dir
-}
-
-fn config_dir() -> PathBuf {
-    #[cfg(target_os = "windows")]
-    {
-        if let Ok(appdata) = std::env::var("APPDATA") {
-            return PathBuf::from(appdata).join("siege-factory");
-        }
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
-            return PathBuf::from(xdg).join("siege-factory");
-        }
-        if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home).join(".config").join("siege-factory");
-        }
-    }
-    PathBuf::from(".").join("config")
 }
 
 // ── SaveData types (unchanged) ──
@@ -277,10 +259,6 @@ fn save_game(
 }
 
 // ── Cleanup world ──
-
-fn silent_despawn(commands: &mut Commands, entity: Entity) {
-    commands.entity(entity).try_despawn();
-}
 
 fn cleanup_world(
     mut commands: Commands,

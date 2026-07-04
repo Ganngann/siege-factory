@@ -30,13 +30,7 @@ pub struct UnitConfig {
     pub units: HashMap<String, UnitDef>,
 }
 
-fn parse_hex_color(s: &str) -> Color {
-    let s = s.trim_start_matches('#');
-    let r = u8::from_str_radix(&s[0..2], 16).unwrap_or(255) as f32 / 255.0;
-    let g = u8::from_str_radix(&s[2..4], 16).unwrap_or(255) as f32 / 255.0;
-    let b = u8::from_str_radix(&s[4..6], 16).unwrap_or(255) as f32 / 255.0;
-    Color::srgb(r, g, b)
-}
+use crate::core::utils::parse_hex_color;
 
 fn parse_cost(cost: &HashMap<String, u32>) -> Vec<UnitCost> {
     let mut result = Vec::new();

@@ -20,9 +20,6 @@ pub struct BuildOrderEvent {
     pub pos: TilePosition,
 }
 
-#[derive(Event)]
-pub struct ToastEvent(pub String);
-
 /// Emitted when a belt/splitter/sorter drag is completed.
 /// The observer handles cost deduction + entity spawn/update.
 #[derive(Event)]

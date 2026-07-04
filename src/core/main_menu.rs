@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use crate::core::game_state::GameState;
 use crate::core::input::{InputBinding, KeyBindings};
 use crate::core::settings::Settings;
+use crate::core::utils::silent_despawn;
 use crate::save_load::{SaveManager, save_path};
 
 // ── TOML types ──
@@ -263,10 +264,6 @@ fn spawn_current_screen(
 
 // ── Systems ──
 
-fn silent_despawn(commands: &mut Commands, entity: Entity) {
-    commands.entity(entity).try_despawn();
-}
-
 pub fn despawn_menu_ui(
     mut commands: Commands,
     query: Query<Entity, With<MenuRoot>>,
@@ -320,16 +317,15 @@ pub fn menu_navigation(
     let items: Vec<MenuItemAction> = if screen_id == "keybindings" {
         build_rebind_items(&bindings)
             .into_iter()
-            .map(|(id, _, action)| MenuItemAction { id, action })
+                .map(|(_id, _, action)| MenuItemAction { action })
             .collect()
     } else {
         screen
             .items
             .iter()
-            .map(|it| MenuItemAction {
-                id: it.id.clone(),
-                action: it.action.clone(),
-            })
+                .map(|it| MenuItemAction {
+                    action: it.action.clone(),
+                })
             .collect()
     };
 
@@ -438,8 +434,6 @@ pub fn menu_navigation(
 // ── Internal helpers ──
 
 struct MenuItemAction {
-    #[allow(dead_code)]
-    id: String,
     action: MenuAction,
 }
 

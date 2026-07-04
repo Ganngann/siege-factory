@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
+use crate::core::utils::parse_hex_color;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ResourceId(pub String);
@@ -23,17 +24,6 @@ impl ResourceId {
             .collect::<Vec<_>>()
             .join(" ")
     }
-}
-
-fn parse_hex_color(s: &str) -> Color {
-    let s = s.trim_start_matches('#');
-    if s.len() < 6 {
-        return Color::srgb(0.5, 0.5, 0.5);
-    }
-    let r = u8::from_str_radix(&s[0..2], 16).unwrap_or(128) as f32 / 255.0;
-    let g = u8::from_str_radix(&s[2..4], 16).unwrap_or(128) as f32 / 255.0;
-    let b = u8::from_str_radix(&s[4..6], 16).unwrap_or(128) as f32 / 255.0;
-    Color::srgb(r, g, b)
 }
 
 #[derive(Debug, Clone)]

@@ -178,9 +178,6 @@ pub struct Active(pub bool);
 #[derive(Resource, Default)]
 pub struct PeacefulMode(pub bool);
 
-#[derive(Event)]
-pub struct SetBuildModeEvent(pub Option<String>);
-
 // ── Menu UI components ──
 
 #[derive(Component)]
@@ -228,8 +225,6 @@ pub struct CapacityBarFill;
 #[derive(Component)]
 pub struct CapacityBarText;
 #[derive(Component)]
-pub struct InventoryRow { pub resource: ResourceId }
-#[derive(Component)]
 pub struct ConnectionRowText;
 #[derive(Component)]
 pub struct StatRowText;
@@ -252,8 +247,6 @@ pub struct RecipeSelectorRoot;
 pub struct RecipeSelectorItem { pub recipe_id: String }
 #[derive(Component)]
 pub struct RecipeCategoryLabel;
-#[derive(Component)]
-pub struct RecipePreviewText;
 
 // ── Sorter settings (kept from old UI) ──
 
