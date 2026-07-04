@@ -57,21 +57,30 @@ pub fn build_mode_input(
 
 // ── Auto-direction ──
 
+fn detect_producer_direction(
+    tx: i32, ty: i32,
+    producers: &Query<&TilePosition, With<Miner>>,
+) -> Option<Direction> {
+    let offsets = [(1, 0), (0, 1), (-1, 0), (0, -1)];
+    let dirs = [Direction::East, Direction::North, Direction::West, Direction::South];
+    for (&(dx, dy), &dir) in offsets.iter().zip(dirs.iter()) {
+        let nx = tx + dx;
+        let ny = ty + dy;
+        if producers.iter().any(|pos| pos.x == nx && pos.y == ny) {
+            return Some(dir);
+        }
+    }
+    None
+}
+
 fn auto_detect_direction(
     tx: i32, ty: i32,
     producers: &Query<&TilePosition, With<Miner>>,
     belts_query: &Query<(&TilePosition, &BeltSlots)>,
     default: Direction,
 ) -> Direction {
-    let offsets = [(1, 0), (0, 1), (-1, 0), (0, -1)];
-    let dirs = [Direction::East, Direction::North, Direction::West, Direction::South];
-
-    for (&(dx, dy), &dir) in offsets.iter().zip(dirs.iter()) {
-        let nx = tx + dx;
-        let ny = ty + dy;
-        if producers.iter().any(|pos| pos.x == nx && pos.y == ny) {
-            return dir;
-        }
+    if let Some(dir) = detect_producer_direction(tx, ty, producers) {
+        return dir;
     }
 
     for (pos, slots) in belts_query.iter() {
@@ -90,15 +99,8 @@ fn auto_detect_direction_from_data(
     belt_data: &[((i32, i32), Direction)],
     default: Direction,
 ) -> Direction {
-    let offsets = [(1, 0), (0, 1), (-1, 0), (0, -1)];
-    let dirs = [Direction::East, Direction::North, Direction::West, Direction::South];
-
-    for (&(dx, dy), &dir) in offsets.iter().zip(dirs.iter()) {
-        let nx = tx + dx;
-        let ny = ty + dy;
-        if producers.iter().any(|pos| pos.x == nx && pos.y == ny) {
-            return dir;
-        }
+    if let Some(dir) = detect_producer_direction(tx, ty, producers) {
+        return dir;
     }
 
     for &((px, py), dir) in belt_data {

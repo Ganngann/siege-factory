@@ -19,7 +19,7 @@ use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveSt
 use crate::enemy::registry::EnemyRegistry;
 use crate::map::components::{ChunkMember, TilePosition};
 use crate::map::config::MapConfig;
-use crate::map::systems::ChunkMarker;
+use crate::map::systems::{spawn_single_chunk_visuals, ChunkMarker};
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
 use crate::rendering::{ShapeCache, TextureCache, texture_stem};
 use crate::unit::{Soldier, Worker, WorkerState};
@@ -333,36 +333,10 @@ fn load_chunks(
     let chunk_size = CHUNK_SIZE as i32;
     let hq_cx = hx.div_euclid(chunk_size);
     let hq_cy = hy.div_euclid(chunk_size);
-    let mat_even = materials.add(Color::srgb(0.25, 0.35, 0.25));
-    let mat_odd = materials.add(Color::srgb(0.18, 0.28, 0.18));
-    let deposit_colors: HashMap<&str, Color> = [
-        ("iron_ore", Color::srgb(0.7, 0.5, 0.1)),
-        ("copper_ore", Color::srgb(0.84, 0.54, 0.30)),
-        ("coal", Color::srgb(0.27, 0.27, 0.27)),
-    ].iter().cloned().collect();
 
     for cx in (hq_cx - 10)..=(hq_cx + 10) {
         for cy in (hq_cy - 10)..=(hq_cy + 10) {
-            let (mesh_even, mesh_odd) = crate::map::systems::build_chunk_mesh(cx, cy, cfg.tile_size);
-            let chunk = chunk_grid.ensure_chunk(cx, cy);
-            commands.spawn(ChunkMarker(cx, cy));
-            commands.spawn((ChunkMember(cx, cy), Mesh2d(meshes.add(mesh_even)), MeshMaterial2d(mat_even.clone()), Transform::default()));
-            commands.spawn((ChunkMember(cx, cy), Mesh2d(meshes.add(mesh_odd)), MeshMaterial2d(mat_odd.clone()), Transform::default()));
-            let world_ox = cx * chunk_size;
-            let world_oy = cy * chunk_size;
-            for &(dx, dy, amount, ref resource) in &chunk.deposits {
-                if amount == 0 { continue; }
-                let wx = world_ox + dx as i32;
-                let wy = world_oy + dy as i32;
-                let color = deposit_colors.get(resource.as_str()).copied().unwrap_or(Color::srgb(0.5, 0.5, 0.5));
-                let mat_color = materials.add(color);
-                commands.spawn((
-                    ChunkMember(cx, cy), ResourceDeposit { resource: resource.clone(), amount },
-                    Mesh2d(shapes.circle.clone()), MeshMaterial2d(mat_color),
-                    Transform::from_xyz(wx as f32 * cfg.tile_size, wy as f32 * cfg.tile_size, 0.5),
-                    TilePosition { x: wx, y: wy },
-                ));
-            }
+            spawn_single_chunk_visuals(&mut commands, &mut chunk_grid, &cfg, &shapes, &mut materials, &mut meshes, cx, cy);
         }
     }
 }

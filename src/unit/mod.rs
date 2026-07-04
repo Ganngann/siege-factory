@@ -6,6 +6,7 @@ use crate::economy::unit_config::UnitConfig;
 use crate::economy::components::{HQ, ResourceDeposit, Unit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
+use crate::enemy::combat::find_closest_enemy;
 use crate::events::DespawnDeposit;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
@@ -151,16 +152,11 @@ fn soldier_auto_attack(
             continue;
         }
 
-        let mut target = None;
-        let mut closest = range_sq;
+        let enemy_positions: Vec<(Entity, Vec3)> = enemies.iter()
+            .map(|(e, t)| (e, t.translation))
+            .collect();
 
-        for (enemy_entity, enemy_pos) in enemies.iter() {
-            let dist = enemy_pos.translation.distance_squared(soldier_pos.translation);
-            if dist < closest {
-                closest = dist;
-                target = Some(enemy_entity);
-            }
-        }
+        let target = find_closest_enemy(soldier_pos.translation, &enemy_positions, range_sq);
 
         if let Some(enemy_entity) = target {
             soldier.attack_cooldown = fire_rate;

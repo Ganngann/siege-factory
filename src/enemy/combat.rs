@@ -9,8 +9,9 @@ use crate::events::DespawnEnemy;
 use crate::map::components::TilePosition;
 use crate::rendering::ShapeCache;
 
+/// Find the closest enemy entity within range_sq of a given position.
 pub fn find_closest_enemy(
-    turret_pos: Vec3,
+    pos: Vec3,
     enemies: &[(Entity, Vec3)],
     range_sq: f32,
 ) -> Option<Entity> {
@@ -18,7 +19,7 @@ pub fn find_closest_enemy(
     let mut closest_dist = range_sq;
 
     for (entity, enemy_pos) in enemies {
-        let dist = enemy_pos.distance_squared(turret_pos);
+        let dist = enemy_pos.distance_squared(pos);
         if dist < closest_dist {
             closest_dist = dist;
             target = Some(*entity);

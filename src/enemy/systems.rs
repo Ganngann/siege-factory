@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::GameState;
-use crate::core::toast::ToastMessage;
+use crate::core::toast::ToastQueue;
 use crate::economy::components::{HQ, PeacefulMode};
 use crate::enemy::components::{Enemy, WaveState, WaveCounterText, GameOverUi, Health, LastWave};
 use crate::enemy::registry::EnemyRegistry;
@@ -185,23 +185,10 @@ pub fn reset_wave(
 pub fn wave_announcement(
     wave: Res<WaveState>,
     mut last_wave: ResMut<LastWave>,
-    mut commands: Commands,
+    mut toast: ResMut<ToastQueue>,
 ) {
     if wave.wave != last_wave.0 && wave.wave > 1 {
-        commands.spawn((
-            ToastMessage { timer: 2.0 },
-            Text::new(format!("Wave {}", wave.wave)),
-            TextFont::from_font_size(32.0),
-            TextColor(Color::srgb(1.0, 0.6, 0.2)),
-            TextLayout::justify(Justify::Center),
-            Node {
-                position_type: PositionType::Absolute,
-                top: Val::Px(40.0),
-                left: Val::Percent(50.0),
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-        ));
+        toast.0.push(format!("Wave {}", wave.wave));
         last_wave.0 = wave.wave;
     }
 }

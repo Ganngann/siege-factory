@@ -157,6 +157,61 @@ fn deposit_color(resource: &str) -> Color {
     }
 }
 
+/// Spawn visual entities for a single chunk (tile mesh + deposits).
+pub fn spawn_single_chunk_visuals(
+    commands: &mut Commands,
+    chunk_grid: &mut ChunkGrid,
+    cfg: &MapConfig,
+    shapes: &ShapeCache,
+    materials: &mut Assets<ColorMaterial>,
+    meshes: &mut Assets<Mesh>,
+    cx: i32,
+    cy: i32,
+) {
+    let chunk_size = CHUNK_SIZE as i32;
+    let tile_size = cfg.tile_size;
+
+    let (mesh_even, mesh_odd) = build_chunk_mesh(cx, cy, tile_size);
+    let chunk = chunk_grid.ensure_chunk(cx, cy);
+
+    let mat_even = materials.add(Color::srgb(0.25, 0.35, 0.25));
+    let mat_odd = materials.add(Color::srgb(0.18, 0.28, 0.18));
+
+    commands.spawn(ChunkMarker(cx, cy));
+    commands.spawn((
+        ChunkMember(cx, cy),
+        Mesh2d(meshes.add(mesh_even)),
+        MeshMaterial2d(mat_even),
+        Transform::default(),
+    ));
+    commands.spawn((
+        ChunkMember(cx, cy),
+        Mesh2d(meshes.add(mesh_odd)),
+        MeshMaterial2d(mat_odd),
+        Transform::default(),
+    ));
+
+    let world_ox = cx * chunk_size;
+    let world_oy = cy * chunk_size;
+    for &(dx, dy, amount, ref resource) in &chunk.deposits {
+        if amount == 0 {
+            continue;
+        }
+        let wx = world_ox + dx as i32;
+        let wy = world_oy + dy as i32;
+        let color = deposit_color(resource);
+        let dep_color = materials.add(color);
+        commands.spawn((
+            ChunkMember(cx, cy),
+            ResourceDeposit { resource: resource.clone(), amount },
+            Mesh2d(shapes.circle.clone()),
+            MeshMaterial2d(dep_color),
+            Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
+            TilePosition { x: wx, y: wy },
+        ));
+    }
+}
+
 fn spawn_chunks_in_range(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
@@ -170,56 +225,12 @@ fn spawn_chunks_in_range(
     max_cy: i32,
     existing: &HashSet<(i32, i32)>,
 ) {
-    let chunk_size = CHUNK_SIZE as i32;
-    let tile_size = cfg.tile_size;
-
-    let mat_even = materials.add(Color::srgb(0.25, 0.35, 0.25));
-    let mat_odd = materials.add(Color::srgb(0.18, 0.28, 0.18));
-
     for cx in min_cx..=max_cx {
         for cy in min_cy..=max_cy {
             if existing.contains(&(cx, cy)) {
                 continue;
             }
-
-            let (mesh_even, mesh_odd) = build_chunk_mesh(cx, cy, tile_size);
-            let chunk = chunk_grid.ensure_chunk(cx, cy);
-
-            commands.spawn(ChunkMarker(cx, cy));
-
-            commands.spawn((
-                ChunkMember(cx, cy),
-                Mesh2d(meshes.add(mesh_even)),
-                MeshMaterial2d(mat_even.clone()),
-                Transform::default(),
-            ));
-
-            commands.spawn((
-                ChunkMember(cx, cy),
-                Mesh2d(meshes.add(mesh_odd)),
-                MeshMaterial2d(mat_odd.clone()),
-                Transform::default(),
-            ));
-
-            let world_ox = cx * chunk_size;
-            let world_oy = cy * chunk_size;
-            for &(dx, dy, amount, ref resource) in &chunk.deposits {
-                if amount == 0 {
-                    continue;
-                }
-                let wx = world_ox + dx as i32;
-                let wy = world_oy + dy as i32;
-                let color = deposit_color(resource);
-                let dep_color = materials.add(color);
-                commands.spawn((
-                    ChunkMember(cx, cy),
-                    ResourceDeposit { resource: resource.clone(), amount },
-                    Mesh2d(shapes.circle.clone()),
-                    MeshMaterial2d(dep_color),
-                    Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
-                    TilePosition { x: wx, y: wy },
-                ));
-            }
+            spawn_single_chunk_visuals(commands, chunk_grid, cfg, shapes, materials, meshes, cx, cy);
         }
     }
 }
