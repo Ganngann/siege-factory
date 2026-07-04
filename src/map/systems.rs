@@ -5,6 +5,7 @@ use bevy::asset::RenderAssetUsages;
 use crate::core::game_state::GameState;
 use crate::economy::components::ResourceDeposit;
 use crate::economy::components::PeacefulMode;
+use crate::economy::components::UiIsBlocking;
 use crate::map::components::*;
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
@@ -24,10 +25,12 @@ impl Plugin for MapPlugin {
         app.insert_resource(HoveredTile::default());
         app.add_systems(OnEnter(GameState::Playing), setup_map.run_if(crate::save_load::is_fresh_game));
         app.add_systems(OnExit(GameState::Playing), cleanup_map);
-        app.add_systems(Update, (
-            update_hovered_tile,
-            update_visible_chunks,
-        ).run_if(in_state(GameState::Playing)));
+        app.add_systems(Update,
+            update_hovered_tile.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(Update,
+            update_visible_chunks.run_if(in_state(GameState::Playing)),
+        );
         app.add_systems(Update,
             recenter_on_hq.run_if(in_state(GameState::Playing)),
         );
@@ -77,7 +80,12 @@ fn update_hovered_tile(
     windows: Query<&Window>,
     camera: Query<(&Camera, &Transform)>,
     cfg: Res<MapConfig>,
+    ui_blocking: Res<UiIsBlocking>,
 ) {
+    if ui_blocking.0 {
+        hovered.0 = None;
+        return;
+    }
     hovered.0 = cursor_to_tile(&windows, &camera, cfg.tile_size);
 }
 

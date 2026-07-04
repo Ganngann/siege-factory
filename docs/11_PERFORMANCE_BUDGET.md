@@ -14,7 +14,7 @@
 | Métrique | Minimum | Idéal |
 |---|---|---|
 | FPS | 30 | 60 |
-| Entités simultanées | 5000 | 20000+ |
+| Entités simultanées | 5000000 | 200000000+ |
 | Taille carte | 100×100 chunks | Infini |
 | Joueurs PvP | 4 | 8 |
 

@@ -9,7 +9,7 @@ use crate::economy::components::{
     CapacityBarFill, CapacityBarText, ConnectionRowText, StatRowText,
     RecipeNameText, RecipeChangeButton, HpBarFill, HpText, AlertText,
     RecipeSelectorRoot, RecipeSelectorItem, RecipeCategoryLabel,
-    SorterResourceButton, SorterInvertButton,
+    SorterResourceButton, SorterInvertButton, UiIsBlocking,
 };
 use crate::economy::belt::BeltSlots;
 use crate::economy::recipe::RecipeRegistry;
@@ -80,6 +80,7 @@ fn open_panel(
         },
         BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
         ZIndex(100),
+        Pickable::default(),
     )).id();
 
     let root = spawn_panel_ui(&mut commands, modal_size, entity, building, kind, show_recipes, &resource_registry);
@@ -729,7 +730,9 @@ pub fn building_inspect_click(
     cfg: Res<MapConfig>,
     building_query: Query<(Entity, &OccupiedTiles, &Building)>,
     resource_registry: Res<ResourceRegistry>,
+    ui_blocking: Res<UiIsBlocking>,
 ) {
+    if ui_blocking.0 { return; }
     if build_mode.0.is_some() || deconstruct.0 { return; }
     if !bindings.just_pressed("place", &keys, &buttons) { return; }
 
@@ -760,19 +763,32 @@ pub fn building_inspect_click(
 pub fn overlay_click_system(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
-    query: Query<&Interaction, (Changed<Interaction>, With<PanelOverlay>)>,
+    buttons: Res<ButtonInput<MouseButton>>,
+    windows: Query<&Window>,
+    modal_query: Query<(&Node, &GlobalTransform), (With<PanelModal>, Without<PanelOverlay>)>,
 ) {
-    for interaction in &query {
-        if *interaction == Interaction::Pressed {
-            if panel.recipe_selector.is_some() {
-                if let Some(e) = panel.recipe_selector.take() {
-                    commands.entity(e).try_despawn();
-                }
-            } else {
-                close_panel(commands, panel);
-                return;
-            }
+    if panel.overlay.is_none() { return; }
+    if !buttons.just_pressed(MouseButton::Left) { return; }
+
+    let Ok(window) = windows.single() else { return };
+    let Some(cursor) = window.cursor_position() else { return };
+
+    // If click inside the modal body → let the modal's own buttons handle it
+    if let Ok((_node, transform)) = modal_query.single() {
+        let center = transform.translation().truncate();
+        let modal_rect = Rect::from_center_size(center, Vec2::new(800.0, 560.0));
+        if modal_rect.contains(cursor) { return; }
+    } else {
+        return;
+    }
+
+    // Click is outside the modal → close
+    if panel.recipe_selector.is_some() {
+        if let Some(e) = panel.recipe_selector.take() {
+            commands.entity(e).try_despawn();
         }
+    } else {
+        close_panel(commands, panel);
     }
 }
 

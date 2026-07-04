@@ -78,16 +78,23 @@ fn setup_texture_cache(
     mut commands: Commands,
     mut images: ResMut<Assets<Image>>,
 ) {
-    let stems = all_texture_stems();
-    let mut base = HashMap::with_capacity(stems.len());
-    let mut owner = HashMap::with_capacity(stems.len());
-    let mut level = HashMap::with_capacity(stems.len());
+    let building_stems = all_texture_stems();
+    let item_stems = all_item_stems();
+    let total = building_stems.len() + item_stems.len();
+    let mut base = HashMap::with_capacity(total);
+    let mut owner = HashMap::with_capacity(total);
+    let mut level = HashMap::with_capacity(total);
 
-    for stem in &stems {
+    for stem in &building_stems {
         let s = stem.as_str();
         base.insert(stem.clone(), load_png(&mut images, s, "base").unwrap_or_default());
         owner.insert(stem.clone(), load_png(&mut images, s, "owner"));
         level.insert(stem.clone(), load_png(&mut images, s, "level"));
+    }
+
+    for stem in &item_stems {
+        let s = stem.as_str();
+        base.insert(stem.clone(), load_png(&mut images, s, "base").unwrap_or_default());
     }
 
     commands.insert_resource(TextureCache { base, owner, level });
@@ -126,6 +133,20 @@ pub fn all_texture_stems() -> Vec<String> {
         "wall_h", "wall_v", "hq_east",
         "soldier", "worker",
     ].into_iter().map(String::from).collect()
+}
+
+/// All item texture stems (used for belt items).
+pub fn all_item_stems() -> Vec<String> {
+    vec![
+        "ore", "iron_ore", "copper_ore", "coal",
+        "iron_plate", "copper_plate", "steel",
+        "gear", "circuit", "ammo", "energy",
+    ].into_iter().map(String::from).collect()
+}
+
+/// Map a ResourceId to its item texture stem.
+pub fn item_stem(id: &str) -> &str {
+    id
 }
 
 /// Map a BuildingDef id to its texture stem.

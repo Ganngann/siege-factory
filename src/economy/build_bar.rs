@@ -95,6 +95,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems) {
                 ..default()
             },
             BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.85)),
+            Pickable::default(),
         ))
         .with_children(|parent| {
             // Breadcrumb

@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use bevy::prelude::*;
 
-use crate::economy::resource::{ResourceId, ResourceRegistry, Inventory};
+use crate::economy::resource::{ResourceId, Inventory};
 use crate::economy::components::{Assembler, Building, Direction, OccupiedTiles, Splitter, Sorter};
 use crate::economy::recipe::RecipeRegistry;
 use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
-use crate::rendering::ShapeCache;
+use crate::rendering::{TextureCache, item_stem};
 
 #[derive(Component, Clone)]
 pub struct BeltSlots {
@@ -46,17 +46,16 @@ pub fn belt_item_placer(
     on: On<SpawnBeltItemEvent>,
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
     mut commands: Commands,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     cfg: Res<MapConfig>,
-    resources: Res<ResourceRegistry>,
+    textures: Res<TextureCache>,
 ) {
     let tile_size = cfg.tile_size;
     let belt_map: HashMap<(i32, i32), Entity> =
         belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
     let ev = on.event();
 
-    let color = resources.get(&ev.resource.0).color;
+    let stem = item_stem(&ev.resource.0);
+    let tex = textures.base(stem);
 
     let mut placed = false;
     for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
@@ -79,9 +78,12 @@ pub fn belt_item_placer(
                     );
                     let item_entity = commands.spawn((
                         BeltItem { resource: ev.resource.clone(), acc: 0.0 },
-                        Mesh2d(shapes.circle.clone()),
-                        MeshMaterial2d(materials.add(color)),
-                        Transform::from_translation(spawn_pos).with_scale(Vec3::splat(0.25)),
+                        Sprite {
+                            image: tex.clone(),
+                            custom_size: Some(Vec2::new(20.0, 20.0)),
+                            ..default()
+                        },
+                        Transform::from_translation(spawn_pos),
                     )).id();
                     bs.slots[free_idx] = Some(item_entity);
                     placed = true;
@@ -335,9 +337,7 @@ pub fn building_output_tick(
     assembler_query: Query<Option<&Assembler>>,
     recipes: Res<RecipeRegistry>,
     mut commands: Commands,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    resources: Res<ResourceRegistry>,
+    textures: Res<TextureCache>,
     cfg: Res<MapConfig>,
 ) {
     let tile_size = cfg.tile_size;
@@ -362,7 +362,7 @@ pub fn building_output_tick(
                             .map(|(r, _)| r.clone());
                         if let Some(res) = output_res {
                             if inv.remove(&res, 1) {
-                                spawn_belt_item(&mut commands, &mut materials, &shapes, &resources, belt_pos, tile_size, res, &mut bs);
+                                spawn_belt_item(&mut commands, &textures, belt_pos, tile_size, res, &mut bs);
                             }
                         }
                         continue;
@@ -372,7 +372,7 @@ pub fn building_output_tick(
                 let first_key = inv.resources.keys().next().cloned();
                 if let Some(res) = first_key {
                     if inv.remove(&res, 1) {
-                        spawn_belt_item(&mut commands, &mut materials, &shapes, &resources, belt_pos, tile_size, res, &mut bs);
+                        spawn_belt_item(&mut commands, &textures, belt_pos, tile_size, res, &mut bs);
                     }
                 }
             }
@@ -382,15 +382,14 @@ pub fn building_output_tick(
 
 fn spawn_belt_item(
     commands: &mut Commands,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-    shapes: &Res<ShapeCache>,
-    resources: &Res<ResourceRegistry>,
+    textures: &TextureCache,
     belt_pos: &TilePosition,
     tile_size: f32,
     resource: ResourceId,
     bs: &mut BeltSlots,
 ) {
-    let color = resources.get(&resource.0).color;
+    let stem = item_stem(&resource.0);
+    let tex = textures.base(stem);
     let spawn_pos = Vec3::new(
         belt_pos.x as f32 * tile_size,
         belt_pos.y as f32 * tile_size,
@@ -398,9 +397,12 @@ fn spawn_belt_item(
     );
     let item_entity = commands.spawn((
         BeltItem { resource, acc: 0.0 },
-        Mesh2d(shapes.circle.clone()),
-        MeshMaterial2d(materials.add(color)),
-        Transform::from_translation(spawn_pos).with_scale(Vec3::splat(0.25)),
+        Sprite {
+            image: tex,
+            custom_size: Some(Vec2::new(20.0, 20.0)),
+            ..default()
+        },
+        Transform::from_translation(spawn_pos),
     )).id();
     bs.slots[0] = Some(item_entity);
 }

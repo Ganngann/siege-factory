@@ -398,6 +398,7 @@ fn spawn_fresh_camera(
     let (hx, hy) = cfg.hq_position;
     commands.spawn((
         Camera2d,
+        bevy::ui::IsDefaultUiCamera,
         Transform::from_xyz(
             hx as f32 * cfg.tile_size + cfg.tile_size / 2.0,
             hy as f32 * cfg.tile_size + cfg.tile_size / 2.0,
@@ -420,6 +421,7 @@ fn load_camera(
     let data = match &buf.data { Some(d) => d, None => return };
     commands.spawn((
         Camera2d,
+        bevy::ui::IsDefaultUiCamera,
         Transform::from_xyz(data.camera.x, data.camera.y, 100.0).with_scale(Vec3::splat(data.camera.scale)),
         bevy_pancam::PanCam { grab_buttons: vec![MouseButton::Middle], speed: 500.0, min_scale: 0.3, max_scale: 3.0, ..default() },
     ));
@@ -691,6 +693,7 @@ fn spawn_pause_menu(
                 display: Display::Flex, flex_direction: FlexDirection::Column, align_items: AlignItems::Center,
                 justify_content: JustifyContent::Center, ..default() },
             BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.6)),
+            Pickable::default(),
         )).with_children(|parent| {
             parent.spawn((
                 Node { display: Display::Flex, flex_direction: FlexDirection::Column, align_items: AlignItems::Center,

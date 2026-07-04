@@ -4,7 +4,7 @@ use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
     Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode, DeconstructDrag,
     Building, Miner, Assembler, ResourceDeposit, Ghost, HQ, OccupiedTiles,
-    TurretCombat, Storage, Splitter, Sorter, Active,
+    TurretCombat, Storage, Splitter, Sorter, Active, UiIsBlocking,
 };
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::core::input::KeyBindings;
@@ -256,7 +256,9 @@ pub fn handle_deconstruct_click_v2(
     mut toast_queue: ResMut<ToastQueue>,
     belt_slots_query: Query<&BeltSlots>,
     item_query: Query<Entity, With<BeltItem>>,
+    ui_blocking: Res<UiIsBlocking>,
 ) {
+    if ui_blocking.0 { return; }
     if !deconstruct.0 { return; }
     if !bindings.just_pressed("place", &keys, &buttons) { return; }
 
@@ -574,7 +576,9 @@ pub fn track_belt_drag(
     bindings: Res<KeyBindings>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
+    ui_blocking: Res<UiIsBlocking>,
 ) {
+    if ui_blocking.0 { return; }
     let Some(ref kind) = build_mode.0 else {
         drag.start_coord = None;
         return;
@@ -785,7 +789,9 @@ pub fn track_deconstruct_drag(
     keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
+    ui_blocking: Res<UiIsBlocking>,
 ) {
+    if ui_blocking.0 { return; }
     if !deconstruct.0 {
         drag.start_coord = None;
         return;
@@ -895,7 +901,9 @@ pub fn handle_build_click(
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
     mut chunk_grid: ResMut<ChunkGrid>,
+    ui_blocking: Res<UiIsBlocking>,
 ) {
+    if ui_blocking.0 { return; }
     let tile_size = cfg.tile_size;
 
     let Some(ref kind) = build_mode.0 else { return };

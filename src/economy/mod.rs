@@ -13,6 +13,8 @@ pub mod ui;
 pub mod unit_config;
 
 use bevy::prelude::*;
+use bevy::picking::hover::HoverMap;
+use bevy::ecs::hierarchy::ChildOf;
 use crate::core::game_state::GameState;
 use crate::core::toast::{toast_system, ToastQueue};
 use crate::core::tooltip::{tooltip_ui, TooltipText};
@@ -20,7 +22,29 @@ use building::DefaultSettings;
 use menu::{MenuState, MenuItems};
 use resource::ResourceRegistry;
 use ui::ResourceCountText;
-use components::{PeacefulMode, Building};
+use components::{PeacefulMode, Building, UiIsBlocking};
+
+pub fn update_ui_blocking(
+    mut blocking: ResMut<UiIsBlocking>,
+    hover_map: Res<HoverMap>,
+    pickable_q: Query<&Pickable>,
+    parent_q: Query<&ChildOf>,
+) {
+    blocking.0 = hover_map.iter().any(|(_, list)| {
+        list.iter().any(|entry| {
+            let mut entity = *entry.0;
+            loop {
+                if let Ok(p) = pickable_q.get(entity) {
+                    if p.should_block_lower { return true; }
+                }
+                match parent_q.get(entity) {
+                    Ok(child_of) => entity = child_of.0,
+                    Err(_) => return false,
+                }
+            }
+        })
+    });
+}
 
 pub struct EconomyPlugin;
 
@@ -50,9 +74,13 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<MenuItems>();
         app.init_resource::<ToastQueue>();
         app.init_resource::<TooltipText>();
+        app.init_resource::<UiIsBlocking>();
         app.add_observer(belt::belt_item_placer);
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
+        app.add_systems(PreUpdate,
+            update_ui_blocking.run_if(in_state(GameState::Playing)),
+        );
         app.add_systems(OnEnter(GameState::Playing), (
             setup::setup_hq.run_if(crate::save_load::is_fresh_game),
             build_bar::spawn_menu_bar,

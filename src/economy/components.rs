@@ -116,6 +116,9 @@ pub struct DeconstructDrag {
     pub start_coord: Option<(i32, i32)>,
 }
 
+#[derive(Resource, Default)]
+pub struct UiIsBlocking(pub bool);
+
 #[derive(Resource)]
 pub struct BuildingPanel {
     pub inspected: Option<Entity>,
