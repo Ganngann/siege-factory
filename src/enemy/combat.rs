@@ -1,13 +1,11 @@
 use bevy::prelude::*;
 
-use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::economy::components::{HQ, TurretCombat};
 use crate::enemy::components::{Enemy, Health};
 use crate::enemy::registry::EnemyRegistry;
-use crate::events::DespawnEnemy;
+use crate::events::{DespawnEnemy, SpawnProjectileEvent};
 use crate::map::components::TilePosition;
-use crate::rendering::ShapeCache;
 
 /// Find the closest enemy entity within range_sq of a given position.
 pub fn find_closest_enemy(
@@ -61,8 +59,6 @@ pub fn turret_shoot(
     mut turrets: Query<(&Transform, &mut TurretCombat)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     time: Res<Time>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for (turret_pos, mut combat) in turrets.iter_mut() {
         combat.timer += time.delta_secs();
@@ -76,16 +72,13 @@ pub fn turret_shoot(
 
         if let Some(entity) = find_closest_enemy(turret_pos.translation, &enemy_positions, combat.range_sq) {
             combat.timer -= combat.fire_interval;
-            commands.spawn((
-                Projectile {
-                    target: entity,
-                    speed: combat.projectile_speed,
-                    damage: combat.damage,
-                },
-                Mesh2d(shapes.circle.clone()),
-                MeshMaterial2d(materials.add(Color::srgb(1.0, 0.8, 0.2))),
-                Transform::from_translation(turret_pos.translation).with_scale(Vec3::splat(0.3)),
-            ));
+            commands.trigger(SpawnProjectileEvent {
+                target: entity,
+                speed: combat.projectile_speed,
+                damage: combat.damage,
+                origin: turret_pos.translation,
+                color: Color::srgb(1.0, 0.8, 0.2),
+            });
         }
     }
 }

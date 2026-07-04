@@ -1,17 +1,15 @@
 use bevy::prelude::*;
 
-use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::economy::unit_config::UnitConfig;
 use crate::economy::components::{HQ, ResourceDeposit, Unit};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::enemy::{Health, Enemy as EnemyComponent};
 use crate::enemy::combat::find_closest_enemy;
-use crate::events::DespawnDeposit;
+use crate::events::{DespawnDeposit, SpawnProjectileEvent};
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-use crate::rendering::{ShapeCache, TextureCache};
 
 
 #[derive(Event)]
@@ -50,7 +48,6 @@ pub enum WorkerState {
 fn spawn_unit_by_id(
     commands: &mut Commands,
     unit_cfg: &UnitConfig,
-    textures: &TextureCache,
     id: &str,
     hq_pos: Vec3,
 ) -> bool {
@@ -64,40 +61,19 @@ fn spawn_unit_by_id(
     } else {
         Vec3::new(40.0, 0.0, 2.5)
     };
-    let stem = &def.texture_stem;
-    let img = textures.base(stem);
-    let size = Vec2::new(48.0, 48.0);
 
     if def.kind == "harvester" {
         commands.spawn((
             Worker { state: WorkerState::Idle, mining_timer: 0.0 },
             Unit, Health { current: hp, max: hp },
-            Sprite { image: img, custom_size: Some(size), ..default() },
             Transform::from_translation(hq_pos + offset),
-            Visibility::default(),
-        )).with_children(|parent| {
-            if let Some(tex) = textures.owner(stem) {
-                parent.spawn((
-                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() },
-                    Transform::default(),
-                ));
-            }
-        });
+        ));
     } else {
         commands.spawn((
             Soldier { attack_cooldown: 0.0 },
             Unit, Health { current: hp, max: hp },
-            Sprite { image: img, custom_size: Some(size), ..default() },
             Transform::from_translation(hq_pos + offset),
-            Visibility::default(),
-        )).with_children(|parent| {
-            if let Some(tex) = textures.owner(stem) {
-                parent.spawn((
-                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() },
-                    Transform::default(),
-                ));
-            }
-        });
+        ));
     }
     true
 }
@@ -106,7 +82,6 @@ fn spawn_unit_on_trigger(
     on: On<SpawnUnitEvent>,
     unit_cfg: Res<UnitConfig>,
     mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
-    textures: Res<TextureCache>,
     mut commands: Commands,
 ) {
     let (hq_transform, mut inv) = match hq_query.single_mut() {
@@ -121,7 +96,7 @@ fn spawn_unit_on_trigger(
             .unwrap_or(0);
         if inv.get(&ResourceId("ore".to_string())) >= cost_ore {
             inv.remove(&ResourceId("ore".to_string()), cost_ore);
-            spawn_unit_by_id(&mut commands, &unit_cfg, &textures, id, hq_transform.translation);
+            spawn_unit_by_id(&mut commands, &unit_cfg, id, hq_transform.translation);
         }
     }
 }
@@ -134,8 +109,6 @@ fn soldier_auto_attack(
     time: Res<Time>,
     unit_cfg: Res<UnitConfig>,
     cfg: Res<MapConfig>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let soldier_def = match unit_cfg.get("soldier") {
         Some(d) => d,
@@ -160,16 +133,13 @@ fn soldier_auto_attack(
 
         if let Some(enemy_entity) = target {
             soldier.attack_cooldown = fire_rate;
-            commands.spawn((
-                Projectile {
-                    target: enemy_entity,
-                    speed: soldier_def.projectile_speed,
-                    damage,
-                },
-                Mesh2d(shapes.circle.clone()),
-                MeshMaterial2d(materials.add(Color::srgb(0.3, 1.0, 0.3))),
-                Transform::from_translation(soldier_pos.translation).with_scale(Vec3::splat(0.3)),
-            ));
+            commands.trigger(SpawnProjectileEvent {
+                target: enemy_entity,
+                speed: soldier_def.projectile_speed,
+                damage,
+                origin: soldier_pos.translation,
+                color: Color::srgb(0.3, 1.0, 0.3),
+            });
         }
     }
 }

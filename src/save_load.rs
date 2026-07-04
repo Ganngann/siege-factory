@@ -7,7 +7,6 @@ use crate::combat::Projectile;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
 use crate::core::utils::{config_dir, silent_despawn};
-use crate::economy::building::BuildingRegistry;
 use crate::economy::belt::{BeltItem, BeltSlots};
 use crate::economy::components::{
     Assembler, Building, Direction, Ghost, HQ, Miner, OccupiedTiles,
@@ -17,14 +16,12 @@ use crate::economy::components::{
 use crate::economy::resource::{ResourceId, Inventory, ResourceRegistry};
 use crate::economy::ui::ResourceCountText;
 use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveState};
-use crate::enemy::registry::EnemyRegistry;
 use crate::map::components::{ChunkMember, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::systems::{spawn_single_chunk_visuals, ChunkMarker};
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-use crate::rendering::{ShapeCache, TextureCache};
+use crate::rendering::ShapeCache;
 use crate::unit::{Soldier, Worker, WorkerState};
-use crate::economy::unit_config::UnitConfig;
 
 // ── Save file path ──
 
@@ -394,11 +391,6 @@ fn load_buildings(
     buf: Res<LoadBuffer>,
     mut commands: Commands,
     cfg: Res<MapConfig>,
-    shapes: Res<ShapeCache>,
-    textures: Res<TextureCache>,
-    res_registry: Res<ResourceRegistry>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    building_registry: Res<BuildingRegistry>,
 ) {
     let data = match &buf.data { Some(d) => d, None => return };
     let tile_size = cfg.tile_size;
@@ -407,49 +399,34 @@ fn load_buildings(
         let (tw, th) = if bs.kind == "hq" { (2, 2) } else { (1, 1) };
         let cx = (bs.tile_x as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
         let cy = (bs.tile_y as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
-        let stem = building_registry.get(&bs.kind)
-            .map(|d| d.texture_stem.as_str())
-            .unwrap_or(&bs.kind);
-        let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
         let inv = if let Some(ref items) = bs.inventory {
             let mut i = Inventory::with_capacity(bs.inventory_capacity);
             for (res, amount) in items { i.add(&ResourceId(res.clone()), *amount); }
             i
         } else if bs.inventory_capacity > 0 { Inventory::with_capacity(bs.inventory_capacity) }
         else { Inventory::new() };
-        let sprite = Sprite { image: textures.base(stem), custom_size: Some(size), ..default() };
         let tf = Transform::from_xyz(cx, cy, 2.0);
         let tile_pos = TilePosition { x: bs.tile_x, y: bs.tile_y };
         let occupied = OccupiedTiles(bs.occupied.clone());
         let building = Building { kind: bs.kind.clone(), name: bs.kind.clone() };
 
         if bs.kind == "hq" {
-            let entity = commands.spawn((
-                HQ, building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
-            )).id();
-            commands.entity(entity).with_children(|parent| {
-                if let Some(tex) = textures.owner(stem) {
-                    parent.spawn((Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() }, Transform::default()));
-                }
-                if let Some(tex) = textures.level(stem) {
-                    parent.spawn((Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.8, 0.2), ..default() }, Transform::default()));
-                }
-            });
+            commands.spawn((
+                HQ, building, inv, occupied, tf, tile_pos, Active(true),
+            ));
         } else if bs.kind == "miner" {
             let a = bs.assembler.as_ref().unwrap();
-            let entity = commands.spawn((
+            commands.spawn((
                 Miner,
                 Assembler { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() },
-                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
-            )).id();
-            attach_children(&mut commands, entity, stem, size, &textures);
+                building, inv, occupied, tf, tile_pos, Active(true),
+            ));
         } else if bs.kind == "assembler" || bs.kind == "furnace" {
             let a = bs.assembler.as_ref().unwrap();
-            let entity = commands.spawn((
+            commands.spawn((
                 Assembler { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() },
-                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
-            )).id();
-            attach_children(&mut commands, entity, stem, size, &textures);
+                building, inv, occupied, tf, tile_pos, Active(true),
+            ));
         } else if bs.belt.is_some() || bs.splitter.is_some() || bs.sorter.is_some() {
             let b = bs.belt.as_ref().unwrap();
             let slot_positions = crate::economy::belt::compute_slot_positions(
@@ -462,85 +439,62 @@ fn load_buildings(
             };
             let belt_tf = Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle));
             let mut slots: Vec<Option<Entity>> = Vec::new();
-            let mut item_entities: Vec<(usize, Entity)> = Vec::new();
             for (i, item_save) in b.slots.iter().enumerate() {
                 if let Some(item) = item_save {
-                    let color = res_registry.get_opt(&item.resource).map(|d| d.color).unwrap_or(Color::srgb(0.5, 0.5, 0.5));
                     let pos = slot_positions[i];
                     let item_entity = commands.spawn((
                         BeltItem { resource: ResourceId(item.resource.clone()), acc: item.acc },
-                        Mesh2d(shapes.circle.clone()), MeshMaterial2d(materials.add(color)),
                         Transform::from_translation(Vec3::new(pos.x, pos.y, 2.5)).with_scale(Vec3::splat(0.25)),
                     )).id();
-                    item_entities.push((i, item_entity));
                     slots.push(Some(item_entity));
                 } else { slots.push(None); }
             }
             let belt_comp = BeltSlots { direction: b.direction, slots, slot_positions, speed: b.speed };
             if let Some(sp) = &bs.splitter {
                 commands.spawn((
-                    belt_comp, building, inv, occupied, sprite, belt_tf, Visibility::default(), tile_pos,
+                    belt_comp, building, inv, occupied, belt_tf, tile_pos,
                     Splitter { counter: sp.counter, outputs: sp.outputs, input_direction: sp.input_direction },
                     Active(true),
                 ));
             } else if let Some(so) = &bs.sorter {
                 commands.spawn((
-                    belt_comp, building, inv, occupied, sprite, belt_tf, Visibility::default(), tile_pos,
+                    belt_comp, building, inv, occupied, belt_tf, tile_pos,
                     Sorter { filter: ResourceId(so.filter.clone()), inverted: so.inverted },
                     Active(true),
                 ));
             } else {
                 commands.spawn((
-                    belt_comp, building, inv, occupied, sprite, belt_tf, Visibility::default(), tile_pos,
+                    belt_comp, building, inv, occupied, belt_tf, tile_pos,
                     Active(true),
                 ));
             }
         } else if bs.kind == "turret" {
             let t = bs.turret.as_ref().unwrap();
-            let entity = commands.spawn((
+            commands.spawn((
                 TurretCombat { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer, projectile_speed: t.projectile_speed },
-                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
-            )).id();
-            attach_children(&mut commands, entity, stem, size, &textures);
+                building, inv, occupied, tf, tile_pos, Active(true),
+            ));
         } else if bs.storage {
-            let entity = commands.spawn((
-                Storage, building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
-            )).id();
-            attach_children(&mut commands, entity, stem, size, &textures);
+            commands.spawn((
+                Storage, building, inv, occupied, tf, tile_pos, Active(true),
+            ));
         } else {
-            let entity = commands.spawn((
-                building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
-            )).id();
-            attach_children(&mut commands, entity, stem, size, &textures);
+            commands.spawn((
+                building, inv, occupied, tf, tile_pos, Active(true),
+            ));
         }
     }
-}
-
-fn attach_children(commands: &mut Commands, entity: Entity, stem: &str, size: Vec2, textures: &TextureCache) {
-    commands.entity(entity).with_children(|parent| {
-        if let Some(tex) = textures.owner(stem) {
-            parent.spawn((Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() }, Transform::default()));
-        }
-        if let Some(tex) = textures.level(stem) {
-            parent.spawn((Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.8, 0.2), ..default() }, Transform::default()));
-        }
-    });
 }
 
 fn load_enemies(
     buf: Res<LoadBuffer>,
     mut commands: Commands,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
     cfg: Res<MapConfig>,
 ) {
     let data = match &buf.data { Some(d) => d, None => return };
     for es in &data.enemies {
-        let reg = EnemyRegistry::load();
-        let def = reg.get(&es.kind).unwrap_or_else(|| reg.get("runner").unwrap());
         let entity = commands.spawn((
             EnemyComponent { kind: es.kind.clone() }, Health { current: es.hp, max: es.max_hp },
-            Mesh2d(shapes.circle.clone()), MeshMaterial2d(materials.add(def.color)),
             Transform::from_xyz(es.x, es.y, 3.0),
             TilePosition { x: (es.x / cfg.tile_size) as i32, y: (es.y / cfg.tile_size) as i32 },
         )).id();
@@ -557,43 +511,24 @@ fn load_enemies(
 fn load_units(
     buf: Res<LoadBuffer>,
     mut commands: Commands,
-    textures: Res<TextureCache>,
     cfg: Res<MapConfig>,
-    unit_cfg: Res<UnitConfig>,
 ) {
     let data = match &buf.data { Some(d) => d, None => return };
     for us in &data.units {
-        let stem = unit_cfg.get(&us.kind)
-            .map(|d| d.texture_stem.as_str())
-            .unwrap_or(&us.kind);
-        let img = textures.base(stem);
-        let size = Vec2::new(48.0, 48.0);
         if us.kind == "worker" {
-            let entity = commands.spawn((
+            commands.spawn((
                 Worker { state: WorkerState::Idle, mining_timer: us.worker_timer.unwrap_or(0.0) },
                 Unit, Health { current: us.hp, max: us.max_hp },
-                Sprite { image: img, custom_size: Some(size), ..default() },
-                Transform::from_xyz(us.x, us.y, 2.5), Visibility::default(),
+                Transform::from_xyz(us.x, us.y, 2.5),
                 TilePosition { x: (us.x / cfg.tile_size) as i32, y: (us.y / cfg.tile_size) as i32 },
-            )).id();
-            commands.entity(entity).with_children(|parent| {
-                if let Some(tex) = textures.owner(stem) {
-                    parent.spawn((Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() }, Transform::default()));
-                }
-            });
+            ));
         } else {
-            let entity = commands.spawn((
+            commands.spawn((
                 Soldier { attack_cooldown: us.soldier_cooldown.unwrap_or(0.0) },
                 Unit, Health { current: us.hp, max: us.max_hp },
-                Sprite { image: img, custom_size: Some(size), ..default() },
-                Transform::from_xyz(us.x, us.y, 2.5), Visibility::default(),
+                Transform::from_xyz(us.x, us.y, 2.5),
                 TilePosition { x: (us.x / cfg.tile_size) as i32, y: (us.y / cfg.tile_size) as i32 },
-            )).id();
-            commands.entity(entity).with_children(|parent| {
-                if let Some(tex) = textures.owner(stem) {
-                    parent.spawn((Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() }, Transform::default()));
-                }
-            });
+            ));
         }
     }
 }

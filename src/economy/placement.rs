@@ -14,7 +14,7 @@ use crate::events::{BeltDragCompleted, DeconstructAreaEvent, DespawnDeposit};
 use crate::map::components::{HoveredTile, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-use crate::rendering::{direction_arrow, PreviewMaterials, ShapeCache, TextureCache};
+use crate::rendering::{direction_arrow, PreviewMaterials, ShapeCache};
 
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
@@ -593,7 +593,6 @@ pub fn on_belt_drag_completed(
     mut commands: Commands,
     mut belt_write: Query<(&TilePosition, &mut BeltSlots)>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
-    textures: Res<TextureCache>,
     registry: Res<BuildingRegistry>,
     cfg: Res<MapConfig>,
     mut toast_queue: ResMut<ToastQueue>,
@@ -655,34 +654,23 @@ pub fn on_belt_drag_completed(
                 TilePosition { x: bx, y: by },
                 BeltSlots { direction: dir, slots, slot_positions, speed },
                 Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle)),
-                Visibility::default(),
             );
-
-            let stem = &def.texture_stem;
-            let sprite = Sprite {
-                image: textures.base(stem),
-                custom_size: Some(Vec2::splat(tile_size)),
-                ..default()
-            };
 
             if def.id == "splitter" {
                 commands.spawn((
                     belt_components,
                     Splitter { counter: 0, outputs: 2, input_direction: None },
-                    sprite,
                     Active(true),
                 ));
             } else if def.id == "sorter" {
                 commands.spawn((
                     belt_components,
                     Sorter { filter: ResourceId("iron_ore".to_string()), inverted: false },
-                    sprite,
                     Active(true),
                 ));
             } else {
                 commands.spawn((
                     belt_components,
-                    sprite,
                     Active(true),
                 ));
             }
@@ -691,19 +679,12 @@ pub fn on_belt_drag_completed(
         for &(bx, by, _dir) in &ev.new_tiles {
             let cx = bx as f32 * tile_size;
             let cy = by as f32 * tile_size;
-            let stem = &def.texture_stem;
             commands.spawn((
                 Building { kind: def.id.clone(), name: def.name.clone() },
                 Inventory::new(),
                 OccupiedTiles(vec![(bx, by)]),
                 TilePosition { x: bx, y: by },
-                Sprite {
-                    image: textures.base(stem),
-                    custom_size: Some(Vec2::splat(tile_size)),
-                    ..default()
-                },
                 Transform::from_xyz(cx, cy, 2.0),
-                Visibility::default(),
                 Active(true),
             ));
         }
@@ -822,7 +803,6 @@ pub fn handle_build_click(
     mut commands: Commands,
     build_mode: Res<BuildMode>,
     cfg: Res<MapConfig>,
-    textures: Res<TextureCache>,
     spatial: Res<SpatialRegistry>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
@@ -866,25 +846,6 @@ pub fn handle_build_click(
 
     let footprint = compute_footprint(tx, ty, tw, th);
 
-    let attach_children = |commands: &mut Commands, entity: Entity, stem: &str, size: Vec2| {
-        if let Some(tex) = textures.owner(stem) {
-            commands.entity(entity).with_children(|parent| {
-                parent.spawn((
-                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() },
-                    Transform::default(),
-                ));
-            });
-        }
-        if let Some(tex) = textures.level(stem) {
-            commands.entity(entity).with_children(|parent| {
-                parent.spawn((
-                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.8, 0.2), ..default() },
-                    Transform::default(),
-                ));
-            });
-        }
-    };
-
     if def.requires_deposit {
         let deposit_data = deposits.iter().find(|(_, pos, _)| pos.x == tx && pos.y == ty);
         let Some((deposit_entity, _, res_dep)) = deposit_data else {
@@ -918,24 +879,19 @@ pub fn handle_build_click(
 
         let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
         let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
-        let stem = &def.texture_stem;
-        let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
         let deposit_resource = res_dep.resource.clone();
         let mine_recipe = format!("mine_{}", deposit_resource);
         let interval = def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0);
-        let entity = commands.spawn((
+        let _entity = commands.spawn((
             Miner,
             Building { kind: def.id.clone(), name: def.name.clone() },
             Inventory::new(),
             OccupiedTiles(footprint),
-            Sprite { image: textures.base(stem), custom_size: Some(size), ..default() },
             Transform::from_xyz(cx, cy, 2.0),
-            Visibility::default(),
             TilePosition { x: tx, y: ty },
             Assembler { production_timer: 0.0, interval, recipe_id: mine_recipe },
             Active(true),
         )).id();
-        attach_children(&mut commands, entity, stem, size);
         return;
     }
 
@@ -958,16 +914,12 @@ pub fn handle_build_click(
 
     let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
     let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
-    let stem = &def.texture_stem;
-    let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
 
     let base = (
         Building { kind: def.id.clone(), name: def.name.clone() },
         OccupiedTiles(footprint),
         TilePosition { x: tx, y: ty },
         Transform::from_xyz(cx, cy, 2.0),
-        Visibility::default(),
-        Sprite { image: textures.base(stem), custom_size: Some(size), ..default() },
         Active(true),
     );
 
@@ -980,15 +932,14 @@ pub fn handle_build_click(
     if def.id == "assembler" || def.id == "furnace" {
         let recipe_id = if def.id == "furnace" { "iron_plate" } else { "ammo_craft" };
         let interval = def.production_interval.unwrap_or(2.0);
-        let entity = commands.spawn((
+        commands.spawn((
             base,
             Assembler { production_timer: 0.0, interval, recipe_id: recipe_id.to_string() },
             inv,
-        )).id();
-        attach_children(&mut commands, entity, stem, size);
+        ));
     } else if def.id == "turret" {
         let stats = def.combat.as_ref().expect("turret def missing combat");
-        let entity = commands.spawn((
+        commands.spawn((
             base,
             inv,
             TurretCombat {
@@ -998,20 +949,17 @@ pub fn handle_build_click(
                 timer: 0.0,
                 projectile_speed: stats.projectile_speed,
             },
-        )).id();
-        attach_children(&mut commands, entity, stem, size);
+        ));
     } else if def.id == "storage" {
-        let entity = commands.spawn((
+        commands.spawn((
             base,
             inv,
             Storage,
-        )).id();
-        attach_children(&mut commands, entity, stem, size);
+        ));
     } else {
-        let entity = commands.spawn((
+        commands.spawn((
             base,
             inv,
-        )).id();
-        attach_children(&mut commands, entity, stem, size);
+        ));
     }
 }

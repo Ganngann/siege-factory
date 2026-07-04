@@ -128,9 +128,6 @@ impl Plugin for EconomyPlugin {
             belt::building_output_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
-            belt::animate_belt_positions.run_if(in_state(GameState::Playing)),
-        );
-        app.add_systems(Update,
             ui::resource_count_ui.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,

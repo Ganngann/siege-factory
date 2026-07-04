@@ -20,8 +20,17 @@ pub struct BuildOrderEvent {
     pub pos: TilePosition,
 }
 
+/// Emitted by logical combat systems; consumed by rendering to spawn projectile visuals.
+#[derive(Event)]
+pub struct SpawnProjectileEvent {
+    pub target: Entity,
+    pub speed: f32,
+    pub damage: u32,
+    pub origin: Vec3,
+    pub color: Color,
+}
+
 /// Emitted when a belt/splitter/sorter drag is completed.
-/// The observer handles cost deduction + entity spawn/update.
 #[derive(Event)]
 pub struct BeltDragCompleted {
     pub kind: String,

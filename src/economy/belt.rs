@@ -7,7 +7,6 @@ use crate::economy::recipe::RecipeRegistry;
 use crate::economy::spatial::SpatialRegistry;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
-use crate::rendering::TextureCache;
 
 #[derive(Component, Clone)]
 pub struct BeltSlots {
@@ -280,11 +279,8 @@ pub fn building_output_tick(
     assembler_query: Query<Option<&Assembler>>,
     recipes: Res<RecipeRegistry>,
     mut commands: Commands,
-    textures: Res<TextureCache>,
-    cfg: Res<MapConfig>,
+    _cfg: Res<MapConfig>,
 ) {
-    let tile_size = cfg.tile_size;
-
     for (belt_pos, mut bs) in belt_query.iter_mut() {
         if bs.slots[0].is_some() { continue; }
         let (odx, ody) = bs.direction.offset();
@@ -301,7 +297,7 @@ pub fn building_output_tick(
                             .map(|(r, _)| r.clone());
                         if let Some(res) = output_res {
                             if inv.remove(&res, 1) {
-                                spawn_belt_item(&mut commands, &textures, belt_pos, tile_size, res, &mut bs);
+                                spawn_belt_item(&mut commands, res, &mut bs);
                             }
                         }
                         continue;
@@ -311,7 +307,7 @@ pub fn building_output_tick(
                 let first_key = inv.resources.keys().next().cloned();
                 if let Some(res) = first_key {
                     if inv.remove(&res, 1) {
-                        spawn_belt_item(&mut commands, &textures, belt_pos, tile_size, res, &mut bs);
+                        spawn_belt_item(&mut commands, res, &mut bs);
                     }
                 }
             }
@@ -321,14 +317,9 @@ pub fn building_output_tick(
 
 fn spawn_belt_item(
     commands: &mut Commands,
-    textures: &TextureCache,
-    _belt_pos: &TilePosition,
-    _tile_size: f32,
     resource: ResourceId,
     bs: &mut BeltSlots,
 ) {
-    let stem = &resource.0;
-    let tex = textures.base(stem);
     let spawn_pos = Vec3::new(
         bs.slot_positions[0].x,
         bs.slot_positions[0].y,
@@ -336,41 +327,9 @@ fn spawn_belt_item(
     );
     let item_entity = commands.spawn((
         BeltItem { resource, acc: 0.0 },
-        Sprite {
-            image: tex,
-            custom_size: Some(Vec2::new(20.0, 20.0)),
-            ..default()
-        },
         Transform::from_translation(spawn_pos),
     )).id();
     bs.slots[0] = Some(item_entity);
 }
 
-pub fn animate_belt_positions(
-    time: Res<Time>,
-    cfg: Res<MapConfig>,
-    belt_query: Query<&BeltSlots>,
-    mut item_query: Query<&mut Transform, With<BeltItem>>,
-) {
-    let dt = time.delta_secs();
-    let tile_size = cfg.tile_size;
 
-    for bs in belt_query.iter() {
-        for (slot_idx, occupant) in bs.slots.iter().enumerate() {
-            if let Some(item_entity) = occupant {
-                if let Ok(mut transform) = item_query.get_mut(*item_entity) {
-                    let target = bs.slot_positions[slot_idx];
-                    let current = Vec2::new(transform.translation.x, transform.translation.y);
-                    let diff = target - current;
-                    let step = bs.speed * tile_size * dt;
-                    if diff.length() <= step {
-                        transform.translation = Vec3::new(target.x, target.y, 2.5);
-                    } else {
-                        let new_pos = current + diff.normalize() * step;
-                        transform.translation = Vec3::new(new_pos.x, new_pos.y, 2.5);
-                    }
-                }
-            }
-        }
-    }
-}

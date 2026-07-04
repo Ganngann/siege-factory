@@ -67,15 +67,6 @@ impl Direction {
         }
     }
 
-    pub fn color(&self) -> Color {
-        match self {
-            Direction::East => Color::srgb(0.6, 0.5, 0.4),
-            Direction::North => Color::srgb(0.5, 0.6, 0.4),
-            Direction::West => Color::srgb(0.4, 0.5, 0.6),
-            Direction::South => Color::srgb(0.5, 0.4, 0.6),
-        }
-    }
-
     pub fn from_offset(dx: i32, dy: i32) -> Self {
         match (dx, dy) {
             (1, 0) => Direction::East,
