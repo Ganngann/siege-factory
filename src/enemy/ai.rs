@@ -52,7 +52,7 @@ fn bfs(
 
 pub fn move_enemies(
     mut set: ParamSet<(
-        Query<(Entity, &mut Transform, &mut TilePosition), With<Enemy>>,
+        Query<(Entity, &Enemy, &mut Transform, &mut TilePosition)>,
         Query<&TilePosition, With<HQ>>,
     )>,
     time: Res<Time>,
@@ -62,9 +62,6 @@ pub fn move_enemies(
     cfg: Res<MapConfig>,
 ) {
     let tile_size = cfg.tile_size;
-    let enemy_speed = enemies_registry.get("runner")
-        .map(|d| d.speed)
-        .unwrap_or(60.0);
 
     let hq_pos = match set.p1().single() {
         Ok(p) => *p,
@@ -81,7 +78,11 @@ pub fn move_enemies(
         blocked.remove(tile);
     }
 
-    for (_entity, mut transform, mut pos) in set.p0().iter_mut() {
+    for (_entity, enemy, mut transform, mut pos) in set.p0().iter_mut() {
+        let enemy_speed = enemies_registry.get(&enemy.kind)
+            .map(|d| d.speed)
+            .unwrap_or(60.0);
+
         let start = (pos.x, pos.y);
         if start == goal {
             continue;

@@ -142,6 +142,7 @@ pub struct TurretCombat {
     pub range_sq: f32,
     pub fire_interval: f32,
     pub timer: f32,
+    pub projectile_speed: f32,
 }
 
 #[derive(Component)]

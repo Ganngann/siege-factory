@@ -5,7 +5,7 @@ use crate::economy::components::{HQ, Building, OccupiedTiles, Active};
 use crate::economy::resource::{ResourceId, Inventory};
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
-use crate::rendering::{TextureCache, texture_stem};
+use crate::rendering::TextureCache;
 
 pub fn setup_hq(
     mut commands: Commands,
@@ -35,7 +35,7 @@ pub fn setup_hq(
     let mut inv = Inventory::new();
     inv.add(&ResourceId("ore".to_string()), cfg.hq_start_ore);
 
-    let stem = texture_stem("hq");
+    let stem = &def.texture_stem;
     let size = Vec2::new(cfg.tile_size * tw as f32, cfg.tile_size * th as f32);
 
     commands.spawn((

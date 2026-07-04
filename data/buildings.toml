@@ -11,6 +11,7 @@ tile_size = { w = 2, h = 2 }
 color = "#3366CC"
 can_deconstruct = false
 hidden = true
+texture_stem = "hq_east"
 
 [buildings.miner]
 name = "Miner"
@@ -21,6 +22,7 @@ color = "#993300"
 visual = "square"
 requires_deposit = true
 production = { resource = "ore", interval_sec = 2.0 }
+texture_stem = "miner_east"
 
 [buildings.furnace]
 name = "Furnace"
@@ -30,6 +32,7 @@ tile_size = { w = 1, h = 1 }
 color = "#884422"
 visual = "diamond"
 recipe_categories = ["smelting"]
+production_interval = 3.0
 
 [buildings.assembler]
 name = "Assembler"
@@ -39,6 +42,8 @@ tile_size = { w = 1, h = 1 }
 color = "#4D99CC"
 visual = "diamond"
 recipe_categories = ["crafting"]
+texture_stem = "assembler_east"
+production_interval = 2.0
 
 [buildings.belt]
 name = "Belt"
@@ -49,6 +54,7 @@ color = "#808080"
 visual = "rectangle"
 slots = 4
 speed = 2.0
+texture_stem = "belt_east"
 
 [buildings.wall]
 name = "Wall"
@@ -58,6 +64,7 @@ tile_size = { w = 1, h = 1 }
 color = "#4D4D4D"
 visual = "rectangle"
 drag_placement = true
+texture_stem = "wall_h"
 
 [buildings.turret]
 name = "Turret"
@@ -66,7 +73,8 @@ hp = 120
 tile_size = { w = 1, h = 1 }
 color = "#E63333"
 visual = "triangle"
-combat = { damage = 5, range = 4.0, fire_rate_sec = 1.0 }
+combat = { damage = 5, range = 4.0, fire_rate_sec = 1.0, projectile_speed = 300.0 }
+texture_stem = "turret_east"
 
 [buildings.storage]
 name = "Storage"
@@ -86,6 +94,7 @@ color = "#AAAA00"
 visual = "diamond"
 slots = 2
 speed = 2.0
+texture_stem = "splitter_east"
 
 [buildings.sorter]
 name = "Sorter"
@@ -96,3 +105,4 @@ color = "#66AA66"
 visual = "diamond"
 slots = 2
 speed = 2.0
+texture_stem = "sorter_east"

@@ -30,25 +30,24 @@ pub fn find_closest_enemy(
 }
 
 pub fn enemies_damage_hq(
-    enemies: Query<(Entity, &TilePosition), With<Enemy>>,
+    enemies: Query<(Entity, &Enemy, &TilePosition)>,
     mut hq: Query<(&mut Health, &TilePosition), With<HQ>>,
     mut next_state: ResMut<NextState<GameState>>,
     enemies_registry: Res<EnemyRegistry>,
     mut commands: Commands,
 ) {
-    let enemy_damage = enemies_registry.get("runner")
-        .map(|d| d.damage)
-        .unwrap_or(10);
-
     let (mut hq_health, hq_pos) = match hq.single_mut() {
         Ok(h) => h,
         Err(_) => return,
     };
 
-    for (entity, pos) in enemies.iter() {
+    for (entity, enemy, pos) in enemies.iter() {
         if pos.x == hq_pos.x && pos.y == hq_pos.y {
+            let damage = enemies_registry.get(&enemy.kind)
+                .map(|d| d.damage)
+                .unwrap_or(10);
             commands.trigger(DespawnEnemy(entity));
-            hq_health.current = hq_health.current.saturating_sub(enemy_damage);
+            hq_health.current = hq_health.current.saturating_sub(damage);
         }
     }
 
@@ -80,7 +79,7 @@ pub fn turret_shoot(
             commands.spawn((
                 Projectile {
                     target: entity,
-                    speed: 300.0,
+                    speed: combat.projectile_speed,
                     damage: combat.damage,
                 },
                 Mesh2d(shapes.circle.clone()),

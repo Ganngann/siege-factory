@@ -15,6 +15,7 @@ pub struct CombatStats {
     pub damage: u32,
     pub range: f32,
     pub fire_rate_sec: f32,
+    pub projectile_speed: f32,
 }
 
 #[derive(Debug, Clone)]
@@ -38,10 +39,12 @@ pub struct BuildingDef {
     pub tile_size: (u32, u32),
     pub color: Color,
     pub visual: String,
+    pub texture_stem: String,
     pub requires_deposit: bool,
     pub combat: Option<CombatStats>,
     pub belt: Option<BeltProperties>,
     pub production: Option<ProductionDef>,
+    pub production_interval: Option<f32>,
     pub can_deconstruct: bool,
     pub refund_ratio: f32,
     pub repair_cost_ratio: f32,
@@ -92,11 +95,13 @@ impl BuildingRegistry {
                 .map(parse_hex_color)
                 .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
             let visual = entry.visual.unwrap_or_else(|| "square".to_string());
+            let texture_stem = entry.texture_stem.unwrap_or_else(|| id.clone());
             let requires_deposit = entry.requires_deposit;
             let combat = entry.combat.map(|c| CombatStats {
                 damage: c.damage,
                 range: c.range * c.range,
                 fire_rate_sec: c.fire_rate_sec,
+                projectile_speed: c.projectile_speed,
             });
             let production = entry.production.map(|p| ProductionDef {
                 resource: ResourceId(p.resource.to_lowercase()),
@@ -122,10 +127,12 @@ impl BuildingRegistry {
                 tile_size: (entry.tile_size.w, entry.tile_size.h),
                 color,
                 visual,
+                texture_stem,
                 requires_deposit,
                 combat,
                 belt,
                 production,
+                production_interval: entry.production_interval,
                 can_deconstruct: entry.can_deconstruct.unwrap_or(defaults.can_deconstruct),
                 refund_ratio: entry.refund_ratio.unwrap_or(defaults.refund_ratio),
                 repair_cost_ratio: entry.repair_cost_ratio.unwrap_or(defaults.repair_cost_ratio),
@@ -169,9 +176,13 @@ struct BuildingEntry {
     #[serde(default)]
     visual: Option<String>,
     #[serde(default)]
+    texture_stem: Option<String>,
+    #[serde(default)]
     requires_deposit: bool,
     #[serde(default)]
     production: Option<ProductionEntry>,
+    #[serde(default)]
+    production_interval: Option<f32>,
     #[serde(default)]
     combat: Option<CombatEntry>,
     #[serde(default)]
@@ -207,7 +218,11 @@ struct CombatEntry {
     damage: u32,
     range: f32,
     fire_rate_sec: f32,
+    #[serde(default = "default_projectile_speed")]
+    projectile_speed: f32,
 }
+
+fn default_projectile_speed() -> f32 { 300.0 }
 
 #[derive(Deserialize)]
 struct BeltEntry {

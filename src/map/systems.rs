@@ -6,6 +6,7 @@ use crate::core::game_state::GameState;
 use crate::economy::components::ResourceDeposit;
 use crate::economy::components::PeacefulMode;
 use crate::economy::components::UiIsBlocking;
+use crate::economy::resource::ResourceRegistry;
 use crate::map::components::*;
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
@@ -20,8 +21,14 @@ impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
         let cfg = MapConfig::load();
         let seed = cfg.seed;
+        let dep_min = cfg.deposit_min_amount;
+        let dep_max = cfg.deposit_max_amount;
+        let dep_chance = cfg.deposit_spawn_chance_pct;
+        let dep_min_per = cfg.deposit_min_per_chunk;
+        let dep_max_per = cfg.deposit_max_per_chunk;
+        let dep_dist = cfg.deposit_distribution.clone();
         app.insert_resource(cfg);
-        app.insert_resource(ChunkGrid::new(seed));
+        app.insert_resource(ChunkGrid::new(seed, dep_min, dep_max, dep_chance, dep_min_per, dep_max_per, dep_dist));
         app.insert_resource(HoveredTile::default());
         app.add_systems(OnEnter(GameState::Playing), setup_map.run_if(crate::save_load::is_fresh_game));
         app.add_systems(OnExit(GameState::Playing), cleanup_map);
@@ -41,6 +48,7 @@ fn setup_map(
     mut commands: Commands,
     cfg: Res<MapConfig>,
     mut chunk_grid: ResMut<ChunkGrid>,
+    res_registry: Res<ResourceRegistry>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -52,7 +60,7 @@ fn setup_map(
     let hq_cy = hy.div_euclid(chunk_size);
     let existing = HashSet::new();
     spawn_chunks_in_range(
-        &mut commands, &mut chunk_grid, &cfg, &shapes,
+        &mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes,
         &mut materials, &mut meshes,
         hq_cx - margin_chunks, hq_cx + margin_chunks,
         hq_cy - margin_chunks, hq_cy + margin_chunks,
@@ -148,20 +156,12 @@ fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
     mesh
 }
 
-fn deposit_color(resource: &str) -> Color {
-    match resource {
-        "iron_ore" => Color::srgb(0.7, 0.5, 0.1),
-        "copper_ore" => Color::srgb(0.84, 0.54, 0.30),
-        "coal" => Color::srgb(0.27, 0.27, 0.27),
-        _ => Color::srgb(0.5, 0.5, 0.5),
-    }
-}
-
 /// Spawn visual entities for a single chunk (tile mesh + deposits).
 pub fn spawn_single_chunk_visuals(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
     cfg: &MapConfig,
+    res_registry: &ResourceRegistry,
     shapes: &ShapeCache,
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
@@ -199,7 +199,9 @@ pub fn spawn_single_chunk_visuals(
         }
         let wx = world_ox + dx as i32;
         let wy = world_oy + dy as i32;
-        let color = deposit_color(resource);
+        let color = res_registry.get_opt(resource)
+            .map(|d| d.color)
+            .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
         let dep_color = materials.add(color);
         commands.spawn((
             ChunkMember(cx, cy),
@@ -216,6 +218,7 @@ fn spawn_chunks_in_range(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
     cfg: &MapConfig,
+    res_registry: &ResourceRegistry,
     shapes: &ShapeCache,
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
@@ -230,7 +233,7 @@ fn spawn_chunks_in_range(
             if existing.contains(&(cx, cy)) {
                 continue;
             }
-            spawn_single_chunk_visuals(commands, chunk_grid, cfg, shapes, materials, meshes, cx, cy);
+            spawn_single_chunk_visuals(commands, chunk_grid, cfg, res_registry, shapes, materials, meshes, cx, cy);
         }
     }
 }
@@ -241,6 +244,7 @@ fn update_visible_chunks(
     window: Query<&Window>,
     mut chunk_grid: ResMut<ChunkGrid>,
     cfg: Res<MapConfig>,
+    res_registry: Res<ResourceRegistry>,
     existing_markers: Query<(Entity, &ChunkMarker)>,
     existing_members: Query<(Entity, &ChunkMember)>,
     existing_deposits: Query<(Entity, &ResourceDeposit, &TilePosition)>,
@@ -325,7 +329,7 @@ fn update_visible_chunks(
     }
 
     spawn_chunks_in_range(
-        &mut commands, &mut chunk_grid, &cfg, &shapes,
+        &mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes,
         &mut materials, &mut meshes,
         min_cx, max_cx, min_cy, max_cy, &spawned,
     );

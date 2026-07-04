@@ -7,6 +7,7 @@ use crate::combat::Projectile;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
 use crate::core::utils::{config_dir, silent_despawn};
+use crate::economy::building::BuildingRegistry;
 use crate::economy::belt::{BeltItem, BeltSlots};
 use crate::economy::components::{
     Assembler, Building, Direction, Ghost, HQ, Miner, OccupiedTiles,
@@ -21,8 +22,9 @@ use crate::map::components::{ChunkMember, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::systems::{spawn_single_chunk_visuals, ChunkMarker};
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-use crate::rendering::{ShapeCache, TextureCache, texture_stem};
+use crate::rendering::{ShapeCache, TextureCache};
 use crate::unit::{Soldier, Worker, WorkerState};
+use crate::economy::unit_config::UnitConfig;
 
 // ── Save file path ──
 
@@ -73,7 +75,7 @@ pub struct BuildingSave {
 pub struct AssemblerSave { pub production_timer: f32, pub interval: f32, pub recipe_id: String }
 
 #[derive(Serialize, Deserialize)]
-pub struct TurretSave { pub damage: u32, pub range_sq: f32, pub fire_interval: f32, pub timer: f32 }
+pub struct TurretSave { pub damage: u32, pub range_sq: f32, pub fire_interval: f32, pub timer: f32, pub projectile_speed: f32 }
 
 #[derive(Serialize, Deserialize)]
 pub struct BeltSave { pub direction: Direction, pub speed: f32, pub slots: Vec<Option<BeltItemSave>> }
@@ -151,7 +153,7 @@ fn save_game(
         Option<&Splitter>, Option<&Sorter>,
     )>,
     belt_items: Query<(&BeltItem, &ChildOf)>,
-    enemies: Query<(&Transform, &Health, &TilePosition), With<EnemyComponent>>,
+    enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
     units: Query<(&Transform, &Health, &TilePosition, Option<&Soldier>, Option<&Worker>), With<Unit>>,
 ) {
     if !keys.just_pressed(KeyCode::F5) && !save_req.0 { return; }
@@ -178,7 +180,15 @@ fn save_game(
     }
 
     for ((cx, cy), chunk) in chunk_grid.generated_chunks_with_data() {
-        let mut ref_grid = ChunkGrid::new(chunk_grid.seed());
+        let mut ref_grid = ChunkGrid::new(
+            chunk_grid.seed(),
+            chunk_grid.deposit_min_amount,
+            chunk_grid.deposit_max_amount,
+            chunk_grid.deposit_spawn_chance_pct,
+            chunk_grid.deposit_min_per_chunk,
+            chunk_grid.deposit_max_per_chunk,
+            chunk_grid.deposit_distribution.clone(),
+        );
         let original = ref_grid.ensure_chunk(*cx, *cy).deposits.clone();
         if chunk.deposits != original {
             data.chunk_deposits.insert((*cx, *cy), chunk.deposits.clone());
@@ -206,16 +216,16 @@ fn save_game(
             inventory: inventory.map(|inv| inv.resources.iter().map(|(r, a)| (r.0.clone(), *a)).collect()),
             inventory_capacity: inventory.map(|inv| inv.capacity).unwrap_or(0),
             assembler: assembler.map(|a| AssemblerSave { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() }),
-            turret: turret.map(|t| TurretSave { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer }),
+            turret: turret.map(|t| TurretSave { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer, projectile_speed: t.projectile_speed }),
             belt: belt_save, storage: storage.is_some(),
             splitter: splitter.map(|s| SplitterSave { counter: s.counter, outputs: s.outputs, input_direction: s.input_direction }),
             sorter: sorter.map(|s| SorterSave { filter: s.filter.0.clone(), inverted: s.inverted }),
         });
     }
 
-    for (tf, hp, _) in enemies.iter() {
+    for (enemy, tf, hp, _) in enemies.iter() {
         data.enemies.push(EnemySave {
-            kind: "runner".to_string(),
+            kind: enemy.kind.clone(),
             x: tf.translation.x, y: tf.translation.y,
             hp: hp.current, max_hp: hp.max,
         });
@@ -315,6 +325,7 @@ fn load_chunks(
     buf: Res<LoadBuffer>,
     mut chunk_grid: ResMut<ChunkGrid>,
     cfg: Res<MapConfig>,
+    res_registry: Res<ResourceRegistry>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -336,7 +347,7 @@ fn load_chunks(
 
     for cx in (hq_cx - 10)..=(hq_cx + 10) {
         for cy in (hq_cy - 10)..=(hq_cy + 10) {
-            spawn_single_chunk_visuals(&mut commands, &mut chunk_grid, &cfg, &shapes, &mut materials, &mut meshes, cx, cy);
+            spawn_single_chunk_visuals(&mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes, &mut materials, &mut meshes, cx, cy);
         }
     }
 }
@@ -387,6 +398,7 @@ fn load_buildings(
     textures: Res<TextureCache>,
     res_registry: Res<ResourceRegistry>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    building_registry: Res<BuildingRegistry>,
 ) {
     let data = match &buf.data { Some(d) => d, None => return };
     let tile_size = cfg.tile_size;
@@ -395,7 +407,9 @@ fn load_buildings(
         let (tw, th) = if bs.kind == "hq" { (2, 2) } else { (1, 1) };
         let cx = (bs.tile_x as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
         let cy = (bs.tile_y as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
-        let stem = texture_stem(&bs.kind);
+        let stem = building_registry.get(&bs.kind)
+            .map(|d| d.texture_stem.as_str())
+            .unwrap_or(&bs.kind);
         let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
         let inv = if let Some(ref items) = bs.inventory {
             let mut i = Inventory::with_capacity(bs.inventory_capacity);
@@ -484,7 +498,7 @@ fn load_buildings(
         } else if bs.kind == "turret" {
             let t = bs.turret.as_ref().unwrap();
             let entity = commands.spawn((
-                TurretCombat { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer },
+                TurretCombat { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer, projectile_speed: t.projectile_speed },
                 building, inv, occupied, sprite, tf, Visibility::default(), tile_pos, Active(true),
             )).id();
             attach_children(&mut commands, entity, stem, size, &textures);
@@ -523,9 +537,9 @@ fn load_enemies(
     let data = match &buf.data { Some(d) => d, None => return };
     for es in &data.enemies {
         let reg = EnemyRegistry::load();
-        let def = reg.get("runner").unwrap();
+        let def = reg.get(&es.kind).unwrap_or_else(|| reg.get("runner").unwrap());
         let entity = commands.spawn((
-            EnemyComponent, Health { current: es.hp, max: es.max_hp },
+            EnemyComponent { kind: es.kind.clone() }, Health { current: es.hp, max: es.max_hp },
             Mesh2d(shapes.circle.clone()), MeshMaterial2d(materials.add(def.color)),
             Transform::from_xyz(es.x, es.y, 3.0),
             TilePosition { x: (es.x / cfg.tile_size) as i32, y: (es.y / cfg.tile_size) as i32 },
@@ -545,10 +559,13 @@ fn load_units(
     mut commands: Commands,
     textures: Res<TextureCache>,
     cfg: Res<MapConfig>,
+    unit_cfg: Res<UnitConfig>,
 ) {
     let data = match &buf.data { Some(d) => d, None => return };
     for us in &data.units {
-        let stem = texture_stem(&us.kind);
+        let stem = unit_cfg.get(&us.kind)
+            .map(|d| d.texture_stem.as_str())
+            .unwrap_or(&us.kind);
         let img = textures.base(stem);
         let size = Vec2::new(48.0, 48.0);
         if us.kind == "worker" {

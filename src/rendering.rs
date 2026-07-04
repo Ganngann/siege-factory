@@ -161,36 +161,12 @@ pub fn all_texture_stems() -> Vec<String> {
     ].into_iter().map(String::from).collect()
 }
 
-/// All item texture stems (used for belt items).
 pub fn all_item_stems() -> Vec<String> {
     vec![
         "ore", "iron_ore", "copper_ore", "coal",
         "iron_plate", "copper_plate", "steel",
         "gear", "circuit", "ammo", "energy",
     ].into_iter().map(String::from).collect()
-}
-
-/// Map a ResourceId to its item texture stem.
-pub fn item_stem(id: &str) -> &str {
-    id
-}
-
-/// Map a BuildingDef id to its texture stem.
-pub fn texture_stem(id: &str) -> &str {
-    match id {
-        "storage" => "storage",
-        "belt" => "belt_east",
-        "splitter" => "splitter_east",
-        "sorter" => "sorter_east",
-        "miner" => "miner_east",
-        "assembler" => "assembler_east",
-        "turret" => "turret_east",
-        "wall" => "wall_h",
-        "hq" => "hq_east",
-        "soldier" => "soldier",
-        "worker" => "worker",
-        _ => id,
-    }
 }
 
 // ── RenderPlugin ──

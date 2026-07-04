@@ -14,7 +14,7 @@ use crate::events::{BeltDragCompleted, DeconstructAreaEvent, DespawnDeposit};
 use crate::map::components::{HoveredTile, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-use crate::rendering::{direction_arrow, PreviewMaterials, ShapeCache, TextureCache, texture_stem};
+use crate::rendering::{direction_arrow, PreviewMaterials, ShapeCache, TextureCache};
 
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
@@ -658,7 +658,7 @@ pub fn on_belt_drag_completed(
                 Visibility::default(),
             );
 
-            let stem = texture_stem(&def.id);
+            let stem = &def.texture_stem;
             let sprite = Sprite {
                 image: textures.base(stem),
                 custom_size: Some(Vec2::splat(tile_size)),
@@ -691,7 +691,7 @@ pub fn on_belt_drag_completed(
         for &(bx, by, _dir) in &ev.new_tiles {
             let cx = bx as f32 * tile_size;
             let cy = by as f32 * tile_size;
-            let stem = texture_stem(&def.id);
+            let stem = &def.texture_stem;
             commands.spawn((
                 Building { kind: def.id.clone(), name: def.name.clone() },
                 Inventory::new(),
@@ -907,18 +907,22 @@ pub fn handle_build_click(
         }
 
         deduct_cost(&mut hq_inv, &def.cost);
-        let cx = tx.div_euclid(CHUNK_SIZE as i32);
-        let cy = ty.div_euclid(CHUNK_SIZE as i32);
-        let dx = tx.rem_euclid(CHUNK_SIZE as i32) as u32;
-        let dy = ty.rem_euclid(CHUNK_SIZE as i32) as u32;
-        chunk_grid.set_deposit_amount(cx, cy, dx, dy, 0);
-        commands.trigger(DespawnDeposit(deposit_entity));
+        if !cfg.infinite_deposits {
+            let cx = tx.div_euclid(CHUNK_SIZE as i32);
+            let cy = ty.div_euclid(CHUNK_SIZE as i32);
+            let dx = tx.rem_euclid(CHUNK_SIZE as i32) as u32;
+            let dy = ty.rem_euclid(CHUNK_SIZE as i32) as u32;
+            chunk_grid.set_deposit_amount(cx, cy, dx, dy, 0);
+            commands.trigger(DespawnDeposit(deposit_entity));
+        }
 
         let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
         let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
-        let stem = texture_stem(&def.id);
+        let stem = &def.texture_stem;
         let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
         let deposit_resource = res_dep.resource.clone();
+        let mine_recipe = format!("mine_{}", deposit_resource);
+        let interval = def.production.as_ref().map(|p| p.interval_sec).unwrap_or(2.0);
         let entity = commands.spawn((
             Miner,
             Building { kind: def.id.clone(), name: def.name.clone() },
@@ -928,7 +932,7 @@ pub fn handle_build_click(
             Transform::from_xyz(cx, cy, 2.0),
             Visibility::default(),
             TilePosition { x: tx, y: ty },
-            Assembler { production_timer: 0.0, interval: 2.0, recipe_id: format!("mine_{}", deposit_resource) },
+            Assembler { production_timer: 0.0, interval, recipe_id: mine_recipe },
             Active(true),
         )).id();
         attach_children(&mut commands, entity, stem, size);
@@ -954,7 +958,7 @@ pub fn handle_build_click(
 
     let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
     let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
-    let stem = texture_stem(&def.id);
+    let stem = &def.texture_stem;
     let size = Vec2::new(tw as f32 * tile_size, th as f32 * tile_size);
 
     let base = (
@@ -975,9 +979,10 @@ pub fn handle_build_click(
 
     if def.id == "assembler" || def.id == "furnace" {
         let recipe_id = if def.id == "furnace" { "iron_plate" } else { "ammo_craft" };
+        let interval = def.production_interval.unwrap_or(2.0);
         let entity = commands.spawn((
             base,
-            Assembler { production_timer: 0.0, interval: 2.0, recipe_id: recipe_id.to_string() },
+            Assembler { production_timer: 0.0, interval, recipe_id: recipe_id.to_string() },
             inv,
         )).id();
         attach_children(&mut commands, entity, stem, size);
@@ -991,6 +996,7 @@ pub fn handle_build_click(
                 range_sq: stats.range,
                 fire_interval: stats.fire_rate_sec,
                 timer: 0.0,
+                projectile_speed: stats.projectile_speed,
             },
         )).id();
         attach_children(&mut commands, entity, stem, size);

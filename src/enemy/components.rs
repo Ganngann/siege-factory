@@ -7,14 +7,24 @@ pub struct Health {
 }
 
 #[derive(Component)]
-pub struct Enemy;
+pub struct Enemy {
+    pub kind: String,
+}
+
+use crate::enemy::wave_config::WaveEntry;
 
 #[derive(Resource)]
 pub struct WaveState {
     pub timer: f32,
     pub wave: u32,
     pub spawn_timer: f32,
-    pub enemies_this_wave: u32,
+    pub spawn_queue: Vec<WaveEntry>,
+}
+
+impl WaveState {
+    pub fn total_remaining(&self) -> u32 {
+        self.spawn_queue.iter().map(|e| e.count).sum()
+    }
 }
 
 impl Default for WaveState {
@@ -23,7 +33,7 @@ impl Default for WaveState {
             timer: 3.0,
             wave: 1,
             spawn_timer: 0.0,
-            enemies_this_wave: 0,
+            spawn_queue: Vec::new(),
         }
     }
 }

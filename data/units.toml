@@ -5,6 +5,7 @@ hp = 30
 damage = 8
 range_tiles = 3.0
 fire_rate_sec = 1.0
+projectile_speed = 300.0
 color = "#33CC4D"
 visual = "pentagon"
 

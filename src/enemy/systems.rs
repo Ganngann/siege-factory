@@ -19,11 +19,15 @@ pub fn wave_timer(
 ) {
     wave.timer -= time.delta_secs();
     if wave.timer <= 0.0 && existing.iter().len() == 0 {
-        wave.wave += 1;
-        wave.timer = cfg.wave_interval_sec;
         if wave.wave > cfg.win_waves {
             next_state.set(GameState::GameOver);
+            return;
         }
+        let wave_idx = ((wave.wave - 1) as usize).min(cfg.waves.len().saturating_sub(1));
+        wave.spawn_queue = cfg.waves[wave_idx].enemies.clone();
+        wave.spawn_timer = 0.0;
+        wave.wave += 1;
+        wave.timer = cfg.wave_interval_sec;
     }
 }
 
@@ -48,6 +52,10 @@ pub fn spawn_enemies(
         return;
     }
 
+    if wave.spawn_queue.is_empty() {
+        return;
+    }
+
     wave.spawn_timer -= time.delta_secs();
     if wave.spawn_timer > 0.0 {
         return;
@@ -59,6 +67,17 @@ pub fn spawn_enemies(
         Err(_) => return,
     };
 
+    // Spawn the next enemy type from queue
+    let entry = &wave.spawn_queue[0];
+    let kind = &entry.kind;
+    let def = match enemies_registry.get(kind) {
+        Some(d) => d,
+        None => {
+            wave.spawn_queue.remove(0);
+            return;
+        }
+    };
+
     use rand::Rng;
     let mut rng = rand::thread_rng();
     let angle = rng.gen_range(0.0..std::f32::consts::TAU);
@@ -66,13 +85,10 @@ pub fn spawn_enemies(
     let sx = (hq_pos.x as f32 + angle.cos() * spawn_dist).round() as i32;
     let sy = (hq_pos.y as f32 + angle.sin() * spawn_dist).round() as i32;
 
-    let def = enemies_registry.get("runner").unwrap_or_else(|| {
-        panic!("enemy 'runner' not found in registry")
-    });
     let enemy_hp = def.hp + (wave.wave - 1) * cfg.hp_per_wave;
 
     commands.spawn((
-        Enemy,
+        Enemy { kind: kind.clone() },
         Health { current: enemy_hp, max: enemy_hp },
         Mesh2d(shapes.circle.clone()),
         MeshMaterial2d(material_from_color(&mut materials, def.color)),
@@ -83,6 +99,12 @@ pub fn spawn_enemies(
         ),
         TilePosition { x: sx, y: sy },
     ));
+
+    if wave.spawn_queue[0].count > 1 {
+        wave.spawn_queue[0].count -= 1;
+    } else {
+        wave.spawn_queue.remove(0);
+    }
 }
 
 pub fn wave_counter_ui(

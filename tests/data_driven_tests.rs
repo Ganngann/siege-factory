@@ -113,10 +113,14 @@ fn production_timer_cycles_correctly() {
 
 // ── ChunkGrid generation tests ──
 
+fn test_dist() -> Vec<(String, u32)> {
+    vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)]
+}
+
 #[test]
 fn chunk_grid_generates_deterministically() {
-    let mut grid_a = ChunkGrid::new(42);
-    let mut grid_b = ChunkGrid::new(42);
+    let mut grid_a = ChunkGrid::new(42, 50, 150, 35, 2, 5, test_dist());
+    let mut grid_b = ChunkGrid::new(42, 50, 150, 35, 2, 5, test_dist());
 
     let chunk_a = grid_a.ensure_chunk(2, 3).clone();
     let chunk_b = grid_b.ensure_chunk(2, 3).clone();
@@ -127,8 +131,8 @@ fn chunk_grid_generates_deterministically() {
 
 #[test]
 fn chunk_grid_stores_seed() {
-    let grid_a = ChunkGrid::new(42);
-    let grid_b = ChunkGrid::new(12345);
+    let grid_a = ChunkGrid::new(42, 50, 150, 35, 2, 5, test_dist());
+    let grid_b = ChunkGrid::new(12345, 50, 150, 35, 2, 5, test_dist());
     // Both grids are valid and can generate chunks without panicking
     assert!(grid_a.chunk_exists(0, 0) == false);
     assert!(grid_b.chunk_exists(0, 0) == false);

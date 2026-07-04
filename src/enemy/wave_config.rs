@@ -1,6 +1,17 @@
 use bevy::prelude::*;
 use serde::Deserialize;
 
+#[derive(Debug, Clone)]
+pub struct WaveEntry {
+    pub kind: String,
+    pub count: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct WaveDef {
+    pub enemies: Vec<WaveEntry>,
+}
+
 #[derive(Debug, Clone, Resource)]
 pub struct WaveConfig {
     pub win_waves: u32,
@@ -10,12 +21,21 @@ pub struct WaveConfig {
     pub hp_per_wave: u32,
     pub max_enemies_base: u32,
     pub max_enemies_cap: u32,
+    pub waves: Vec<WaveDef>,
 }
 
 impl WaveConfig {
     pub fn load() -> Self {
         let toml_str = include_str!("../../data/waves.toml");
         let parsed: WavesToml = toml::from_str(toml_str).expect("failed to parse waves.toml");
+        let waves = parsed.waves.iter().map(|w| {
+            WaveDef {
+                enemies: w.enemies.iter().map(|e| WaveEntry {
+                    kind: e.kind.clone(),
+                    count: e.count,
+                }).collect(),
+            }
+        }).collect();
         Self {
             win_waves: parsed.game.win_waves,
             wave_interval_sec: parsed.game.wave_interval_sec,
@@ -24,6 +44,7 @@ impl WaveConfig {
             hp_per_wave: parsed.game.hp_per_wave,
             max_enemies_base: parsed.game.max_enemies_base,
             max_enemies_cap: parsed.game.max_enemies_cap,
+            waves,
         }
     }
 }
@@ -31,6 +52,18 @@ impl WaveConfig {
 #[derive(Deserialize)]
 struct WavesToml {
     game: GameEntry,
+    waves: Vec<WaveTomlEntry>,
+}
+
+#[derive(Deserialize)]
+struct WaveTomlEntry {
+    enemies: Vec<EnemyTomlEntry>,
+}
+
+#[derive(Deserialize)]
+struct EnemyTomlEntry {
+    kind: String,
+    count: u32,
 }
 
 #[derive(Deserialize)]

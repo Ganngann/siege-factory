@@ -11,7 +11,7 @@ use crate::events::DespawnDeposit;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-use crate::rendering::{ShapeCache, TextureCache, texture_stem};
+use crate::rendering::{ShapeCache, TextureCache};
 
 
 #[derive(Event)]
@@ -64,7 +64,7 @@ fn spawn_unit_by_id(
     } else {
         Vec3::new(40.0, 0.0, 2.5)
     };
-    let stem = texture_stem(id);
+    let stem = &def.texture_stem;
     let img = textures.base(stem);
     let size = Vec2::new(48.0, 48.0);
 
@@ -163,7 +163,7 @@ fn soldier_auto_attack(
             commands.spawn((
                 Projectile {
                     target: enemy_entity,
-                    speed: 300.0,
+                    speed: soldier_def.projectile_speed,
                     damage,
                 },
                 Mesh2d(shapes.circle.clone()),
@@ -239,15 +239,19 @@ fn worker_harvest(
             }
             WorkerState::Mining(target_dep) => {
                 if let Ok((_dep_entity, mut deposit, _, _)) = deposits.get_mut(target_dep) {
-                    if deposit.amount > 0 {
+                    if deposit.amount > 0 || cfg.infinite_deposits {
                         worker.mining_timer += time.delta_secs();
-                        while worker.mining_timer >= mine_interval && deposit.amount > 0 {
+                        while worker.mining_timer >= mine_interval
+                            && (deposit.amount > 0 || cfg.infinite_deposits)
+                        {
                             worker.mining_timer -= mine_interval;
-                            deposit.amount -= 1;
+                            if !cfg.infinite_deposits {
+                                deposit.amount = deposit.amount.saturating_sub(1);
+                            }
                             hq_inv.add(&ResourceId(deposit.resource.clone()), 1);
                         }
                     }
-                    if deposit.amount == 0 {
+                    if !cfg.infinite_deposits && deposit.amount == 0 {
                         worker.state = WorkerState::Idle;
                     }
                 } else {
@@ -257,14 +261,16 @@ fn worker_harvest(
         }
     }
 
-    for (entity, deposit, _, tile_pos) in deposits.iter() {
-        if deposit.amount == 0 {
-            let cx = tile_pos.x.div_euclid(CHUNK_SIZE as i32);
-            let cy = tile_pos.y.div_euclid(CHUNK_SIZE as i32);
-            let dx = tile_pos.x.rem_euclid(CHUNK_SIZE as i32) as u32;
-            let dy = tile_pos.y.rem_euclid(CHUNK_SIZE as i32) as u32;
-            chunk_grid.set_deposit_amount(cx, cy, dx, dy, 0);
-            commands.trigger(DespawnDeposit(entity));
+    if !cfg.infinite_deposits {
+        for (entity, deposit, _, tile_pos) in deposits.iter() {
+            if deposit.amount == 0 {
+                let cx = tile_pos.x.div_euclid(CHUNK_SIZE as i32);
+                let cy = tile_pos.y.div_euclid(CHUNK_SIZE as i32);
+                let dx = tile_pos.x.rem_euclid(CHUNK_SIZE as i32) as u32;
+                let dy = tile_pos.y.rem_euclid(CHUNK_SIZE as i32) as u32;
+                chunk_grid.set_deposit_amount(cx, cy, dx, dy, 0);
+                commands.trigger(DespawnDeposit(entity));
+            }
         }
     }
 }
