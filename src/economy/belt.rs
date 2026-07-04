@@ -5,7 +5,6 @@ use crate::economy::resource::{ResourceId, Inventory};
 use crate::economy::components::{Assembler, Building, Direction, Splitter, Sorter};
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::spatial::SpatialRegistry;
-use crate::events::SpawnBeltItemEvent;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::rendering::{TextureCache, item_stem};
@@ -43,60 +42,7 @@ pub fn compute_slot_positions(
         .collect()
 }
 
-pub fn belt_item_placer(
-    on: On<SpawnBeltItemEvent>,
-    mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
-    mut commands: Commands,
-    cfg: Res<MapConfig>,
-    textures: Res<TextureCache>,
-) {
-    let tile_size = cfg.tile_size;
-    let belt_map: HashMap<(i32, i32), Entity> =
-        belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
-    let ev = on.event();
 
-    let stem = item_stem(&ev.resource.0);
-    let tex = textures.base(stem);
-
-    let mut placed = false;
-    for (dx, dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
-        let ax = ev.source_tile.x + dx;
-        let ay = ev.source_tile.y + dy;
-        if let Some(&belt_entity) = belt_map.get(&(ax, ay)) {
-            if let Ok((_, _, mut bs)) = belt_query.get_mut(belt_entity) {
-                // Skip belts that point toward the source tile (input belts)
-                let (odx, ody) = bs.direction.offset();
-                if ax + odx == ev.source_tile.x
-                    && ay + ody == ev.source_tile.y
-                {
-                    continue;
-                }
-                if let Some(free_idx) = bs.slots.iter().position(|s| s.is_none()) {
-                    let spawn_pos = Vec3::new(
-                        ev.source_tile.x as f32 * tile_size,
-                        ev.source_tile.y as f32 * tile_size,
-                        2.5,
-                    );
-                    let item_entity = commands.spawn((
-                        BeltItem { resource: ev.resource.clone(), acc: 0.0 },
-                        Sprite {
-                            image: tex.clone(),
-                            custom_size: Some(Vec2::new(20.0, 20.0)),
-                            ..default()
-                        },
-                        Transform::from_translation(spawn_pos),
-                    )).id();
-                    bs.slots[free_idx] = Some(item_entity);
-                    placed = true;
-                    break;
-                }
-            }
-        }
-    }
-    if !placed {
-        // No free belt slot — item is backed up
-    }
-}
 
 pub fn advance_belt_slots(
     time: Res<Time>,
@@ -376,16 +322,16 @@ pub fn building_output_tick(
 fn spawn_belt_item(
     commands: &mut Commands,
     textures: &TextureCache,
-    belt_pos: &TilePosition,
-    tile_size: f32,
+    _belt_pos: &TilePosition,
+    _tile_size: f32,
     resource: ResourceId,
     bs: &mut BeltSlots,
 ) {
     let stem = item_stem(&resource.0);
     let tex = textures.base(stem);
     let spawn_pos = Vec3::new(
-        belt_pos.x as f32 * tile_size,
-        belt_pos.y as f32 * tile_size,
+        bs.slot_positions[0].x,
+        bs.slot_positions[0].y,
         2.5,
     );
     let item_entity = commands.spawn((

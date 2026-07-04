@@ -78,7 +78,6 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<ToastQueue>();
         app.init_resource::<TooltipText>();
         app.init_resource::<UiIsBlocking>();
-        app.add_observer(belt::belt_item_placer);
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
         app.add_systems(PreUpdate,

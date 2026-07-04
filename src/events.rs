@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 use crate::economy::components::Direction;
-use crate::economy::resource::ResourceId;
 use crate::map::components::TilePosition;
 
 #[derive(Event)]
@@ -14,12 +13,6 @@ pub struct DespawnDeposit(pub Entity);
 
 #[derive(Event)]
 pub struct DespawnEnemy(pub Entity);
-
-#[derive(Event)]
-pub struct SpawnBeltItemEvent {
-    pub source_tile: TilePosition,
-    pub resource: ResourceId,
-}
 
 #[derive(Event)]
 pub struct BuildOrderEvent {
