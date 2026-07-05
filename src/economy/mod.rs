@@ -78,6 +78,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<ToastQueue>();
         app.init_resource::<TooltipText>();
         app.init_resource::<UiIsBlocking>();
+        app.insert_resource(Time::<Fixed>::from_hz(20.0));
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
         app.add_systems(PreUpdate,
@@ -118,13 +119,13 @@ impl Plugin for EconomyPlugin {
         app.add_systems(Update,
             placement::deconstruct_drag_preview.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(FixedUpdate,
             belt::advance_belt_slots.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,
             production::assembler_tick.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(FixedUpdate,
             belt::building_output_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update,

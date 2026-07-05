@@ -1,3 +1,4 @@
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use std::collections::HashMap;
 use bevy::prelude::*;
 use crate::combat::Projectile;
@@ -200,12 +201,14 @@ impl Plugin for RenderPlugin {
             attach_unit_visuals,
             animate_belt_positions,
             wave_counter_ui,
+            fps_overlay,
         ));
         app.add_systems(OnEnter(GameState::GameOver), spawn_game_over_ui);
         app.add_systems(OnExit(GameState::GameOver), despawn_game_over_ui);
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub fn wave_counter_ui(
     wave: Res<WaveState>,
     enemies: Query<Entity, With<Enemy>>,
@@ -281,6 +284,7 @@ pub fn despawn_game_over_ui(mut commands: Commands, query: Query<Entity, With<Ga
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub fn animate_belt_positions(
     time: Res<Time>,
     cfg: Res<MapConfig>,
@@ -526,5 +530,38 @@ fn update_hp_bars(
                 sprite.custom_size = Some(Vec2::new(24.0 * ratio, 3.0));
             }
         }
+    }
+}
+
+// ── FPS overlay ──
+
+#[derive(Component)]
+struct FpsOverlay;
+
+fn fps_overlay(
+    diagnostics: Res<DiagnosticsStore>,
+    mut text_query: Query<(Entity, &mut Text), With<FpsOverlay>>,
+    mut commands: Commands,
+) {
+    let fps = diagnostics
+        .get(&FrameTimeDiagnosticsPlugin::FPS)
+        .and_then(|d| d.smoothed())
+        .map_or("--".to_string(), |v| format!("{:.0}", v));
+
+    if let Ok((_, mut text)) = text_query.single_mut() {
+        text.0 = format!("FPS: {}", fps);
+    } else {
+        commands.spawn((
+            FpsOverlay,
+            Text::new(format!("FPS: {}", fps)),
+            TextFont::from_font_size(14.0),
+            TextColor(Color::srgb(0.0, 1.0, 0.0)),
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(10.0),
+                left: Val::Px(10.0),
+                ..default()
+            },
+        ));
     }
 }

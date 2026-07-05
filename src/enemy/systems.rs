@@ -9,6 +9,7 @@ use crate::enemy::wave_config::WaveConfig;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 
+#[tracing::instrument(skip_all)]
 pub fn wave_timer(
     time: Res<Time>,
     mut wave: ResMut<WaveState>,
@@ -30,6 +31,7 @@ pub fn wave_timer(
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub fn spawn_enemies(
     mut commands: Commands,
     mut wave: ResMut<WaveState>,

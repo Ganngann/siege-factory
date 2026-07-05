@@ -44,7 +44,7 @@ pub fn compute_slot_positions(
 
 
 pub fn advance_belt_slots(
-    time: Res<Time>,
+    time: Res<Time<Fixed>>,
     mut commands: Commands,
     spatial: Res<SpatialRegistry>,
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
@@ -272,6 +272,7 @@ pub fn advance_belt_slots(
     }
 }
 
+#[tracing::instrument(skip_all)]
 pub fn building_output_tick(
     spatial: Res<SpatialRegistry>,
     mut belt_query: Query<(&TilePosition, &mut BeltSlots)>,

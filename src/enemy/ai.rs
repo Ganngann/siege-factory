@@ -50,6 +50,7 @@ fn bfs(
     None
 }
 
+#[tracing::instrument(skip_all)]
 pub fn move_enemies(
     mut set: ParamSet<(
         Query<(Entity, &Enemy, &mut Transform, &mut TilePosition)>,

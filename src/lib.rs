@@ -8,6 +8,7 @@ pub mod rendering;
 pub mod save_load;
 pub mod unit;
 
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
 use bevy_pancam::PanCamPlugin;
 use combat::CombatPlugin;
@@ -28,6 +29,7 @@ pub fn run() {
         .add_plugins(enemy::EnemyPlugin)
         .add_plugins(unit::UnitPlugin)
         .add_plugins(CombatPlugin)
+        .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(RenderPlugin)
         .add_plugins(CleanupPlugin)
         .add_plugins(SaveLoadPlugin)
