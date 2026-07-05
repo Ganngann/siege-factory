@@ -1,0 +1,23 @@
+- je veux pouvoir activer ou désactiver les vagues ennemis.
+- il faut refactor la facon dont les batiments produisent, le fonctionnement de la bare de progression est erroné, il faut repenser la logique, la décrire puis l'appliquer.
+- quand on clique sur un menu de construction, le premier élément dois etre activé automatiquement
+- la partie gameplay concernant le combat est secondaire et peut etre renvoyé vers une phase de developpement future.
+- le bouton on off des batiment dois afficher off si le batiment est off
+- il y a une police non rendue, on trouve des petits carés vides sur quasy tous les boutons du jeu
+- dans un batiment, les reccetes pour les quelles les ingrédients sont présents, doivent etre mise en avant.
+- les dessins des batiments doivent etre utilisés dan sle menu
+- il faut des décors sur la map
+- il faut des ressources cultivables
+- il faut plus de décors sur la map.
+- il faut une arborescence de technologie pour débloquer des recettes ou des quality off life.
+- il ne faut pas pouvoir détruire le hq.
+- il faut un systeme d'électricité.
+- il faut des belt sous terrain ou aerien.
+- dans la fenetre d'un batiment, on dois pouvoir cliquer directement sur les batiments qui y sont connectés par des belt.
+- quand on pivote un batiment, ca dois pivoter aussi son sprite (belt).
+- quand on clique sur un dépot on dois voir ce que c'est comme ressource et la quantité.
+- le jeux dois etre sans fin, la partie ne dois jamais se finir. 
+- les dépots de ressources doivent avoir un sprite dédié pour chaque ressource.
+- on dosi pouvoir déplacer une fenetre.
+- il faut plusieurs slot pour sauvegarder.
+
