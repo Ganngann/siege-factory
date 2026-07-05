@@ -7,7 +7,7 @@ use crate::combat::Projectile;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
 use crate::core::utils::{config_dir, silent_despawn};
-use crate::economy::belt::{BeltItem, BeltSlots};
+use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::components::{
     Assembler, Building, Direction, Ghost, HQ, Miner, OccupiedTiles,
     ResourceDeposit, Splitter, Storage, Sorter, TurretCombat,
@@ -149,7 +149,6 @@ fn save_game(
         Option<&BeltSlots>, Option<&Storage>,
         Option<&Splitter>, Option<&Sorter>,
     )>,
-    belt_items: Query<(&BeltItem, &ChildOf)>,
     enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
     units: Query<(&Transform, &Health, &TilePosition, Option<&Soldier>, Option<&Worker>), With<Unit>>,
 ) {
@@ -195,12 +194,9 @@ fn save_game(
     for (building, pos, occupied, hp, inventory, assembler,
          turret, belt, storage, splitter, sorter) in buildings.iter() {
         let belt_save = belt.map(|b| {
-            let slots: Vec<Option<BeltItemSave>> = b.slots.iter().map(|slot| {
-                slot.as_ref().and_then(|&item_entity| {
-                    belt_items.iter().find(|(_, child_of)| child_of.0 == item_entity)
-                        .map(|(item, _)| BeltItemSave {
-                            resource: item.resource.0.clone(), acc: item.acc,
-                        })
+            let slots: Vec<Option<BeltItemSave>> = b.items.iter().map(|item| {
+                item.as_ref().map(|i| BeltItemSave {
+                    resource: i.resource_id.0.clone(), acc: i.acc,
                 })
             }).collect();
             BeltSave { direction: b.direction, speed: b.speed, slots }
@@ -276,7 +272,7 @@ fn cleanup_world(
     markers: Query<Entity, With<ChunkMarker>>,
     members: Query<Entity, (With<ChunkMember>, Without<ResourceDeposit>)>,
     cameras: Query<Entity, With<Camera2d>>,
-    belt_items: Query<Entity, With<BeltItem>>,
+    belt_slots: Query<&BeltSlots>,
     ghosts: Query<Entity, With<Ghost>>,
     hp_bars: Query<Entity, With<HpBarChild>>,
     menus: Query<Entity, With<crate::economy::components::MenuBarPanel>>,
@@ -285,9 +281,14 @@ fn cleanup_world(
     pause_menus: Query<Entity, With<PauseMenuRoot>>,
     projectiles: Query<Entity, With<Projectile>>,
 ) {
+    for bs in belt_slots.iter() {
+        for sprite_entity in bs.slot_sprites.iter().flatten() {
+            silent_despawn(&mut commands, *sprite_entity);
+        }
+    }
     for e in buildings.iter().chain(enemies.iter()).chain(units.iter())
         .chain(deposits.iter()).chain(markers.iter()).chain(members.iter())
-        .chain(cameras.iter()).chain(belt_items.iter()).chain(ghosts.iter())
+        .chain(cameras.iter()).chain(ghosts.iter())
         .chain(hp_bars.iter()).chain(menus.iter()).chain(popups.iter())
         .chain(ui_texts.iter()).chain(pause_menus.iter()).chain(projectiles.iter())
     {
@@ -438,18 +439,14 @@ fn load_buildings(
                 Direction::South => -std::f32::consts::FRAC_PI_2,
             };
             let belt_tf = Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle));
-            let mut slots: Vec<Option<Entity>> = Vec::new();
-            for (i, item_save) in b.slots.iter().enumerate() {
+            let mut items: Vec<Option<ItemOnBelt>> = Vec::new();
+            for item_save in &b.slots {
                 if let Some(item) = item_save {
-                    let pos = slot_positions[i];
-                    let item_entity = commands.spawn((
-                        BeltItem { resource: ResourceId(item.resource.clone()), acc: item.acc },
-                        Transform::from_translation(Vec3::new(pos.x, pos.y, 2.5)).with_scale(Vec3::splat(0.25)),
-                    )).id();
-                    slots.push(Some(item_entity));
-                } else { slots.push(None); }
+                    items.push(Some(ItemOnBelt { resource_id: ResourceId(item.resource.clone()), acc: item.acc }));
+                } else { items.push(None); }
             }
-            let belt_comp = BeltSlots { direction: b.direction, slots, slot_positions, speed: b.speed };
+            let slot_sprites: Vec<Option<Entity>> = vec![None; items.len()];
+            let belt_comp = BeltSlots { direction: b.direction, items, slot_sprites, slot_positions, speed: b.speed };
             if let Some(sp) = &bs.splitter {
                 commands.spawn((
                     belt_comp, building, inv, occupied, belt_tf, tile_pos,

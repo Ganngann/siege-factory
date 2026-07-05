@@ -629,9 +629,9 @@ pub fn update_panel_connections(
 
     if let Some(bs) = belt {
         if let Ok(mut ct) = conn_text.single_mut() {
-            let occupied = bs.slots.iter().filter(|s| s.is_some()).count();
+            let occupied = bs.items.iter().filter(|s| s.is_some()).count();
             ct.0 = format!("Items in transit:  {}/{}  |  {:?}",
-                occupied, bs.slots.len(), bs.direction);
+                occupied, bs.items.len(), bs.direction);
         }
     } else {
         if let Ok(mut ct) = conn_text.single_mut() {

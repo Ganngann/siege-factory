@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
-use crate::economy::belt::{BeltItem, BeltSlots};
+use crate::economy::belt::BeltSlots;
+use crate::economy::resource::ResourceId;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{Building, Direction, HpBarChild, HasHpBar, BuildMode, Unit};
 use crate::economy::unit_config::UnitConfig;
@@ -195,7 +196,7 @@ impl Plugin for RenderPlugin {
         ));
         app.add_observer(spawn_projectile_visual);
         app.add_systems(Update, (
-            attach_belt_item_sprites,
+            sync_belt_slot_sprites,
             attach_enemy_visuals,
             attach_building_visuals,
             attach_unit_visuals,
@@ -208,7 +209,6 @@ impl Plugin for RenderPlugin {
     }
 }
 
-#[tracing::instrument(skip_all)]
 pub fn wave_counter_ui(
     wave: Res<WaveState>,
     enemies: Query<Entity, With<Enemy>>,
@@ -284,20 +284,67 @@ pub fn despawn_game_over_ui(mut commands: Commands, query: Query<Entity, With<Ga
     }
 }
 
-#[tracing::instrument(skip_all)]
+fn sync_belt_slot_sprites(
+    mut commands: Commands,
+    textures: Res<TextureCache>,
+    cfg: Res<MapConfig>,
+    mut belt_query: Query<&mut BeltSlots>,
+) {
+    for mut bs in belt_query.iter_mut() {
+        let mut to_create: Vec<(usize, ResourceId)> = Vec::new();
+        for (slot_idx, item) in bs.items.iter().enumerate() {
+            if item.is_some() && bs.slot_sprites[slot_idx].is_none() {
+                to_create.push((slot_idx, item.as_ref().unwrap().resource_id.clone()));
+            }
+        }
+        let mut to_destroy: Vec<usize> = Vec::new();
+        for (slot_idx, sprite) in bs.slot_sprites.iter().enumerate() {
+            if sprite.is_some() && bs.items[slot_idx].is_none() {
+                to_destroy.push(slot_idx);
+            }
+        }
+        for (slot_idx, resource_id) in to_create {
+            let tex = textures.base(&resource_id.0);
+            let target = bs.slot_positions[slot_idx];
+            // Spawn at entry point so lerp animates smoothly toward target
+            let entry = if slot_idx == 0 {
+                let (dx, dy) = bs.direction.offset();
+                let dir_vec = Vec2::new(dx as f32, dy as f32);
+                target - dir_vec * (cfg.tile_size / bs.items.len() as f32)
+            } else {
+                bs.slot_positions[slot_idx - 1]
+            };
+            let entity = commands.spawn((
+                Sprite {
+                    image: tex,
+                    custom_size: Some(Vec2::new(20.0, 20.0)),
+                    ..default()
+                },
+                Transform::from_translation(Vec3::new(entry.x, entry.y, 2.5)),
+            )).id();
+            bs.slot_sprites[slot_idx] = Some(entity);
+        }
+        for slot_idx in to_destroy {
+            if let Some(entity) = bs.slot_sprites[slot_idx].take() {
+                commands.entity(entity).despawn();
+            }
+        }
+    }
+}
+
 pub fn animate_belt_positions(
     time: Res<Time>,
     cfg: Res<MapConfig>,
     belt_query: Query<&BeltSlots>,
-    mut item_query: Query<&mut Transform, With<BeltItem>>,
+    mut sprite_query: Query<&mut Transform>,
 ) {
     let dt = time.delta_secs();
     let tile_size = cfg.tile_size;
 
     for bs in belt_query.iter() {
-        for (slot_idx, occupant) in bs.slots.iter().enumerate() {
-            if let Some(item_entity) = occupant {
-                if let Ok(mut transform) = item_query.get_mut(*item_entity) {
+        for (slot_idx, sprite_entity) in bs.slot_sprites.iter().enumerate() {
+            if let Some(entity) = sprite_entity {
+                if let Ok(mut transform) = sprite_query.get_mut(*entity) {
                     let target = bs.slot_positions[slot_idx];
                     let current = Vec2::new(transform.translation.x, transform.translation.y);
                     let diff = target - current;
@@ -408,24 +455,6 @@ fn attach_enemy_visuals(
         commands.entity(entity).insert((
             Mesh2d(shapes.circle.clone()),
             MeshMaterial2d(materials.add(color)),
-        ));
-    }
-}
-
-fn attach_belt_item_sprites(
-    mut commands: Commands,
-    items: Query<(Entity, &BeltItem), Without<Sprite>>,
-    textures: Res<TextureCache>,
-) {
-    for (entity, item) in items.iter() {
-        let stem = &item.resource.0;
-        let tex = textures.base(stem);
-        commands.entity(entity).insert((
-            Sprite {
-                image: tex,
-                custom_size: Some(Vec2::new(20.0, 20.0)),
-                ..default()
-            },
         ));
     }
 }

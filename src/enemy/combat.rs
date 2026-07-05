@@ -54,7 +54,6 @@ pub fn enemies_damage_hq(
     }
 }
 
-#[tracing::instrument(skip_all)]
 pub fn turret_shoot(
     mut commands: Commands,
     mut turrets: Query<(&Transform, &mut TurretCombat)>,

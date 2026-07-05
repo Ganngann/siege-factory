@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::economy::belt::{BeltItem, BeltSlots, compute_slot_positions};
+use crate::economy::belt::{BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
     Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode, DeconstructDrag,
@@ -35,7 +35,7 @@ pub fn build_mode_input(
                     belt.direction = belt.direction.next();
                     belt.slot_positions = compute_slot_positions(
                         tile_pos.x, tile_pos.y, belt.direction,
-                        belt.slots.len() as u32, cfg.tile_size,
+                        belt.items.len() as u32, cfg.tile_size,
                     );
                     rotated = true;
                     break;
@@ -194,7 +194,6 @@ pub fn handle_deconstruct_click_v2(
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
     belt_slots_query: Query<&BeltSlots>,
-    item_query: Query<Entity, With<BeltItem>>,
     ui_blocking: Res<UiIsBlocking>,
 ) {
     if ui_blocking.0 { return; }
@@ -235,12 +234,8 @@ pub fn handle_deconstruct_click_v2(
     }
 
     if let Ok(belt_slots) = belt_slots_query.get(entity) {
-        for slot in belt_slots.slots.iter() {
-            if let Some(item_entity) = slot {
-                if item_query.contains(*item_entity) {
-                    commands.entity(*item_entity).despawn();
-                }
-            }
+        for sprite_entity in belt_slots.slot_sprites.iter().flatten() {
+            commands.entity(*sprite_entity).despawn();
         }
     }
 
@@ -639,7 +634,8 @@ pub fn on_belt_drag_completed(
             let cx = bx as f32 * tile_size;
             let cy = by as f32 * tile_size;
             let slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
-            let slots = vec![None; num_slots as usize];
+            let items: Vec<Option<crate::economy::belt::ItemOnBelt>> = vec![None; num_slots as usize];
+            let slot_sprites: Vec<Option<Entity>> = vec![None; num_slots as usize];
             let angle = match dir {
                 Direction::East => 0.0,
                 Direction::North => std::f32::consts::FRAC_PI_2,
@@ -652,7 +648,7 @@ pub fn on_belt_drag_completed(
                 Inventory::new(),
                 OccupiedTiles(vec![(bx, by)]),
                 TilePosition { x: bx, y: by },
-                BeltSlots { direction: dir, slots, slot_positions, speed },
+                BeltSlots { direction: dir, items, slot_sprites, slot_positions, speed },
                 Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle)),
             );
 
@@ -742,7 +738,6 @@ pub fn on_deconstruct_area(
     spatial: Res<SpatialRegistry>,
     building_query: Query<(&Building, &OccupiedTiles)>,
     belt_slots_query: Query<&BeltSlots>,
-    item_query: Query<Entity, With<BeltItem>>,
     mut hq_query: Query<&mut Inventory, With<HQ>>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
@@ -774,12 +769,8 @@ pub fn on_deconstruct_area(
         }
 
         if let Ok(belt_slots) = belt_slots_query.get(entity) {
-            for slot in belt_slots.slots.iter() {
-                if let Some(item_entity) = slot {
-                    if item_query.contains(*item_entity) {
-                        commands.entity(*item_entity).despawn();
-                    }
-                }
+            for sprite_entity in belt_slots.slot_sprites.iter().flatten() {
+                commands.entity(*sprite_entity).despawn();
             }
         }
 
