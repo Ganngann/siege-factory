@@ -6,10 +6,9 @@ use crate::core::game_state::GameState;
 use crate::economy::belt::BeltSlots;
 use crate::economy::resource::ResourceId;
 use crate::economy::building::BuildingRegistry;
-use crate::economy::components::{Building, Direction, HpBarChild, HasHpBar, BuildMode, Unit};
+use crate::economy::components::{Building, Direction, HpBarChild, HasHpBar, BuildMode, Unit, PeacefulMode};
 use crate::economy::unit_config::UnitConfig;
 use crate::enemy::components::{Enemy, Health, WaveState, WaveCounterText, GameOverUi};
-use crate::enemy::wave_config::WaveConfig;
 use crate::enemy::registry::EnemyRegistry;
 use crate::events::SpawnProjectileEvent;
 use crate::map::components::HoveredTile;
@@ -212,12 +211,16 @@ impl Plugin for RenderPlugin {
 pub fn wave_counter_ui(
     wave: Res<WaveState>,
     enemies: Query<Entity, With<Enemy>>,
-    cfg: Res<WaveConfig>,
+    peaceful: Res<PeacefulMode>,
     mut text_query: Query<(Entity, &mut Text), With<WaveCounterText>>,
     mut commands: Commands,
 ) {
-    let count = enemies.iter().len();
-    let msg = format!("Wave {}/{}  |  Enemies: {}", wave.wave, cfg.win_waves, count);
+    let msg = if peaceful.0 {
+        "Peaceful Mode  |  No enemies".to_string()
+    } else {
+        let count = enemies.iter().len();
+        format!("Wave {}  |  Enemies: {}", wave.wave, count)
+    };
 
     if let Ok((_, mut text)) = text_query.single_mut() {
         text.0 = msg;
@@ -240,9 +243,7 @@ pub fn wave_counter_ui(
 pub fn spawn_game_over_ui(
     mut commands: Commands,
     wave: Res<WaveState>,
-    cfg: Res<WaveConfig>,
 ) {
-    let won = wave.wave > cfg.win_waves;
     commands.spawn((Camera2d, GameOverUi));
     commands
         .spawn((GameOverUi, Node {
@@ -257,14 +258,13 @@ pub fn spawn_game_over_ui(
         .with_children(|parent| {
             parent.spawn((
                 GameOverUi,
-                Text::new(if won { "VICTORY" } else { "GAME OVER" }),
+                Text::new("GAME OVER"),
                 TextFont::from_font_size(48.0),
-                TextColor(if won { Color::srgb(0.3, 1.0, 0.3) } else { Color::srgb(1.0, 0.3, 0.3) }),
+                TextColor(Color::srgb(1.0, 0.3, 0.3)),
             ));
             parent.spawn((
                 GameOverUi,
-                Text::new(if won { format!("Survived {} waves!", wave.wave - 1) }
-                    else { format!("Waves survived: {}", wave.wave - 1) }),
+                Text::new(format!("Waves survived: {}", wave.wave - 1)),
                 TextFont::from_font_size(24.0),
                 TextColor(Color::WHITE),
             ));
@@ -565,7 +565,7 @@ fn update_hp_bars(
 // ── FPS overlay ──
 
 #[derive(Component)]
-struct FpsOverlay;
+pub struct FpsOverlay;
 
 fn fps_overlay(
     diagnostics: Res<DiagnosticsStore>,

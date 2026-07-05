@@ -199,6 +199,8 @@ pub struct PanelModal;
 #[derive(Component)]
 pub struct BuildingTitleText;
 #[derive(Component)]
+pub struct DragHandle;
+#[derive(Component)]
 pub struct ActiveToggleButton;
 #[derive(Component)]
 pub struct CloseButton;

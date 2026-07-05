@@ -6,6 +6,7 @@ use crate::core::game_state::GameState;
 use crate::core::input::{InputBinding, KeyBindings};
 use crate::core::settings::Settings;
 use crate::core::utils::silent_despawn;
+use crate::economy::components::PeacefulMode;
 use crate::save_load::{SaveManager, save_path};
 
 // ── TOML types ──
@@ -56,6 +57,7 @@ pub struct MenuItemDef {
 #[derive(Debug, Clone)]
 pub enum MenuAction {
     StartGame,
+    StartPeaceful,
     OpenScreen(String),
     Back,
     Quit,
@@ -115,6 +117,7 @@ impl MainMenuDef {
                     .filter_map(|ti| {
                         let action = match ti.action.as_str() {
                             "StartGame" => MenuAction::StartGame,
+                            "StartPeaceful" => MenuAction::StartPeaceful,
                             "OpenScreen" => MenuAction::OpenScreen(
                                 ti.target.clone().unwrap_or_default(),
                             ),
@@ -288,6 +291,7 @@ pub fn menu_navigation(
     bindings: Res<KeyBindings>,
     mut next_state: ResMut<NextState<GameState>>,
     mut fresh_game: ResMut<crate::core::game_state::IsFreshGame>,
+    mut peaceful: ResMut<PeacefulMode>,
     mut save_mgr: ResMut<SaveManager>,
     root_query: Query<Entity, With<MenuRoot>>,
     buttons: Query<(&Interaction, &MenuIndex, &MenuItemComp, &Children)>,
@@ -399,6 +403,12 @@ pub fn menu_navigation(
         match &item.action {
             MenuAction::StartGame => {
                 fresh_game.0 = true;
+                peaceful.0 = false;
+                next_state.set(GameState::Playing);
+            }
+            MenuAction::StartPeaceful => {
+                fresh_game.0 = true;
+                peaceful.0 = true;
                 next_state.set(GameState::Playing);
             }
             MenuAction::LoadGame => {

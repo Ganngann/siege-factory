@@ -16,6 +16,9 @@ pub struct TilePosition {
 #[derive(Debug, Clone, Copy, Component, PartialEq, Eq, Hash)]
 pub struct ChunkMember(pub i32, pub i32);
 
+#[derive(Component)]
+pub struct Decoration(pub String);
+
 #[derive(Resource, Default)]
 pub struct HoveredTile(pub Option<TilePosition>);
 

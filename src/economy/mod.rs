@@ -19,6 +19,7 @@ use bevy::ecs::hierarchy::ChildOf;
 use crate::core::game_state::GameState;
 use crate::core::toast::{toast_system, ToastQueue};
 use crate::core::tooltip::{tooltip_ui, TooltipText};
+use crate::core::utils::silent_despawn;
 use building::DefaultSettings;
 use menu::{MenuState, MenuItems};
 use spatial::SpatialRegistry;
@@ -72,6 +73,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::DeconstructMode>();
         app.init_resource::<components::DeconstructDrag>();
         app.init_resource::<components::BuildingPanel>();
+        app.init_resource::<inspect::PanelDrag>();
         app.init_resource::<PeacefulMode>();
         app.init_resource::<MenuState>();
         app.init_resource::<MenuItems>();
@@ -170,6 +172,9 @@ impl Plugin for EconomyPlugin {
         app.add_systems(Update,
             inspect::sorter_invert_click_system.run_if(in_state(GameState::Playing)),
         );
+        app.add_systems(Update,
+            inspect::drag_panel_system.run_if(in_state(GameState::Playing)),
+        );
         app.add_systems(Update, (
             inspect::update_panel_header,
             inspect::update_panel_production,
@@ -190,18 +195,42 @@ impl Plugin for EconomyPlugin {
 
 fn cleanup_ghost(mut commands: Commands, query: Query<Entity, With<components::Ghost>>) {
     for entity in &query {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 }
 
-fn cleanup_buildings(mut commands: Commands, query: Query<Entity, With<Building>>) {
+fn cleanup_buildings(
+    mut commands: Commands,
+    query: Query<Entity, With<Building>>,
+    belt_query: Query<&crate::economy::belt::BeltSlots>,
+) {
     for entity in &query {
-        commands.entity(entity).despawn();
+        if let Ok(belt) = belt_query.get(entity) {
+            for sprite_entity in belt.slot_sprites.iter().flatten() {
+                silent_despawn(&mut commands, *sprite_entity);
+            }
+        }
+        silent_despawn(&mut commands, entity);
     }
 }
 
-fn cleanup_playing_ui(mut commands: Commands, query: Query<Entity, With<ResourceCountText>>) {
+fn cleanup_playing_ui(
+    mut commands: Commands,
+    query: Query<Entity, With<ResourceCountText>>,
+    camera: Query<Entity, With<Camera2d>>,
+    waves: Query<Entity, With<crate::enemy::components::WaveCounterText>>,
+    fps: Query<Entity, With<crate::rendering::FpsOverlay>>,
+) {
     for entity in &query {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
+    }
+    for entity in &camera {
+        silent_despawn(&mut commands, entity);
+    }
+    for entity in &waves {
+        silent_despawn(&mut commands, entity);
+    }
+    for entity in &fps {
+        silent_despawn(&mut commands, entity);
     }
 }

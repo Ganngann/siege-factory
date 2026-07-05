@@ -10,7 +10,7 @@ use crate::economy::resource::ResourceRegistry;
 use crate::map::components::*;
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-use crate::rendering::ShapeCache;
+use crate::rendering::{ShapeCache, TextureCache};
 
 #[derive(Component)]
 pub struct ChunkMarker(pub i32, pub i32);
@@ -52,6 +52,7 @@ fn setup_map(
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    textures: Res<TextureCache>,
 ) {
     let (hx, hy) = cfg.hq_position;
     let chunk_size = CHUNK_SIZE as i32;
@@ -61,7 +62,7 @@ fn setup_map(
     let existing = HashSet::new();
     spawn_chunks_in_range(
         &mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes,
-        &mut materials, &mut meshes,
+        &mut materials, &mut meshes, &textures,
         hq_cx - margin_chunks, hq_cx + margin_chunks,
         hq_cy - margin_chunks, hq_cy + margin_chunks,
         &existing,
@@ -156,7 +157,16 @@ fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
     mesh
 }
 
-/// Spawn visual entities for a single chunk (tile mesh + deposits).
+fn chunk_hash(seed: u64, cx: i32, cy: i32) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::hash::DefaultHasher::new();
+    seed.hash(&mut hasher);
+    cx.hash(&mut hasher);
+    cy.hash(&mut hasher);
+    hasher.finish()
+}
+
+/// Spawn visual entities for a single chunk (tile mesh + deposits + decorations).
 pub fn spawn_single_chunk_visuals(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
@@ -165,12 +175,14 @@ pub fn spawn_single_chunk_visuals(
     shapes: &ShapeCache,
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
+    textures: &TextureCache,
     cx: i32,
     cy: i32,
 ) {
     let chunk_size = CHUNK_SIZE as i32;
     let tile_size = cfg.tile_size;
 
+    let chunk_hash = chunk_hash(cfg.seed, cx, cy);
     let (mesh_even, mesh_odd) = build_chunk_mesh(cx, cy, tile_size);
     let chunk = chunk_grid.ensure_chunk(cx, cy);
 
@@ -193,24 +205,87 @@ pub fn spawn_single_chunk_visuals(
 
     let world_ox = cx * chunk_size;
     let world_oy = cy * chunk_size;
+
+    // Track occupied positions (deposits) to avoid overlap
+    let mut occupied: HashSet<(u32, u32)> = HashSet::new();
+
     for &(dx, dy, amount, ref resource) in &chunk.deposits {
         if amount == 0 {
             continue;
         }
+        occupied.insert((dx, dy));
         let wx = world_ox + dx as i32;
         let wy = world_oy + dy as i32;
-        let color = res_registry.get_opt(resource)
-            .map(|d| d.color)
-            .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
-        let dep_color = materials.add(color);
+
+        // Use resource sprite if available, fallback to colored circle
+        if let Some(handle) = textures.base.get(resource) {
+            commands.spawn((
+                ChunkMember(cx, cy),
+                ResourceDeposit { resource: resource.clone(), amount },
+                Sprite {
+                    image: handle.clone(),
+                    custom_size: Some(Vec2::new(tile_size * 0.8, tile_size * 0.8)),
+                    ..default()
+                },
+                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
+                TilePosition { x: wx, y: wy },
+            ));
+        } else {
+            let color = res_registry.get_opt(resource)
+                .map(|d| d.color)
+                .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
+            let dep_color = materials.add(color);
+            commands.spawn((
+                ChunkMember(cx, cy),
+                ResourceDeposit { resource: resource.clone(), amount },
+                Mesh2d(shapes.circle.clone()),
+                MeshMaterial2d(dep_color),
+                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
+                TilePosition { x: wx, y: wy },
+            ));
+        }
+    }
+
+    // Spawn decorations (trees, rocks) on random empty ground tiles
+    let mut rng = SimpleRng::new(chunk_hash);
+    let deco_count = 4 + (rng.next() as usize % 5); // 4-8 per chunk
+    let deco_kinds = [("tree", Color::srgb(0.15, 0.45, 0.15)), ("rock", Color::srgb(0.4, 0.4, 0.4))];
+    for _ in 0..deco_count {
+        let dx = rng.next() % CHUNK_SIZE as u64;
+        let dy = rng.next() % CHUNK_SIZE as u64;
+        if occupied.contains(&(dx as u32, dy as u32)) {
+            continue;
+        }
+        occupied.insert((dx as u32, dy as u32));
+        let wx = world_ox + dx as i32;
+        let wy = world_oy + dy as i32;
+        let kind_idx = rng.next() as usize % deco_kinds.len();
+        let (kind_name, color) = &deco_kinds[kind_idx];
+        let mesh = if *kind_name == "tree" { shapes.triangle.clone() } else { shapes.circle.clone() };
+        let z = if *kind_name == "tree" { 0.3 } else { 0.2 };
+        let mat = materials.add(*color);
         commands.spawn((
             ChunkMember(cx, cy),
-            ResourceDeposit { resource: resource.clone(), amount },
-            Mesh2d(shapes.circle.clone()),
-            MeshMaterial2d(dep_color),
-            Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
+            Decoration(kind_name.to_string()),
+            Mesh2d(mesh),
+            MeshMaterial2d(mat),
+            Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, z),
             TilePosition { x: wx, y: wy },
         ));
+    }
+}
+
+struct SimpleRng {
+    state: u64,
+}
+
+impl SimpleRng {
+    fn new(seed: u64) -> Self {
+        Self { state: seed }
+    }
+    fn next(&mut self) -> u64 {
+        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.state >> 33
     }
 }
 
@@ -222,6 +297,7 @@ fn spawn_chunks_in_range(
     shapes: &ShapeCache,
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
+    textures: &TextureCache,
     min_cx: i32,
     max_cx: i32,
     min_cy: i32,
@@ -233,7 +309,7 @@ fn spawn_chunks_in_range(
             if existing.contains(&(cx, cy)) {
                 continue;
             }
-            spawn_single_chunk_visuals(commands, chunk_grid, cfg, res_registry, shapes, materials, meshes, cx, cy);
+            spawn_single_chunk_visuals(commands, chunk_grid, cfg, res_registry, shapes, materials, meshes, textures, cx, cy);
         }
     }
 }
@@ -251,6 +327,7 @@ fn update_visible_chunks(
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    textures: Res<TextureCache>,
     _peaceful: Res<PeacefulMode>,
 ) {
     let Ok((cam, cam_transform)) = camera.single() else { return };
@@ -330,7 +407,7 @@ fn update_visible_chunks(
 
     spawn_chunks_in_range(
         &mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes,
-        &mut materials, &mut meshes,
+        &mut materials, &mut meshes, &textures,
         min_cx, max_cx, min_cy, max_cy, &spawned,
     );
 }

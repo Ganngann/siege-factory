@@ -20,7 +20,7 @@ use crate::map::components::{ChunkMember, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::systems::{spawn_single_chunk_visuals, ChunkMarker};
 use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-use crate::rendering::ShapeCache;
+use crate::rendering::{ShapeCache, TextureCache};
 use crate::unit::{Soldier, Worker, WorkerState};
 
 // ── Save file path ──
@@ -327,6 +327,7 @@ fn load_chunks(
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    textures: Res<TextureCache>,
     mut commands: Commands,
 ) {
     let data = match &buf.data { Some(d) => d, None => return };
@@ -345,7 +346,7 @@ fn load_chunks(
 
     for cx in (hq_cx - 10)..=(hq_cx + 10) {
         for cy in (hq_cy - 10)..=(hq_cy + 10) {
-            spawn_single_chunk_visuals(&mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes, &mut materials, &mut meshes, cx, cy);
+            spawn_single_chunk_visuals(&mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes, &mut materials, &mut meshes, &textures, cx, cy);
         }
     }
 }

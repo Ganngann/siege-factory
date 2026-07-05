@@ -9,49 +9,6 @@
 
 ---
 
-## Phase 1A — Correctifs & Polish (immédiat)
-
-### Production (note #2)
-- [-] **Refactor production** : la barre ne doit pas avancer si les ressources ne sont pas disponibles, pas d'accumulation de crédit de temps, un seul cycle de production à la fois
-- [-] **Barre progression** : ne démarre que quand tout est prêt, pas de dépassement (650/3)
-
-### UI & Boutons
-- [ ] **Bouton ON/OFF** (note #5) : afficher "OFF" quand le bâtiment est inactif
-- [ ] **Police manquante** (note #6) : remplacer les caractères non rendus (carrés vides) — ×, ✕, etc. — par une police complète ou des caractères ASCII
-- [ ] **Auto-select 1er élément** (note #3) : au clic sur une catégorie du menu, le premier bâtiment est automatiquement sélectionné
-- [ ] **Mise en avant recettes** (note #7) : dans un bâtiment, les recettes pour lesquelles les ingrédients sont disponibles doivent être mises en évidence
-- [ ] **Fenêtres déplaçables** (note #21) : possibilité de glisser une fenêtre ouverte
-
-### Dépôts
-- [ ] **Clic dépôt** (note #18) : ouvrir une fenêtre affichant le type de ressource et la quantité restante (comme un bâtiment)
-
-### Bâtiments & Monde
-- [ ] **HQ indestructible** (note #13) : impossible de détruire le HQ (retirer la condition de Game Over)
-- [ ] **Rotation sprite belt** (note #17) : quand on pivote un bâtiment (touche R), le sprite suit la direction
-- [ ] **Clic bâtiments connectés** (note #16) : dans la fenêtre d'un bâtiment, cliquer sur les bâtiments reliés par belts pour ouvrir leur fenêtre
-- [ ] **Slots de sauvegarde multiples** (note #22)
-
-### Crash
-- [ ] **Retour menu principal** (note bonus) : le jeu plante quand on quitte une partie pour revenir au menu
-
----
-
-## Phase 1B — Features légères
-
-### Vagues & Combat (rétrogradé)
-- [ ] **Toggle vagues ON/OFF** (note #1) : activer ou désactiver les vagues ennemies dans une partie
-- [ ] **Jeu sans fin** (note #4, #19) : retirer la victoire à 10 vagues (WIN_WAVES), le jeu ne se termine jamais. Le combat devient optionnel (mode défense ou pacifique)
-- [ ] **Mode pacifique** (PeacefulMode) : créatif sans ennemis
-
-### Map
-- [ ] **Décors sur la map** (note #9, #11) : ajouter des éléments décoratifs (arbres, rochers, etc.)
-
-### Menu & Sprites
-- [ ] **Sprites bâtiments dans le menu** (note #8) : utiliser les dessins existants dans le menu de construction (remplacer les Mesh2d shapes par les sprites)
-- [ ] **Sprites dédiés par dépôt** (note #20) : chaque type de dépôt de ressource a son propre sprite
-
----
-
 ## Phase 2 — Contenu étendu
 
 ### Économie & Production

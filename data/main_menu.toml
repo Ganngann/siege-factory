@@ -4,8 +4,13 @@ subtitle = "Build defenses  |  Survive waves  |  Automate everything"
 
 [[screen.main_menu.items]]
 id = "play"
-label = "Play"
+label = "Play (Survival)"
 action = "StartGame"
+
+[[screen.main_menu.items]]
+id = "play_peaceful"
+label = "Play (Peaceful)"
+action = "StartPeaceful"
 
 [[screen.main_menu.items]]
 id = "load"

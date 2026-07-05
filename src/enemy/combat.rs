@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use crate::core::game_state::GameState;
 use crate::economy::components::{HQ, TurretCombat};
 use crate::enemy::components::{Enemy, Health};
 use crate::enemy::registry::EnemyRegistry;
@@ -30,7 +29,6 @@ pub fn find_closest_enemy(
 pub fn enemies_damage_hq(
     enemies: Query<(Entity, &Enemy, &TilePosition)>,
     mut hq: Query<(&mut Health, &TilePosition), With<HQ>>,
-    mut next_state: ResMut<NextState<GameState>>,
     enemies_registry: Res<EnemyRegistry>,
     mut commands: Commands,
 ) {
@@ -49,9 +47,7 @@ pub fn enemies_damage_hq(
         }
     }
 
-    if hq_health.current == 0 {
-        next_state.set(GameState::GameOver);
-    }
+    // HQ is indestructible — no GameOver trigger
 }
 
 pub fn turret_shoot(

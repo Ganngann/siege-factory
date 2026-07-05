@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 use crate::core::tooltip::TooltipText;
+use crate::core::utils::silent_despawn;
+use crate::rendering::TextureCache;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::unit_config::UnitConfig;
 use crate::economy::resource::Inventory;
@@ -40,13 +42,14 @@ pub fn spawn_menu_bar(
     mut menu_items: ResMut<MenuItems>,
     registry: Res<BuildingRegistry>,
     unit_cfg: Res<UnitConfig>,
+    textures: Res<TextureCache>,
 ) {
     *menu_items = crate::economy::menu::flat_items_at(
         &menu_def.root, &menu_state.stack, menu_state.scroll,
         &registry, &unit_cfg,
     );
 
-    build_menu_bar(&mut commands, &menu_items);
+    build_menu_bar(&mut commands, &menu_items, &textures);
 }
 
 // ── Rebuild MenuItems + refresh UI when state changes ──
@@ -58,6 +61,7 @@ pub fn refresh_menu_bar(
     mut menu_items: ResMut<MenuItems>,
     registry: Res<BuildingRegistry>,
     unit_cfg: Res<UnitConfig>,
+    textures: Res<TextureCache>,
     panel_query: Query<Entity, With<MenuBarPanel>>,
 ) {
     let new_items = crate::economy::menu::flat_items_at(
@@ -70,14 +74,14 @@ pub fn refresh_menu_bar(
     *menu_items = new_items;
 
     for entity in &panel_query {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
-    build_menu_bar(&mut commands, &menu_items);
+    build_menu_bar(&mut commands, &menu_items, &textures);
 }
 
 // ── Shared panel builder (called on create AND refresh) ──
 
-fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems) {
+fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &TextureCache) {
     commands
         .spawn((
             MenuBarPanel,
@@ -142,7 +146,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems) {
                         ))
                         .with_children(|b| {
                             b.spawn((
-                                Text::new("←1 Retour"),
+                                Text::new("<-1 Retour"),
                                 TextFont::from_font_size(11.0),
                                 TextColor(Color::WHITE),
                             ));
@@ -188,7 +192,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems) {
                         ))
                         .with_children(|b| {
                             b.spawn((
-                                Text::new("◀"),
+                                Text::new("<"),
                                 TextFont::from_font_size(14.0),
                                 TextColor(Color::WHITE),
                             ));
@@ -222,6 +226,19 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems) {
                             BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.2)),
                         ))
                         .with_children(|b| {
+                            // Sprite preview
+                            if let Some(stem) = &item.texture_stem {
+                                if let Some(handle) = textures.base.get(stem) {
+                                    b.spawn((
+                                        ImageNode::new(handle.clone()),
+                                        Node {
+                                            width: Val::Px(32.0),
+                                            height: Val::Px(32.0),
+                                            ..default()
+                                        },
+                                    ));
+                                }
+                            }
                             b.spawn((
                                 Text::new(format!("{} {}", key, sub_prefix)),
                                 TextFont::from_font_size(9.0),
@@ -260,7 +277,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems) {
                         ))
                         .with_children(|b| {
                             b.spawn((
-                                Text::new("▶"),
+                                Text::new(">"),
                                 TextFont::from_font_size(14.0),
                                 TextColor(Color::WHITE),
                             ));
@@ -434,6 +451,19 @@ fn activate_item(
             if let Some(idx) = idx {
                 menu_state.stack.push(idx);
                 menu_state.scroll = 0;
+                // Auto-select first item in the submenu
+                let new_level = crate::economy::menu::items_at(&menu_def.root, &menu_state.stack);
+                if let Some(MenuEntry::Action { action: first_action, .. }) = new_level.first() {
+                    match first_action {
+                        MenuAction::Build(id) => {
+                            build_mode.0 = Some(id.clone());
+                        }
+                        MenuAction::Spawn(id) => {
+                            commands.trigger(SpawnUnitEvent(id.clone()));
+                        }
+                        _ => {}
+                    }
+                }
             }
         }
         FlatItemKind::Action(action) => match action {
@@ -514,6 +544,6 @@ pub fn update_menu_bar(
 
 pub fn cleanup_menu_bar(mut commands: Commands, query: Query<Entity, With<MenuBarPanel>>) {
     for entity in &query {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 }

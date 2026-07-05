@@ -3,10 +3,10 @@ use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    Building, BuildMode, DeconstructMode, Sorter, Assembler, Active,
-    BuildingPanel, PanelOverlay, PanelModal, BuildingTitleText, ActiveToggleButton,
-    CloseButton, ProgressBarBg, ProgressBarFill, StatusText, FlowInputText, FlowOutputText,
-    CapacityBarFill, CapacityBarText, ConnectionRowText, StatRowText,
+    Building, BuildMode, DeconstructMode, Sorter, Assembler, Active, ResourceDeposit,
+    BuildingPanel, PanelOverlay, PanelModal, BuildingTitleText, DragHandle,
+    ActiveToggleButton, CloseButton, ProgressBarBg, ProgressBarFill, StatusText,
+    FlowInputText, FlowOutputText, CapacityBarFill, CapacityBarText, ConnectionRowText, StatRowText,
     RecipeNameText, RecipeChangeButton, HpBarFill, HpText, AlertText,
     RecipeSelectorRoot, RecipeSelectorItem, RecipeCategoryLabel,
     SorterResourceButton, SorterInvertButton, UiIsBlocking,
@@ -16,6 +16,7 @@ use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::{ResourceRegistry, Inventory};
 use crate::economy::spatial::SpatialRegistry;
 use crate::enemy::components::Health;
+use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 
 // ── Colors ──
@@ -125,6 +126,7 @@ fn spawn_panel_ui(
     )).with_children(|parent| {
         // ── Header ──
         parent.spawn((
+            DragHandle,
             Node {
                 width: Val::Percent(100.0),
                 height: Val::Px(40.0),
@@ -158,7 +160,7 @@ fn spawn_panel_ui(
                 BackgroundColor(BTN_ACTIVE),
             )).with_children(|btn| {
                 btn.spawn((
-                    Text::new("● ON"),
+                    Text::new("[ON]"),
                     TextFont::from_font_size(12.0),
                     TextColor(TEXT_GREEN),
                 ));
@@ -176,7 +178,7 @@ fn spawn_panel_ui(
                 BackgroundColor(BTN_CLOSE),
             )).with_children(|btn| {
                 btn.spawn((
-                    Text::new("✕"),
+                    Text::new("X"),
                     TextFont::from_font_size(16.0),
                     TextColor(Color::WHITE),
                 ));
@@ -443,6 +445,116 @@ fn spawn_panel_ui(
     }).id()
 }
 
+fn spawn_deposit_panel(
+    commands: &mut Commands,
+    panel: &mut BuildingPanel,
+    entity: Entity,
+    deposit: &ResourceDeposit,
+    resource_registry: &ResourceRegistry,
+) {
+    let resource_name = resource_registry.get_opt(&deposit.resource)
+        .map_or(deposit.resource.as_str(), |r| &r.name);
+
+    if let Some(e) = panel.root.take() { commands.entity(e).try_despawn(); }
+    if let Some(e) = panel.overlay.take() { commands.entity(e).try_despawn(); }
+    if let Some(e) = panel.recipe_selector.take() { commands.entity(e).try_despawn(); }
+    panel.inspected = None;
+    panel.dirty = false;
+
+    let overlay = commands.spawn((
+        PanelOverlay,
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::ZERO, right: Val::ZERO,
+            top: Val::ZERO, bottom: Val::ZERO,
+            display: Display::Flex,
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
+        ZIndex(100),
+        Pickable::default(),
+    )).id();
+
+    let root = commands.spawn((
+        PanelModal,
+        Node {
+            position_type: PositionType::Absolute,
+            left: Val::Px((1280.0 - 400.0) / 2.0),
+            top: Val::Px((720.0 - 200.0) / 2.0),
+            flex_direction: FlexDirection::Column,
+            width: Val::Px(400.0),
+            height: Val::Px(200.0),
+            overflow: Overflow::clip(),
+            ..default()
+        },
+        BackgroundColor(BG_MODAL),
+        Outline { width: Val::Px(1.0), offset: Val::ZERO, color: Color::srgb(0.30, 0.30, 0.45) },
+        ZIndex(101),
+    )).with_children(|parent| {
+        parent.spawn((
+            DragHandle,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(40.0),
+                flex_direction: FlexDirection::Row,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::SpaceBetween,
+                padding: UiRect::horizontal(Val::Px(14.0)),
+                border: UiRect::bottom(Val::Px(1.0)),
+                ..default()
+            },
+            BackgroundColor(BG_SECTION),
+            BorderColor { top: SEPARATOR, bottom: SEPARATOR, left: SEPARATOR, right: SEPARATOR },
+        )).with_children(|header| {
+            header.spawn((
+                BuildingTitleText,
+                Text::new(format!("Resource Deposit: {}", resource_name)),
+                TextFont::from_font_size(16.0),
+                TextColor(TEXT_PRIMARY),
+            ));
+            header.spawn((
+                CloseButton,
+                Button,
+                Node { width: Val::Px(28.0), height: Val::Px(28.0),
+                    align_items: AlignItems::Center, justify_content: JustifyContent::Center, ..default() },
+                BackgroundColor(BTN_CLOSE),
+            )).with_children(|btn| {
+                btn.spawn((Text::new("X"), TextFont::from_font_size(16.0), TextColor(Color::WHITE)));
+            });
+        });
+
+        parent.spawn((
+            Node {
+                width: Val::Percent(100.0),
+                flex_grow: 1.0,
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(16.0)),
+                ..default()
+            },
+        )).with_children(|body| {
+            body.spawn((
+                Text::new(format!("Resource: {}", resource_name)),
+                TextFont::from_font_size(14.0),
+                TextColor(TEXT_PRIMARY),
+                Node { margin: UiRect::bottom(Val::Px(8.0)), ..default() },
+            ));
+            body.spawn((
+                Text::new(format!("Remaining: {}", deposit.amount)),
+                TextFont::from_font_size(14.0),
+                TextColor(TEXT_GREEN),
+            ));
+        });
+    }).id();
+
+    commands.entity(overlay).add_child(root);
+    panel.overlay = Some(overlay);
+    panel.root = Some(root);
+    panel.inspected = Some(entity);
+    panel.dirty = true;
+}
+
 fn spawn_section(
     parent: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
     title: &str,
@@ -487,10 +599,10 @@ pub fn update_panel_header(
     if let Ok((mut bg, mut text)) = toggle_btn.single_mut() {
         if is_active {
             *bg = BackgroundColor(BTN_ACTIVE);
-            text.0 = "\u{25cf} ON".to_string();
+            text.0 = "[ON]".to_string();
         } else {
             *bg = BackgroundColor(BTN_INACTIVE);
-            text.0 = "\u{25cb} OFF".to_string();
+            text.0 = "[OFF]".to_string();
         }
     }
 }
@@ -529,13 +641,13 @@ pub fn update_panel_production(
             };
             progress_pct = pct;
             if is_active && asm.production_timer > 0.0 {
-                status_str = if is_mining {
-                    format!("Mining: {}  \u{b7}  {:.1}s / {:.1}s",
-                        display_name, asm.production_timer, def.time_sec)
-                } else {
-                    format!("Producing: {}  \u{b7}  {:.1}s / {:.1}s",
-                        display_name, asm.production_timer, def.time_sec)
-                };
+                    status_str = if is_mining {
+                        format!("Mining: {}  -  {:.1}s / {:.1}s",
+                            display_name, asm.production_timer, def.time_sec)
+                    } else {
+                        format!("Producing: {}  -  {:.1}s / {:.1}s",
+                            display_name, asm.production_timer, def.time_sec)
+                    };
             } else if !is_active {
                 status_str = "Paused".to_string();
             } else {
@@ -548,7 +660,7 @@ pub fn update_panel_production(
                 } else {
                     let parts: Vec<String> = def.input.iter().map(|(rid, amt)| {
                         let name = resource_registry.get_opt(&rid.0).map_or(rid.0.as_str(), |r| &r.name);
-                        format!("{}  \u{d7}{}", name, amt)
+                        format!("{} x{}", name, amt)
                     }).collect();
                     inp.0 = format!("Inputs:  {}", parts.join("  "));
                 }
@@ -705,7 +817,7 @@ pub fn update_panel_alerts(
     let is_active = active.and_then(|a| Some(a.0)).unwrap_or(true);
     let mut alerts: Vec<String> = Vec::new();
     if !is_active {
-        alerts.push("\u{26a0}  Building paused".to_string());
+        alerts.push("[!] Building paused".to_string());
     }
     if let Ok(mut at) = alert_text.single_mut() {
         if alerts.is_empty() {
@@ -719,8 +831,8 @@ pub fn update_panel_alerts(
 // ── Click detection ──
 
 pub fn building_inspect_click(
-    commands: Commands,
-    panel: ResMut<BuildingPanel>,
+    mut commands: Commands,
+    mut panel: ResMut<BuildingPanel>,
     build_mode: Res<BuildMode>,
     deconstruct: Res<DeconstructMode>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -731,6 +843,7 @@ pub fn building_inspect_click(
     cfg: Res<MapConfig>,
     spatial: Res<SpatialRegistry>,
     building_query: Query<&Building>,
+    deposit_query: Query<(Entity, &ResourceDeposit, &TilePosition)>,
     resource_registry: Res<ResourceRegistry>,
     ui_blocking: Res<UiIsBlocking>,
 ) {
@@ -747,12 +860,23 @@ pub fn building_inspect_click(
     let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
-    if let Some(entity) = spatial.at(tile_x, tile_y) {
-        let Ok(building) = building_query.get(entity) else { return };
-        if panel.inspected == Some(entity) {
+    // Check deposits first (they are NOT in SpatialRegistry)
+    if let Some((deposit_entity, deposit, _)) = deposit_query.iter().find(|(_, _, pos)| pos.x == tile_x && pos.y == tile_y) {
+        if panel.inspected == Some(deposit_entity) {
             close_panel(commands, panel);
             return;
         }
+        spawn_deposit_panel(&mut commands, &mut *panel, deposit_entity, deposit, &resource_registry);
+        return;
+    }
+
+    let Some(entity) = spatial.at(tile_x, tile_y) else { return };
+    if panel.inspected == Some(entity) {
+        close_panel(commands, panel);
+        return;
+    }
+
+    if let Ok(building) = building_query.get(entity) {
         open_panel(commands, panel, entity, building, &building.kind, &resource_registry);
     }
 }
@@ -853,6 +977,7 @@ pub fn recipe_change_system(
     query: Query<&Interaction, (Changed<Interaction>, With<RecipeChangeButton>)>,
     building_query: Query<&Building>,
     assembler_query: Query<&Assembler>,
+    inventory_query: Query<Option<&Inventory>>,
     recipes: Res<RecipeRegistry>,
     resource_registry: Res<ResourceRegistry>,
     reg: Res<BuildingRegistry>,
@@ -871,7 +996,10 @@ pub fn recipe_change_system(
             .map(|def| def.recipe_categories.clone())
             .unwrap_or_default();
 
-        let sel = spawn_recipe_selector(&mut commands, &asm.recipe_id, &categories, &recipes, &resource_registry);
+        // Use the building's own inventory to determine which recipes are craftable
+        let building_inv = inventory_query.get(inspected).ok().and_then(|o| o);
+
+        let sel = spawn_recipe_selector(&mut commands, &asm.recipe_id, &categories, &recipes, &resource_registry, building_inv, &building.kind);
         if let Some(root) = panel.root {
             commands.entity(root).add_child(sel);
         }
@@ -885,6 +1013,8 @@ fn spawn_recipe_selector(
     categories: &[String],
     recipes: &RecipeRegistry,
     resource_registry: &ResourceRegistry,
+    building_inv: Option<&Inventory>,
+    kind: &str,
 ) -> Entity {
     commands.spawn((
         RecipeSelectorRoot,
@@ -931,7 +1061,7 @@ fn spawn_recipe_selector(
                 BackgroundColor(BTN_CLOSE),
             )).with_children(|btn| {
                 btn.spawn((
-                    Text::new("✕"),
+                    Text::new("X"),
                     TextFont::from_font_size(12.0),
                     TextColor(Color::WHITE),
                 ));
@@ -952,7 +1082,7 @@ fn spawn_recipe_selector(
         for (cat_name, cat_recipes) in &seen_categories {
             parent.spawn((
                 RecipeCategoryLabel,
-                Text::new(format!("\u{2500}\u{2500} {} \u{2500}\u{2500}", cat_name.to_uppercase())),
+                Text::new(format!("-- {} --", cat_name.to_uppercase())),
                 TextFont::from_font_size(11.0),
                 TextColor(TEXT_YELLOW),
                 Node { margin: UiRect::vertical(Val::Px(4.0)), ..default() },
@@ -960,20 +1090,41 @@ fn spawn_recipe_selector(
 
             for recipe in cat_recipes {
                 let is_active = recipe.id == current_id;
-                let bg = if is_active { Color::srgb(0.18, 0.35, 0.18) } else { Color::srgb(0.12, 0.12, 0.20) };
-                let prefix = if is_active { "\u{25b6} " } else { "  " };
+
+                let is_mining = kind == "miner" || kind == "assembler" && recipe.category == "mining";
+                let can_craft = if is_mining {
+                    recipe.input.is_empty()
+                } else {
+                    building_inv.map_or(false, |inv| {
+                        recipe.input.iter().all(|(rid, amt)| inv.get(rid) >= *amt)
+                    })
+                };
+
+                let bg = if is_active {
+                    Color::srgb(0.20, 0.50, 0.20)
+                } else if can_craft {
+                    Color::srgb(0.18, 0.35, 0.18)
+                } else {
+                    Color::srgb(0.12, 0.12, 0.20)
+                };
+                let border_color = if can_craft && !is_active {
+                    Color::srgb(0.30, 0.70, 0.30)
+                } else {
+                    Color::srgb(0.20, 0.20, 0.30)
+                };
+                let prefix = if is_active { "> " } else if can_craft { "[x] " } else { "    " };
 
                 let input_str: String = recipe.input.iter()
                     .map(|(rid, amt)| {
                         let name = resource_registry.get_opt(&rid.0).map_or(rid.0.as_str(), |r| &r.name);
-                        format!("{}\u{d7}{}", name, amt)
+                        format!("{} x{}", name, amt)
                     })
                     .collect::<Vec<_>>()
                     .join(" + ");
                 let output_str: String = recipe.output.iter()
                     .map(|(rid, amt)| {
                         let name = resource_registry.get_opt(&rid.0).map_or(rid.0.as_str(), |r| &r.name);
-                        format!("{}\u{d7}{}", name, amt)
+                        format!("{} x{}", name, amt)
                     })
                     .collect::<Vec<_>>()
                     .join(" + ");
@@ -987,18 +1138,20 @@ fn spawn_recipe_selector(
                         flex_direction: FlexDirection::Column,
                         padding: UiRect::all(Val::Px(6.0)),
                         margin: UiRect::vertical(Val::Px(1.0)),
+                        border: UiRect::all(Val::Px(1.0)),
                         ..default()
                     },
                     BackgroundColor(bg),
+                    BorderColor::all(border_color),
                 )).with_children(|btn| {
                     let recipe_name = resource_registry.get_opt(&recipe.id).map_or(recipe.id.as_str(), |r| &r.name);
                     btn.spawn((
                         Text::new(format!("{}{}", prefix, recipe_name)),
                         TextFont::from_font_size(12.0),
-                        TextColor(if is_active { TEXT_GREEN } else { TEXT_PRIMARY }),
+                        TextColor(if is_active { TEXT_GREEN } else if can_craft { TEXT_PRIMARY } else { TEXT_SECONDARY }),
                     ));
                     btn.spawn((
-                        Text::new(format!("    {}  \u{2192}  {}  |  {:.1}s", input_str, output_str, recipe.time_sec)),
+                        Text::new(format!("    {}  ->  {}  |  {:.1}s", input_str, output_str, recipe.time_sec)),
                         TextFont::from_font_size(10.0),
                         TextColor(TEXT_SECONDARY),
                     ));
@@ -1069,10 +1222,72 @@ pub fn sorter_invert_click_system(
     }
 }
 
+// ── Draggable panels ──
+
+#[derive(Resource, Default)]
+pub struct PanelDrag {
+    pub dragging: bool,
+    pub cursor_start: Vec2,
+    pub panel_start_left: f32,
+    pub panel_start_top: f32,
+    pub frame_delay: u32,
+}
+
+pub fn drag_panel_system(
+    mut drag: ResMut<PanelDrag>,
+    buttons: Res<ButtonInput<MouseButton>>,
+    windows: Query<&Window>,
+    mut panel_query: Query<&mut Node, With<PanelModal>>,
+) {
+    if panel_query.is_empty() {
+        *drag = PanelDrag::default();
+        return;
+    }
+
+    let Ok(window) = windows.single() else { return };
+    let Some(cursor) = window.cursor_position() else { return };
+
+    if drag.dragging {
+        if buttons.just_released(MouseButton::Left) {
+            drag.dragging = false;
+        } else if let Ok(mut node) = panel_query.single_mut() {
+            let delta = cursor - drag.cursor_start;
+            node.left = Val::Px(drag.panel_start_left + delta.x);
+            node.top = Val::Px(drag.panel_start_top + delta.y);
+        }
+        return;
+    }
+
+    // Delay drag detection for 2 frames after panel opens
+    // to avoid catching the mouse click that triggered panel spawn
+    if drag.frame_delay < 2 {
+        drag.frame_delay += 1;
+        return;
+    }
+
+    if !buttons.just_pressed(MouseButton::Left) { return; }
+    let Ok(node) = panel_query.single() else { return };
+
+    let panel_left = match node.left { Val::Px(v) => v, _ => 0.0 };
+    let panel_top = match node.top { Val::Px(v) => v, _ => 0.0 };
+    let panel_w = match node.width { Val::Px(v) => v, _ => 800.0 };
+
+    let header_rect = Rect::new(
+        panel_left, panel_top,
+        panel_left + panel_w, panel_top + 40.0,
+    );
+    if header_rect.contains(cursor) {
+        drag.dragging = true;
+        drag.cursor_start = cursor;
+        drag.panel_start_left = panel_left;
+        drag.panel_start_top = panel_top;
+    }
+}
+
 // ── Cleanup on state exit ──
 
 pub fn cleanup_popup(mut commands: Commands, query: Query<Entity, With<PanelModal>>) {
     for entity in &query {
-        commands.entity(entity).despawn();
+        commands.entity(entity).try_despawn();
     }
 }

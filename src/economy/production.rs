@@ -16,21 +16,16 @@ pub fn assembler_tick(
             None => continue,
         };
 
+        // Check: enough inputs in inventory?
+        let can_produce = recipe.input.iter()
+            .all(|(req_resource, req_amount)| inventory.get(req_resource) >= *req_amount);
+
+        if !can_produce {
+            continue;
+        }
+
         assembler.production_timer += time.delta_secs();
-        while assembler.production_timer >= recipe.time_sec {
-            // Check: enough inputs in inventory?
-            let mut can_produce = true;
-            for (req_resource, req_amount) in &recipe.input {
-                if inventory.get(req_resource) < *req_amount {
-                    can_produce = false;
-                    break;
-                }
-            }
-
-            if !can_produce {
-                break;
-            }
-
+        if assembler.production_timer >= recipe.time_sec {
             // Consume: remove inputs from inventory
             for (req_resource, req_amount) in &recipe.input {
                 inventory.remove(req_resource, *req_amount);

@@ -1,6 +1,5 @@
 use bevy::prelude::*;
 
-use crate::core::game_state::GameState;
 use crate::core::toast::ToastQueue;
 use crate::economy::components::{HQ, PeacefulMode};
 use crate::enemy::components::{Enemy, WaveState, Health, LastWave};
@@ -13,15 +12,14 @@ pub fn wave_timer(
     time: Res<Time>,
     mut wave: ResMut<WaveState>,
     existing: Query<Entity, With<Enemy>>,
-    mut next_state: ResMut<NextState<GameState>>,
     cfg: Res<WaveConfig>,
+    peaceful: Res<PeacefulMode>,
 ) {
+    if peaceful.0 {
+        return;
+    }
     wave.timer -= time.delta_secs();
     if wave.timer <= 0.0 && existing.iter().len() == 0 {
-        if wave.wave > cfg.win_waves {
-            next_state.set(GameState::GameOver);
-            return;
-        }
         let wave_idx = ((wave.wave - 1) as usize).min(cfg.waves.len().saturating_sub(1));
         wave.spawn_queue = cfg.waves[wave_idx].enemies.clone();
         wave.spawn_timer = 0.0;
@@ -108,7 +106,7 @@ pub fn cleanup_game_entities(
     units: Query<Entity, With<crate::economy::components::Unit>>,
 ) {
     for entity in enemies.iter().chain(units.iter()) {
-        commands.entity(entity).despawn();
+        commands.entity(entity).try_despawn();
     }
 }
 

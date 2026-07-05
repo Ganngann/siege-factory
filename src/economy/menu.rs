@@ -5,7 +5,7 @@ use crate::economy::unit_config::UnitConfig;
 
 // ── Menu action (leaf) ──
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MenuAction {
     Build(String),
     Spawn(String),
@@ -28,15 +28,16 @@ pub enum MenuEntry {
 
 // ── Flat item for current level (for UI rendering) ──
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FlatItem {
     pub label: String,
     pub kind: FlatItemKind,
     pub cost_str: String,
     pub color: Color,
+    pub texture_stem: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FlatItemKind {
     Action(MenuAction),
     SubMenu,
@@ -209,23 +210,23 @@ pub fn flat_items_at(
     for entry in level.iter().skip(scroll).take(PAGE_SIZE) {
         match entry {
             MenuEntry::Action { label, action } => {
-                let (cost_str, color) = match action {
+                let (cost_str, color, texture_stem) = match action {
                     MenuAction::Build(id) => {
                         if let Some(def) = registry.get(id) {
-                            (format_cost(&def.cost), def.color)
+                            (format_cost(&def.cost), def.color, Some(def.texture_stem.clone()))
                         } else {
-                            (String::new(), Color::srgb(0.4, 0.4, 0.5))
+                            (String::new(), Color::srgb(0.4, 0.4, 0.5), None)
                         }
                     }
                     MenuAction::Spawn(id) => {
                         if let Some(def) = unit_cfg.get(id) {
-                            (format_unit_cost(&def.cost), def.color)
+                            (format_unit_cost(&def.cost), def.color, Some(def.texture_stem.clone()))
                         } else {
-                            (String::new(), Color::srgb(0.3, 0.35, 0.4))
+                            (String::new(), Color::srgb(0.3, 0.35, 0.4), None)
                         }
                     }
                     MenuAction::Delete => {
-                        (String::new(), Color::srgb(0.8, 0.2, 0.2))
+                        (String::new(), Color::srgb(0.8, 0.2, 0.2), None)
                     }
                 };
                 items.push(FlatItem {
@@ -233,6 +234,7 @@ pub fn flat_items_at(
                     kind: FlatItemKind::Action(action.clone()),
                     cost_str,
                     color,
+                    texture_stem,
                 });
             }
             MenuEntry::SubMenu { label, .. } => {
@@ -241,6 +243,7 @@ pub fn flat_items_at(
                     kind: FlatItemKind::SubMenu,
                     cost_str: String::new(),
                     color: Color::srgb(0.4, 0.4, 0.5),
+                    texture_stem: None,
                 });
             }
         }
