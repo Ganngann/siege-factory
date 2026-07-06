@@ -1095,11 +1095,23 @@ pub fn handle_build_click(
     let do_power_producer = def.power_generation > 0.0;
     let do_power_pole = def.power_pole_range > 0.0;
 
-    if def.id == "assembler" || def.id == "furnace" {
-        let recipe_id = if def.id == "furnace" {
-            "iron_plate"
-        } else {
-            "ammo_craft"
+    if def.id == "assembler" || def.id == "furnace"
+        || def.id == "blast_furnace" || def.id == "assembly_crane"
+        || def.id == "alchemy_lab" || def.id == "electronics_lab"
+        || def.id == "foundry" || def.id == "guild_hall"
+        || def.id == "enchanting_array" || def.id == "pumpjack"
+    {
+        let recipe_id = match def.id.as_str() {
+            "furnace" | "blast_furnace" => "iron_plate",
+            "assembler" => "ammo_craft",
+            "assembly_crane" => "gear",
+            "alchemy_lab" => "petroleum_gas",
+            "electronics_lab" => "advanced_circuit",
+            "foundry" => "iron_beam",
+            "guild_hall" => "bread",
+            "enchanting_array" => "scroll_of_haste",
+            "pumpjack" => "pump_crude_oil",
+            _ => "gear",
         };
         let interval = def.production_interval.unwrap_or(2.0);
         let mut e = commands.spawn((
@@ -1143,7 +1155,7 @@ pub fn handle_build_click(
             inv,
             Farm {
                 crop_index: 0,
-                crop_types: vec!["wheat".to_string(), "wood".to_string()],
+                crop_types: vec!["wheat".to_string(), "wood".to_string(), "rubber".to_string()],
             },
             ProductionCounter::default(),
             DiscoveredRecipes::default(),

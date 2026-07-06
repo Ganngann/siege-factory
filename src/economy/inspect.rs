@@ -85,7 +85,11 @@ fn open_panel(
     panel.dirty = false;
 
     let modal_size = Vec2::new(800.0, 560.0);
-    let show_recipes = kind == "assembler" || kind == "furnace";
+    let show_recipes = kind == "assembler" || kind == "furnace"
+        || kind == "blast_furnace" || kind == "assembly_crane"
+        || kind == "alchemy_lab" || kind == "electronics_lab"
+        || kind == "foundry" || kind == "guild_hall"
+        || kind == "enchanting_array" || kind == "pumpjack";
     let is_farm = kind == "farm";
 
     let overlay = commands

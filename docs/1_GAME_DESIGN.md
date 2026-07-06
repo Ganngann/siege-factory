@@ -30,20 +30,9 @@ Le mode tower defense actuel est un **scaffold temporaire** pour construire le s
 
 ### Ressources — arbre complet
 
-Définies dans `data/resources.toml`. 15 ressources organisées en arborescence :
+Définies dans `data/resources.toml`. 15 ressources organisées en 4 étages (Extraction → Fonderie → Atelier → Haute Technologie).
 
-```
-Brut              Forge              Atelier              Haute technologie
-──────────────────────────────────────────────────────────────────────────
-Iron Ore ─────→ Iron Plate ─────→ Gear ─────────────→ Motor ─────→ Drivetrain
-                                     │                     │
-Copper Ore ───→ Copper Plate ──→ Circuit ───────────→ Electronic Module
-                                     │                     │
-                                     └──── Ammo            └────→ Targeting Computer
-Coal ─────────→ Steel ←──── Iron Plate + Coal               
-                   │
-                   └────→ Machine Frame ←── Steel + Motor
-```
+Voir [`docs/20_RESOURCE_TREE.md`](20_RESOURCE_TREE.md) pour le diagramme Mermaid et les recettes détaillées.
 
 Principes :
 - Toute production est automatique une fois les buildings placés.

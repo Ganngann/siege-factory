@@ -90,3 +90,178 @@ color = "#8888AA"
 name = "Wheat"
 max_stack = 999
 color = "#E8C84A"
+
+[resources.stone]
+name = "Stone"
+max_stack = 999
+color = "#888888"
+
+[resources.sand]
+name = "Sand"
+max_stack = 999
+color = "#DDCC88"
+
+[resources.sulfur]
+name = "Sulfur"
+max_stack = 999
+color = "#DDDD44"
+
+[resources.crude_oil]
+name = "Crude Oil"
+max_stack = 999
+color = "#222222"
+
+[resources.rubber]
+name = "Rubber"
+max_stack = 999
+color = "#335533"
+
+[resources.brick]
+name = "Brick"
+max_stack = 999
+color = "#CC5533"
+
+[resources.glass]
+name = "Glass"
+max_stack = 999
+color = "#CCDDEE"
+
+[resources.concrete]
+name = "Concrete"
+max_stack = 999
+color = "#999999"
+
+[resources.plastic]
+name = "Plastic"
+max_stack = 999
+color = "#EEEEBB"
+
+[resources.sulfur_powder]
+name = "Sulfur Powder"
+max_stack = 999
+color = "#DDDD44"
+
+[resources.petroleum_gas]
+name = "Petroleum Gas"
+max_stack = 999
+color = "#664422"
+
+[resources.copper_wire]
+name = "Copper Wire"
+max_stack = 999
+color = "#CC7733"
+
+[resources.screw]
+name = "Screw"
+max_stack = 999
+color = "#AAAAAA"
+
+[resources.pipe]
+name = "Pipe"
+max_stack = 999
+color = "#557788"
+
+[resources.iron_beam]
+name = "Iron Beam"
+max_stack = 999
+color = "#777799"
+
+[resources.battery]
+name = "Battery"
+max_stack = 999
+color = "#33AA33"
+
+[resources.flour]
+name = "Flour"
+max_stack = 999
+color = "#EEDDAA"
+
+[resources.bread]
+name = "Bread"
+max_stack = 999
+color = "#CC8833"
+
+[resources.lubricant]
+name = "Lubricant"
+max_stack = 999
+color = "#886633"
+
+[resources.rocket_fuel]
+name = "Rocket Fuel"
+max_stack = 999
+color = "#FF4422"
+
+[resources.explosive]
+name = "Explosive"
+max_stack = 999
+color = "#DD3333"
+
+[resources.fertilizer]
+name = "Fertilizer"
+max_stack = 999
+color = "#446633"
+
+[resources.composite]
+name = "Composite"
+max_stack = 999
+color = "#77AAAA"
+
+[resources.advanced_circuit]
+name = "Advanced Circuit"
+max_stack = 999
+color = "#44DD44"
+
+[resources.processing_unit]
+name = "Processing Unit"
+max_stack = 999
+color = "#33BB33"
+
+[resources.electric_engine]
+name = "Electric Engine"
+max_stack = 999
+color = "#AACCEE"
+
+[resources.laser_crystal]
+name = "Laser Crystal"
+max_stack = 999
+color = "#FF66DD"
+
+[resources.radar_array]
+name = "Radar Array"
+max_stack = 999
+color = "#554488"
+
+[resources.scanner_module]
+name = "Scanner Module"
+max_stack = 999
+color = "#4466AA"
+
+[resources.telemetry_unit]
+name = "Telemetry Unit"
+max_stack = 999
+color = "#6688CC"
+
+[resources.fusion_core]
+name = "Fusion Core"
+max_stack = 999
+color = "#FFAA44"
+
+[resources.nano_pack]
+name = "Nano Pack"
+max_stack = 999
+color = "#88DD88"
+
+[resources.scroll_of_haste]
+name = "Scroll of Haste"
+max_stack = 99
+color = "#FF6644"
+
+[resources.scroll_of_plenty]
+name = "Scroll of Plenty"
+max_stack = 99
+color = "#44BB44"
+
+[resources.scroll_of_conservation]
+name = "Scroll of Conservation"
+max_stack = 99
+color = "#4488FF"

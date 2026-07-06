@@ -3,3 +3,4 @@
 - quand on clique sur une mine, ca ouvre la fenetre du dépot en dessous.
 - les batiements doivent arreter d'accepetr les resources quand ils sont plein
 - le generateur dois stocker des ressources et il dois les consommer pour produire de l'électricité.
+les batiments ne doivent apparaitre dans le menu que quand ils sont découverts.

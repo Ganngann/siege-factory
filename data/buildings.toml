@@ -151,3 +151,199 @@ color = "#CCAA44"
 visual = "diamond"
 inventory_capacity = 1
 hidden = false
+
+# === NEW BUILDINGS (recipe-based) ===
+
+[buildings.pumpjack]
+name = "Pumpjack"
+cost = { iron_plate = 8, gear = 2 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#444455"
+visual = "square"
+recipe_categories = ["pumping"]
+production_interval = 3.0
+power_consumption = 15.0
+
+[buildings.blast_furnace]
+name = "Blast Furnace"
+cost = { brick = 6, steel = 2 }
+hp = 120
+tile_size = { w = 1, h = 1 }
+color = "#AA4422"
+visual = "diamond"
+recipe_categories = ["smelting"]
+production_interval = 1.5
+power_consumption = 20.0
+
+[buildings.assembly_crane]
+name = "Assembly Crane"
+cost = { steel = 3, gear = 4 }
+hp = 100
+tile_size = { w = 2, h = 1 }
+color = "#3377AA"
+visual = "rectangle"
+recipe_categories = ["crafting"]
+production_interval = 1.0
+power_consumption = 25.0
+
+[buildings.alchemy_lab]
+name = "Alchemy Lab"
+cost = { pipe = 4, circuit = 2 }
+hp = 90
+tile_size = { w = 2, h = 2 }
+color = "#664488"
+visual = "diamond"
+recipe_categories = ["refining"]
+production_interval = 3.0
+power_consumption = 20.0
+
+[buildings.electronics_lab]
+name = "Electronics Lab"
+cost = { plastic = 3, circuit = 4 }
+hp = 80
+tile_size = { w = 2, h = 2 }
+color = "#33AA88"
+visual = "diamond"
+recipe_categories = ["electronics"]
+production_interval = 3.0
+power_consumption = 30.0
+
+[buildings.foundry]
+name = "Foundry"
+cost = { iron_beam = 3, brick = 6 }
+hp = 150
+tile_size = { w = 2, h = 2 }
+color = "#888855"
+visual = "square"
+recipe_categories = ["forging"]
+production_interval = 3.0
+power_consumption = 25.0
+
+[buildings.guild_hall]
+name = "Guild Hall"
+cost = { brick = 4, wood = 6 }
+hp = 100
+tile_size = { w = 2, h = 2 }
+color = "#CC8844"
+visual = "square"
+recipe_categories = ["cooking"]
+production_interval = 3.0
+power_consumption = 5.0
+
+[buildings.enchanting_array]
+name = "Enchanting Array"
+cost = { advanced_circuit = 1, glass = 3 }
+hp = 70
+tile_size = { w = 2, h = 2 }
+color = "#DD66CC"
+visual = "diamond"
+recipe_categories = ["enchanting"]
+production_interval = 4.0
+power_consumption = 30.0
+
+# === NEW BUILDINGS (belt-based) ===
+
+[buildings.high_speed_track]
+name = "High-Speed Track"
+cost = { lubricant = 1, steel = 1 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#CC8844"
+visual = "rectangle"
+slots = 4
+speed = 4.0
+power_consumption = 8.0
+
+# === NEW BUILDINGS (generic / placeholder) ===
+
+[buildings.arboretum]
+name = "Arboretum"
+cost = { glass = 3, brick = 4 }
+hp = 80
+tile_size = { w = 2, h = 2 }
+color = "#336633"
+visual = "square"
+power_consumption = 2.0
+
+[buildings.scribing_desk]
+name = "Scribing Desk"
+cost = { iron_beam = 1, glass = 2 }
+hp = 50
+tile_size = { w = 1, h = 1 }
+color = "#AA9966"
+visual = "square"
+power_consumption = 5.0
+
+[buildings.excavation_rig]
+name = "Excavation Rig"
+cost = { explosive = 2, steel = 3 }
+hp = 120
+tile_size = { w = 2, h = 2 }
+color = "#775533"
+visual = "square"
+power_consumption = 15.0
+
+[buildings.grand_counterweight]
+name = "Grand Counterweight"
+cost = { battery = 4, steel = 4 }
+hp = 150
+tile_size = { w = 2, h = 2 }
+color = "#557799"
+visual = "pentagon"
+power_consumption = 5.0
+power_generation = 50.0
+
+[buildings.deep_core_drill]
+name = "Deep Core Drill"
+cost = { composite = 3, electric_engine = 1 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#664433"
+visual = "square"
+power_consumption = 40.0
+
+[buildings.compactor]
+name = "Compactor"
+cost = { plastic = 3, steel = 2 }
+hp = 60
+tile_size = { w = 1, h = 1 }
+color = "#AAAA77"
+visual = "square"
+power_consumption = 10.0
+
+[buildings.watchtower]
+name = "Watchtower"
+cost = { radar_array = 1, steel = 5 }
+hp = 100
+tile_size = { w = 1, h = 1 }
+color = "#5577AA"
+visual = "pentagon"
+power_consumption = 10.0
+
+[buildings.assembly_matrix]
+name = "Assembly Matrix"
+cost = { processing_unit = 1, steel = 4 }
+hp = 80
+tile_size = { w = 2, h = 2 }
+color = "#44AACC"
+visual = "diamond"
+power_consumption = 30.0
+
+[buildings.thermal_bore]
+name = "Thermal Bore"
+cost = { fusion_core = 1, composite = 4 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#FF6622"
+visual = "square"
+power_generation = 200.0
+
+[buildings.cobblestone_path]
+name = "Cobblestone Path"
+cost = { concrete = 2 }
+hp = 50
+tile_size = { w = 1, h = 1 }
+color = "#AAAAAA"
+visual = "rectangle"
+drag_placement = true
