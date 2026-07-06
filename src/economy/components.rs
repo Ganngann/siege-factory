@@ -173,6 +173,24 @@ pub struct Sorter {
 #[derive(Component)]
 pub struct Active(pub bool);
 
+// ── Electricity ──
+
+#[derive(Component)]
+pub struct PowerConsumer {
+    pub draw: f32,
+    pub satisfied: bool,
+}
+
+#[derive(Component)]
+pub struct PowerProducer {
+    pub output: f32,
+}
+
+#[derive(Component)]
+pub struct PowerPole {
+    pub range: f32,
+}
+
 #[derive(Resource, Default)]
 pub struct PeacefulMode(pub bool);
 
@@ -238,6 +256,8 @@ pub struct HpBarFill;
 pub struct HpText;
 #[derive(Component)]
 pub struct AlertText;
+#[derive(Component)]
+pub struct PowerStatusText;
 
 // ── Recipe selector sub-window ──
 

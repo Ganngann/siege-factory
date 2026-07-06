@@ -1,17 +1,23 @@
 use bevy::prelude::*;
 
-use crate::economy::components::{Active, Assembler};
+use crate::economy::components::{Active, Assembler, PowerConsumer};
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::Inventory;
 
 pub fn assembler_tick(
     time: Res<Time>,
     recipes: Res<RecipeRegistry>,
-    mut assembler_query: Query<(&mut Assembler, &mut Inventory, &Active)>,
+    mut assembler_query: Query<(&mut Assembler, &mut Inventory, &Active, Option<&PowerConsumer>)>,
 ) {
-    for (mut assembler, mut inventory, active) in assembler_query.iter_mut() {
+    for (mut assembler, mut inventory, active, power) in assembler_query.iter_mut() {
         if !active.0 {
             continue;
+        }
+        // Check power: if building requires power and is not satisfied, skip
+        if let Some(pc) = power {
+            if !pc.satisfied {
+                continue;
+            }
         }
         let recipe = match recipes.get(&assembler.recipe_id) {
             Some(r) => r,

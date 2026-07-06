@@ -36,9 +36,11 @@ src/
 │   ├── menu.rs                   # MenuDef, MenuState, MenuItems, flat_items_at()
 │   ├── build_bar.rs              # UI barre de construction (affichage + interaction)
 │   ├── placement.rs              # Placement système (clic → build, ghost, rotation)
-│   ├── components.rs             # Components économie (Building, Produces, Belt, etc.)
-│   ├── recipe.rs                 # RecipeBank, craft system
-│   └── unit_config.rs            # UnitDef, UnitConfig (chargé depuis units.toml)
+│   ├── components.rs             # Components économie (Building, Assembler, etc.)
+│   ├── recipe.rs                 # RecipeRegistry, craft system
+│   ├── unit_config.rs            # UnitDef, UnitConfig (chargé depuis units.toml)
+│   ├── discovery.rs              # [NEW] DiscoveryRegistry, ProductionCounter, check_discoveries
+│   └── archive.rs                # [NEW] Archive building, GlobalArchive, delivery check
 │
 ├── enemy/                        # Ennemis et vagues
 │   ├── mod.rs

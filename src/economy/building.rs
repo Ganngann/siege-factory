@@ -52,6 +52,9 @@ pub struct BuildingDef {
     pub hidden: bool,
     pub drag_placement: bool,
     pub recipe_categories: Vec<String>,
+    pub power_consumption: f32,
+    pub power_generation: f32,
+    pub power_pole_range: f32,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -155,6 +158,9 @@ impl BuildingRegistry {
                 hidden: entry.hidden,
                 drag_placement: entry.drag_placement,
                 recipe_categories,
+                power_consumption: entry.power_consumption,
+                power_generation: entry.power_generation,
+                power_pole_range: entry.power_pole_range,
             });
         }
         Self { buildings }
@@ -220,6 +226,12 @@ struct BuildingEntry {
     drag_placement: bool,
     #[serde(default)]
     recipe_categories: Vec<String>,
+    #[serde(default)]
+    power_consumption: f32,
+    #[serde(default)]
+    power_generation: f32,
+    #[serde(default)]
+    power_pole_range: f32,
 }
 
 #[derive(Deserialize)]

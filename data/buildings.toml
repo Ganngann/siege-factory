@@ -22,6 +22,7 @@ color = "#993300"
 visual = "square"
 requires_deposit = true
 production = { resource = "ore", interval_sec = 2.0 }
+power_consumption = 10.0
 texture_stem = "miner_east"
 
 [buildings.furnace]
@@ -33,6 +34,7 @@ color = "#884422"
 visual = "diamond"
 recipe_categories = ["smelting"]
 production_interval = 3.0
+power_consumption = 8.0
 
 [buildings.assembler]
 name = "Assembler"
@@ -44,6 +46,7 @@ visual = "diamond"
 recipe_categories = ["crafting"]
 texture_stem = "assembler_east"
 production_interval = 2.0
+power_consumption = 12.0
 
 [buildings.belt]
 name = "Belt"
@@ -54,6 +57,7 @@ color = "#808080"
 visual = "rectangle"
 slots = 4
 speed = 2.0
+power_consumption = 2.0
 texture_stem = "belt_east"
 
 [buildings.wall]
@@ -74,6 +78,7 @@ tile_size = { w = 1, h = 1 }
 color = "#E63333"
 visual = "triangle"
 combat = { damage = 5, range = 4.0, fire_rate_sec = 1.0, projectile_speed = 300.0 }
+power_consumption = 15.0
 texture_stem = "turret_east"
 
 [buildings.storage]
@@ -94,6 +99,7 @@ color = "#AAAA00"
 visual = "diamond"
 slots = 2
 speed = 2.0
+power_consumption = 3.0
 texture_stem = "splitter_east"
 
 [buildings.sorter]
@@ -105,7 +111,27 @@ color = "#66AA66"
 visual = "diamond"
 slots = 2
 speed = 2.0
+power_consumption = 4.0
 texture_stem = "sorter_east"
+
+[buildings.burner_generator]
+name = "Burner Generator"
+cost = { ore = 20 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#DD6622"
+visual = "square"
+inventory_capacity = 16
+power_generation = 50.0
+
+[buildings.power_pole]
+name = "Power Pole"
+cost = { ore = 5 }
+hp = 10
+tile_size = { w = 1, h = 1 }
+color = "#888888"
+visual = "circle"
+power_pole_range = 5.0
 
 [buildings.farm]
 name = "Farm"

@@ -38,10 +38,10 @@ docs/          → Documentation
 ## Roadmap
 
 | Milestone | Contenu | Statut |
-|---|---|---|
+|---|---|---|---|
 | M1 | Squelette, grille, états, tests | ✅ |
-| M2 | Économie, ressources, inventaire | 🔜 |
-| M3 | Constructions, ceintures, craft | |
+| M2 | Économie, ressources, inventaire | ✅ |
+| M3 | Constructions, ceintures, craft, Découverte + Archive | ✅ |
 | M4 | Ennemis, combat, vagues | |
 | M5 | Polissage, build web, équilibrage | |
 | M6 | Unités RTS, tech, fog of war | |

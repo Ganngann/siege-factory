@@ -1,117 +1,119 @@
 # Game Design — Siege Factory
 
-## Vision (destination)
+## Vision
 
 Un jeu **Factorio-like** : carte infinie, multijoueur, arbre technologique profond, recettes en arborescence, N ressources.
 
-Tout ce qui est fait aujourd'hui (tower defense, vagues, grille 20×15) est un **scaffold temporaire** pour construire le socle technique en itérant sur un gameplay simple mais complet.
-
-Le mode TD actuel restera comme un mode de jeu (défense de base) une fois la destination atteinte.
+Le mode tower defense actuel est un **scaffold temporaire** pour construire le socle technique sur un gameplay simple mais complet. Il restera comme mode de jeu une fois la destination atteinte.
 
 ---
 
-## Phase actuelle — Scaffold TD
+## Phase actuelle — Découverte & Archive
 
 ### Flow joueur
 
-1. **Début de partie** : carte 20×15 avec gisements fixes. Le joueur place son quartier général.
-2. **Phase automation** : le joueur place mines, assembleurs, ceintures pour produire ressources et munitions.
-3. **Phase défense** : des vagues d'ennemis spawnent et marchent vers la base via pathfinding BFS.
-4. **Phase RTS** : sélection d'unités, ordres de déplacement, attaque ciblée.
-5. **Win/Loss** : survivre à 10 vagues, ou base détruite = game over.
+1. **Début de partie** : pose le HQ (20 000 ore de départ), construit mines + fours.
+2. **Phase automation** : extract → forge → assemble → ceintures → stockage.
+3. **Découverte** : un bâtiment productif (Furnace, Assembler, Miner, Farm) *découvre* une nouvelle recette après un certain nombre de crafts. La recette est utilisable **sur ce bâtiment uniquement**.
+4. **Archivage** : tu craftes 1 exemplaire de l'item découvert et tu l'apportes à l'Archive. Il est consommé → la recette est débloquée **définitivement** sur tous les bâtiments.
+5. **Approfondissement** : chaque nouvelle recette en débloque d'autres (gear → motor → drivetrain, circuit → electronic module → targeting computer).
+6. **Construction** : les bâtiments eux-mêmes nécessitent des items craftés (plus que de l'ore brut). Le "mall" devient un vrai défi logistique.
 
-### Ressources actuelles
+### Principe Découverte + Archive
 
-Définies dans `data/resources.toml`.
+| Concept | Rôle |
+|---|---|
+| **Découverte** (usage-based) | Un bâtiment qui craft accumule de l'XP. À certains paliers (1, 10, 25, 50, 100...), il découvre une recette. |
+| **Découverte fragile** | La recette n'existe que sur CE bâtiment. Si le bâtiment est détruit, la découverte est perdue. |
+| **Archive** | Bâtiment 2×2 qu'on construit. Reçoit 1 exemplaire d'un item découvert, le consomme, débloque la recette pour toujours. |
+| **Progression** | Jouer = automatiser plus pour découvrir plus, puis transporter les découvertes à l'Archive sans tout casser. |
 
-| Ressource | Source | Usage |
-|---|---|---|
-| Ore | Mines (automatique) | Construction, ammo |
-| Ammo | Assembleur (Ore → Ammo) | Tourelles |
-| Energy | Réacteurs (plus tard) | Alimentation buildings (plus tard) |
+### Ressources — arbre complet
+
+Définies dans `data/resources.toml`. 15 ressources organisées en arborescence :
+
+```
+Brut              Forge              Atelier              Haute technologie
+──────────────────────────────────────────────────────────────────────────
+Iron Ore ─────→ Iron Plate ─────→ Gear ─────────────→ Motor ─────→ Drivetrain
+                                     │                     │
+Copper Ore ───→ Copper Plate ──→ Circuit ───────────→ Electronic Module
+                                     │                     │
+                                     └──── Ammo            └────→ Targeting Computer
+Coal ─────────→ Steel ←──── Iron Plate + Coal               
+                   │
+                   └────→ Machine Frame ←── Steel + Motor
+```
 
 Principes :
-- Les ressources sont transportées par ceintures et stockées dans des inventaires.
 - Toute production est automatique une fois les buildings placés.
+- Les ressources sont transportées par ceintures et stockées dans des inventaires.
 
-### Bâtiments actuels
+### Bâtiments
 
-Définis dans `data/buildings.toml`.
+Définis dans `data/buildings.toml`. Les coûts évoluent avec l'arbre :
 
-| Building | Rôle |
-|---|---|
-| HQ | Centre, HP de la base, stockage global |
-| Miner | Extrait Ore des gisements |
-| Assembler | Transforme Ore → Ammo |
-| Belt | Transporte les items entre buildings |
-| Wall | Bloque les ennemis, HP élevé |
-| Turret | Tire automatiquement sur ennemis |
-| Storage | Stockage tampon, capacité 64 |
-| Splitter | Route les items sur 2 sorties |
-| Sorter | Filtre les items par type |
+| Building | Coût (exemple) | Rôle |
+|---|---|---|
+| HQ | — | Centre, stockage (20 000 ore au départ) |
+| Miner | Iron Plate ×6, Gear ×2 | Extrait minerai des gisements |
+| Furnace | Iron Plate ×8, Gear ×2 | Fait les recettes de fonderie |
+| Assembler | Iron Plate ×10, Gear ×4, Circuit ×2 | Fait les recettes de craft |
+| Belt | Iron Plate ×2 | Transporte les items |
+| Wall | Iron Plate ×4 | Bloque les ennemis, HP élevé |
+| Turret | Steel ×5, Gear ×3, Targeting Computer ×1 | Tire automatiquement |
+| Storage | Iron Plate ×8, Gear ×2 | Stockage tampon, capacité 64 |
+| Splitter | Iron Plate ×4, Gear ×1 | Route les items sur 2 sorties |
+| Sorter | Iron Plate ×6, Gear ×2 | Filtre les items par type |
+| Farm | Iron Plate ×8, Gear ×3 | Agriculture, capacité 64 |
+| **Archive** | **Gear ×5, Iron Plate ×10** | **Musée des découvertes, pérennise les recettes** |
 
-### Ennemis actuels
+### Mécanique Découverte (détail)
 
-Définis dans `data/enemies.toml`. Pathfinding : BFS sur grille 20×15.
+Chaque bâtiment productif (Furnace, Assembler, Miner, Farm) a un compteur de crafts.
+Les seuils de découverte sont définis dans `data/discoveries.toml` :
 
-| Type | Comportement |
-|---|---|
-| Runner | Rapide, faible |
-| Tank | Lent, résistant |
+| Bâtiment | Seuil | Découverte |
+|---|---|---|
+| Furnace | 1 craft | Acier |
+| Assembler | 10 crafts | Motor |
+| Assembler | 25 crafts | Electronic Module |
+| Assembler | 50 crafts | Drivetrain |
+| Assembler | 75 crafts | Machine Frame |
+| Assembler | 100 crafts | Targeting Computer |
 
-### Win / Loss (phase TD)
+Dès le seuil atteint, le bâtiment émet un événement `DiscoveryEvent` : la recette apparaît dans son sélecteur de recettes, utilisable immédiatement.
 
-- **Win** : survivre à 10 vagues (WIN_WAVES = 10).
-- **Loss** : HQ détruit (HP = 0).
+#### Péril de la découverte
 
----
+Si le bâtiment est déconstruit ou détruit alors que la recette n'a pas encore été archivée, la recette est **perdue**. Le joueur doit redécouvrir (un autre bâtiment doit refaire assez de crafts).
 
-## Destination — Factorio-like
+L'Archive émet un toast quand elle reçoit un item correspondant à une découverte en attente.
 
-### Carte
+### Recettes de démarrage
 
-- Infinie / à étendue dynamique (chunks 32×32)
-- Génération procédurale avec seed déterministe
-- Biomes, obstacles naturels, ressources réparties
-
-### Économie & Craft
-
-- N ressources de base
-- Recettes en arborescence (ex: Ore → Plaques → Circuits → Modules → ...)
-- Usine automatisée, transport par ceintures/trains/drones
-
-### Technologie
-
-- Arbre de recherche débloquant bâtiments, recettes, améliorations
-- Niveaux de bâtiments (Miner II, Assembler III, etc.)
-
-### Multijoueur
-
-- Simulation déterministe (même seed, frame number)
-- Mode coop (vagues + dures) et PvP (plusieurs variantes)
-- NetworkId sur entités persistantes
+Certaines recettes sont débloquées dès le début (pas besoin de découverte) :
+```
+- mine_iron_ore, mine_copper_ore, mine_coal  (minage)
+- iron_plate, copper_plate                    (fonderie)
+- gear, circuit, ammo_craft                   (craft)
+```
 
 ### Anti-microgestion
 
 Tout ce qui est répétitif doit être automatisable. Le joueur design l'usine, ne l'exploite pas manuellement.
 
-- Production continue automatique
-- Ceintures auto
-- Tourelles auto avec priorité
-- Ghost placement, blueprints
-- Rally points, patrouilles, auto-squad
-
 ---
 
 ## Principe d'évolution
 
-Chaque feature implémentée dans le scaffold TD est un **investissement** qui servira dans la destination :
+Chaque feature est un **investissement** qui servira dans la destination :
 
-| Scaffold TD | Sert la destination |
+| Feature | Sert la destination |
 |---|---|
 | ECS + Events | Scale multi, determinism |
 | Data-driven TOML | N ressources, modding |
+| Découverte + Archive | Remplace le tech tree classique (pas de science packs) |
 | Menu arborescent | Tech tree, recettes |
-| BFS pathfinding | Sera remplacé par pathfinding hiérarchique (chunk A* + BFS local) |
 | Inventory component | Reste inchangé |
-| Ceintures + items | Core du transport, reste inchangé |
+| Ceintures + items | Core du transport |

@@ -11,7 +11,8 @@ use crate::core::utils::{config_dir, silent_despawn};
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::components::{
     Active, Assembler, Building, Direction, Ghost, HQ, HpBarChild, Miner, OccupiedTiles,
-    PanelModal, PeacefulMode, ResourceDeposit, Sorter, Splitter, Storage, TurretCombat, Unit,
+    PanelModal, PeacefulMode, PowerConsumer, ResourceDeposit, Sorter, Splitter, Storage,
+    TurretCombat, Unit,
 };
 use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
 use crate::economy::ui::ResourceCountText;
@@ -87,6 +88,7 @@ pub struct BuildingSave {
     pub splitter: Option<SplitterSave>,
     pub sorter: Option<SorterSave>,
     pub farm: Option<FarmSave>,
+    pub power_draw: Option<f32>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -211,6 +213,7 @@ fn save_game(
         Option<&Splitter>,
         Option<&Sorter>,
         Option<&Farm>,
+        Option<&PowerConsumer>,
     )>,
     enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
     units: Query<
@@ -285,6 +288,7 @@ fn save_game(
         splitter,
         sorter,
         farm,
+        power_consumer,
     ) in buildings.iter()
     {
         let belt_save = belt.map(|b| {
@@ -343,6 +347,7 @@ fn save_game(
             farm: farm.map(|f| FarmSave {
                 crop_types: f.crop_types.clone(),
             }),
+            power_draw: power_consumer.map(|pc| pc.draw),
         });
     }
 
@@ -606,11 +611,15 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
             name: bs.kind.clone(),
         };
 
+        let insert_power = |mut e: EntityCommands, draw: f32| {
+            e.insert(PowerConsumer { draw, satisfied: false });
+        };
+
         if bs.kind == "hq" {
             commands.spawn((HQ, building, inv, occupied, tf, tile_pos, Active(true)));
         } else if bs.kind == "miner" {
             let a = bs.assembler.as_ref().unwrap();
-            commands.spawn((
+            let e = commands.spawn((
                 Miner,
                 Assembler {
                     production_timer: a.production_timer,
@@ -624,9 +633,10 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
                 tile_pos,
                 Active(true),
             ));
+            if let Some(d) = bs.power_draw { insert_power(e, d); }
         } else if bs.assembler.is_some() {
             let a = bs.assembler.as_ref().unwrap();
-            commands.spawn((
+            let e = commands.spawn((
                 Assembler {
                     production_timer: a.production_timer,
                     interval: a.interval,
@@ -639,6 +649,7 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
                 tile_pos,
                 Active(true),
             ));
+            if let Some(d) = bs.power_draw { insert_power(e, d); }
         } else if bs.farm.is_some() {
             let f = bs.farm.as_ref().unwrap();
             commands.spawn((

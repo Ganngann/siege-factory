@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::economy::components::{HQ, TurretCombat};
+use crate::economy::components::{HQ, PowerConsumer, TurretCombat};
 use crate::enemy::components::{Enemy, Health};
 use crate::enemy::registry::EnemyRegistry;
 use crate::events::{DespawnEnemy, SpawnProjectileEvent};
@@ -49,11 +49,14 @@ pub fn enemies_damage_hq(
 
 pub fn turret_shoot(
     mut commands: Commands,
-    mut turrets: Query<(&Transform, &mut TurretCombat)>,
+    mut turrets: Query<(&Transform, &mut TurretCombat, Option<&PowerConsumer>)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     time: Res<Time>,
 ) {
-    for (turret_pos, mut combat) in turrets.iter_mut() {
+    for (turret_pos, mut combat, power) in turrets.iter_mut() {
+        if let Some(pc) = power {
+            if !pc.satisfied { continue; }
+        }
         combat.timer += time.delta_secs();
         if combat.timer < combat.fire_interval {
             continue;

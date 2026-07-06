@@ -4,10 +4,12 @@ use crate::core::toast::ToastQueue;
 use crate::economy::belt::{BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
-    Active, Assembler, BeltDirection, BeltDrag, BuildMode, BuildPreview, Building, DeconstructDrag,
-    DeconstructMode, Direction, Ghost, HQ, Miner, OccupiedTiles, ResourceDeposit, Sorter, Splitter,
-    Storage, TurretCombat, UiIsBlocking,
+    Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode, DeconstructDrag,
+    Building, Miner, Assembler, ResourceDeposit, Ghost, HQ, OccupiedTiles,
+    TurretCombat, Storage, Splitter, Sorter, Active, UiIsBlocking,
+    PowerConsumer, PowerProducer, PowerPole,
 };
+
 use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::spatial::SpatialRegistry;
 use crate::events::{BeltDragCompleted, DeconstructAreaEvent, DespawnDeposit};
@@ -1020,25 +1022,24 @@ pub fn handle_build_click(
             .as_ref()
             .map(|p| p.interval_sec)
             .unwrap_or(2.0);
-        let _entity = commands
-            .spawn((
-                Miner,
-                Building {
-                    kind: def.id.clone(),
-                    name: def.name.clone(),
-                },
-                Inventory::new(),
-                OccupiedTiles(footprint),
-                Transform::from_xyz(cx, cy, 2.0),
-                TilePosition { x: tx, y: ty },
-                Assembler {
-                    production_timer: 0.0,
-                    interval,
-                    recipe_id: mine_recipe,
-                },
-                Active(true),
-            ))
-            .id();
+        let mut e = commands.spawn((
+            Miner,
+            Building {
+                kind: def.id.clone(),
+                name: def.name.clone(),
+            },
+            Inventory::new(),
+            OccupiedTiles(footprint),
+            Transform::from_xyz(cx, cy, 2.0),
+            TilePosition { x: tx, y: ty },
+            Assembler {
+                production_timer: 0.0,
+                interval,
+                recipe_id: mine_recipe,
+            },
+            Active(true),
+        ));
+        if def.power_consumption > 0.0 { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
         return;
     }
 
@@ -1088,6 +1089,10 @@ pub fn handle_build_click(
         Inventory::new()
     };
 
+    let do_power_consumer = def.power_consumption > 0.0;
+    let do_power_producer = def.power_generation > 0.0;
+    let do_power_pole = def.power_pole_range > 0.0;
+
     if def.id == "assembler" || def.id == "furnace" {
         let recipe_id = if def.id == "furnace" {
             "iron_plate"
@@ -1095,7 +1100,7 @@ pub fn handle_build_click(
             "ammo_craft"
         };
         let interval = def.production_interval.unwrap_or(2.0);
-        commands.spawn((
+        let mut e = commands.spawn((
             base,
             Assembler {
                 production_timer: 0.0,
@@ -1104,9 +1109,12 @@ pub fn handle_build_click(
             },
             inv,
         ));
+        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
+        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
+        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
     } else if def.id == "turret" {
         let stats = def.combat.as_ref().expect("turret def missing combat");
-        commands.spawn((
+        let mut e = commands.spawn((
             base,
             inv,
             TurretCombat {
@@ -1117,10 +1125,16 @@ pub fn handle_build_click(
                 projectile_speed: stats.projectile_speed,
             },
         ));
+        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
+        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
+        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
     } else if def.id == "storage" {
-        commands.spawn((base, inv, Storage));
+        let mut e = commands.spawn((base, inv, Storage));
+        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
+        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
+        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
     } else if def.id == "farm" {
-        commands.spawn((
+        let mut e = commands.spawn((
             base,
             inv,
             Farm {
@@ -1128,7 +1142,13 @@ pub fn handle_build_click(
                 crop_types: vec!["wheat".to_string(), "wood".to_string()],
             },
         ));
+        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
+        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
+        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
     } else {
-        commands.spawn((base, inv));
+        let mut e = commands.spawn((base, inv));
+        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
+        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
+        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
     }
 }

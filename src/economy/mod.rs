@@ -5,6 +5,7 @@ pub mod components;
 pub mod inspect;
 pub mod menu;
 pub mod placement;
+pub mod power;
 pub mod production;
 pub mod recipe;
 pub mod resource;
@@ -68,6 +69,7 @@ impl Plugin for EconomyPlugin {
         app.insert_resource(menu_def);
 
         app.init_resource::<SpatialRegistry>();
+        app.init_resource::<power::PowerGrid>();
         app.init_resource::<components::BuildMode>();
         app.init_resource::<components::BeltDirection>();
         app.init_resource::<components::BuildPreview>();
@@ -109,6 +111,14 @@ impl Plugin for EconomyPlugin {
         app.add_systems(
             PreUpdate,
             spatial::sync_spatial_registry.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            PreUpdate,
+            power::detect_power_changes.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            PreUpdate,
+            power::rebuild_power_grid.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(
             Update,
@@ -228,6 +238,7 @@ impl Plugin for EconomyPlugin {
                 inspect::update_panel_stats,
                 inspect::update_panel_hp,
                 inspect::update_panel_alerts,
+                inspect::update_panel_power,
                 inspect::update_farm_crop_text,
                 inspect::update_farm_cultivator_count,
             )

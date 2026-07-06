@@ -3,6 +3,10 @@ label = "Production"
 items = ["miner", "furnace", "assembler"]
 
 [[menu]]
+label = "Énergie"
+items = ["burner_generator", "power_pole"]
+
+[[menu]]
 label = "Agriculture"
 items = ["farm"]
 

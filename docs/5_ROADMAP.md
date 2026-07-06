@@ -13,11 +13,11 @@
 
 ### Économie & Production
 - [x] **Ressources cultivables** (note #10) : agriculture, fermes, cultivateurs, cultures (blé/bois), récolte, livraison, spirale
-- [ ] **Arbre de technologies** (note #12) : `data/techs.toml`, déblocages progressifs de recettes et QoL
-- [ ] **Système d'électricité** (note #14) : réseau électrique, générateurs, consommateurs, coupures
+- [x] **Système Découverte + Archive** : `data/discoveries.toml`, compteur de crafts par bâtiment, découvertes fragiles, Archive pérennise
+- [x] **Recettes arborescentes** : 15 ressources sur 6 niveaux (Ore → Plate → Gear → Motor → Drivetrain, etc.)
+- [x] **Système d'électricité** (note #14) : réseau électrique, poteaux, générateurs, consommateurs, section POWER inspect
 - [ ] **Belts souterrains / aériens** (note #15) : variantes de belts passant sous/par-dessus les autres bâtiments
 - [ ] **Niveaux de bâtiments** (Miner II, Assembler III, etc.)
-- [ ] **Recettes arborescentes** : inputs/outputs multiples, temps, sélecteurs
 
 ### Map & Monde
 - [ ] **Chunks** : découpage en chunks 32×32, loading/unloading
@@ -77,7 +77,7 @@ Références croisées avec `docs/00_note.md` :
 | 9 | Décors map | 1B |
 | 10 | Ressources cultivables | 2 |
 | 11 | + de décors (doublon #9) | 1B |
-| 12 | Arbre de technologies | 2 |
+| 12 | Arbre de technologies (→ remplacé par Découverte+Archive) | 2 ✅ |
 | 13 | HQ indestructible | 1A |
 | 14 | Électricité | 2 |
 | 15 | Belts souterrain/aérien | 2 |

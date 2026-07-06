@@ -9,9 +9,9 @@ use crate::economy::components::{
     BuildingTitleText, CapacityBarFill, CapacityBarText, CloseButton, ConnectionRowText,
     DeconstructMode, DragHandle, FarmCropSelectButton, FarmCropText, FarmCultivatorCountText,
     FarmRecruitButton, FlowInputText, FlowOutputText, HpBarFill, HpText, PanelModal, PanelOverlay,
-    ProgressBarBg, ProgressBarFill, RecipeCategoryLabel, RecipeChangeButton, RecipeNameText,
-    RecipeSelectorItem, RecipeSelectorRoot, ResourceDeposit, Sorter, SorterInvertButton,
-    SorterResourceButton, StatRowText, StatusText, UiIsBlocking,
+    PowerConsumer, PowerStatusText, ProgressBarBg, ProgressBarFill, RecipeCategoryLabel,
+    RecipeChangeButton, RecipeNameText, RecipeSelectorItem, RecipeSelectorRoot, ResourceDeposit,
+    Sorter, SorterInvertButton, SorterResourceButton, StatRowText, StatusText, UiIsBlocking,
 };
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::ResourceId;
@@ -388,6 +388,15 @@ fn spawn_panel_ui(
                                         },
                                     ));
                                 }
+                            });
+
+                            spawn_section(right, "POWER", |sec| {
+                                sec.spawn((
+                                    PowerStatusText,
+                                    Text::new("Power: --"),
+                                    TextFont::from_font_size(11.0),
+                                    TextColor(TEXT_SECONDARY),
+                                ));
                             });
 
                             if show_recipes {
@@ -1116,6 +1125,23 @@ pub fn update_panel_alerts(
             at.0 = alerts.join("\n");
         }
     }
+}
+
+pub fn update_panel_power(
+    panel: Res<BuildingPanel>,
+    power_query: Query<Option<&PowerConsumer>>,
+    mut power_text: Query<&mut Text, With<PowerStatusText>>,
+) {
+    let Some(inspected) = panel.inspected else { return };
+    let Ok(power) = power_query.get(inspected) else { return };
+    let Ok(mut pt) = power_text.single_mut() else { return };
+
+    let msg = match power {
+        Some(pc) if pc.satisfied => format!("Power: OK ({:.0} kW)", pc.draw),
+        Some(_) => "Power: NO POWER".to_string(),
+        None => "Power: --".to_string(),
+    };
+    pt.0 = msg;
 }
 
 // ── Click detection ──
