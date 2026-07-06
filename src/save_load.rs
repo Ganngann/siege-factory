@@ -25,6 +25,15 @@ use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid, Deposit};
 use crate::rendering::{ShapeCache, TextureCache};
 use crate::unit::{Soldier, Worker, WorkerState};
 
+macro_rules! load_data {
+    ($buf:expr) => {
+        match &$buf.data {
+            Some(d) => d,
+            None => return,
+        }
+    };
+}
+
 // ── Save file path ──
 
 fn save_dir() -> PathBuf {
@@ -507,10 +516,7 @@ fn load_chunks(
     textures: Res<TextureCache>,
     mut commands: Commands,
 ) {
-    let data = match &buf.data {
-        Some(d) => d,
-        None => return,
-    };
+    let data = load_data!(buf);
     chunk_grid.clear();
     chunk_grid.set_seed(data.game_seed);
     for ((cx, cy), deposits) in &data.chunk_deposits {
@@ -546,53 +552,41 @@ fn load_chunks(
     }
 }
 
+fn spawn_camera(commands: &mut Commands, transform: Transform) {
+    commands.spawn((
+        Camera2d,
+        bevy::ui::IsDefaultUiCamera,
+        transform,
+        bevy_pancam::PanCam {
+            grab_buttons: vec![MouseButton::Middle],
+            speed: 500.0,
+            min_scale: 0.3,
+            max_scale: 3.0,
+            ..default()
+        },
+    ));
+}
+
 fn spawn_fresh_camera(mut commands: Commands, cfg: Res<MapConfig>, buf: Res<LoadBuffer>) {
     if buf.data.is_some() {
         return;
     }
     let (hx, hy) = cfg.player_start_position;
-    commands.spawn((
-        Camera2d,
-        bevy::ui::IsDefaultUiCamera,
-        {
-            let pos = tile_to_world(hx, hy, cfg.tile_size);
-            Transform::from_xyz(pos.x, pos.y, 100.0)
-        },
-        bevy_pancam::PanCam {
-            grab_buttons: vec![MouseButton::Middle],
-            speed: 500.0,
-            min_scale: 0.3,
-            max_scale: 3.0,
-            ..default()
-        },
-    ));
+    let pos = tile_to_world(hx, hy, cfg.tile_size);
+    spawn_camera(&mut commands, Transform::from_xyz(pos.x, pos.y, 100.0));
 }
 
 fn load_camera(buf: Res<LoadBuffer>, mut commands: Commands) {
-    let data = match &buf.data {
-        Some(d) => d,
-        None => return,
-    };
-    commands.spawn((
-        Camera2d,
-        bevy::ui::IsDefaultUiCamera,
+    let data = load_data!(buf);
+    spawn_camera(
+        &mut commands,
         Transform::from_xyz(data.camera.x, data.camera.y, 100.0)
             .with_scale(Vec3::splat(data.camera.scale)),
-        bevy_pancam::PanCam {
-            grab_buttons: vec![MouseButton::Middle],
-            speed: 500.0,
-            min_scale: 0.3,
-            max_scale: 3.0,
-            ..default()
-        },
-    ));
+    );
 }
 
 fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>, registry: Res<BuildingRegistry>) {
-    let data = match &buf.data {
-        Some(d) => d,
-        None => return,
-    };
+    let data = load_data!(buf);
     let tile_size = cfg.tile_size;
 
     for bs in &data.buildings {
@@ -786,10 +780,7 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
 }
 
 fn load_enemies(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>) {
-    let data = match &buf.data {
-        Some(d) => d,
-        None => return,
-    };
+    let data = load_data!(buf);
     for es in &data.enemies {
         let entity = commands
             .spawn((
@@ -822,10 +813,7 @@ fn load_enemies(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig
 }
 
 fn load_units(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>) {
-    let data = match &buf.data {
-        Some(d) => d,
-        None => return,
-    };
+    let data = load_data!(buf);
     for us in &data.units {
         if us.kind == "worker" {
             commands.spawn((

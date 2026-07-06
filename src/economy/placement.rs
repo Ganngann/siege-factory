@@ -12,10 +12,9 @@ use crate::economy::components::{
 };
 
 use crate::economy::resource::{Inventory, ResourceId};
-use crate::core::utils::world_to_tile;
 use crate::economy::spatial::SpatialRegistry;
 use crate::events::{BeltDragCompleted, DeconstructAreaEvent, DespawnDeposit};
-use crate::map::components::{HoveredTile, TilePosition};
+use crate::map::components::{HoveredTile, TilePosition, cursor_to_tile};
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 use crate::rendering::{PreviewMaterials, ShapeCache, direction_arrow};
@@ -239,19 +238,9 @@ pub fn handle_deconstruct_click_v2(
         return;
     }
 
-    let tile_size = cfg.tile_size;
-    let Ok(window) = windows.single() else { return };
-    let Ok((cam, cam_transform)) = camera.single() else {
+    let Some(TilePosition { x: tx, y: ty }) = cursor_to_tile(&windows, &camera, &cfg) else {
         return;
     };
-    let Some(cursor) = window.cursor_position() else {
-        return;
-    };
-    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else {
-        return;
-    };
-
-    let (tx, ty) = world_to_tile(world_pos, tile_size);
 
     let Some(entity) = spatial.at(tx, ty) else {
         return;
@@ -618,20 +607,10 @@ pub fn track_belt_drag(
         drag.start_coord = None;
         return;
     }
-    let tile_size = cfg.tile_size;
 
-    let Ok(window) = windows.single() else { return };
-    let Ok((cam, cam_transform)) = camera.single() else {
+    let Some(TilePosition { x: tx, y: ty }) = cursor_to_tile(&windows, &camera, &cfg) else {
         return;
     };
-    let Some(cursor) = window.cursor_position() else {
-        return;
-    };
-    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else {
-        return;
-    };
-
-    let (tx, ty) = world_to_tile(world_pos, tile_size);
 
     if buttons.just_pressed(bindings.mouse("place")) {
         let has_belt = belt_read.iter().any(|(pos, _)| pos.x == tx && pos.y == ty);
@@ -751,12 +730,6 @@ pub fn on_belt_drag_completed(
             let items: Vec<Option<crate::economy::belt::ItemOnBelt>> =
                 vec![None; num_slots as usize];
             let slot_sprites: Vec<Option<Entity>> = vec![None; num_slots as usize];
-            let angle = match dir {
-                Direction::East => 0.0,
-                Direction::North => std::f32::consts::FRAC_PI_2,
-                Direction::West => std::f32::consts::PI,
-                Direction::South => -std::f32::consts::FRAC_PI_2,
-            };
 
             let belt_components = (
                 Building {
@@ -773,7 +746,7 @@ pub fn on_belt_drag_completed(
                     slot_positions,
                     speed,
                 },
-                Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle)),
+                Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(dir.to_angle())),
             );
 
             if def.id == "splitter" {
@@ -841,20 +814,9 @@ pub fn track_deconstruct_drag(
         return;
     }
 
-    let tile_size = cfg.tile_size;
-
-    let Ok(window) = windows.single() else { return };
-    let Ok((cam, cam_transform)) = camera.single() else {
+    let Some(TilePosition { x: tx, y: ty }) = cursor_to_tile(&windows, &camera, &cfg) else {
         return;
     };
-    let Some(cursor) = window.cursor_position() else {
-        return;
-    };
-    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else {
-        return;
-    };
-
-    let (tx, ty) = world_to_tile(world_pos, tile_size);
 
     if bindings.just_pressed("place", &keys, &buttons) && drag.start_coord.is_none() {
         drag.start_coord = Some((tx, ty));
@@ -958,18 +920,9 @@ pub fn handle_build_click(
         return;
     }
 
-    let Ok(window) = windows.single() else { return };
-    let Ok((cam, cam_transform)) = camera.single() else {
+    let Some(TilePosition { x: tx, y: ty }) = cursor_to_tile(&windows, &camera, &cfg) else {
         return;
     };
-    let Some(cursor) = window.cursor_position() else {
-        return;
-    };
-    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else {
-        return;
-    };
-
-    let (tx, ty) = world_to_tile(world_pos, tile_size);
 
     let def = match registry.get(kind) {
         Some(d) => d,

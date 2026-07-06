@@ -112,7 +112,7 @@ fn recenter_on_player(
 fn update_hovered_tile(
     mut hovered: ResMut<HoveredTile>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &Transform)>,
+    camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
     ui_blocking: Res<UiIsBlocking>,
 ) {
@@ -120,7 +120,7 @@ fn update_hovered_tile(
         hovered.0 = None;
         return;
     }
-    hovered.0 = cursor_to_tile(&windows, &camera, cfg.tile_size);
+    hovered.0 = cursor_to_tile(&windows, &camera, &cfg);
 }
 
 pub fn build_chunk_mesh(cx: i32, cy: i32, tile_size: f32) -> (Mesh, Mesh) {

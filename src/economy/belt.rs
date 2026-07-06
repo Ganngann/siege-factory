@@ -1,3 +1,4 @@
+use bevy::ecs::query::QueryData;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -43,6 +44,26 @@ pub fn compute_slot_positions(
         .collect()
 }
 
+fn build_pos_map<T: QueryData>(query: &Query<(Entity, &TilePosition, T)>) -> HashMap<(i32, i32), Entity> {
+    query
+        .iter()
+        .map(|(e, pos, _)| ((pos.x, pos.y), e))
+        .collect()
+}
+
+fn transfer_item(
+    src: &mut [Option<ItemOnBelt>],
+    dst: &mut [Option<ItemOnBelt>],
+    src_idx: usize,
+    dst_idx: usize,
+    slot_duration: f32,
+) {
+    if let Some(mut item) = src[src_idx].take() {
+        item.acc -= slot_duration;
+        dst[dst_idx] = Some(item);
+    }
+}
+
 pub fn advance_belt_slots(
     time: Res<Time<Fixed>>,
     spatial: Res<SpatialRegistry>,
@@ -55,44 +76,39 @@ pub fn advance_belt_slots(
     sorter_query: Query<(Entity, &TilePosition, &Sorter)>,
 ) {
     let dt = time.delta_secs();
-    let belt_map: HashMap<(i32, i32), Entity> = belt_query
-        .iter()
-        .map(|(e, pos, _)| ((pos.x, pos.y), e))
-        .collect();
-    let splitter_map: HashMap<(i32, i32), Entity> = splitter_query
-        .iter()
-        .map(|(e, pos, _)| ((pos.x, pos.y), e))
-        .collect();
-    let sorter_map: HashMap<(i32, i32), Entity> = sorter_query
-        .iter()
-        .map(|(e, pos, _)| ((pos.x, pos.y), e))
-        .collect();
+    let belt_map = build_pos_map(&belt_query);
+    let splitter_map = build_pos_map(&splitter_query);
+    let sorter_map = build_pos_map(&sorter_query);
 
-    let belt_data: Vec<(Entity, TilePosition, Direction, f32, usize)> = belt_query
+    let belt_data: Vec<(Entity, TilePosition, Direction, f32, usize, f32)> = belt_query
         .iter()
-        .map(|(e, pos, bs)| (e, *pos, bs.direction, bs.speed, bs.items.len()))
+        .map(|(e, pos, bs)| {
+            let slot_duration = 1.0 / (bs.speed * bs.items.len() as f32);
+            (e, *pos, bs.direction, bs.speed, bs.items.len(), slot_duration)
+        })
         .collect();
 
     // Accumulate time on all items
-    for (_, _, mut bs) in belt_query.iter_mut() {
-        let slot_duration = 1.0 / (bs.speed * bs.items.len() as f32);
-        for item in &mut bs.items {
-            if let Some(item) = item {
-                item.acc = (item.acc + dt).min(slot_duration);
+    for (belt_entity, _, _, _, _, slot_duration) in &belt_data {
+        if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
+            for item in &mut bs.items {
+                if let Some(item) = item {
+                    item.acc = (item.acc + dt).min(*slot_duration);
+                }
             }
         }
     }
 
     // Internal advancement: last → first within each belt
-    for (belt_entity, _, _, speed, n_slots) in &belt_data {
-        let slot_duration = 1.0 / (speed * *n_slots as f32);
+    for (belt_entity, _, _, _, _, slot_duration) in &belt_data {
         if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
             for i in (0..bs.items.len() - 1).rev() {
                 if let Some(ref item) = bs.items[i] {
-                    if item.acc >= slot_duration && bs.items[i + 1].is_none() {
-                        let mut moved = bs.items[i].take().unwrap();
-                        moved.acc -= slot_duration;
-                        bs.items[i + 1] = Some(moved);
+                    if item.acc >= *slot_duration && bs.items[i + 1].is_none() {
+                        let (left, right) = bs.items.split_at_mut(i + 1);
+                        let mut item = left[i].take().unwrap();
+                        item.acc -= *slot_duration;
+                        right[0] = Some(item);
                     }
                 }
             }
@@ -100,8 +116,7 @@ pub fn advance_belt_slots(
     }
 
     // Cross-belt transfers (belt→belt + belt→splitter/sorter + belt→building)
-    for (belt_entity, belt_pos, dir, speed, n_slots) in &belt_data {
-        let slot_duration = 1.0 / (speed * *n_slots as f32);
+    for (belt_entity, belt_pos, dir, _, n_slots, slot_duration) in &belt_data {
         let (dx, dy) = dir.offset();
         let nx = belt_pos.x + dx;
         let ny = belt_pos.y + dy;
@@ -112,7 +127,7 @@ pub fn advance_belt_slots(
             if let Ok((_, _, bs)) = belt_query.get(*belt_entity) {
                 let ready = bs.items[last]
                     .as_ref()
-                    .map(|item| item.acc >= slot_duration)
+                    .map(|item| item.acc >= *slot_duration)
                     .unwrap_or(false);
                 if !ready {
                     continue;
@@ -185,9 +200,7 @@ pub fn advance_belt_slots(
                     };
                     if bs.items[last].is_some() {
                         if target_bs.items[0].is_none() {
-                            let mut moved = bs.items[last].take().unwrap();
-                            moved.acc -= slot_duration;
-                            target_bs.items[0] = Some(moved);
+                            transfer_item(&mut bs.items, &mut target_bs.items, last, 0, *slot_duration);
                             if let Ok((_, _, mut s)) = splitter_query.get_mut(*belt_entity) {
                                 s.counter = s.counter.wrapping_add(1);
                                 s.input_direction = input_dir;
@@ -242,9 +255,7 @@ pub fn advance_belt_slots(
                     {
                         if target_bs.items[0].is_none() {
                             if bs.items[last].is_some() {
-                                let mut moved = bs.items[last].take().unwrap();
-                                moved.acc -= slot_duration;
-                                target_bs.items[0] = Some(moved);
+                                transfer_item(&mut bs.items, &mut target_bs.items, last, 0, *slot_duration);
                             }
                         }
                     }
@@ -262,10 +273,8 @@ pub fn advance_belt_slots(
                 belt_query.get_many_mut([*belt_entity, next_belt])
             {
                 if let Some(ref item) = bs.items[last] {
-                    if item.acc >= slot_duration && next_bs.items[0].is_none() {
-                        let mut moved = bs.items[last].take().unwrap();
-                        moved.acc -= slot_duration;
-                        next_bs.items[0] = Some(moved);
+                    if item.acc >= *slot_duration && next_bs.items[0].is_none() {
+                        transfer_item(&mut bs.items, &mut next_bs.items, last, 0, *slot_duration);
                     }
                 }
             }
@@ -273,7 +282,7 @@ pub fn advance_belt_slots(
             // Building deposit (belt→building inventory)
             if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
                 if let Some(ref item) = bs.items[last] {
-                    if item.acc >= slot_duration {
+                    if item.acc >= *slot_duration {
                         let resource = item.resource_id.clone();
                         if let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity) {
                             if !inv.is_full() {

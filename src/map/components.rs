@@ -1,3 +1,4 @@
+use crate::map::config::MapConfig;
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -24,17 +25,16 @@ pub struct HoveredTile(pub Option<TilePosition>);
 
 pub fn cursor_to_tile(
     windows: &Query<&Window>,
-    camera: &Query<(&Camera, &Transform)>,
-    tile_size: f32,
+    camera: &Query<(&Camera, &GlobalTransform)>,
+    cfg: &MapConfig,
 ) -> Option<TilePosition> {
     let window = windows.single().ok()?;
     let cursor = window.cursor_position()?;
     let (cam, cam_tf) = camera.single().ok()?;
-    let world_pos = cam
-        .viewport_to_world_2d(&GlobalTransform::from(*cam_tf), cursor)
-        .ok()?;
-    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    let world_pos = cam.viewport_to_world_2d(cam_tf, cursor).ok()?;
+    let ts = cfg.tile_size;
+    let tile_x = ((world_pos.x + ts / 2.0) / ts).floor() as i32;
+    let tile_y = ((world_pos.y + ts / 2.0) / ts).floor() as i32;
     Some(TilePosition {
         x: tile_x,
         y: tile_y,

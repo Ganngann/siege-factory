@@ -17,6 +17,9 @@ use bevy::prelude::*;
 const PANEL_HEIGHT: f32 = 90.0;
 const ITEM_WIDTH: f32 = 90.0;
 const ITEM_HEIGHT: f32 = 70.0;
+const SCROLL_BUTTON_WIDTH: f32 = 24.0;
+const BACK_BUTTON_WIDTH: f32 = 60.0;
+const BORDER_WIDTH: f32 = 2.0;
 
 fn slot_key(index: usize) -> &'static str {
     match index {
@@ -138,12 +141,12 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                             BackButton,
                             Button,
                             Node {
-                                width: Val::Px(60.0),
+                                width: Val::Px(BACK_BUTTON_WIDTH),
                                 height: Val::Px(ITEM_HEIGHT),
                                 flex_direction: FlexDirection::Column,
                                 align_items: AlignItems::Center,
                                 justify_content: JustifyContent::Center,
-                                border: UiRect::all(Val::Px(2.0)),
+                                border: UiRect::all(Val::Px(BORDER_WIDTH)),
                                 ..default()
                             },
                             BackgroundColor(Color::srgb(0.3, 0.3, 0.4)),
@@ -159,12 +162,12 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                     } else {
                         row.spawn((
                             Node {
-                                width: Val::Px(60.0),
+                                width: Val::Px(BACK_BUTTON_WIDTH),
                                 height: Val::Px(ITEM_HEIGHT),
                                 flex_direction: FlexDirection::Column,
                                 align_items: AlignItems::Center,
                                 justify_content: JustifyContent::Center,
-                                border: UiRect::all(Val::Px(2.0)),
+                                border: UiRect::all(Val::Px(BORDER_WIDTH)),
                                 ..default()
                             },
                             BackgroundColor(Color::srgba(0.2, 0.2, 0.25, 0.5)),
@@ -185,7 +188,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                             ScrollButton(-1),
                             Button,
                             Node {
-                                width: Val::Px(24.0),
+                                width: Val::Px(SCROLL_BUTTON_WIDTH),
                                 height: Val::Px(ITEM_HEIGHT),
                                 align_items: AlignItems::Center,
                                 justify_content: JustifyContent::Center,
@@ -204,7 +207,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                         });
                     } else {
                         row.spawn(Node {
-                            width: Val::Px(24.0),
+                            width: Val::Px(SCROLL_BUTTON_WIDTH),
                             ..default()
                         });
                     }
@@ -227,7 +230,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                                 flex_direction: FlexDirection::Column,
                                 align_items: AlignItems::Center,
                                 justify_content: JustifyContent::Center,
-                                border: UiRect::all(Val::Px(2.0)),
+                                border: UiRect::all(Val::Px(BORDER_WIDTH)),
                                 ..default()
                             },
                             BackgroundColor(bg_color),
@@ -273,7 +276,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                             ScrollButton(1),
                             Button,
                             Node {
-                                width: Val::Px(24.0),
+                                width: Val::Px(SCROLL_BUTTON_WIDTH),
                                 height: Val::Px(ITEM_HEIGHT),
                                 align_items: AlignItems::Center,
                                 justify_content: JustifyContent::Center,
@@ -292,7 +295,7 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                         });
                     } else {
                         row.spawn(Node {
-                            width: Val::Px(24.0),
+                            width: Val::Px(SCROLL_BUTTON_WIDTH),
                             ..default()
                         });
                     }

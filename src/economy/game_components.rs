@@ -58,6 +58,22 @@ pub enum Direction {
 }
 
 impl Direction {
+    pub const ALL: [Direction; 4] = [
+        Direction::East,
+        Direction::North,
+        Direction::West,
+        Direction::South,
+    ];
+
+    pub fn to_angle(&self) -> f32 {
+        match self {
+            Direction::East => 0.0,
+            Direction::North => std::f32::consts::FRAC_PI_2,
+            Direction::West => std::f32::consts::PI,
+            Direction::South => -std::f32::consts::FRAC_PI_2,
+        }
+    }
+
     pub fn offset(&self) -> (i32, i32) {
         match self {
             Direction::East => (1, 0),

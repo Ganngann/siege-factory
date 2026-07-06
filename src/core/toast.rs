@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+const TOAST_LIFETIME: f32 = 3.0;
+
 #[derive(Component)]
 pub struct ToastMessage {
     pub timer: f32,
@@ -16,7 +18,7 @@ pub fn toast_system(
 ) {
     for msg in queue.0.drain(..) {
         commands.spawn((
-            ToastMessage { timer: 3.0 },
+            ToastMessage { timer: TOAST_LIFETIME },
             Text::new(msg),
             TextFont::from_font_size(16.0),
             TextColor(Color::srgb(1.0, 0.85, 0.3)),
@@ -33,7 +35,7 @@ pub fn toast_system(
     for (entity, mut msg) in toasts.iter_mut() {
         msg.timer -= time.delta_secs();
         if msg.timer <= 0.0 {
-            commands.entity(entity).despawn();
+            commands.entity(entity).try_despawn();
         }
     }
 }

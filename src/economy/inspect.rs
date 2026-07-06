@@ -17,12 +17,12 @@ use crate::economy::components::{
 };
 use crate::economy::discovery::GlobalArchive;
 use crate::economy::recipe::RecipeRegistry;
-use crate::core::utils::{tile_to_world, world_to_tile};
+use crate::core::utils::tile_to_world;
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::unit_config::UnitConfig;
 use crate::enemy::components::Health;
-use crate::map::components::TilePosition;
+use crate::map::components::{TilePosition, cursor_to_tile};
 use crate::map::config::MapConfig;
 use bevy::prelude::*;
 
@@ -30,6 +30,18 @@ use crate::economy::window::{
     spawn_window, ACCENT, BAR_BG, BG_SECTION, BTN_ACTIVE, BTN_CLOSE, BTN_INACTIVE,
     HP_GREEN, TEXT_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_YELLOW,
 };
+
+const MODAL_WIDTH: f32 = 800.0;
+const MODAL_HEIGHT: f32 = 560.0;
+const DEPOSIT_MODAL_WIDTH: f32 = 400.0;
+const DEPOSIT_MODAL_HEIGHT: f32 = 200.0;
+const RECIPE_SELECTOR_WIDTH: f32 = 420.0;
+const RECIPE_SELECTOR_HEIGHT: f32 = 300.0;
+
+const SECTION_FONT_SIZE: f32 = 11.0;
+const BAR_HEIGHT: f32 = 12.0;
+const CLOSE_BUTTON_SIZE: f32 = 26.0;
+const CLOSE_BUTTON_FONT: f32 = 14.0;
 
 // ── Open / close panel ──
 
@@ -74,7 +86,7 @@ fn open_panel(
     panel.inspected = None;
     panel.dirty = false;
 
-    let modal_size = Vec2::new(800.0, 560.0);
+    let modal_size = Vec2::new(MODAL_WIDTH, MODAL_HEIGHT);
     let show_recipes = kind == "assembler"
         || kind == "furnace"
         || kind == "blast_furnace"
@@ -239,7 +251,7 @@ fn spawn_panel_ui(
                                 sec.spawn((
                                     Node {
                                         width: Val::Percent(100.0),
-                                        height: Val::Px(12.0),
+                                        height: Val::Px(BAR_HEIGHT),
                                         flex_direction: FlexDirection::Row,
                                         ..default()
                                     },
@@ -259,7 +271,7 @@ fn spawn_panel_ui(
                                 sec.spawn((
                                     CapacityBarText,
                                     Text::new("Capacity: 0/0"),
-                                    TextFont::from_font_size(11.0),
+                                    TextFont::from_font_size(SECTION_FONT_SIZE),
                                     TextColor(TEXT_SECONDARY),
                                     Node {
                                         margin: UiRect::vertical(Val::Px(4.0)),
@@ -312,7 +324,7 @@ fn spawn_panel_ui(
                                 sec.spawn((
                                     ConnectionRowText,
                                     Text::new("No connections"),
-                                    TextFont::from_font_size(11.0),
+                                    TextFont::from_font_size(SECTION_FONT_SIZE),
                                     TextColor(TEXT_SECONDARY),
                                 ));
                             });
@@ -336,7 +348,7 @@ fn spawn_panel_ui(
                                     sec.spawn((
                                         StatRowText,
                                         Text::new(line),
-                                        TextFont::from_font_size(11.0),
+                                        TextFont::from_font_size(SECTION_FONT_SIZE),
                                         TextColor(TEXT_SECONDARY),
                                         Node {
                                             margin: UiRect::bottom(Val::Px(1.0)),
@@ -350,7 +362,7 @@ fn spawn_panel_ui(
                                 sec.spawn((
                                     PowerStatusText,
                                     Text::new("Power: --"),
-                                    TextFont::from_font_size(11.0),
+                                    TextFont::from_font_size(SECTION_FONT_SIZE),
                                     TextColor(TEXT_SECONDARY),
                                 ));
                             });
@@ -382,7 +394,7 @@ fn spawn_panel_ui(
                                     .with_children(|btn| {
                                         btn.spawn((
                                             Text::new("[Change Recipe]"),
-                                            TextFont::from_font_size(11.0),
+                                            TextFont::from_font_size(SECTION_FONT_SIZE),
                                             TextColor(ACCENT),
                                         ));
                                     });
@@ -423,7 +435,7 @@ fn spawn_panel_ui(
                                             |btn| {
                                                 btn.spawn((
                                                     Text::new(crop_type),
-                                                    TextFont::from_font_size(11.0),
+                                                    TextFont::from_font_size(SECTION_FONT_SIZE),
                                                     TextColor(TEXT_SECONDARY),
                                                 ));
                                             },
@@ -445,7 +457,7 @@ fn spawn_panel_ui(
                                         Button,
                                         Node {
                                             width: Val::Px(160.0),
-                                            height: Val::Px(26.0),
+                                            height: Val::Px(CLOSE_BUTTON_SIZE),
                                             align_items: AlignItems::Center,
                                             justify_content: JustifyContent::Center,
                                             ..default()
@@ -469,7 +481,7 @@ fn spawn_panel_ui(
                                         Button,
                                         Node {
                                             width: Val::Percent(100.0),
-                                            height: Val::Px(26.0),
+                                            height: Val::Px(CLOSE_BUTTON_SIZE),
                                             align_items: AlignItems::Center,
                                             justify_content: JustifyContent::Center,
                                             margin: UiRect::bottom(Val::Px(4.0)),
@@ -513,7 +525,7 @@ fn spawn_panel_ui(
                                             |btn| {
                                                 btn.spawn((
                                                     Text::new(res),
-                                                    TextFont::from_font_size(11.0),
+                                                    TextFont::from_font_size(SECTION_FONT_SIZE),
                                                     TextColor(TEXT_SECONDARY),
                                                 ));
                                             },
@@ -526,7 +538,7 @@ fn spawn_panel_ui(
                                 sec.spawn((
                                     Node {
                                         width: Val::Percent(100.0),
-                                        height: Val::Px(12.0),
+                                        height: Val::Px(BAR_HEIGHT),
                                         ..default()
                                     },
                                     BackgroundColor(BAR_BG),
@@ -545,7 +557,7 @@ fn spawn_panel_ui(
                                 sec.spawn((
                                     HpText,
                                     Text::new("HP: --/--"),
-                                    TextFont::from_font_size(11.0),
+                                    TextFont::from_font_size(SECTION_FONT_SIZE),
                                     TextColor(TEXT_SECONDARY),
                                     Node {
                                         margin: UiRect::top(Val::Px(4.0)),
@@ -558,7 +570,7 @@ fn spawn_panel_ui(
                                 sec.spawn((
                                     AlertText,
                                     Text::new("No alerts"),
-                                    TextFont::from_font_size(11.0),
+                                    TextFont::from_font_size(SECTION_FONT_SIZE),
                                     TextColor(TEXT_SECONDARY),
                                 ));
                             });
@@ -614,10 +626,10 @@ fn spawn_deposit_panel(
     let root = spawn_window(
         commands,
         &format!("Resource Deposit: {}", resource_name),
-        400.0,
-        200.0,
-        (1280.0 - 400.0) / 2.0,
-        (720.0 - 200.0) / 2.0,
+        DEPOSIT_MODAL_WIDTH,
+        DEPOSIT_MODAL_HEIGHT,
+        (1280.0 - DEPOSIT_MODAL_WIDTH) / 2.0,
+        (720.0 - DEPOSIT_MODAL_HEIGHT) / 2.0,
         None,
         |parent| {
             parent
@@ -631,7 +643,7 @@ fn spawn_deposit_panel(
                 .with_children(|body| {
                     body.spawn((
                         Text::new(format!("Resource: {}", resource_name)),
-                        TextFont::from_font_size(14.0),
+                        TextFont::from_font_size(CLOSE_BUTTON_FONT),
                         TextColor(TEXT_PRIMARY),
                         Node {
                             margin: UiRect::bottom(Val::Px(8.0)),
@@ -640,7 +652,7 @@ fn spawn_deposit_panel(
                     ));
                     body.spawn((
                         Text::new(format!("Remaining: {}", deposit.amount)),
-                        TextFont::from_font_size(14.0),
+                        TextFont::from_font_size(CLOSE_BUTTON_FONT),
                         TextColor(TEXT_GREEN),
                     ));
                 });
@@ -1067,19 +1079,9 @@ pub fn building_inspect_click(
         return;
     }
 
-    let tile_size = cfg.tile_size;
-    let Ok(window) = windows.single() else { return };
-    let Ok((cam, cam_transform)) = camera.single() else {
+    let Some(TilePosition { x: tile_x, y: tile_y }) = cursor_to_tile(&windows, &camera, &cfg) else {
         return;
     };
-    let Some(cursor) = window.cursor_position() else {
-        return;
-    };
-    let Ok(world_pos) = cam.viewport_to_world_2d(cam_transform, cursor) else {
-        return;
-    };
-
-    let (tile_x, tile_y) = world_to_tile(world_pos, tile_size);
 
     let interact_range_sq = (3.0 * cfg.tile_size).powi(2);
 
@@ -1099,7 +1101,7 @@ pub fn building_inspect_click(
             .map(|o| o.0.clone())
             .unwrap_or_else(|| vec![(tile_x, tile_y)]);
         let in_proximity = footprint.iter().any(|(tx, ty)| {
-            let tile_center = tile_to_world(*tx, *ty, tile_size);
+            let tile_center = tile_to_world(*tx, *ty, cfg.tile_size);
             let (wx, wy) = (tile_center.x, tile_center.y);
             let dx = player_pos.0.x - wx;
             let dy = player_pos.0.y - wy;
@@ -1138,7 +1140,7 @@ pub fn building_inspect_click(
         }
 
         // Check proximity (deposit is single tile)
-        let tile_center = tile_to_world(pos.x, pos.y, tile_size);
+        let tile_center = tile_to_world(pos.x, pos.y, cfg.tile_size);
         let (wx, wy) = (tile_center.x, tile_center.y);
         let dx = player_pos.0.x - wx;
         let dy = player_pos.0.y - wy;
@@ -1180,7 +1182,7 @@ pub fn overlay_click_system(
     // If click inside the modal body → let the modal's own buttons handle it
     if let Ok((_node, transform)) = modal_query.single() {
         let center = transform.translation().truncate();
-        let modal_rect = Rect::from_center_size(center, Vec2::new(800.0, 560.0));
+        let modal_rect = Rect::from_center_size(center, Vec2::new(MODAL_WIDTH, MODAL_HEIGHT));
         if modal_rect.contains(cursor) {
             return;
         }
@@ -1341,11 +1343,11 @@ fn spawn_recipe_selector(
             RecipeSelectorRoot,
             Node {
                 position_type: PositionType::Absolute,
-                left: Val::Px(420.0),
+                left: Val::Px(RECIPE_SELECTOR_WIDTH),
                 top: Val::Px(20.0),
                 flex_direction: FlexDirection::Column,
                 width: Val::Px(360.0),
-                height: Val::Px(300.0),
+                height: Val::Px(RECIPE_SELECTOR_HEIGHT),
                 padding: UiRect::all(Val::Px(10.0)),
                 overflow: Overflow::clip(),
                 ..default()
@@ -1371,7 +1373,7 @@ fn spawn_recipe_selector(
                 .with_children(|title| {
                     title.spawn((
                         Text::new("Select Recipe"),
-                        TextFont::from_font_size(14.0),
+                        TextFont::from_font_size(CLOSE_BUTTON_FONT),
                         TextColor(TEXT_PRIMARY),
                     ));
                     title
@@ -1415,7 +1417,7 @@ fn spawn_recipe_selector(
                 parent.spawn((
                     RecipeCategoryLabel,
                     Text::new(format!("-- {} --", cat_name.to_uppercase())),
-                    TextFont::from_font_size(11.0),
+                    TextFont::from_font_size(SECTION_FONT_SIZE),
                     TextColor(TEXT_YELLOW),
                     Node {
                         margin: UiRect::vertical(Val::Px(4.0)),
@@ -1662,7 +1664,7 @@ pub fn drag_panel_system(
     };
     let panel_w = match node.width {
         Val::Px(v) => v,
-        _ => 800.0,
+        _ => MODAL_WIDTH,
     };
 
     let header_rect = Rect::new(
