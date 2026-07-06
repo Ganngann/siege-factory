@@ -51,3 +51,33 @@ category = "crafting"
 input = { iron_plate = 1 }
 output = { ammo = 1 }
 time_sec = 2.0
+
+[recipes.motor]
+category = "crafting"
+input = { gear = 1, steel = 2 }
+output = { motor = 1 }
+time_sec = 4.0
+
+[recipes.electronic_module]
+category = "crafting"
+input = { circuit = 1, steel = 1 }
+output = { electronic_module = 1 }
+time_sec = 3.0
+
+[recipes.drivetrain]
+category = "crafting"
+input = { gear = 2, motor = 1 }
+output = { drivetrain = 1 }
+time_sec = 5.0
+
+[recipes.machine_frame]
+category = "crafting"
+input = { steel = 2, motor = 1 }
+output = { machine_frame = 1 }
+time_sec = 6.0
+
+[recipes.targeting_computer]
+category = "crafting"
+input = { circuit = 2, electronic_module = 1 }
+output = { targeting_computer = 1 }
+time_sec = 6.0

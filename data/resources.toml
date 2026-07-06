@@ -61,6 +61,31 @@ name = "Wood"
 max_stack = 999
 color = "#8B5E3C"
 
+[resources.motor]
+name = "Motor"
+max_stack = 999
+color = "#AA8844"
+
+[resources.electronic_module]
+name = "Electronic Module"
+max_stack = 999
+color = "#66CC66"
+
+[resources.drivetrain]
+name = "Drivetrain"
+max_stack = 999
+color = "#886644"
+
+[resources.targeting_computer]
+name = "Targeting Computer"
+max_stack = 999
+color = "#CC6644"
+
+[resources.machine_frame]
+name = "Machine Frame"
+max_stack = 999
+color = "#8888AA"
+
 [resources.wheat]
 name = "Wheat"
 max_stack = 999

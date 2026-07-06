@@ -4,10 +4,10 @@ use crate::core::toast::ToastQueue;
 use crate::economy::belt::{BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
-    Direction, BuildMode, BeltDirection, BuildPreview, BeltDrag, DeconstructMode, DeconstructDrag,
-    Building, Miner, Assembler, ResourceDeposit, Ghost, HQ, OccupiedTiles,
-    TurretCombat, Storage, Splitter, Sorter, Active, UiIsBlocking,
-    PowerConsumer, PowerProducer, PowerPole,
+    Active, Archive, Assembler, BeltDirection, BeltDrag, BuildMode, BuildPreview, Building,
+    DeconstructDrag, DeconstructMode, Direction, DiscoveredRecipes, Ghost, HQ, Miner,
+    OccupiedTiles, PowerConsumer, PowerPole, PowerProducer, ProductionCounter, ResourceDeposit,
+    Sorter, Splitter, Storage, TurretCombat, UiIsBlocking,
 };
 
 use crate::economy::resource::{Inventory, ResourceId};
@@ -1038,6 +1038,8 @@ pub fn handle_build_click(
                 recipe_id: mine_recipe,
             },
             Active(true),
+            ProductionCounter::default(),
+            DiscoveredRecipes::default(),
         ));
         if def.power_consumption > 0.0 { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
         return;
@@ -1108,6 +1110,8 @@ pub fn handle_build_click(
                 recipe_id: recipe_id.to_string(),
             },
             inv,
+            ProductionCounter::default(),
+            DiscoveredRecipes::default(),
         ));
         if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
         if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
@@ -1141,7 +1145,14 @@ pub fn handle_build_click(
                 crop_index: 0,
                 crop_types: vec!["wheat".to_string(), "wood".to_string()],
             },
+            ProductionCounter::default(),
+            DiscoveredRecipes::default(),
         ));
+        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
+        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
+        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
+    } else if def.id == "archive" {
+        let mut e = commands.spawn((base, inv, Archive));
         if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
         if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
         if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }

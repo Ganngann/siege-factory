@@ -1,19 +1,24 @@
 use bevy::prelude::*;
 
-use crate::economy::components::{Active, Assembler, PowerConsumer};
+use crate::economy::components::{Active, Assembler, PowerConsumer, ProductionCounter};
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::Inventory;
 
 pub fn assembler_tick(
     time: Res<Time>,
     recipes: Res<RecipeRegistry>,
-    mut assembler_query: Query<(&mut Assembler, &mut Inventory, &Active, Option<&PowerConsumer>)>,
+    mut assembler_query: Query<(
+        &mut Assembler,
+        &mut Inventory,
+        &Active,
+        Option<&PowerConsumer>,
+        Option<&mut ProductionCounter>,
+    )>,
 ) {
-    for (mut assembler, mut inventory, active, power) in assembler_query.iter_mut() {
+    for (mut assembler, mut inventory, active, power, mut counter) in assembler_query.iter_mut() {
         if !active.0 {
             continue;
         }
-        // Check power: if building requires power and is not satisfied, skip
         if let Some(pc) = power {
             if !pc.satisfied {
                 continue;
@@ -24,7 +29,6 @@ pub fn assembler_tick(
             None => continue,
         };
 
-        // Check: enough inputs in inventory?
         let can_produce = recipe
             .input
             .iter()
@@ -36,14 +40,18 @@ pub fn assembler_tick(
 
         assembler.production_timer += time.delta_secs();
         if assembler.production_timer >= recipe.time_sec {
-            // Consume: remove inputs from inventory
             for (req_resource, req_amount) in &recipe.input {
                 inventory.remove(req_resource, *req_amount);
             }
 
-            // Produce: add outputs to inventory
             for (out_resource, out_amount) in &recipe.output {
                 inventory.add(out_resource, *out_amount);
+            }
+
+            if let Some(ref mut ctr) = counter {
+                for (_, amount) in &recipe.output {
+                    ctr.0 += amount;
+                }
             }
 
             assembler.production_timer -= recipe.time_sec;

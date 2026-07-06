@@ -1,7 +1,9 @@
+pub mod archive;
 pub mod belt;
 pub mod build_bar;
 pub mod building;
 pub mod components;
+pub mod discovery;
 pub mod inspect;
 pub mod menu;
 pub mod placement;
@@ -59,6 +61,8 @@ impl Plugin for EconomyPlugin {
         app.insert_resource(ResourceRegistry::load());
         app.insert_resource(DefaultSettings::load());
         app.insert_resource(recipe::RecipeRegistry::load());
+        app.insert_resource(discovery::DiscoveryRegistry::load());
+        app.insert_resource(discovery::GlobalArchive::default());
 
         // Load registries + derive MenuDef in dependency order (avoids double-load)
         let building_registry = building::BuildingRegistry::load();
@@ -156,6 +160,15 @@ impl Plugin for EconomyPlugin {
             Update,
             production::assembler_tick.run_if(in_state(GameState::Playing)),
         );
+        app.add_systems(
+            Update,
+            discovery::check_discoveries.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            archive::archive_delivery_check.run_if(in_state(GameState::Playing)),
+        );
+        app.add_observer(discovery::on_discovery);
         app.add_systems(
             FixedUpdate,
             belt::building_output_tick.run_if(in_state(GameState::Playing)),

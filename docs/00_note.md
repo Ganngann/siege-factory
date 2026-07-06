@@ -1,3 +1,5 @@
 - fog of war, il faut découvrir la carte.
 - il faut des belt virage 45°
-- 
+- quand on clique sur une mine, ca ouvre la fenetre du dépot en dessous.
+- les batiements doivent arreter d'accepetr les resources quand ils sont plein
+- le generateur dois stocker des ressources et il dois les consommer pour produire de l'électricité.

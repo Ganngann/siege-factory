@@ -1,0 +1,41 @@
+[[discovery]]
+building = "Furnace"
+threshold = 1
+type = "recipe"
+id = "steel"
+message = "The intense heat has fused iron with coal into steel."
+
+[[discovery]]
+building = "Assembler"
+threshold = 10
+type = "recipe"
+id = "motor"
+message = "Gears and steel combine into a compact motor."
+
+[[discovery]]
+building = "Assembler"
+threshold = 25
+type = "recipe"
+id = "electronic_module"
+message = "Circuits fused with steel form a sophisticated electronic module."
+
+[[discovery]]
+building = "Assembler"
+threshold = 50
+type = "recipe"
+id = "drivetrain"
+message = "Multiple motors coupled into a heavy-duty drivetrain."
+
+[[discovery]]
+building = "Assembler"
+threshold = 75
+type = "recipe"
+id = "machine_frame"
+message = "A load-bearing frame for heavy machinery."
+
+[[discovery]]
+building = "Assembler"
+threshold = 100
+type = "recipe"
+id = "targeting_computer"
+message = "A ballistic targeting computer of exceptional precision."

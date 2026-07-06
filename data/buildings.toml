@@ -141,3 +141,13 @@ tile_size = { w = 1, h = 1 }
 color = "#5A8C2A"
 visual = "square"
 inventory_capacity = 64
+
+[buildings.archive]
+name = "Archive"
+cost = { iron_plate = 10, gear = 5 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#CCAA44"
+visual = "diamond"
+inventory_capacity = 1
+hidden = false

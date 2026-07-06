@@ -7,12 +7,14 @@ use crate::economy::components::HQ;
 use crate::economy::components::{
     Active, ActiveToggleButton, AlertText, Assembler, BuildMode, Building, BuildingPanel,
     BuildingTitleText, CapacityBarFill, CapacityBarText, CloseButton, ConnectionRowText,
-    DeconstructMode, DragHandle, FarmCropSelectButton, FarmCropText, FarmCultivatorCountText,
-    FarmRecruitButton, FlowInputText, FlowOutputText, HpBarFill, HpText, PanelModal, PanelOverlay,
-    PowerConsumer, PowerStatusText, ProgressBarBg, ProgressBarFill, RecipeCategoryLabel,
-    RecipeChangeButton, RecipeNameText, RecipeSelectorItem, RecipeSelectorRoot, ResourceDeposit,
-    Sorter, SorterInvertButton, SorterResourceButton, StatRowText, StatusText, UiIsBlocking,
+    DeconstructMode, DiscoveredRecipes, DragHandle, FarmCropSelectButton, FarmCropText,
+    FarmCultivatorCountText, FarmRecruitButton, FlowInputText, FlowOutputText, HpBarFill, HpText,
+    PanelModal, PanelOverlay, PowerConsumer, PowerStatusText, ProgressBarBg, ProgressBarFill,
+    RecipeCategoryLabel, RecipeChangeButton, RecipeNameText, RecipeSelectorItem, RecipeSelectorRoot,
+    ResourceDeposit, Sorter, SorterInvertButton, SorterResourceButton, StatRowText, StatusText,
+    UiIsBlocking,
 };
+use crate::economy::discovery::GlobalArchive;
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::ResourceId;
 use crate::economy::resource::{Inventory, ResourceRegistry};
@@ -1348,9 +1350,11 @@ pub fn recipe_change_system(
     building_query: Query<&Building>,
     assembler_query: Query<&Assembler>,
     inventory_query: Query<Option<&Inventory>>,
+    discovered_query: Query<Option<&DiscoveredRecipes>>,
     recipes: Res<RecipeRegistry>,
     resource_registry: Res<ResourceRegistry>,
     reg: Res<BuildingRegistry>,
+    global_archive: Res<GlobalArchive>,
 ) {
     for interaction in &query {
         if *interaction != Interaction::Pressed {
@@ -1375,8 +1379,17 @@ pub fn recipe_change_system(
             .map(|def| def.recipe_categories.clone())
             .unwrap_or_default();
 
-        // Use the building's own inventory to determine which recipes are craftable
         let building_inv = inventory_query.get(inspected).ok().and_then(|o| o);
+
+        // Build set of unlocked recipes for this building
+        let mut unlocked = global_archive.unlocked_recipes.clone();
+        if let Ok(Some(discovered)) = discovered_query.get(inspected) {
+            for id in &discovered.0 {
+                unlocked.insert(id.clone());
+            }
+        }
+        // Always show the currently selected recipe
+        unlocked.insert(asm.recipe_id.clone());
 
         let sel = spawn_recipe_selector(
             &mut commands,
@@ -1385,6 +1398,7 @@ pub fn recipe_change_system(
             &recipes,
             &resource_registry,
             building_inv,
+            &unlocked,
         );
         if let Some(root) = panel.root {
             commands.entity(root).add_child(sel);
@@ -1400,6 +1414,7 @@ fn spawn_recipe_selector(
     recipes: &RecipeRegistry,
     resource_registry: &ResourceRegistry,
     building_inv: Option<&Inventory>,
+    unlocked: &std::collections::HashSet<String>,
 ) -> Entity {
     commands
         .spawn((
@@ -1468,6 +1483,7 @@ fn spawn_recipe_selector(
                     .recipes
                     .values()
                     .filter(|r| r.category == *cat)
+                    .filter(|r| unlocked.contains(&r.id))
                     .collect();
                 cat_recipes.sort_by(|a, b| a.id.cmp(&b.id));
                 if !cat_recipes.is_empty() {

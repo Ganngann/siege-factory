@@ -270,6 +270,17 @@ pub struct RecipeSelectorItem {
 #[derive(Component)]
 pub struct RecipeCategoryLabel;
 
+// ── Discovery & Archive ──
+
+#[derive(Component, Default)]
+pub struct ProductionCounter(pub u32);
+
+#[derive(Component, Default)]
+pub struct DiscoveredRecipes(pub Vec<String>);
+
+#[derive(Component)]
+pub struct Archive;
+
 // ── Sorter settings (kept from old UI) ──
 
 #[derive(Component)]
