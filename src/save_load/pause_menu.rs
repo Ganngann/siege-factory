@@ -238,47 +238,35 @@ pub fn cleanup_pause_menu(mut commands: Commands, query: Query<Entity, With<Paus
     }
 }
 
-// TODO: reduce the number of queries — this function has 15 queries and could be refactored
-// into smaller, more focused cleanup systems.
 pub fn cleanup_world(
     mut commands: Commands,
-    buildings: Query<Entity, With<Building>>,
-    enemies: Query<Entity, With<EnemyComponent>>,
-    units: Query<Entity, With<Unit>>,
-    deposits: Query<Entity, With<ResourceDeposit>>,
-    markers: Query<Entity, With<ChunkMarker>>,
-    members: Query<Entity, (With<ChunkMember>, Without<ResourceDeposit>)>,
-    cameras: Query<Entity, With<Camera2d>>,
     belt_slots: Query<&BeltSlots>,
-    ghosts: Query<Entity, With<Ghost>>,
-    hp_bars: Query<Entity, With<HpBarChild>>,
-    menus: Query<Entity, With<crate::economy::components::MenuBarPanel>>,
-    popups: Query<Entity, With<PanelModal>>,
-    ui_texts: Query<Entity, With<InventoryPanel>>,
-    pause_menus: Query<Entity, With<PauseMenuRoot>>,
-    projectiles: Query<Entity, With<Projectile>>,
+    to_despawn: Query<
+        Entity,
+        Or<(
+            With<Building>,
+            With<EnemyComponent>,
+            With<Unit>,
+            With<ResourceDeposit>,
+            With<ChunkMarker>,
+            With<ChunkMember>,
+            With<Camera2d>,
+            With<Ghost>,
+            With<HpBarChild>,
+            With<crate::economy::components::MenuBarPanel>,
+            With<PanelModal>,
+            With<InventoryPanel>,
+            With<PauseMenuRoot>,
+            With<Projectile>,
+        )>,
+    >,
 ) {
     for bs in belt_slots.iter() {
         for sprite_entity in bs.slot_sprites.iter().flatten() {
             silent_despawn(&mut commands, *sprite_entity);
         }
     }
-    for e in buildings
-        .iter()
-        .chain(enemies.iter())
-        .chain(units.iter())
-        .chain(deposits.iter())
-        .chain(markers.iter())
-        .chain(members.iter())
-        .chain(cameras.iter())
-        .chain(ghosts.iter())
-        .chain(hp_bars.iter())
-        .chain(menus.iter())
-        .chain(popups.iter())
-        .chain(ui_texts.iter())
-        .chain(pause_menus.iter())
-        .chain(projectiles.iter())
-    {
+    for e in &to_despawn {
         silent_despawn(&mut commands, e);
     }
 }

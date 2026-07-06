@@ -180,9 +180,29 @@ pub fn load_buildings(
                 },
             ));
         } else if bs.kind == "miner" {
-            let a = bs.assembler.as_ref().unwrap();
+            if let Some(a) = &bs.assembler {
+                let mut e = commands.spawn((
+                    Miner,
+                    Assembler {
+                        production_timer: a.production_timer,
+                        interval: a.interval,
+                        recipe_id: a.recipe_id.clone(),
+                    },
+                    building,
+                    inv,
+                    occupied,
+                    tf,
+                    tile_pos,
+                    Active(true),
+                ));
+                if let Some(def) = registry.get(&bs.kind) {
+                    attach_power_components(&mut e, def);
+                }
+            } else {
+                bevy::log::warn!("Skipped miner at ({}, {}): missing assembler data", bs.tile_x, bs.tile_y);
+            }
+        } else if let Some(a) = &bs.assembler {
             let mut e = commands.spawn((
-                Miner,
                 Assembler {
                     production_timer: a.production_timer,
                     interval: a.interval,
@@ -198,26 +218,7 @@ pub fn load_buildings(
             if let Some(def) = registry.get(&bs.kind) {
                 attach_power_components(&mut e, def);
             }
-        } else if bs.assembler.is_some() {
-            let a = bs.assembler.as_ref().unwrap();
-            let mut e = commands.spawn((
-                Assembler {
-                    production_timer: a.production_timer,
-                    interval: a.interval,
-                    recipe_id: a.recipe_id.clone(),
-                },
-                building,
-                inv,
-                occupied,
-                tf,
-                tile_pos,
-                Active(true),
-            ));
-            if let Some(def) = registry.get(&bs.kind) {
-                attach_power_components(&mut e, def);
-            }
-        } else if bs.farm.is_some() {
-            let f = bs.farm.as_ref().unwrap();
+        } else if let Some(f) = &bs.farm {
             commands.spawn((
                 Farm {
                     crop_index: 0,
@@ -231,98 +232,104 @@ pub fn load_buildings(
                 Active(true),
             ));
         } else if bs.belt.is_some() || bs.splitter.is_some() || bs.sorter.is_some() {
-            let b = bs.belt.as_ref().unwrap();
-            let slot_positions = crate::economy::belt::compute_slot_positions(
-                bs.tile_x,
-                bs.tile_y,
-                b.direction,
-                b.slots.len() as u32,
-                tile_size,
-            );
-            let angle = match b.direction {
-                Direction::East => 0.0,
-                Direction::North => std::f32::consts::FRAC_PI_2,
-                Direction::West => std::f32::consts::PI,
-                Direction::South => -std::f32::consts::FRAC_PI_2,
-            };
-            let belt_tf =
-                Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle));
-            let mut items: Vec<Option<ItemOnBelt>> = Vec::new();
-            for item_save in &b.slots {
-                if let Some(item) = item_save {
-                    items.push(Some(ItemOnBelt {
-                        resource_id: ResourceId(item.resource.clone()),
-                        acc: item.acc,
-                    }));
-                } else {
-                    items.push(None);
+            if let Some(b) = &bs.belt {
+                let slot_positions = crate::economy::belt::compute_slot_positions(
+                    bs.tile_x,
+                    bs.tile_y,
+                    b.direction,
+                    b.slots.len() as u32,
+                    tile_size,
+                );
+                let angle = match b.direction {
+                    Direction::East => 0.0,
+                    Direction::North => std::f32::consts::FRAC_PI_2,
+                    Direction::West => std::f32::consts::PI,
+                    Direction::South => -std::f32::consts::FRAC_PI_2,
+                };
+                let belt_tf =
+                    Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle));
+                let mut items: Vec<Option<ItemOnBelt>> = Vec::new();
+                for item_save in &b.slots {
+                    if let Some(item) = item_save {
+                        items.push(Some(ItemOnBelt {
+                            resource_id: ResourceId(item.resource.clone()),
+                            acc: item.acc,
+                        }));
+                    } else {
+                        items.push(None);
+                    }
                 }
+                let slot_sprites: Vec<Option<Entity>> = vec![None; items.len()];
+                let belt_comp = BeltSlots {
+                    direction: b.direction,
+                    items,
+                    slot_sprites,
+                    slot_positions,
+                    speed: b.speed,
+                };
+                if let Some(sp) = &bs.splitter {
+                    commands.spawn((
+                        belt_comp,
+                        building,
+                        inv,
+                        occupied,
+                        belt_tf,
+                        tile_pos,
+                        Splitter {
+                            counter: sp.counter,
+                            outputs: sp.outputs,
+                            input_direction: sp.input_direction,
+                        },
+                        Active(true),
+                    ));
+                } else if let Some(so) = &bs.sorter {
+                    commands.spawn((
+                        belt_comp,
+                        building,
+                        inv,
+                        occupied,
+                        belt_tf,
+                        tile_pos,
+                        Sorter {
+                            filter: ResourceId(so.filter.clone()),
+                            inverted: so.inverted,
+                        },
+                        Active(true),
+                    ));
+                } else {
+                    commands.spawn((
+                        belt_comp,
+                        building,
+                        inv,
+                        occupied,
+                        belt_tf,
+                        tile_pos,
+                        Active(true),
+                    ));
+                }
+            } else {
+                bevy::log::warn!("Skipped belt at ({}, {}): missing belt data", bs.tile_x, bs.tile_y);
             }
-            let slot_sprites: Vec<Option<Entity>> = vec![None; items.len()];
-            let belt_comp = BeltSlots {
-                direction: b.direction,
-                items,
-                slot_sprites,
-                slot_positions,
-                speed: b.speed,
-            };
-            if let Some(sp) = &bs.splitter {
+        } else if bs.kind == "turret" {
+            if let Some(t) = &bs.turret {
                 commands.spawn((
-                    belt_comp,
+                    TurretCombat {
+                        damage: t.damage,
+                        range_sq: t.range_sq,
+                        fire_interval: t.fire_interval,
+                        timer: t.timer,
+                        projectile_speed: t.projectile_speed,
+                    },
                     building,
                     inv,
                     occupied,
-                    belt_tf,
+                    tf,
                     tile_pos,
-                    Splitter {
-                        counter: sp.counter,
-                        outputs: sp.outputs,
-                        input_direction: sp.input_direction,
-                    },
-                    Active(true),
-                ));
-            } else if let Some(so) = &bs.sorter {
-                commands.spawn((
-                    belt_comp,
-                    building,
-                    inv,
-                    occupied,
-                    belt_tf,
-                    tile_pos,
-                    Sorter {
-                        filter: ResourceId(so.filter.clone()),
-                        inverted: so.inverted,
-                    },
                     Active(true),
                 ));
             } else {
-                commands.spawn((
-                    belt_comp,
-                    building,
-                    inv,
-                    occupied,
-                    belt_tf,
-                    tile_pos,
-                    Active(true),
-                ));
+                bevy::log::warn!("Skipped turret at ({}, {}): missing turret data", bs.tile_x, bs.tile_y);
             }
-        } else if bs.kind == "turret" {
-            let t = bs.turret.as_ref().unwrap();
-            commands.spawn((
-                TurretCombat {
-                    damage: t.damage,
-                    range_sq: t.range_sq,
-                    fire_interval: t.fire_interval,
-                    timer: t.timer,
-                    projectile_speed: t.projectile_speed,
-                },
-                building,
-                inv,
-                occupied,
-                tf,
-                tile_pos,
-                Active(true),
-            ));
         } else if bs.storage {
             commands.spawn((Storage, building, inv, occupied, tf, tile_pos, Active(true)));
         } else {

@@ -104,12 +104,13 @@ pub fn advance_belt_slots(
         if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
             for i in (0..bs.items.len() - 1).rev() {
                 if let Some(ref item) = bs.items[i] {
-                    if item.acc >= *slot_duration && bs.items[i + 1].is_none() {
-                        let (left, right) = bs.items.split_at_mut(i + 1);
-                        let mut item = left[i].take().unwrap();
+                if item.acc >= *slot_duration && bs.items[i + 1].is_none() {
+                    let (left, right) = bs.items.split_at_mut(i + 1);
+                    if let Some(mut item) = left[i].take() {
                         item.acc -= *slot_duration;
                         right[0] = Some(item);
                     }
+                }
                 }
             }
         }

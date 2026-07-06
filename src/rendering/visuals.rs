@@ -96,8 +96,10 @@ pub fn sync_belt_slot_sprites(
     for mut bs in belt_query.iter_mut() {
         let mut to_create: Vec<(usize, crate::economy::resource::ResourceId)> = Vec::new();
         for (slot_idx, item) in bs.items.iter().enumerate() {
-            if item.is_some() && bs.slot_sprites[slot_idx].is_none() {
-                to_create.push((slot_idx, item.as_ref().unwrap().resource_id.clone()));
+            if let Some(item) = item {
+                if bs.slot_sprites[slot_idx].is_none() {
+                    to_create.push((slot_idx, item.resource_id.clone()));
+                }
             }
         }
         let mut to_destroy: Vec<usize> = Vec::new();

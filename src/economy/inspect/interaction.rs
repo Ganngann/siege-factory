@@ -17,6 +17,8 @@ use bevy::prelude::*;
 
 use super::{close_panel, open_panel, spawn_deposit_panel};
 
+const BUILDING_KIND_FARM: &str = "farm";
+
 // ── Click detection ──
 
 pub fn building_inspect_click(
@@ -78,7 +80,7 @@ pub fn building_inspect_click(
             return;
         }
 
-        let farm_crop_types = if building.kind == "farm" {
+        let farm_crop_types = if building.kind == BUILDING_KIND_FARM {
             vec!["wheat".to_string(), "wood".to_string()]
         } else {
             Vec::new()

@@ -12,6 +12,25 @@ use crate::economy::window::{
 };
 use bevy::prelude::*;
 
+const BUILDING_KIND_FARM: &str = "farm";
+const BUILDING_KIND_SORTER: &str = "sorter";
+
+fn kind_has_recipes(kind: &str) -> bool {
+    matches!(
+        kind,
+        "assembler"
+            | "furnace"
+            | "blast_furnace"
+            | "assembly_crane"
+            | "alchemy_lab"
+            | "electronics_lab"
+            | "foundry"
+            | "guild_hall"
+            | "enchanting_array"
+            | "pumpjack"
+    )
+}
+
 pub fn open_panel(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
@@ -36,17 +55,8 @@ pub fn open_panel(
     panel.dirty = false;
 
     let modal_size = Vec2::new(super::MODAL_WIDTH, super::MODAL_HEIGHT);
-    let show_recipes = kind == "assembler"
-        || kind == "furnace"
-        || kind == "blast_furnace"
-        || kind == "assembly_crane"
-        || kind == "alchemy_lab"
-        || kind == "electronics_lab"
-        || kind == "foundry"
-        || kind == "guild_hall"
-        || kind == "enchanting_array"
-        || kind == "pumpjack";
-    let is_farm = kind == "farm";
+    let show_recipes = kind_has_recipes(kind);
+    let is_farm = kind == BUILDING_KIND_FARM;
 
     let overlay = commands
         .spawn((
@@ -101,7 +111,7 @@ fn spawn_panel_ui(
     let panel_w = modal_size.x;
     let col_w = panel_w * 0.58;
     let right_w = panel_w * 0.38;
-    let show_sorter = kind == "sorter";
+    let show_sorter = kind == BUILDING_KIND_SORTER;
 
     let x = (1280.0 - modal_size.x) / 2.0;
     let y = (720.0 - modal_size.y) / 2.0;
@@ -111,52 +121,7 @@ fn spawn_panel_ui(
         &format!("{}  #{}", building.name, entity.to_bits() % 1000),
         modal_size.x, modal_size.y, x, y, None,
         |parent| {
-            // ── Status bar ──
-            parent
-                .spawn((
-                    Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Px(50.0),
-                        flex_direction: FlexDirection::Column,
-                        padding: UiRect::all(Val::Px(8.0)),
-                        ..default()
-                    },
-                    BackgroundColor(BG_SECTION),
-                ))
-                .with_children(|status| {
-                    status
-                        .spawn((
-                            ProgressBarBg,
-                            Node {
-                                width: Val::Percent(100.0),
-                                height: Val::Px(14.0),
-                                position_type: PositionType::Relative,
-                                ..default()
-                            },
-                            BackgroundColor(BAR_BG),
-                        ))
-                        .with_children(|bg| {
-                            bg.spawn((
-                                ProgressBarFill,
-                                Node {
-                                    width: Val::Percent(0.0),
-                                    height: Val::Percent(100.0),
-                                    ..default()
-                                },
-                                BackgroundColor(ACCENT),
-                            ));
-                        });
-                    status.spawn((
-                        StatusText,
-                        Text::new("Idle"),
-                        TextFont::from_font_size(12.0),
-                        TextColor(TEXT_SECONDARY),
-                        Node {
-                            margin: UiRect::top(Val::Px(4.0)),
-                            ..default()
-                        },
-                    ));
-                });
+            spawn_status_bar(parent);
 
             // ── Content row (left | right) ──
             parent
@@ -176,107 +141,11 @@ fn spawn_panel_ui(
                         ..default()
                     },))
                         .with_children(|left| {
-                            spawn_section(left, "FLOW", |sec| {
-                                sec.spawn((
-                                    FlowInputText,
-                                    Text::new("Inputs: --"),
-                                    TextFont::from_font_size(12.0),
-                                    TextColor(TEXT_SECONDARY),
-                                    Node {
-                                        margin: UiRect::bottom(Val::Px(2.0)),
-                                        ..default()
-                                    },
-                                ));
-                                sec.spawn((
-                                    FlowOutputText,
-                                    Text::new("Outputs: --"),
-                                    TextFont::from_font_size(12.0),
-                                    TextColor(TEXT_SECONDARY),
-                                ));
-                            });
-
+                            spawn_section(left, "FLOW", spawn_flow_content);
                             spawn_section(left, "INVENTORY", |sec| {
-                                // Capacity bar
-                                sec.spawn((
-                                    Node {
-                                        width: Val::Percent(100.0),
-                                        height: Val::Px(super::BAR_HEIGHT),
-                                        flex_direction: FlexDirection::Row,
-                                        ..default()
-                                    },
-                                    BackgroundColor(BAR_BG),
-                                ))
-                                .with_children(|bar| {
-                                    bar.spawn((
-                                        CapacityBarFill,
-                                        Node {
-                                            width: Val::Percent(0.0),
-                                            height: Val::Percent(100.0),
-                                            ..default()
-                                        },
-                                        BackgroundColor(Color::srgb(0.30, 0.55, 0.30)),
-                                    ));
-                                });
-                                sec.spawn((
-                                    CapacityBarText,
-                                    Text::new("Capacity: 0/0"),
-                                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                    TextColor(TEXT_SECONDARY),
-                                    Node {
-                                        margin: UiRect::vertical(Val::Px(4.0)),
-                                        ..default()
-                                    },
-                                ));
-                                // Building inventory grid (3×2 slots)
-                                const S2: f32 = 40.0;
-                                const G2: f32 = 3.0;
-                                sec.spawn((
-                                    crate::economy::components::InventoryGrid { cols: 3, rows: 2, owner: entity },
-                                    Node {
-                                        width: Val::Px(3.0 * (S2 + G2) + G2 * 2.0),
-                                        padding: bevy::ui::UiRect::all(Val::Px(G2)),
-                                        display: Display::Flex,
-                                        flex_wrap: FlexWrap::Wrap,
-                                        align_content: AlignContent::FlexStart,
-                                        ..default()
-                                    },
-                                    BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.9)),
-                                ))
-                                .with_children(|g| {
-                                    for i in 0..6 {
-                                        g.spawn((
-                                            crate::economy::components::InventorySlot { index: i },
-                                            Button,
-                                            Node {
-                                                width: Val::Px(S2),
-                                                height: Val::Px(S2),
-                                                flex_shrink: 0.0,
-                                                margin: bevy::ui::UiRect::axes(Val::Px(G2 / 2.0), Val::Px(G2 / 2.0)),
-                                                border: bevy::ui::UiRect::all(Val::Px(1.0)),
-                                                display: Display::Flex,
-                                                flex_direction: FlexDirection::Column,
-                                                align_items: AlignItems::Center,
-                                                justify_content: JustifyContent::Center,
-                                                ..default()
-                                            },
-                                            BorderColor::all(Color::srgba(0.3, 0.3, 0.4, 1.0)),
-                                            BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
-                                            Text::new(String::new()),
-                                            TextFont::from_font_size(9.0),
-                                            TextColor(Color::WHITE),
-                                        ));
-                                    }
-                                });
+                                spawn_inventory_content(sec, entity);
                             });
-
-                            spawn_section(left, "CONNECTIONS", |sec| {
-                                sec.spawn((
-                                    ConnectionRowText,
-                                    Text::new("No connections"),
-                                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                    TextColor(TEXT_SECONDARY),
-                                ));
-                            });
+                            spawn_section(left, "CONNECTIONS", spawn_connections_content);
                         });
 
                     // ── Right column (Stats + Settings + HP + Alerts) ──
@@ -286,247 +155,426 @@ fn spawn_panel_ui(
                         ..default()
                     },))
                         .with_children(|right| {
-                            spawn_section(right, "STATS", |sec| {
-                                for line in [
-                                    "Produced/min:  --",
-                                    "Consumed/min:  --",
-                                    "Uptime:        --",
-                                    "Efficiency:    --",
-                                    "Total output:  0",
-                                ] {
-                                    sec.spawn((
-                                        StatRowText,
-                                        Text::new(line),
-                                        TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                        TextColor(TEXT_SECONDARY),
-                                        Node {
-                                            margin: UiRect::bottom(Val::Px(1.0)),
-                                            ..default()
-                                        },
-                                    ));
-                                }
-                            });
-
-                            spawn_section(right, "POWER", |sec| {
-                                sec.spawn((
-                                    PowerStatusText,
-                                    Text::new("Power: --"),
-                                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                    TextColor(TEXT_SECONDARY),
-                                ));
-                            });
+                            spawn_section(right, "STATS", spawn_stats_content);
+                            spawn_section(right, "POWER", spawn_power_content);
 
                             if show_recipes {
-                                spawn_section(right, "SETTINGS", |sec| {
-                                    sec.spawn((
-                                        RecipeNameText,
-                                        Text::new("Recipe: --"),
-                                        TextFont::from_font_size(12.0),
-                                        TextColor(TEXT_PRIMARY),
-                                        Node {
-                                            margin: UiRect::bottom(Val::Px(4.0)),
-                                            ..default()
-                                        },
-                                    ));
-                                    sec.spawn((
-                                        RecipeChangeButton,
-                                        Button,
-                                        Node {
-                                            width: Val::Px(120.0),
-                                            height: Val::Px(24.0),
-                                            align_items: AlignItems::Center,
-                                            justify_content: JustifyContent::Center,
-                                            ..default()
-                                        },
-                                        BackgroundColor(Color::srgb(0.18, 0.25, 0.40)),
-                                    ))
-                                    .with_children(|btn| {
-                                        btn.spawn((
-                                            Text::new("[Change Recipe]"),
-                                            TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                            TextColor(ACCENT),
-                                        ));
-                                    });
-                                });
+                                spawn_section(right, "SETTINGS", spawn_recipe_content);
                             }
 
                             if is_farm {
                                 spawn_section(right, "FARM", |sec| {
-                                    sec.spawn((
-                                        FarmCropText,
-                                        Text::new("Crops:  --"),
-                                        TextFont::from_font_size(12.0),
-                                        TextColor(TEXT_PRIMARY),
-                                        Node {
-                                            margin: UiRect::bottom(Val::Px(4.0)),
-                                            ..default()
-                                        },
-                                    ));
-
-                                    // Crop type selection buttons
-                                    for crop_type in &farm_crop_types {
-                                        sec.spawn((
-                                            FarmCropSelectButton {
-                                                crop_type: crop_type.clone(),
-                                            },
-                                            Button,
-                                            Node {
-                                                width: Val::Px(120.0),
-                                                height: Val::Px(22.0),
-                                                align_items: AlignItems::Center,
-                                                justify_content: JustifyContent::Center,
-                                                margin: UiRect::vertical(Val::Px(1.0)),
-                                                ..default()
-                                            },
-                                            BackgroundColor(Color::srgb(0.18, 0.35, 0.18)),
-                                        ))
-                                        .with_children(
-                                            |btn| {
-                                                btn.spawn((
-                                                    Text::new(crop_type),
-                                                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                                    TextColor(TEXT_SECONDARY),
-                                                ));
-                                            },
-                                        );
-                                    }
-
-                                    sec.spawn((
-                                        FarmCultivatorCountText,
-                                        Text::new("Cultivators:  --"),
-                                        TextFont::from_font_size(12.0),
-                                        TextColor(TEXT_SECONDARY),
-                                        Node {
-                                            margin: UiRect::vertical(Val::Px(4.0)),
-                                            ..default()
-                                        },
-                                    ));
-                                    sec.spawn((
-                                        FarmRecruitButton,
-                                        Button,
-                                        Node {
-                                            width: Val::Px(160.0),
-                                            height: Val::Px(super::CLOSE_BUTTON_SIZE),
-                                            align_items: AlignItems::Center,
-                                            justify_content: JustifyContent::Center,
-                                            ..default()
-                                        },
-                                        BackgroundColor(Color::srgb(0.25, 0.55, 0.25)),
-                                    ))
-                                    .with_children(|btn| {
-                                        btn.spawn((
-                                            Text::new("[Recruit Cultivator]  8 ore"),
-                                            TextFont::from_font_size(12.0),
-                                            TextColor(TEXT_PRIMARY),
-                                        ));
-                                    });
+                                    spawn_farm_content(sec, farm_crop_types);
                                 });
                             }
 
                             if show_sorter {
                                 spawn_section(right, "FILTER", |sec| {
-                                    sec.spawn((
-                                        SorterInvertButton,
-                                        Button,
-                                        Node {
-                                            width: Val::Percent(100.0),
-                                            height: Val::Px(super::CLOSE_BUTTON_SIZE),
-                                            align_items: AlignItems::Center,
-                                            justify_content: JustifyContent::Center,
-                                            margin: UiRect::bottom(Val::Px(4.0)),
-                                            ..default()
-                                        },
-                                        BackgroundColor(Color::srgb(0.30, 0.30, 0.15)),
-                                    ))
-                                    .with_children(|btn| {
-                                        btn.spawn((
-                                            Text::new("Invert: OFF"),
-                                            TextFont::from_font_size(12.0),
-                                            TextColor(TEXT_PRIMARY),
-                                        ));
-                                    });
-
-                                    let mut resources: Vec<String> = resource_registry
-                                        .resources
-                                        .keys()
-                                        .map(|k| k.clone())
-                                        .collect();
-                                    resources.sort();
-                                    for res in &resources {
-                                        sec.spawn((
-                                            SorterResourceButton {
-                                                resource: crate::economy::resource::ResourceId(
-                                                    res.clone(),
-                                                ),
-                                            },
-                                            Button,
-                                            Node {
-                                                width: Val::Percent(100.0),
-                                                height: Val::Px(22.0),
-                                                align_items: AlignItems::Center,
-                                                padding: UiRect::horizontal(Val::Px(8.0)),
-                                                margin: UiRect::vertical(Val::Px(1.0)),
-                                                ..default()
-                                            },
-                                            BackgroundColor(Color::srgb(0.15, 0.15, 0.22)),
-                                        ))
-                                        .with_children(
-                                            |btn| {
-                                                btn.spawn((
-                                                    Text::new(res),
-                                                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                                    TextColor(TEXT_SECONDARY),
-                                                ));
-                                            },
-                                        );
-                                    }
+                                    spawn_sorter_content(sec, resource_registry);
                                 });
                             }
 
-                            spawn_section(right, "HP", |sec| {
-                                sec.spawn((
-                                    Node {
-                                        width: Val::Percent(100.0),
-                                        height: Val::Px(super::BAR_HEIGHT),
-                                        ..default()
-                                    },
-                                    BackgroundColor(BAR_BG),
-                                ))
-                                .with_children(|bar| {
-                                    bar.spawn((
-                                        HpBarFill,
-                                        Node {
-                                            width: Val::Percent(100.0),
-                                            height: Val::Percent(100.0),
-                                            ..default()
-                                        },
-                                        BackgroundColor(HP_GREEN),
-                                    ));
-                                });
-                                sec.spawn((
-                                    HpText,
-                                    Text::new("HP: --/--"),
-                                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                    TextColor(TEXT_SECONDARY),
-                                    Node {
-                                        margin: UiRect::top(Val::Px(4.0)),
-                                        ..default()
-                                    },
-                                ));
-                            });
-
-                            spawn_section(right, "ALERTS", |sec| {
-                                sec.spawn((
-                                    AlertText,
-                                    Text::new("No alerts"),
-                                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                                    TextColor(TEXT_SECONDARY),
-                                ));
-                            });
+                            spawn_section(right, "HP", spawn_hp_content);
+                            spawn_section(right, "ALERTS", spawn_alerts_content);
                         });
-                        });
+                });
         })
 }
+
+// ── Extracted section helpers ──
+
+fn spawn_status_bar(parent: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    parent
+        .spawn((
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(50.0),
+                flex_direction: FlexDirection::Column,
+                padding: UiRect::all(Val::Px(8.0)),
+                ..default()
+            },
+            BackgroundColor(BG_SECTION),
+        ))
+        .with_children(|status| {
+            status
+                .spawn((
+                    ProgressBarBg,
+                    Node {
+                        width: Val::Percent(100.0),
+                        height: Val::Px(14.0),
+                        position_type: PositionType::Relative,
+                        ..default()
+                    },
+                    BackgroundColor(BAR_BG),
+                ))
+                .with_children(|bg| {
+                    bg.spawn((
+                        ProgressBarFill,
+                        Node {
+                            width: Val::Percent(0.0),
+                            height: Val::Percent(100.0),
+                            ..default()
+                        },
+                        BackgroundColor(ACCENT),
+                    ));
+                });
+            status.spawn((
+                StatusText,
+                Text::new("Idle"),
+                TextFont::from_font_size(12.0),
+                TextColor(TEXT_SECONDARY),
+                Node {
+                    margin: UiRect::top(Val::Px(4.0)),
+                    ..default()
+                },
+            ));
+        });
+}
+
+fn spawn_flow_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    sec.spawn((
+        FlowInputText,
+        Text::new("Inputs: --"),
+        TextFont::from_font_size(12.0),
+        TextColor(TEXT_SECONDARY),
+        Node {
+            margin: UiRect::bottom(Val::Px(2.0)),
+            ..default()
+        },
+    ));
+    sec.spawn((
+        FlowOutputText,
+        Text::new("Outputs: --"),
+        TextFont::from_font_size(12.0),
+        TextColor(TEXT_SECONDARY),
+    ));
+}
+
+fn spawn_inventory_content(
+    sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
+    entity: Entity,
+) {
+    // Capacity bar
+    sec.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Px(super::BAR_HEIGHT),
+            flex_direction: FlexDirection::Row,
+            ..default()
+        },
+        BackgroundColor(BAR_BG),
+    ))
+    .with_children(|bar| {
+        bar.spawn((
+            CapacityBarFill,
+            Node {
+                width: Val::Percent(0.0),
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            BackgroundColor(Color::srgb(0.30, 0.55, 0.30)),
+        ));
+    });
+    sec.spawn((
+        CapacityBarText,
+        Text::new("Capacity: 0/0"),
+        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        TextColor(TEXT_SECONDARY),
+        Node {
+            margin: UiRect::vertical(Val::Px(4.0)),
+            ..default()
+        },
+    ));
+    // Building inventory grid (3×2 slots)
+    const S2: f32 = 40.0;
+    const G2: f32 = 3.0;
+    sec.spawn((
+        crate::economy::components::InventoryGrid { cols: 3, rows: 2, owner: entity },
+        Node {
+            width: Val::Px(3.0 * (S2 + G2) + G2 * 2.0),
+            padding: bevy::ui::UiRect::all(Val::Px(G2)),
+            display: Display::Flex,
+            flex_wrap: FlexWrap::Wrap,
+            align_content: AlignContent::FlexStart,
+            ..default()
+        },
+        BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.9)),
+    ))
+    .with_children(|g| {
+        for i in 0..6 {
+            g.spawn((
+                crate::economy::components::InventorySlot { index: i },
+                Button,
+                Node {
+                    width: Val::Px(S2),
+                    height: Val::Px(S2),
+                    flex_shrink: 0.0,
+                    margin: bevy::ui::UiRect::axes(Val::Px(G2 / 2.0), Val::Px(G2 / 2.0)),
+                    border: bevy::ui::UiRect::all(Val::Px(1.0)),
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                BorderColor::all(Color::srgba(0.3, 0.3, 0.4, 1.0)),
+                BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
+                Text::new(String::new()),
+                TextFont::from_font_size(9.0),
+                TextColor(Color::WHITE),
+            ));
+        }
+    });
+}
+
+fn spawn_connections_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    sec.spawn((
+        ConnectionRowText,
+        Text::new("No connections"),
+        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        TextColor(TEXT_SECONDARY),
+    ));
+}
+
+fn spawn_stats_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    for line in [
+        "Produced/min:  --",
+        "Consumed/min:  --",
+        "Uptime:        --",
+        "Efficiency:    --",
+        "Total output:  0",
+    ] {
+        sec.spawn((
+            StatRowText,
+            Text::new(line),
+            TextFont::from_font_size(super::SECTION_FONT_SIZE),
+            TextColor(TEXT_SECONDARY),
+            Node {
+                margin: UiRect::bottom(Val::Px(1.0)),
+                ..default()
+            },
+        ));
+    }
+}
+
+fn spawn_power_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    sec.spawn((
+        PowerStatusText,
+        Text::new("Power: --"),
+        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        TextColor(TEXT_SECONDARY),
+    ));
+}
+
+fn spawn_recipe_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    sec.spawn((
+        RecipeNameText,
+        Text::new("Recipe: --"),
+        TextFont::from_font_size(12.0),
+        TextColor(TEXT_PRIMARY),
+        Node {
+            margin: UiRect::bottom(Val::Px(4.0)),
+            ..default()
+        },
+    ));
+    sec.spawn((
+        RecipeChangeButton,
+        Button,
+        Node {
+            width: Val::Px(120.0),
+            height: Val::Px(24.0),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        BackgroundColor(Color::srgb(0.18, 0.25, 0.40)),
+    ))
+    .with_children(|btn| {
+        btn.spawn((
+            Text::new("[Change Recipe]"),
+            TextFont::from_font_size(super::SECTION_FONT_SIZE),
+            TextColor(ACCENT),
+        ));
+    });
+}
+
+fn spawn_farm_content(
+    sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
+    farm_crop_types: Vec<String>,
+) {
+    sec.spawn((
+        FarmCropText,
+        Text::new("Crops:  --"),
+        TextFont::from_font_size(12.0),
+        TextColor(TEXT_PRIMARY),
+        Node {
+            margin: UiRect::bottom(Val::Px(4.0)),
+            ..default()
+        },
+    ));
+
+    // Crop type selection buttons
+    for crop_type in &farm_crop_types {
+        sec.spawn((
+            FarmCropSelectButton {
+                crop_type: crop_type.clone(),
+            },
+            Button,
+            Node {
+                width: Val::Px(120.0),
+                height: Val::Px(22.0),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                margin: UiRect::vertical(Val::Px(1.0)),
+                ..default()
+            },
+            BackgroundColor(Color::srgb(0.18, 0.35, 0.18)),
+        ))
+        .with_children(
+            |btn| {
+                btn.spawn((
+                    Text::new(crop_type),
+                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
+                    TextColor(TEXT_SECONDARY),
+                ));
+            },
+        );
+    }
+
+    sec.spawn((
+        FarmCultivatorCountText,
+        Text::new("Cultivators:  --"),
+        TextFont::from_font_size(12.0),
+        TextColor(TEXT_SECONDARY),
+        Node {
+            margin: UiRect::vertical(Val::Px(4.0)),
+            ..default()
+        },
+    ));
+    sec.spawn((
+        FarmRecruitButton,
+        Button,
+        Node {
+            width: Val::Px(160.0),
+            height: Val::Px(super::CLOSE_BUTTON_SIZE),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        BackgroundColor(Color::srgb(0.25, 0.55, 0.25)),
+    ))
+    .with_children(|btn| {
+        btn.spawn((
+            Text::new("[Recruit Cultivator]  8 ore"),
+            TextFont::from_font_size(12.0),
+            TextColor(TEXT_PRIMARY),
+        ));
+    });
+}
+
+fn spawn_sorter_content(
+    sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
+    resource_registry: &ResourceRegistry,
+) {
+    sec.spawn((
+        SorterInvertButton,
+        Button,
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Px(super::CLOSE_BUTTON_SIZE),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            margin: UiRect::bottom(Val::Px(4.0)),
+            ..default()
+        },
+        BackgroundColor(Color::srgb(0.30, 0.30, 0.15)),
+    ))
+    .with_children(|btn| {
+        btn.spawn((
+            Text::new("Invert: OFF"),
+            TextFont::from_font_size(12.0),
+            TextColor(TEXT_PRIMARY),
+        ));
+    });
+
+    let mut resources: Vec<String> = resource_registry
+        .resources
+        .keys()
+        .map(|k| k.clone())
+        .collect();
+    resources.sort();
+    for res in &resources {
+        sec.spawn((
+            SorterResourceButton {
+                resource: crate::economy::resource::ResourceId(
+                    res.clone(),
+                ),
+            },
+            Button,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(22.0),
+                align_items: AlignItems::Center,
+                padding: UiRect::horizontal(Val::Px(8.0)),
+                margin: UiRect::vertical(Val::Px(1.0)),
+                ..default()
+            },
+            BackgroundColor(Color::srgb(0.15, 0.15, 0.22)),
+        ))
+        .with_children(
+            |btn| {
+                btn.spawn((
+                    Text::new(res),
+                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
+                    TextColor(TEXT_SECONDARY),
+                ));
+            },
+        );
+    }
+}
+
+fn spawn_hp_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    sec.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Px(super::BAR_HEIGHT),
+            ..default()
+        },
+        BackgroundColor(BAR_BG),
+    ))
+    .with_children(|bar| {
+        bar.spawn((
+            HpBarFill,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            BackgroundColor(HP_GREEN),
+        ));
+    });
+    sec.spawn((
+        HpText,
+        Text::new("HP: --/--"),
+        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        TextColor(TEXT_SECONDARY),
+        Node {
+            margin: UiRect::top(Val::Px(4.0)),
+            ..default()
+        },
+    ));
+}
+
+fn spawn_alerts_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    sec.spawn((
+        AlertText,
+        Text::new("No alerts"),
+        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        TextColor(TEXT_SECONDARY),
+    ));
+}
+
+// ── Section wrapper ──
 
 fn spawn_section(
     parent: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,

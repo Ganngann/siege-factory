@@ -12,6 +12,8 @@ use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 
+const UNIT_KIND_HARVESTER: &str = "harvester";
+
 #[derive(Event)]
 pub struct SpawnUnitEvent(pub String);
 
@@ -56,13 +58,13 @@ fn spawn_unit_by_id(
         None => return false,
     };
     let hp = def.hp;
-    let offset = if def.kind == "harvester" {
+    let offset = if def.kind == UNIT_KIND_HARVESTER {
         Vec3::new(-40.0, 0.0, 2.5)
     } else {
         Vec3::new(40.0, 0.0, 2.5)
     };
 
-    if def.kind == "harvester" {
+    if def.kind == UNIT_KIND_HARVESTER {
         commands.spawn((
             Worker {
                 state: WorkerState::Idle,

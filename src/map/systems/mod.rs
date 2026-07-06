@@ -1,14 +1,20 @@
 pub mod chunks;
 
-pub use chunks::*;
+pub use chunks::{
+    build_chunk_mesh, spawn_chunks_in_range, spawn_single_chunk_visuals, update_visible_chunks,
+};
 
 use crate::core::game_state::GameState;
 use crate::core::utils::tile_to_world;
 use crate::economy::components::UiIsBlocking;
-use crate::map::components::*;
+use crate::map::components::{ChunkMember, HoveredTile, cursor_to_tile};
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
-use bevy::prelude::*;
+use bevy::prelude::{
+    App, Assets, ButtonInput, Camera, Camera2d, ColorMaterial, Commands, Component, Entity,
+    GlobalTransform, IntoScheduleConfigs, KeyCode, Mesh, OnEnter, OnExit, Plugin, Query, Res,
+    ResMut, Transform, Update, Window, With, in_state,
+};
 
 #[derive(Component)]
 pub struct ChunkMarker(pub i32, pub i32);

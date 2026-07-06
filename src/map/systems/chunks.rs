@@ -1,13 +1,16 @@
 use crate::core::utils::tile_to_world_corner;
 use crate::economy::components::{PeacefulMode, ResourceDeposit};
 use crate::economy::resource::ResourceRegistry;
-use crate::map::components::*;
+use crate::map::components::{ChunkMember, Decoration, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::rng::{SimpleRng, chunk_hash};
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 use crate::rendering::{ShapeCache, TextureCache};
 use bevy::asset::RenderAssetUsages;
-use bevy::prelude::*;
+use bevy::prelude::{
+    Assets, Camera, Color, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d,
+    MeshMaterial2d, Query, Res, ResMut, Sprite, Transform, Vec2, Window, default,
+};
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use std::collections::HashSet;
 

@@ -11,6 +11,9 @@ use crate::economy::unit_config::UnitConfig;
 use crate::unit::SpawnUnitEvent;
 use bevy::prelude::*;
 
+const UNIT_KIND_COMBAT: &str = "combat";
+const UNIT_KIND_HARVESTER: &str = "harvester";
+
 pub fn menu_navigation(
     mut menu_state: ResMut<MenuState>,
     menu_def: Res<MenuDef>,
@@ -145,12 +148,12 @@ pub fn menu_bar_interaction(
                                     "{}  HP:{}  Cost:{}",
                                     def.name, def.hp, item.cost_str
                                 )];
-                                if def.kind == "combat" {
+                                if def.kind == UNIT_KIND_COMBAT {
                                     parts.push(format!(
                                         "Dmg {}  Range {:.0}  Rate {:.1}s",
                                         def.damage, def.range_tiles, def.fire_rate_sec
                                     ));
-                                } else if def.kind == "harvester" {
+                                } else if def.kind == UNIT_KIND_HARVESTER {
                                     parts.push(format!(
                                         "Speed {:.0}  Mine interval {:.1}s",
                                         def.speed, def.mine_interval_sec

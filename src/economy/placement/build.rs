@@ -516,16 +516,16 @@ pub fn handle_build_click(
         ));
         attach_power_components(&mut e, &def);
     } else if def.id == BUILDING_TURRET {
-        let stats = def.combat.as_ref().expect("turret def missing combat");
+        let stats = def.combat.as_ref();
         let mut e = commands.spawn((
             base,
             inv,
             TurretCombat {
-                damage: stats.damage,
-                range_sq: stats.range,
-                fire_interval: stats.fire_rate_sec,
+                damage: stats.map_or(0, |s| s.damage),
+                range_sq: stats.map_or(0.0, |s| s.range),
+                fire_interval: stats.map_or(0.0, |s| s.fire_rate_sec),
                 timer: 0.0,
-                projectile_speed: stats.projectile_speed,
+                projectile_speed: stats.map_or(0.0, |s| s.projectile_speed),
             },
         ));
         attach_power_components(&mut e, &def);
