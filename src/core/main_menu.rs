@@ -168,10 +168,7 @@ fn build_rebind_items(bindings: &KeyBindings) -> Vec<(String, String, MenuAction
 }
 
 fn binding_to_str(binding: InputBinding) -> String {
-    match binding {
-        InputBinding::Key(k) => format!("{:?}", k),
-        InputBinding::Mouse(m) => format!("{:?}", m),
-    }
+    binding.to_string()
 }
 
 fn spawn_current_screen(
@@ -534,7 +531,7 @@ pub fn menu_rebind_handler(
         bindings.set(action, binding);
         settings
             .keybindings
-            .insert(action.clone(), format!("{:?}", key));
+            .insert(action.clone(), binding.to_string());
         settings.save();
         for entity in &prompt_query {
             commands.entity(entity).despawn();
@@ -557,7 +554,7 @@ pub fn menu_rebind_handler(
             bindings.set(action, binding);
             settings
                 .keybindings
-                .insert(action.clone(), format!("{:?}", btn));
+                .insert(action.clone(), binding.to_string());
             settings.save();
             for entity in &prompt_query {
                 commands.entity(entity).despawn();

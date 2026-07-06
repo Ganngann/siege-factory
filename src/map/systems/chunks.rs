@@ -1,8 +1,5 @@
-use crate::core::game_state::GameState;
-use crate::core::utils::{tile_to_world, tile_to_world_corner};
-use crate::economy::components::PeacefulMode;
-use crate::economy::components::ResourceDeposit;
-use crate::economy::components::UiIsBlocking;
+use crate::core::utils::tile_to_world_corner;
+use crate::economy::components::{PeacefulMode, ResourceDeposit};
 use crate::economy::resource::ResourceRegistry;
 use crate::map::components::*;
 use crate::map::config::MapConfig;
@@ -13,115 +10,6 @@ use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use std::collections::HashSet;
-
-#[derive(Component)]
-pub struct ChunkMarker(pub i32, pub i32);
-
-pub struct MapPlugin;
-
-impl Plugin for MapPlugin {
-    fn build(&self, app: &mut App) {
-        let cfg = MapConfig::load();
-        let seed = cfg.seed;
-        let dep_min = cfg.deposit_min_amount;
-        let dep_max = cfg.deposit_max_amount;
-        let dep_chance = cfg.deposit_spawn_chance_pct;
-        let dep_min_per = cfg.deposit_min_per_chunk;
-        let dep_max_per = cfg.deposit_max_per_chunk;
-        let dep_dist = cfg.deposit_distribution.clone();
-        app.insert_resource(cfg);
-        app.insert_resource(ChunkGrid::new(
-            seed,
-            dep_min,
-            dep_max,
-            dep_chance,
-            dep_min_per,
-            dep_max_per,
-            dep_dist,
-        ));
-        app.insert_resource(HoveredTile::default());
-        app.add_systems(
-            OnEnter(GameState::Playing),
-            setup_map.run_if(crate::save_load::is_fresh_game),
-        );
-        app.add_systems(OnExit(GameState::Playing), cleanup_map);
-        app.add_systems(
-            Update,
-            update_hovered_tile.run_if(in_state(GameState::Playing)),
-        );
-        app.add_systems(
-            Update,
-            update_visible_chunks.run_if(in_state(GameState::Playing)),
-        );
-        app.add_systems(
-            Update,
-            recenter_on_player.run_if(in_state(GameState::Playing)),
-        );
-    }
-}
-
-fn setup_map(
-    mut commands: Commands,
-    cfg: Res<MapConfig>,
-    mut chunk_grid: ResMut<ChunkGrid>,
-    res_registry: Res<ResourceRegistry>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    textures: Res<TextureCache>,
-) {
-    let (px, py) = cfg.player_start_position;
-    let chunk_size = CHUNK_SIZE as i32;
-    let margin_chunks = 10;
-    let player_cx = px.div_euclid(chunk_size);
-    let player_cy = py.div_euclid(chunk_size);
-    let existing = HashSet::new();
-    spawn_chunks_in_range(
-        &mut commands,
-        &mut chunk_grid,
-        &cfg,
-        &res_registry,
-        &shapes,
-        &mut materials,
-        &mut meshes,
-        &textures,
-        player_cx - margin_chunks,
-        player_cx + margin_chunks,
-        player_cy - margin_chunks,
-        player_cy + margin_chunks,
-        &existing,
-    );
-}
-
-fn recenter_on_player(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut camera: Query<&mut Transform, With<Camera2d>>,
-    cfg: Res<MapConfig>,
-) {
-    if !keys.just_pressed(KeyCode::KeyH) {
-        return;
-    }
-    let (px, py) = cfg.player_start_position;
-    if let Ok(mut tf) = camera.single_mut() {
-        let pos = tile_to_world(px, py, cfg.tile_size);
-        tf.translation.x = pos.x;
-        tf.translation.y = pos.y;
-    }
-}
-
-fn update_hovered_tile(
-    mut hovered: ResMut<HoveredTile>,
-    windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
-    cfg: Res<MapConfig>,
-    ui_blocking: Res<UiIsBlocking>,
-) {
-    if ui_blocking.0 {
-        hovered.0 = None;
-        return;
-    }
-    hovered.0 = cursor_to_tile(&windows, &camera, &cfg);
-}
 
 pub fn build_chunk_mesh(cx: i32, cy: i32, tile_size: f32) -> (Mesh, Mesh) {
     let chunk_size = CHUNK_SIZE as i32;
@@ -184,7 +72,6 @@ fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
     mesh
 }
 
-/// Spawn visual entities for a single chunk (tile mesh + deposits + decorations).
 pub fn spawn_single_chunk_visuals(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
@@ -207,7 +94,7 @@ pub fn spawn_single_chunk_visuals(
     let mat_even = materials.add(Color::srgb(0.25, 0.35, 0.25));
     let mat_odd = materials.add(Color::srgb(0.18, 0.28, 0.18));
 
-    commands.spawn(ChunkMarker(cx, cy));
+    commands.spawn(super::ChunkMarker(cx, cy));
     commands.spawn((
         ChunkMember(cx, cy),
         Mesh2d(meshes.add(mesh_even)),
@@ -224,7 +111,6 @@ pub fn spawn_single_chunk_visuals(
     let world_ox = cx * chunk_size;
     let world_oy = cy * chunk_size;
 
-    // Track occupied positions (deposits) to avoid overlap
     let mut occupied: HashSet<(u32, u32)> = HashSet::new();
 
     for d in &chunk.deposits {
@@ -235,7 +121,6 @@ pub fn spawn_single_chunk_visuals(
         let wx = world_ox + d.x as i32;
         let wy = world_oy + d.y as i32;
 
-        // Use resource sprite if available, fallback to colored circle
         if let Some(handle) = textures.base.get(&d.resource) {
             commands.spawn((
                 ChunkMember(cx, cy),
@@ -271,9 +156,8 @@ pub fn spawn_single_chunk_visuals(
         }
     }
 
-    // Spawn decorations (trees, rocks) on random empty ground tiles
     let mut rng = SimpleRng::new(chunk_hash);
-    let deco_count = 4 + (rng.next() as usize % 5); // 4-8 per chunk
+    let deco_count = 4 + (rng.next() as usize % 5);
     let deco_kinds = [
         ("tree", Color::srgb(0.15, 0.45, 0.15)),
         ("rock", Color::srgb(0.4, 0.4, 0.4)),
@@ -307,7 +191,7 @@ pub fn spawn_single_chunk_visuals(
     }
 }
 
-fn spawn_chunks_in_range(
+pub fn spawn_chunks_in_range(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
     cfg: &MapConfig,
@@ -343,14 +227,14 @@ fn spawn_chunks_in_range(
     }
 }
 
-fn update_visible_chunks(
+pub fn update_visible_chunks(
     mut commands: Commands,
     camera: Query<(&Camera, &Transform)>,
     window: Query<&Window>,
     mut chunk_grid: ResMut<ChunkGrid>,
     cfg: Res<MapConfig>,
     res_registry: Res<ResourceRegistry>,
-    existing_markers: Query<(Entity, &ChunkMarker)>,
+    existing_markers: Query<(Entity, &super::ChunkMarker)>,
     existing_members: Query<(Entity, &ChunkMember)>,
     existing_deposits: Query<(Entity, &ResourceDeposit, &TilePosition)>,
     shapes: Res<ShapeCache>,
@@ -467,23 +351,4 @@ fn update_visible_chunks(
         max_cy,
         &spawned,
     );
-}
-
-fn cleanup_map(
-    mut commands: Commands,
-    markers: Query<Entity, With<ChunkMarker>>,
-    members: Query<Entity, With<ChunkMember>>,
-    cameras: Query<Entity, With<Camera2d>>,
-    mut chunk_grid: ResMut<ChunkGrid>,
-) {
-    for entity in markers.iter() {
-        commands.entity(entity).despawn();
-    }
-    for entity in members.iter() {
-        commands.entity(entity).despawn();
-    }
-    for entity in cameras.iter() {
-        commands.entity(entity).despawn();
-    }
-    chunk_grid.clear();
 }

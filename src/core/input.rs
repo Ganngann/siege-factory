@@ -1,11 +1,98 @@
 use crate::load_toml;
 use bevy::prelude::*;
 use std::collections::HashMap;
+use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum InputBinding {
     Key(KeyCode),
     Mouse(MouseButton),
+}
+
+impl fmt::Display for InputBinding {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            InputBinding::Key(k) => write!(f, "{}", key_code_display(*k)),
+            InputBinding::Mouse(m) => write!(f, "{}", mouse_button_display(*m)),
+        }
+    }
+}
+
+fn key_code_display(k: KeyCode) -> &'static str {
+    match k {
+        KeyCode::Space => "Space",
+        KeyCode::Escape => "Escape",
+        KeyCode::Enter => "Enter",
+        KeyCode::Tab => "Tab",
+        KeyCode::Backspace => "Backspace",
+        KeyCode::Delete => "Delete",
+        KeyCode::Home => "Home",
+        KeyCode::End => "End",
+        KeyCode::PageUp => "PageUp",
+        KeyCode::PageDown => "PageDown",
+        KeyCode::ArrowUp => "ArrowUp",
+        KeyCode::ArrowDown => "ArrowDown",
+        KeyCode::ArrowLeft => "ArrowLeft",
+        KeyCode::ArrowRight => "ArrowRight",
+        KeyCode::KeyA => "KeyA",
+        KeyCode::KeyB => "KeyB",
+        KeyCode::KeyC => "KeyC",
+        KeyCode::KeyD => "KeyD",
+        KeyCode::KeyE => "KeyE",
+        KeyCode::KeyF => "KeyF",
+        KeyCode::KeyG => "KeyG",
+        KeyCode::KeyH => "KeyH",
+        KeyCode::KeyI => "KeyI",
+        KeyCode::KeyJ => "KeyJ",
+        KeyCode::KeyK => "KeyK",
+        KeyCode::KeyL => "KeyL",
+        KeyCode::KeyM => "KeyM",
+        KeyCode::KeyN => "KeyN",
+        KeyCode::KeyO => "KeyO",
+        KeyCode::KeyP => "KeyP",
+        KeyCode::KeyQ => "KeyQ",
+        KeyCode::KeyR => "KeyR",
+        KeyCode::KeyS => "KeyS",
+        KeyCode::KeyT => "KeyT",
+        KeyCode::KeyU => "KeyU",
+        KeyCode::KeyV => "KeyV",
+        KeyCode::KeyW => "KeyW",
+        KeyCode::KeyX => "KeyX",
+        KeyCode::KeyY => "KeyY",
+        KeyCode::KeyZ => "KeyZ",
+        KeyCode::Digit0 => "Digit0",
+        KeyCode::Digit1 => "Digit1",
+        KeyCode::Digit2 => "Digit2",
+        KeyCode::Digit3 => "Digit3",
+        KeyCode::Digit4 => "Digit4",
+        KeyCode::Digit5 => "Digit5",
+        KeyCode::Digit6 => "Digit6",
+        KeyCode::Digit7 => "Digit7",
+        KeyCode::Digit8 => "Digit8",
+        KeyCode::Digit9 => "Digit9",
+        KeyCode::F1 => "F1",
+        KeyCode::F2 => "F2",
+        KeyCode::F3 => "F3",
+        KeyCode::F4 => "F4",
+        KeyCode::F5 => "F5",
+        KeyCode::F6 => "F6",
+        KeyCode::F7 => "F7",
+        KeyCode::F8 => "F8",
+        KeyCode::F9 => "F9",
+        KeyCode::F10 => "F10",
+        KeyCode::F11 => "F11",
+        KeyCode::F12 => "F12",
+        _ => "Other",
+    }
+}
+
+fn mouse_button_display(m: MouseButton) -> &'static str {
+    match m {
+        MouseButton::Left => "MouseLeft",
+        MouseButton::Right => "MouseRight",
+        MouseButton::Middle => "MouseMiddle",
+        _ => "Mouse",
+    }
 }
 
 #[derive(Resource, Debug, Clone)]
