@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use std::collections::HashSet;
 
 use crate::core::game_state::GameState;
+use crate::core::utils::move_toward;
 use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::unit_config::UnitConfig;
@@ -167,9 +168,7 @@ fn cultivator_ai(
                         cultivator.carried_amount = carry_capacity;
                         cultivator.state = CultivatorState::Idle;
                     } else {
-                        let step = (speed * time.delta_secs()).min(dist);
-                        transform.translation.x += dx / dist * step;
-                        transform.translation.y += dy / dist * step;
+                        move_toward(&mut transform.translation, farm_pos, speed, time.delta_secs());
                     }
                 } else {
                     cultivator.state = CultivatorState::Idle;
@@ -211,9 +210,7 @@ fn cultivator_ai(
                     }
                     cultivator.state = CultivatorState::Idle;
                 } else {
-                    let step = (speed * time.delta_secs()).min(dist);
-                    transform.translation.x += dx / dist * step;
-                    transform.translation.y += dy / dist * step;
+                    move_toward(&mut transform.translation, Vec3::new(target_x, target_y, 0.0), speed, time.delta_secs());
                 }
             }
 
@@ -248,9 +245,7 @@ fn cultivator_ai(
                             cultivator.state = CultivatorState::Idle;
                         }
                     } else {
-                        let step = (speed * time.delta_secs()).min(dist);
-                        transform.translation.x += dx / dist * step;
-                        transform.translation.y += dy / dist * step;
+                        move_toward(&mut transform.translation, crop_transform.translation, speed, time.delta_secs());
                     }
                 } else {
                     cultivator.state = CultivatorState::Idle;
@@ -278,9 +273,7 @@ fn cultivator_ai(
                         cultivator.carried_amount = 0;
                         cultivator.state = CultivatorState::Idle;
                     } else {
-                        let step = (speed * time.delta_secs()).min(dist);
-                        transform.translation.x += dx / dist * step;
-                        transform.translation.y += dy / dist * step;
+                        move_toward(&mut transform.translation, farm_pos, speed, time.delta_secs());
                     }
                 } else {
                     cultivator.state = CultivatorState::Idle;

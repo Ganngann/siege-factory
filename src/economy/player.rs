@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::core::utils::{move_toward, tile_to_world, world_to_tile};
 use crate::economy::building::BuildingRegistry;
 use crate::economy::resource::Cost;
 use crate::economy::components::{
@@ -23,8 +24,8 @@ pub fn setup_player(
     }
 
     let (bx, by) = cfg.player_start_position;
-    let cx = bx as f32 * cfg.tile_size + cfg.tile_size / 2.0;
-    let cy = by as f32 * cfg.tile_size + cfg.tile_size / 2.0;
+    let start_pos = tile_to_world(bx, by, cfg.tile_size);
+    let (cx, cy) = (start_pos.x, start_pos.y);
 
     let inv = crate::economy::resource::Inventory::new();
 
@@ -94,8 +95,9 @@ pub fn player_movement(
         tf.translation.x += dx * speed * time.delta_secs();
         tf.translation.y += dy * speed * time.delta_secs();
 
-        tile_pos.x = ((tf.translation.x + cfg.tile_size / 2.0) / cfg.tile_size).floor() as i32;
-        tile_pos.y = ((tf.translation.y + cfg.tile_size / 2.0) / cfg.tile_size).floor() as i32;
+        let (tx, ty) = world_to_tile(tf.translation.truncate(), cfg.tile_size);
+        tile_pos.x = tx;
+        tile_pos.y = ty;
     }
     player_pos.0 = tf.translation;
 }
@@ -130,16 +132,15 @@ pub fn builder_work(
             let d = target - builder_tf.translation;
             let dist = d.length();
             if dist > 4.0 {
-                let step = (speed * time.delta_secs()).min(dist);
-                builder_tf.translation += d / dist * step;
+                move_toward(&mut builder_tf.translation, target, speed, time.delta_secs());
             }
 
             // Find closest unbuilt within range
             let mut closest: Option<(Entity, f32)> = None;
             for (build_entity, _tf, building, footprint, _inv) in building_query.iter() {
                 let in_range = footprint.0.iter().any(|(tx, ty)| {
-                    let wx = *tx as f32 * cfg.tile_size + cfg.tile_size / 2.0;
-                    let wy = *ty as f32 * cfg.tile_size + cfg.tile_size / 2.0;
+                    let pos = tile_to_world(*tx, *ty, cfg.tile_size);
+                    let (wx, wy) = (pos.x, pos.y);
                     let dx = player_tf.translation.x - wx;
                     let dy = player_tf.translation.y - wy;
                     dx * dx + dy * dy <= range_sq
@@ -169,8 +170,8 @@ pub fn builder_work(
                 if !has_any {
                     continue;
                 }
-                let wx = footprint.0[0].0 as f32 * cfg.tile_size + cfg.tile_size / 2.0;
-                let wy = footprint.0[0].1 as f32 * cfg.tile_size + cfg.tile_size / 2.0;
+                let foot_pos = tile_to_world(footprint.0[0].0, footprint.0[0].1, cfg.tile_size);
+                let (wx, wy) = (foot_pos.x, foot_pos.y);
                 let d2 = (wx - builder_tf.translation.x).powi(2)
                     + (wy - builder_tf.translation.y).powi(2);
                 match closest {
@@ -251,8 +252,7 @@ pub fn builder_work(
             if dist <= reach_dist {
                 builder.state = BuilderState::Idle;
             } else {
-                let step = (speed * time.delta_secs()).min(dist);
-                builder_tf.translation += d / dist * step;
+                move_toward(&mut builder_tf.translation, target, speed, time.delta_secs());
             }
         }
     }

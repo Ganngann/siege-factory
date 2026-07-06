@@ -12,6 +12,7 @@ use crate::economy::components::{
 };
 
 use crate::economy::resource::{Inventory, ResourceId};
+use crate::core::utils::world_to_tile;
 use crate::economy::spatial::SpatialRegistry;
 use crate::events::{BeltDragCompleted, DeconstructAreaEvent, DespawnDeposit};
 use crate::map::components::{HoveredTile, TilePosition};
@@ -250,8 +251,7 @@ pub fn handle_deconstruct_click_v2(
         return;
     };
 
-    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    let (tx, ty) = world_to_tile(world_pos, tile_size);
 
     let Some(entity) = spatial.at(tx, ty) else {
         return;
@@ -618,8 +618,7 @@ pub fn track_belt_drag(
         return;
     };
 
-    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    let (tx, ty) = world_to_tile(world_pos, tile_size);
 
     if buttons.just_pressed(bindings.mouse("place")) {
         let has_belt = belt_read.iter().any(|(pos, _)| pos.x == tx && pos.y == ty);
@@ -842,8 +841,7 @@ pub fn track_deconstruct_drag(
         return;
     };
 
-    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    let (tx, ty) = world_to_tile(world_pos, tile_size);
 
     if bindings.just_pressed("place", &keys, &buttons) && drag.start_coord.is_none() {
         drag.start_coord = Some((tx, ty));
@@ -965,8 +963,7 @@ pub fn handle_build_click(
         return;
     };
 
-    let tx = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let ty = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    let (tx, ty) = world_to_tile(world_pos, tile_size);
 
     let def = match registry.get(kind) {
         Some(d) => d,

@@ -1,4 +1,5 @@
 use crate::core::game_state::GameState;
+use crate::core::utils::{tile_to_world, tile_to_world_corner};
 use crate::economy::components::PeacefulMode;
 use crate::economy::components::ResourceDeposit;
 use crate::economy::components::UiIsBlocking;
@@ -102,8 +103,9 @@ fn recenter_on_player(
     }
     let (px, py) = cfg.player_start_position;
     if let Ok(mut tf) = camera.single_mut() {
-        tf.translation.x = px as f32 * cfg.tile_size + cfg.tile_size / 2.0;
-        tf.translation.y = py as f32 * cfg.tile_size + cfg.tile_size / 2.0;
+        let pos = tile_to_world(px, py, cfg.tile_size);
+        tf.translation.x = pos.x;
+        tf.translation.y = pos.y;
     }
 }
 
@@ -137,8 +139,8 @@ pub fn build_chunk_mesh(cx: i32, cy: i32, tile_size: f32) -> (Mesh, Mesh) {
         for tx in 0..CHUNK_SIZE as usize {
             let wx = world_ox + tx as i32;
             let wy = world_oy + ty as i32;
-            let x = wx as f32 * tile_size - tile_size / 2.0;
-            let y = wy as f32 * tile_size - tile_size / 2.0;
+            let pos = tile_to_world_corner(wx, wy, tile_size);
+            let (x, y) = (pos.x, pos.y);
             let s = tile_size;
 
             let quad_positions = [

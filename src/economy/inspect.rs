@@ -17,6 +17,7 @@ use crate::economy::components::{
 };
 use crate::economy::discovery::GlobalArchive;
 use crate::economy::recipe::RecipeRegistry;
+use crate::core::utils::{tile_to_world, world_to_tile};
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::unit_config::UnitConfig;
@@ -1146,8 +1147,7 @@ pub fn building_inspect_click(
         return;
     };
 
-    let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
-    let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    let (tile_x, tile_y) = world_to_tile(world_pos, tile_size);
 
     let interact_range_sq = (3.0 * cfg.tile_size).powi(2);
 
@@ -1167,8 +1167,8 @@ pub fn building_inspect_click(
             .map(|o| o.0.clone())
             .unwrap_or_else(|| vec![(tile_x, tile_y)]);
         let in_proximity = footprint.iter().any(|(tx, ty)| {
-            let wx = *tx as f32 * tile_size + tile_size / 2.0;
-            let wy = *ty as f32 * tile_size + tile_size / 2.0;
+            let tile_center = tile_to_world(*tx, *ty, tile_size);
+            let (wx, wy) = (tile_center.x, tile_center.y);
             let dx = player_pos.0.x - wx;
             let dy = player_pos.0.y - wy;
             dx * dx + dy * dy <= interact_range_sq
@@ -1206,8 +1206,8 @@ pub fn building_inspect_click(
         }
 
         // Check proximity (deposit is single tile)
-        let wx = pos.x as f32 * tile_size + tile_size / 2.0;
-        let wy = pos.y as f32 * tile_size + tile_size / 2.0;
+        let tile_center = tile_to_world(pos.x, pos.y, tile_size);
+        let (wx, wy) = (tile_center.x, tile_center.y);
         let dx = player_pos.0.x - wx;
         let dy = player_pos.0.y - wy;
         if dx * dx + dy * dy > interact_range_sq {

@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::toast::ToastQueue;
+use crate::core::utils::tile_to_world;
 use crate::economy::components::{PeacefulMode, Player};
 use crate::enemy::components::{Enemy, Health, LastWave, WaveState};
 use crate::enemy::registry::EnemyRegistry;
@@ -90,11 +91,10 @@ pub fn spawn_enemies(
             current: enemy_hp,
             max: enemy_hp,
         },
-        Transform::from_xyz(
-            sx as f32 * tile_size + tile_size / 2.0,
-            sy as f32 * tile_size + tile_size / 2.0,
-            3.0,
-        ),
+        {
+            let pos = tile_to_world(sx, sy, tile_size);
+            Transform::from_xyz(pos.x, pos.y, 3.0)
+        },
         TilePosition { x: sx, y: sy },
     ));
 

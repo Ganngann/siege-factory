@@ -7,7 +7,7 @@ use crate::agriculture::components::Farm;
 use crate::combat::Projectile;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
-use crate::core::utils::{config_dir, silent_despawn};
+use crate::core::utils::{config_dir, silent_despawn, tile_to_world};
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::components::{
     Active, Assembler, Building, Direction, Ghost, HpBarChild, Miner, OccupiedTiles, PanelModal,
@@ -543,11 +543,10 @@ fn spawn_fresh_camera(mut commands: Commands, cfg: Res<MapConfig>, buf: Res<Load
     commands.spawn((
         Camera2d,
         bevy::ui::IsDefaultUiCamera,
-        Transform::from_xyz(
-            hx as f32 * cfg.tile_size + cfg.tile_size / 2.0,
-            hy as f32 * cfg.tile_size + cfg.tile_size / 2.0,
-            100.0,
-        ),
+        {
+            let pos = tile_to_world(hx, hy, cfg.tile_size);
+            Transform::from_xyz(pos.x, pos.y, 100.0)
+        },
         bevy_pancam::PanCam {
             grab_buttons: vec![MouseButton::Middle],
             speed: 500.0,

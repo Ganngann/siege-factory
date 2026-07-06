@@ -1,4 +1,5 @@
 use crate::core::game_state::GameState;
+use crate::core::utils::move_toward;
 use crate::enemy::wave_config::WaveConfig;
 use crate::enemy::{Enemy as EnemyComponent, Health};
 use crate::events::DespawnEnemy;
@@ -44,8 +45,7 @@ fn move_and_hit_projectiles(
                 }
                 to_despawn.push(proj_entity);
             } else {
-                let step = (projectile.speed * time.delta_secs()).min(dist);
-                transform.translation += dir / dist * step;
+                move_toward(&mut transform.translation, target_transform.translation, projectile.speed, time.delta_secs());
             }
         } else {
             to_despawn.push(proj_entity);

@@ -34,3 +34,40 @@ pub fn parse_hex_color(s: &str) -> Color {
 pub fn silent_despawn(commands: &mut Commands, entity: Entity) {
     commands.entity(entity).try_despawn();
 }
+
+/// Convert tile grid coordinates to world position (center of tile).
+pub fn tile_to_world(tx: i32, ty: i32, tile_size: f32) -> Vec2 {
+    Vec2::new(
+        tx as f32 * tile_size + tile_size / 2.0,
+        ty as f32 * tile_size + tile_size / 2.0,
+    )
+}
+
+/// Convert tile grid coordinates to world position (bottom-left corner of tile).
+pub fn tile_to_world_corner(tx: i32, ty: i32, tile_size: f32) -> Vec2 {
+    Vec2::new(
+        tx as f32 * tile_size - tile_size / 2.0,
+        ty as f32 * tile_size - tile_size / 2.0,
+    )
+}
+
+/// Convert world position to tile grid coordinates.
+pub fn world_to_tile(pos: Vec2, tile_size: f32) -> (i32, i32) {
+    let tx = ((pos.x + tile_size / 2.0) / tile_size).floor() as i32;
+    let ty = ((pos.y + tile_size / 2.0) / tile_size).floor() as i32;
+    (tx, ty)
+}
+
+/// Move `translation` toward `target` at `speed` on a 2D plane (x/y), returns true when arrived.
+pub fn move_toward(translation: &mut Vec3, target: Vec3, speed: f32, dt: f32) -> bool {
+    let dx = target.x - translation.x;
+    let dy = target.y - translation.y;
+    let dist = (dx * dx + dy * dy).sqrt();
+    if dist < 0.001 {
+        return true;
+    }
+    let step = (speed * dt).min(dist);
+    translation.x += dx / dist * step;
+    translation.y += dy / dist * step;
+    false
+}

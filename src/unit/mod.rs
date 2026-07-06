@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::GameState;
+use crate::core::utils::move_toward;
 use crate::economy::components::{Player, ResourceDeposit, Unit};
 use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::unit_config::UnitConfig;
@@ -209,9 +210,7 @@ fn worker_harvest(
                     if dist < tile_size * 0.5 {
                         worker.state = WorkerState::Mining(target_dep);
                     } else {
-                        let step = (speed * time.delta_secs()).min(dist);
-                        transform.translation.x += dx / dist * step;
-                        transform.translation.y += dy / dist * step;
+                        move_toward(&mut transform.translation, target_pos, speed, time.delta_secs());
                     }
                 } else {
                     worker.state = WorkerState::Idle;

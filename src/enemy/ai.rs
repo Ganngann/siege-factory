@@ -1,3 +1,4 @@
+use crate::core::utils::{move_toward, tile_to_world};
 use crate::economy::components::Player;
 use crate::economy::spatial::SpatialRegistry;
 use crate::enemy::components::Enemy;
@@ -88,8 +89,9 @@ pub fn move_enemies(
             _ => continue,
         };
 
-        let target_wx = target.0 as f32 * tile_size + tile_size / 2.0;
-        let target_wy = target.1 as f32 * tile_size + tile_size / 2.0;
+        let target_pos = tile_to_world(target.0, target.1, tile_size);
+        let target_wx = target_pos.x;
+        let target_wy = target_pos.y;
         let dx = target_wx - transform.translation.x;
         let dy = target_wy - transform.translation.y;
         let dist = (dx * dx + dy * dy).sqrt();
@@ -100,10 +102,8 @@ pub fn move_enemies(
             transform.translation.x = target_wx;
             transform.translation.y = target_wy;
         } else {
-            let step = enemy_speed * time.delta_secs();
-            let ratio = (step / dist).min(1.0);
-            transform.translation.x += dx * ratio;
-            transform.translation.y += dy * ratio;
+            let z = transform.translation.z;
+            move_toward(&mut transform.translation, Vec3::new(target_wx, target_wy, z), enemy_speed, time.delta_secs());
         }
     }
 }
