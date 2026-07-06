@@ -5,6 +5,7 @@ use crate::economy::components::UiIsBlocking;
 use crate::economy::resource::ResourceRegistry;
 use crate::map::components::*;
 use crate::map::config::MapConfig;
+use crate::map::rng::{SimpleRng, chunk_hash};
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 use crate::rendering::{ShapeCache, TextureCache};
 use bevy::asset::RenderAssetUsages;
@@ -181,15 +182,6 @@ fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
     mesh
 }
 
-fn chunk_hash(seed: u64, cx: i32, cy: i32) -> u64 {
-    use std::hash::{Hash, Hasher};
-    let mut hasher = std::hash::DefaultHasher::new();
-    seed.hash(&mut hasher);
-    cx.hash(&mut hasher);
-    cy.hash(&mut hasher);
-    hasher.finish()
-}
-
 /// Spawn visual entities for a single chunk (tile mesh + deposits + decorations).
 pub fn spawn_single_chunk_visuals(
     commands: &mut Commands,
@@ -233,21 +225,21 @@ pub fn spawn_single_chunk_visuals(
     // Track occupied positions (deposits) to avoid overlap
     let mut occupied: HashSet<(u32, u32)> = HashSet::new();
 
-    for &(dx, dy, amount, ref resource) in &chunk.deposits {
-        if amount == 0 {
+    for d in &chunk.deposits {
+        if d.amount == 0 {
             continue;
         }
-        occupied.insert((dx, dy));
-        let wx = world_ox + dx as i32;
-        let wy = world_oy + dy as i32;
+        occupied.insert((d.x, d.y));
+        let wx = world_ox + d.x as i32;
+        let wy = world_oy + d.y as i32;
 
         // Use resource sprite if available, fallback to colored circle
-        if let Some(handle) = textures.base.get(resource) {
+        if let Some(handle) = textures.base.get(&d.resource) {
             commands.spawn((
                 ChunkMember(cx, cy),
                 ResourceDeposit {
-                    resource: resource.clone(),
-                    amount,
+                    resource: d.resource.clone(),
+                    amount: d.amount,
                 },
                 Sprite {
                     image: handle.clone(),
@@ -259,15 +251,15 @@ pub fn spawn_single_chunk_visuals(
             ));
         } else {
             let color = res_registry
-                .get_opt(resource)
+                .get_opt(&d.resource)
                 .map(|d| d.color)
                 .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
             let dep_color = materials.add(color);
             commands.spawn((
                 ChunkMember(cx, cy),
                 ResourceDeposit {
-                    resource: resource.clone(),
-                    amount,
+                    resource: d.resource.clone(),
+                    amount: d.amount,
                 },
                 Mesh2d(shapes.circle.clone()),
                 MeshMaterial2d(dep_color),
@@ -285,12 +277,12 @@ pub fn spawn_single_chunk_visuals(
         ("rock", Color::srgb(0.4, 0.4, 0.4)),
     ];
     for _ in 0..deco_count {
-        let dx = rng.next() % CHUNK_SIZE as u64;
-        let dy = rng.next() % CHUNK_SIZE as u64;
-        if occupied.contains(&(dx as u32, dy as u32)) {
+        let dx = rng.next() % CHUNK_SIZE;
+        let dy = rng.next() % CHUNK_SIZE;
+        if occupied.contains(&(dx, dy)) {
             continue;
         }
-        occupied.insert((dx as u32, dy as u32));
+        occupied.insert((dx, dy));
         let wx = world_ox + dx as i32;
         let wy = world_oy + dy as i32;
         let kind_idx = rng.next() as usize % deco_kinds.len();
@@ -310,23 +302,6 @@ pub fn spawn_single_chunk_visuals(
             Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, z),
             TilePosition { x: wx, y: wy },
         ));
-    }
-}
-
-struct SimpleRng {
-    state: u64,
-}
-
-impl SimpleRng {
-    fn new(seed: u64) -> Self {
-        Self { state: seed }
-    }
-    fn next(&mut self) -> u64 {
-        self.state = self
-            .state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
-        self.state >> 33
     }
 }
 
@@ -468,8 +443,8 @@ fn update_visible_chunks(
     for ((cx, cy, dx, dy), amount) in deposit_updates {
         let chunk = chunk_grid.ensure_chunk_mut(cx, cy);
         for d in chunk.deposits.iter_mut() {
-            if d.0 == dx && d.1 == dy {
-                d.2 = amount;
+            if d.x == dx && d.y == dy {
+                d.amount = amount;
                 break;
             }
         }

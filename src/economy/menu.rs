@@ -1,4 +1,5 @@
 use crate::economy::building::BuildingRegistry;
+use crate::economy::resource::Cost;
 use crate::economy::unit_config::UnitConfig;
 use bevy::prelude::*;
 use serde::Deserialize;
@@ -255,7 +256,7 @@ pub fn flat_items_at(
                     MenuAction::Spawn(id) => {
                         if let Some(def) = unit_cfg.get(id) {
                             (
-                                format_unit_cost(&def.cost),
+                                format_cost(&def.cost),
                                 def.color,
                                 Some(def.texture_stem.clone()),
                             )
@@ -301,14 +302,7 @@ pub fn flat_items_at(
     }
 }
 
-fn format_cost(cost: &[crate::economy::building::BuildingCost]) -> String {
-    cost.iter()
-        .map(|c| format!("{} {:?}", c.amount, c.resource))
-        .collect::<Vec<_>>()
-        .join(" + ")
-}
-
-fn format_unit_cost(cost: &[crate::economy::unit_config::UnitCost]) -> String {
+fn format_cost(cost: &[Cost]) -> String {
     cost.iter()
         .map(|c| format!("{} {:?}", c.amount, c.resource))
         .collect::<Vec<_>>()

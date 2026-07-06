@@ -1294,9 +1294,10 @@ pub fn close_popup_on_escape(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
     keys: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
 ) {
-    if !keys.just_pressed(bindings.key("cancel")) {
+    if !bindings.just_pressed("cancel", &keys, &mouse) {
         return;
     }
     if panel.recipe_selector.is_some() {

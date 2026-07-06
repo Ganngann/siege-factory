@@ -1,14 +1,8 @@
 use crate::core::utils::parse_hex_color;
-use crate::economy::resource::ResourceId;
+use crate::economy::resource::{Cost, ResourceId};
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
-
-#[derive(Debug, Clone)]
-pub struct BuildingCost {
-    pub resource: ResourceId,
-    pub amount: u32,
-}
 
 #[derive(Debug, Clone)]
 pub struct CombatStats {
@@ -34,7 +28,7 @@ pub struct ProductionDef {
 pub struct BuildingDef {
     pub id: String,
     pub name: String,
-    pub cost: Vec<BuildingCost>,
+    pub cost: Vec<Cost>,
     pub hp: u32,
     pub tile_size: (u32, u32),
     pub color: Color,
@@ -97,8 +91,8 @@ impl BuildingRegistry {
         for (id, entry) in parsed.buildings {
             let mut cost = Vec::new();
             for (res_key, amount) in entry.cost {
-                cost.push(BuildingCost {
-                    resource: ResourceId(res_key.to_lowercase()),
+                cost.push(Cost {
+                    resource: ResourceId::new(res_key),
                     amount,
                 });
             }
@@ -117,7 +111,7 @@ impl BuildingRegistry {
                 projectile_speed: c.projectile_speed,
             });
             let production = entry.production.map(|p| ProductionDef {
-                resource: ResourceId(p.resource.to_lowercase()),
+                resource: ResourceId::new(&p.resource),
                 interval_sec: p.interval_sec,
             });
 

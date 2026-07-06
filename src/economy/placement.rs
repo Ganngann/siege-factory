@@ -2,7 +2,8 @@ use crate::agriculture::components::{Crop, Farm};
 use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
 use crate::economy::belt::{BeltSlots, compute_slot_positions};
-use crate::economy::building::{BuildingCost, BuildingRegistry};
+use crate::economy::building::BuildingRegistry;
+use crate::economy::resource::Cost;
 use crate::economy::components::{
     Active, Archive, Assembler, BeltDirection, BeltDrag, BuildMode, BuildPreview, Building,
     DeconstructDrag, DeconstructMode, Direction, DiscoveredRecipes, Ghost, Miner, OccupiedTiles,
@@ -24,13 +25,14 @@ pub fn build_mode_input(
     mut deconstruct: ResMut<DeconstructMode>,
     mut belt_dir: ResMut<BeltDirection>,
     keys: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
     cfg: Res<MapConfig>,
     mut placed_belts: Query<(&mut BeltSlots, &TilePosition)>,
     hovered: Res<HoveredTile>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
-    if keys.just_pressed(bindings.key("build_rotate")) && build_mode.0.as_deref() == Some("belt") {
+    if bindings.just_pressed("build_rotate", &keys, &mouse) && build_mode.0.as_deref() == Some("belt") {
         if let Some(pos) = hovered.0 {
             let mut rotated = false;
             for (mut belt, tile_pos) in placed_belts.iter_mut() {
@@ -559,11 +561,11 @@ pub fn deconstruct_drag_preview(
     ));
 }
 
-fn can_afford(hq_inv: &Inventory, cost: &[BuildingCost]) -> bool {
+fn can_afford(hq_inv: &Inventory, cost: &[Cost]) -> bool {
     cost.iter().all(|c| hq_inv.get(&c.resource) >= c.amount)
 }
 
-fn deduct_cost(hq_inv: &mut Inventory, cost: &[BuildingCost]) {
+fn deduct_cost(hq_inv: &mut Inventory, cost: &[Cost]) {
     for c in cost {
         hq_inv.remove(&c.resource, c.amount);
     }
@@ -695,10 +697,10 @@ pub fn on_belt_drag_completed(
             Ok(inv) => inv,
             Err(_) => return,
         };
-        let scaled_cost: Vec<BuildingCost> = def
+        let scaled_cost: Vec<Cost> = def
             .cost
             .iter()
-            .map(|c| BuildingCost {
+            .map(|c| Cost {
                 resource: c.resource.clone(),
                 amount: c.amount * ev.new_tiles.len() as u32,
             })

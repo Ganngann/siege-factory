@@ -1,13 +1,22 @@
 use crate::map::components::TileType;
 use bevy::prelude::Resource;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub const CHUNK_SIZE: u32 = 32;
 
+#[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Deposit {
+    pub x: u32,
+    pub y: u32,
+    pub amount: u32,
+    pub resource: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct Chunk {
     pub tiles: [[TileType; CHUNK_SIZE as usize]; CHUNK_SIZE as usize],
-    pub deposits: Vec<(u32, u32, u32, String)>,
+    pub deposits: Vec<Deposit>,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -44,6 +53,8 @@ impl ChunkGrid {
         }
     }
 
+    // TODO: consolidate ensure_chunk and ensure_chunk_mut into a single helper
+    // returning (&Chunk, &mut Chunk) or using a shared inner fn.
     pub fn ensure_chunk(&mut self, cx: i32, cy: i32) -> &Chunk {
         let seed = self.seed;
         let min_amt = self.deposit_min_amount;
@@ -136,8 +147,8 @@ impl ChunkGrid {
     pub fn set_deposit_amount(&mut self, cx: i32, cy: i32, dx: u32, dy: u32, amount: u32) {
         if let Some(chunk) = self.chunks.get_mut(&(cx, cy)) {
             for d in &mut chunk.deposits {
-                if d.0 == dx && d.1 == dy {
-                    d.2 = amount;
+                if d.x == dx && d.y == dy {
+                    d.amount = amount;
                     return;
                 }
             }
@@ -147,8 +158,8 @@ impl ChunkGrid {
     pub fn set_deposit_resource(&mut self, cx: i32, cy: i32, dx: u32, dy: u32, resource: &str) {
         if let Some(chunk) = self.chunks.get_mut(&(cx, cy)) {
             for d in &mut chunk.deposits {
-                if d.0 == dx && d.1 == dy {
-                    d.3 = resource.to_string();
+                if d.x == dx && d.y == dy {
+                    d.resource = resource.to_string();
                     return;
                 }
             }
@@ -167,46 +178,33 @@ fn generate_chunk(
     deposit_max_per_chunk: u32,
     deposit_distribution: Vec<(String, u32)>,
 ) -> Chunk {
-    use std::hash::{Hash, Hasher};
+    use super::rng::{SimpleRng, chunk_hash};
 
     let mut tiles = [[TileType::Ground; CHUNK_SIZE as usize]; CHUNK_SIZE as usize];
 
-    let mut hasher = std::hash::DefaultHasher::new();
-    seed.hash(&mut hasher);
-    cx.hash(&mut hasher);
-    cy.hash(&mut hasher);
-    let chunk_hash = hasher.finish();
+    let h = chunk_hash(seed, cx, cy);
 
-    let mut rng = simple_rng(chunk_hash);
-
-    let world_ox = cx * CHUNK_SIZE as i32;
-    let world_oy = cy * CHUNK_SIZE as i32;
+    let mut rng = SimpleRng::new(h);
 
     for ty in 0..CHUNK_SIZE as usize {
         for tx in 0..CHUNK_SIZE as usize {
-            let wx = world_ox + tx as i32;
-            let wy = world_oy + ty as i32;
-            tiles[ty][tx] = if (wx + wy) % 2 == 0 {
-                TileType::Ground
-            } else {
-                TileType::Ground
-            };
+            tiles[ty][tx] = TileType::Ground;
         }
     }
 
     let total_weight: u32 = deposit_distribution.iter().map(|(_, w)| w).sum();
-    let has_deposits = rng.next() % 100 < deposit_spawn_chance_pct as u64;
+    let has_deposits = rng.next() % 100 < deposit_spawn_chance_pct;
     let mut deposits = Vec::new();
 
     if has_deposits && total_weight > 0 {
         let count_range = deposit_max_per_chunk - deposit_min_per_chunk;
-        let count = deposit_min_per_chunk + (rng.next() as u32 % (count_range + 1));
+        let count = deposit_min_per_chunk + (rng.next() % (count_range + 1));
         for _ in 0..count {
-            let dx = (rng.next() % CHUNK_SIZE as u64) as u32;
-            let dy = (rng.next() % CHUNK_SIZE as u64) as u32;
+            let dx = rng.next() % CHUNK_SIZE;
+            let dy = rng.next() % CHUNK_SIZE;
             let amount = deposit_min_amount
-                + (rng.next() as u32 % (deposit_max_amount - deposit_min_amount + 1));
-            let pick = rng.next() as u32 % total_weight;
+                + (rng.next() % (deposit_max_amount - deposit_min_amount + 1));
+            let pick = rng.next() % total_weight;
             let mut cumulative = 0u32;
             let resource = deposit_distribution
                 .iter()
@@ -217,29 +215,11 @@ fn generate_chunk(
                 .map(|(r, _)| r.clone())
                 .unwrap_or_else(|| "iron_ore".to_string());
             tiles[dy as usize][dx as usize] = TileType::Resource;
-            deposits.push((dx, dy, amount, resource));
+            deposits.push(Deposit { x: dx, y: dy, amount, resource });
         }
     }
 
     Chunk { tiles, deposits }
-}
-
-fn simple_rng(seed: u64) -> SimpleRng {
-    SimpleRng { state: seed }
-}
-
-struct SimpleRng {
-    state: u64,
-}
-
-impl SimpleRng {
-    fn next(&mut self) -> u64 {
-        self.state = self
-            .state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1442695040888963407);
-        self.state >> 33
-    }
 }
 
 #[cfg(test)]
@@ -336,11 +316,11 @@ mod tests {
         ];
         let mut grid = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist);
         let chunk = grid.ensure_chunk(0, 0);
-        for &(dx, dy, amount, _) in &chunk.deposits {
-            assert!(dx < CHUNK_SIZE);
-            assert!(dy < CHUNK_SIZE);
-            assert!(amount >= 50);
-            assert!(amount <= 150);
+        for d in &chunk.deposits {
+            assert!(d.x < CHUNK_SIZE);
+            assert!(d.y < CHUNK_SIZE);
+            assert!(d.amount >= 50);
+            assert!(d.amount <= 150);
         }
     }
 }

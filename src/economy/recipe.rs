@@ -26,12 +26,12 @@ impl RecipeRegistry {
             let input = entry
                 .input
                 .iter()
-                .map(|(k, v)| (ResourceId(k.to_lowercase()), *v))
+                .map(|(k, v)| (ResourceId::new(k), *v))
                 .collect();
             let output = entry
                 .output
                 .iter()
-                .map(|(k, v)| (ResourceId(k.to_lowercase()), *v))
+                .map(|(k, v)| (ResourceId::new(k), *v))
                 .collect();
             recipes.insert(
                 id.clone(),

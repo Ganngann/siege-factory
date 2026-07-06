@@ -1,4 +1,5 @@
 use crate::economy::components::{CloseButton, DragHandle};
+use bevy::ecs::hierarchy::ChildOf;
 use bevy::prelude::*;
 
 // ── Shared UI constants ──
@@ -233,19 +234,25 @@ pub fn drag_window_system(
 
 pub fn close_window_system(
     mut commands: Commands,
-    query: Query<(&Interaction, Option<&CloseButton>), (Changed<Interaction>, With<Button>)>,
-    window_query: Query<Entity, With<WindowRoot>>,
+    buttons: Query<(Entity, &Interaction), (Changed<Interaction>, With<CloseButton>)>,
+    parents: Query<&ChildOf>,
+    windows: Query<Entity, With<WindowRoot>>,
 ) {
-    for (interaction, close) in query.iter() {
+    for (entity, interaction) in &buttons {
         if *interaction != Interaction::Pressed {
             continue;
         }
-        if close.is_none() {
-            continue;
+        // Walk up parent chain to find WindowRoot
+        let mut current = entity;
+        loop {
+            if windows.contains(current) {
+                commands.entity(current).despawn();
+                break;
+            }
+                match parents.get(current) {
+                    Ok(child_of) => current = child_of.0,
+                    Err(_) => break,
+            }
         }
-        for entity in window_query.iter() {
-            commands.entity(entity).despawn();
-        }
-        return;
     }
 }

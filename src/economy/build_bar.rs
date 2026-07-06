@@ -324,6 +324,7 @@ pub fn menu_navigation(
     mut build_mode: ResMut<BuildMode>,
     mut deconstruct: ResMut<DeconstructMode>,
     keys: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
     bindings: Res<crate::core::input::KeyBindings>,
     mut commands: Commands,
 ) {
@@ -373,7 +374,7 @@ pub fn menu_navigation(
         }
     }
 
-    if keys.just_pressed(bindings.key("build_deconstruct")) {
+    if bindings.just_pressed("build_deconstruct", &keys, &mouse) {
         if build_mode.0.is_some() {
             build_mode.0 = None;
         }

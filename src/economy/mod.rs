@@ -32,6 +32,9 @@ use resource::ResourceRegistry;
 use spatial::SpatialRegistry;
 use ui::InventoryPanel;
 
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+struct PlayingSystems;
+
 pub fn update_ui_blocking(
     mut blocking: ResMut<UiIsBlocking>,
     hover_map: Res<HoverMap>,
@@ -94,6 +97,10 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<player::PlayerWorldPos>();
         app.init_resource::<components::DragState>();
         app.insert_resource(Time::<Fixed>::from_hz(20.0));
+        app.configure_sets(
+            Update,
+            PlayingSystems.run_if(in_state(GameState::Playing)),
+        );
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
         app.add_systems(
@@ -132,51 +139,51 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
-            placement::build_mode_input.run_if(in_state(GameState::Playing)),
+            placement::build_mode_input.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            placement::track_belt_drag.run_if(in_state(GameState::Playing)),
+            placement::track_belt_drag.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            placement::handle_build_click.run_if(in_state(GameState::Playing)),
+            placement::handle_build_click.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            placement::handle_deconstruct_click_v2.run_if(in_state(GameState::Playing)),
+            placement::handle_deconstruct_click_v2.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            placement::track_deconstruct_drag.run_if(in_state(GameState::Playing)),
+            placement::track_deconstruct_drag.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            placement::update_build_preview.run_if(in_state(GameState::Playing)),
+            placement::update_build_preview.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            placement::deconstruct_drag_preview.run_if(in_state(GameState::Playing)),
+            placement::deconstruct_drag_preview.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            player::player_movement.run_if(in_state(GameState::Playing)),
+            player::player_movement.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            player::camera_follow_player.run_if(in_state(GameState::Playing)),
+            player::camera_follow_player.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            player::builder_work.run_if(in_state(GameState::Playing)),
+            player::builder_work.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            player::finish_construction.run_if(in_state(GameState::Playing)),
+            player::finish_construction.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            player::player_mine.run_if(in_state(GameState::Playing)),
+            player::player_mine.in_set(PlayingSystems),
         );
         app.add_systems(
             FixedUpdate,
@@ -184,15 +191,15 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
-            production::assembler_tick.run_if(in_state(GameState::Playing)),
+            production::assembler_tick.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            discovery::check_discoveries.run_if(in_state(GameState::Playing)),
+            discovery::check_discoveries.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            archive::archive_delivery_check.run_if(in_state(GameState::Playing)),
+            archive::archive_delivery_check.in_set(PlayingSystems),
         );
         app.add_observer(discovery::on_discovery);
         app.add_systems(
@@ -201,95 +208,95 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
-            ui::toggle_inventory_panel.run_if(in_state(GameState::Playing)),
+            ui::toggle_inventory_panel.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            ui::update_inventory_grids.run_if(in_state(GameState::Playing)),
+            ui::update_inventory_grids.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            ui::drag_start.run_if(in_state(GameState::Playing)),
+            ui::drag_start.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            ui::drag_update.run_if(in_state(GameState::Playing)),
+            ui::drag_update.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            ui::drag_end.run_if(in_state(GameState::Playing)),
+            ui::drag_end.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            window::close_window_system.run_if(in_state(GameState::Playing)),
+            window::close_window_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            build_bar::menu_navigation.run_if(in_state(GameState::Playing)),
+            build_bar::menu_navigation.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            build_bar::menu_bar_interaction.run_if(in_state(GameState::Playing)),
+            build_bar::menu_bar_interaction.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            build_bar::refresh_menu_bar.run_if(in_state(GameState::Playing)),
+            build_bar::refresh_menu_bar.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            build_bar::update_menu_bar.run_if(in_state(GameState::Playing)),
+            build_bar::update_menu_bar.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::building_inspect_click.run_if(in_state(GameState::Playing)),
+            inspect::building_inspect_click.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::overlay_click_system.run_if(in_state(GameState::Playing)),
+            inspect::overlay_click_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::close_button_system.run_if(in_state(GameState::Playing)),
+            inspect::close_button_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::close_popup_on_escape.run_if(in_state(GameState::Playing)),
+            inspect::close_popup_on_escape.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::active_toggle_system.run_if(in_state(GameState::Playing)),
+            inspect::active_toggle_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::recipe_change_system.run_if(in_state(GameState::Playing)),
+            inspect::recipe_change_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::recipe_selector_click.run_if(in_state(GameState::Playing)),
+            inspect::recipe_selector_click.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::farm_recruit_system.run_if(in_state(GameState::Playing)),
+            inspect::farm_recruit_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::farm_crop_select_system.run_if(in_state(GameState::Playing)),
+            inspect::farm_crop_select_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::sorter_resource_click_system.run_if(in_state(GameState::Playing)),
+            inspect::sorter_resource_click_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::sorter_invert_click_system.run_if(in_state(GameState::Playing)),
+            inspect::sorter_invert_click_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            inspect::resource_transfer.run_if(in_state(GameState::Playing)),
+            inspect::resource_transfer.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
-            window::drag_window_system.run_if(in_state(GameState::Playing)),
+            window::drag_window_system.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
@@ -305,10 +312,10 @@ impl Plugin for EconomyPlugin {
                 inspect::update_farm_crop_text,
                 inspect::update_farm_cultivator_count,
             )
-                .run_if(in_state(GameState::Playing)),
+                .in_set(PlayingSystems),
         );
-        app.add_systems(Update, toast_system.run_if(in_state(GameState::Playing)));
-        app.add_systems(Update, tooltip_ui.run_if(in_state(GameState::Playing)));
+        app.add_systems(Update, toast_system.in_set(PlayingSystems));
+        app.add_systems(Update, tooltip_ui.in_set(PlayingSystems));
     }
 }
 

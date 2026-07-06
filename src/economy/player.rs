@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-use crate::economy::building::{BuildingCost, BuildingRegistry};
+use crate::economy::building::BuildingRegistry;
+use crate::economy::resource::Cost;
 use crate::economy::components::{
     Active, Builder, BuilderState, Building, OccupiedTiles, Player, ResourceDeposit,
     UnbuiltBuilding,
@@ -260,7 +261,7 @@ pub fn builder_work(
 /// Count how many units of a cost item have been delivered to a building's inventory.
 fn total_delivered_for(
     entity: Entity,
-    cost: &BuildingCost,
+    cost: &Cost,
     query: &Query<
         (Entity, &Transform, &Building, &OccupiedTiles, &mut Inventory),
         (

@@ -37,6 +37,7 @@ fn game_state_transition(
     state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     keys: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
     mut build_mode: Option<ResMut<BuildMode>>,
 ) {
@@ -47,7 +48,7 @@ fn game_state_transition(
             // Menu → Playing is handled by menu_navigation via StartGame action
         }
         GameState::Playing => {
-            if keys.just_pressed(bindings.key("cancel")) {
+            if bindings.just_pressed("cancel", &keys, &mouse) {
                 if mode_active {
                     if let Some(ref mut bm) = build_mode {
                         bm.0 = None;
@@ -61,9 +62,9 @@ fn game_state_transition(
             // Transitional state — no key handling needed
         }
         GameState::GameOver => {
-            if keys.just_pressed(bindings.key("restart")) {
+            if bindings.just_pressed("restart", &keys, &mouse) {
                 next_state.set(GameState::Playing);
-            } else if keys.just_pressed(bindings.key("cancel")) {
+            } else if bindings.just_pressed("cancel", &keys, &mouse) {
                 next_state.set(GameState::Menu);
             }
         }
@@ -84,6 +85,7 @@ mod tests {
         app.add_plugins(bevy::state::app::StatesPlugin);
         app.init_state::<GameState>();
         app.init_resource::<ButtonInput<KeyCode>>();
+        app.init_resource::<ButtonInput<MouseButton>>();
         app.init_resource::<BuildMode>();
         app.add_systems(Update, game_state_transition);
         app

@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use std::collections::HashSet;
 
 use crate::economy::components::{PowerConsumer, PowerPole, PowerProducer, UnbuiltBuilding};
-use crate::map::config::MapConfig;
 
 #[derive(Resource, Default)]
 pub struct PowerGrid {
@@ -18,9 +17,12 @@ pub fn detect_power_changes(
     }
 }
 
+fn is_in_range(pos: Vec3, poles: &[(Entity, Vec3, f32)]) -> bool {
+    poles.iter().any(|(_, pp, range)| pp.distance(pos) <= *range)
+}
+
 pub fn rebuild_power_grid(
     mut grid: ResMut<PowerGrid>,
-    cfg: Res<MapConfig>,
     producers: Query<(Entity, &PowerProducer, &Transform), Without<UnbuiltBuilding>>,
     poles: Query<(Entity, &PowerPole, &Transform), Without<UnbuiltBuilding>>,
     mut consumers: Query<(Entity, &mut PowerConsumer, &Transform), Without<UnbuiltBuilding>>,
@@ -30,31 +32,22 @@ pub fn rebuild_power_grid(
     }
     grid.dirty = false;
 
-    let tile_size = cfg.tile_size;
     let pole_data: Vec<(Entity, Vec3, f32)> = poles
         .iter()
-        .map(|(e, p, tf)| (e, tf.translation, p.range * tile_size))
+        .map(|(e, p, tf)| (e, tf.translation, p.range))
         .collect();
 
     let mut connected_producers: HashSet<Entity> = HashSet::new();
     let mut consumer_map: HashSet<Entity> = HashSet::new();
 
     for (entity, _producer, tf) in producers.iter() {
-        let pos = tf.translation;
-        let in_range = pole_data
-            .iter()
-            .any(|(_, pp, range)| pp.distance(pos) <= *range);
-        if in_range || pole_data.is_empty() {
+        if is_in_range(tf.translation, &pole_data) || pole_data.is_empty() {
             connected_producers.insert(entity);
         }
     }
 
     for (entity, _consumer, tf) in consumers.iter() {
-        let pos = tf.translation;
-        let in_range = pole_data
-            .iter()
-            .any(|(_, pp, range)| pp.distance(pos) <= *range);
-        if in_range || pole_data.is_empty() {
+        if is_in_range(tf.translation, &pole_data) || pole_data.is_empty() {
             consumer_map.insert(entity);
         }
     }

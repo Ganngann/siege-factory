@@ -1,19 +1,13 @@
-use crate::economy::resource::ResourceId;
+use crate::economy::resource::{Cost, ResourceId};
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
-pub struct UnitCost {
-    pub resource: ResourceId,
-    pub amount: u32,
-}
-
-#[derive(Debug, Clone)]
 pub struct UnitDef {
     pub id: String,
     pub name: String,
-    pub cost: Vec<UnitCost>,
+    pub cost: Vec<Cost>,
     pub hp: u32,
     pub color: Color,
     pub visual: String,
@@ -35,11 +29,11 @@ pub struct UnitConfig {
 
 use crate::core::utils::parse_hex_color;
 
-fn parse_cost(cost: &HashMap<String, u32>) -> Vec<UnitCost> {
+fn parse_cost(cost: &HashMap<String, u32>) -> Vec<Cost> {
     let mut result = Vec::new();
     for (key, amount) in cost {
-        result.push(UnitCost {
-            resource: ResourceId(key.to_lowercase()),
+        result.push(Cost {
+            resource: ResourceId::new(key),
             amount: *amount,
         });
     }

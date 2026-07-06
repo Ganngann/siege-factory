@@ -8,7 +8,7 @@ pub struct ResourceId(pub String);
 
 impl ResourceId {
     pub fn new<S: Into<String>>(id: S) -> Self {
-        Self(id.into())
+        Self(id.into().to_lowercase())
     }
 
     pub fn display_name(&self) -> String {
@@ -24,6 +24,12 @@ impl ResourceId {
             .collect::<Vec<_>>()
             .join(" ")
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Cost {
+    pub resource: ResourceId,
+    pub amount: u32,
 }
 
 #[derive(Debug, Clone)]

@@ -20,7 +20,7 @@ use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveSt
 use crate::map::components::{ChunkMember, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::systems::{ChunkMarker, spawn_single_chunk_visuals};
-use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
+use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid, Deposit};
 use crate::rendering::{ShapeCache, TextureCache};
 use crate::unit::{Soldier, Worker, WorkerState};
 
@@ -46,7 +46,7 @@ pub struct SaveData {
     pub game_seed: u64,
     pub camera: CameraSave,
     pub wave: WaveSave,
-    pub chunk_deposits: HashMap<(i32, i32), Vec<(u32, u32, u32, String)>>,
+    pub chunk_deposits: HashMap<(i32, i32), Vec<Deposit>>,
     pub buildings: Vec<BuildingSave>,
     pub enemies: Vec<EnemySave>,
     pub units: Vec<UnitSave>,
@@ -908,10 +908,11 @@ struct QuitButton;
 
 fn toggle_pause_menu(
     keys: Res<ButtonInput<KeyCode>>,
+    mouse: Res<ButtonInput<MouseButton>>,
     bindings: Res<crate::core::input::KeyBindings>,
     mut show: ResMut<ShowPauseMenu>,
 ) {
-    if keys.just_pressed(bindings.key("cancel")) {
+    if bindings.just_pressed("cancel", &keys, &mouse) {
         show.0 = !show.0;
     }
 }
