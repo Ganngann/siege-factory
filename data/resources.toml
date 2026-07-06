@@ -55,3 +55,13 @@ color = "#887766"
 name = "Circuit"
 max_stack = 999
 color = "#44AA44"
+
+[resources.wood]
+name = "Wood"
+max_stack = 999
+color = "#8B5E3C"
+
+[resources.wheat]
+name = "Wheat"
+max_stack = 999
+color = "#E8C84A"

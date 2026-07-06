@@ -6,26 +6,26 @@ pub mod inspect;
 pub mod menu;
 pub mod placement;
 pub mod production;
-pub mod spatial;
 pub mod recipe;
 pub mod resource;
 pub mod setup;
+pub mod spatial;
 pub mod ui;
 pub mod unit_config;
 
-use bevy::prelude::*;
-use bevy::picking::hover::HoverMap;
-use bevy::ecs::hierarchy::ChildOf;
 use crate::core::game_state::GameState;
-use crate::core::toast::{toast_system, ToastQueue};
-use crate::core::tooltip::{tooltip_ui, TooltipText};
+use crate::core::toast::{ToastQueue, toast_system};
+use crate::core::tooltip::{TooltipText, tooltip_ui};
 use crate::core::utils::silent_despawn;
+use bevy::ecs::hierarchy::ChildOf;
+use bevy::picking::hover::HoverMap;
+use bevy::prelude::*;
 use building::DefaultSettings;
-use menu::{MenuState, MenuItems};
-use spatial::SpatialRegistry;
+use components::{Building, PeacefulMode, UiIsBlocking};
+use menu::{MenuItems, MenuState};
 use resource::ResourceRegistry;
+use spatial::SpatialRegistry;
 use ui::ResourceCountText;
-use components::{PeacefulMode, Building, UiIsBlocking};
 
 pub fn update_ui_blocking(
     mut blocking: ResMut<UiIsBlocking>,
@@ -38,7 +38,9 @@ pub fn update_ui_blocking(
             let mut entity = *entry.0;
             loop {
                 if let Ok(p) = pickable_q.get(entity) {
-                    if p.should_block_lower { return true; }
+                    if p.should_block_lower {
+                        return true;
+                    }
                 }
                 match parent_q.get(entity) {
                     Ok(child_of) => entity = child_of.0,
@@ -83,113 +85,156 @@ impl Plugin for EconomyPlugin {
         app.insert_resource(Time::<Fixed>::from_hz(20.0));
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
-        app.add_systems(PreUpdate,
+        app.add_systems(
+            PreUpdate,
             update_ui_blocking.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(OnEnter(GameState::Playing), (
-            setup::setup_hq.run_if(crate::save_load::is_fresh_game),
-            build_bar::spawn_menu_bar,
-        ));
-        app.add_systems(OnExit(GameState::Playing), (
-            cleanup_playing_ui,
-            cleanup_ghost,
-            cleanup_buildings,
-            build_bar::cleanup_menu_bar,
-            inspect::cleanup_popup,
-        ));
-        app.add_systems(PreUpdate,
+        app.add_systems(
+            OnEnter(GameState::Playing),
+            (
+                setup::setup_hq.run_if(crate::save_load::is_fresh_game),
+                build_bar::spawn_menu_bar,
+            ),
+        );
+        app.add_systems(
+            OnExit(GameState::Playing),
+            (
+                cleanup_playing_ui,
+                cleanup_ghost,
+                cleanup_buildings,
+                build_bar::cleanup_menu_bar,
+                inspect::cleanup_popup,
+            ),
+        );
+        app.add_systems(
+            PreUpdate,
             spatial::sync_spatial_registry.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             placement::build_mode_input.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             placement::track_belt_drag.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             placement::handle_build_click.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             placement::handle_deconstruct_click_v2.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             placement::track_deconstruct_drag.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             placement::update_build_preview.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             placement::deconstruct_drag_preview.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(FixedUpdate,
+        app.add_systems(
+            FixedUpdate,
             belt::advance_belt_slots.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             production::assembler_tick.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(FixedUpdate,
+        app.add_systems(
+            FixedUpdate,
             belt::building_output_tick.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             ui::resource_count_ui.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             build_bar::menu_navigation.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             build_bar::menu_bar_interaction.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             build_bar::refresh_menu_bar.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             build_bar::update_menu_bar.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::building_inspect_click.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::overlay_click_system.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::close_button_system.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::close_popup_on_escape.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::active_toggle_system.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::recipe_change_system.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::recipe_selector_click.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
+            inspect::farm_recruit_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            inspect::farm_crop_select_system.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
             inspect::sorter_resource_click_system.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::sorter_invert_click_system.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             inspect::drag_panel_system.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update, (
-            inspect::update_panel_header,
-            inspect::update_panel_production,
-            inspect::update_panel_inventory,
-            inspect::update_panel_connections,
-            inspect::update_panel_stats,
-            inspect::update_panel_hp,
-            inspect::update_panel_alerts,
-        ).run_if(in_state(GameState::Playing)));
-        app.add_systems(Update,
-            toast_system.run_if(in_state(GameState::Playing)),
+        app.add_systems(
+            Update,
+            (
+                inspect::update_panel_header,
+                inspect::update_panel_production,
+                inspect::update_panel_inventory,
+                inspect::update_panel_connections,
+                inspect::update_panel_stats,
+                inspect::update_panel_hp,
+                inspect::update_panel_alerts,
+                inspect::update_farm_crop_text,
+                inspect::update_farm_cultivator_count,
+            )
+                .run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
-            tooltip_ui.run_if(in_state(GameState::Playing)),
-        );
+        app.add_systems(Update, toast_system.run_if(in_state(GameState::Playing)));
+        app.add_systems(Update, tooltip_ui.run_if(in_state(GameState::Playing)));
     }
 }
 

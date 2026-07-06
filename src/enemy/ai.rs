@@ -1,11 +1,11 @@
-use std::collections::{HashMap, HashSet, VecDeque};
-use bevy::prelude::*;
-use crate::enemy::components::Enemy;
-use crate::enemy::registry::EnemyRegistry;
 use crate::economy::components::{HQ, OccupiedTiles};
 use crate::economy::spatial::SpatialRegistry;
+use crate::enemy::components::Enemy;
+use crate::enemy::registry::EnemyRegistry;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
+use bevy::prelude::*;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 fn bfs(
     start: (i32, i32),
@@ -70,7 +70,8 @@ pub fn move_enemies(
     let goal = (hq_pos.x, hq_pos.y);
 
     // Build blocked set from spatial registry, excluding HQ tiles
-    let hq_tiles: HashSet<(i32, i32)> = hq_tiles_query.iter()
+    let hq_tiles: HashSet<(i32, i32)> = hq_tiles_query
+        .iter()
         .flat_map(|t| t.0.iter().copied())
         .collect();
     let mut blocked: HashSet<(i32, i32)> = spatial.occupied_tiles().copied().collect();
@@ -79,7 +80,8 @@ pub fn move_enemies(
     }
 
     for (_entity, enemy, mut transform, mut pos) in set.p0().iter_mut() {
-        let enemy_speed = enemies_registry.get(&enemy.kind)
+        let enemy_speed = enemies_registry
+            .get(&enemy.kind)
             .map(|d| d.speed)
             .unwrap_or(60.0);
 

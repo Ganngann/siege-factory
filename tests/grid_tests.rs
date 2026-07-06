@@ -1,8 +1,12 @@
-use siege_factory::map::tile_grid::ChunkGrid;
 use siege_factory::map::components::TileType;
+use siege_factory::map::tile_grid::ChunkGrid;
 
 fn test_dist() -> Vec<(String, u32)> {
-    vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)]
+    vec![
+        ("iron_ore".to_string(), 50),
+        ("copper_ore".to_string(), 35),
+        ("coal".to_string(), 15),
+    ]
 }
 
 #[test]

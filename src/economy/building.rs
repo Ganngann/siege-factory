@@ -1,8 +1,8 @@
+use crate::core::utils::parse_hex_color;
+use crate::economy::resource::ResourceId;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
-use crate::core::utils::parse_hex_color;
-use crate::economy::resource::ResourceId;
 
 #[derive(Debug, Clone)]
 pub struct BuildingCost {
@@ -65,7 +65,8 @@ pub struct DefaultSettings {
 impl DefaultSettings {
     pub fn load() -> Self {
         let toml_str = include_str!("../../data/buildings.toml");
-        let parsed: BuildingsToml = toml::from_str(toml_str).expect("failed to parse buildings.toml");
+        let parsed: BuildingsToml =
+            toml::from_str(toml_str).expect("failed to parse buildings.toml");
         Self {
             can_deconstruct: parsed.defaults.can_deconstruct,
             refund_ratio: parsed.defaults.refund_ratio,
@@ -83,15 +84,21 @@ pub struct BuildingRegistry {
 impl BuildingRegistry {
     pub fn load() -> Self {
         let toml_str = include_str!("../../data/buildings.toml");
-        let parsed: BuildingsToml = toml::from_str(toml_str).expect("failed to parse buildings.toml");
+        let parsed: BuildingsToml =
+            toml::from_str(toml_str).expect("failed to parse buildings.toml");
         let defaults = &parsed.defaults;
         let mut buildings = Vec::new();
         for (id, entry) in parsed.buildings {
             let mut cost = Vec::new();
             for (res_key, amount) in entry.cost {
-                cost.push(BuildingCost { resource: ResourceId(res_key.to_lowercase()), amount });
+                cost.push(BuildingCost {
+                    resource: ResourceId(res_key.to_lowercase()),
+                    amount,
+                });
             }
-            let color = entry.color.as_deref()
+            let color = entry
+                .color
+                .as_deref()
                 .map(parse_hex_color)
                 .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
             let visual = entry.visual.unwrap_or_else(|| "square".to_string());
@@ -111,11 +118,15 @@ impl BuildingRegistry {
             let recipe_categories = entry.recipe_categories.clone();
 
             let belt = match entry.belt {
-                Some(b) => Some(BeltProperties { slots: b.slots, speed: b.speed }),
+                Some(b) => Some(BeltProperties {
+                    slots: b.slots,
+                    speed: b.speed,
+                }),
                 None => {
                     let slots = entry.slots.unwrap_or(2);
                     let speed = entry.speed.unwrap_or(2.0);
-                    (entry.slots.is_some() || entry.speed.is_some()).then_some(BeltProperties { slots, speed })
+                    (entry.slots.is_some() || entry.speed.is_some())
+                        .then_some(BeltProperties { slots, speed })
                 }
             };
 
@@ -135,8 +146,12 @@ impl BuildingRegistry {
                 production_interval: entry.production_interval,
                 can_deconstruct: entry.can_deconstruct.unwrap_or(defaults.can_deconstruct),
                 refund_ratio: entry.refund_ratio.unwrap_or(defaults.refund_ratio),
-                repair_cost_ratio: entry.repair_cost_ratio.unwrap_or(defaults.repair_cost_ratio),
-                inventory_capacity: entry.inventory_capacity.unwrap_or(defaults.inventory_capacity),
+                repair_cost_ratio: entry
+                    .repair_cost_ratio
+                    .unwrap_or(defaults.repair_cost_ratio),
+                inventory_capacity: entry
+                    .inventory_capacity
+                    .unwrap_or(defaults.inventory_capacity),
                 hidden: entry.hidden,
                 drag_placement: entry.drag_placement,
                 recipe_categories,
@@ -222,7 +237,9 @@ struct CombatEntry {
     projectile_speed: f32,
 }
 
-fn default_projectile_speed() -> f32 { 300.0 }
+fn default_projectile_speed() -> f32 {
+    300.0
+}
 
 #[derive(Deserialize)]
 struct BeltEntry {

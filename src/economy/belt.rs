@@ -1,10 +1,10 @@
-use std::collections::HashMap;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
-use crate::economy::resource::{ResourceId, Inventory};
-use crate::economy::components::{Assembler, Building, Direction, Splitter, Sorter};
+use crate::economy::components::{Assembler, Building, Direction, Sorter, Splitter};
 use crate::economy::recipe::RecipeRegistry;
+use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::spatial::SpatialRegistry;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
@@ -43,8 +43,6 @@ pub fn compute_slot_positions(
         .collect()
 }
 
-
-
 pub fn advance_belt_slots(
     time: Res<Time<Fixed>>,
     spatial: Res<SpatialRegistry>,
@@ -54,12 +52,18 @@ pub fn advance_belt_slots(
     sorter_query: Query<(Entity, &TilePosition, &Sorter)>,
 ) {
     let dt = time.delta_secs();
-    let belt_map: HashMap<(i32, i32), Entity> =
-        belt_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
-    let splitter_map: HashMap<(i32, i32), Entity> =
-        splitter_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
-    let sorter_map: HashMap<(i32, i32), Entity> =
-        sorter_query.iter().map(|(e, pos, _)| ((pos.x, pos.y), e)).collect();
+    let belt_map: HashMap<(i32, i32), Entity> = belt_query
+        .iter()
+        .map(|(e, pos, _)| ((pos.x, pos.y), e))
+        .collect();
+    let splitter_map: HashMap<(i32, i32), Entity> = splitter_query
+        .iter()
+        .map(|(e, pos, _)| ((pos.x, pos.y), e))
+        .collect();
+    let sorter_map: HashMap<(i32, i32), Entity> = sorter_query
+        .iter()
+        .map(|(e, pos, _)| ((pos.x, pos.y), e))
+        .collect();
 
     let belt_data: Vec<(Entity, TilePosition, Direction, f32, usize)> = belt_query
         .iter()
@@ -103,11 +107,16 @@ pub fn advance_belt_slots(
         // Does this belt have an item ready in its last slot?
         {
             if let Ok((_, _, bs)) = belt_query.get(*belt_entity) {
-                let ready = bs.items[last].as_ref()
+                let ready = bs.items[last]
+                    .as_ref()
                     .map(|item| item.acc >= slot_duration)
                     .unwrap_or(false);
-                if !ready { continue; }
-            } else { continue; }
+                if !ready {
+                    continue;
+                }
+            } else {
+                continue;
+            }
         }
 
         // Splitter output routing
@@ -119,7 +128,7 @@ pub fn advance_belt_slots(
                 }
             }
             if input_dir.is_none() {
-                for (adj_dx, adj_dy) in [(1,0), (-1,0), (0,1), (0,-1)] {
+                for (adj_dx, adj_dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
                     let ax = belt_pos.x + adj_dx;
                     let ay = belt_pos.y + adj_dy;
                     if let Some(&adj_entity) = belt_map.get(&(ax, ay)) {
@@ -135,8 +144,15 @@ pub fn advance_belt_slots(
             }
 
             let mut output_dirs: Vec<Direction> = Vec::new();
-            for test_dir in [Direction::East, Direction::North, Direction::West, Direction::South] {
-                if Some(test_dir) == input_dir { continue; }
+            for test_dir in [
+                Direction::East,
+                Direction::North,
+                Direction::West,
+                Direction::South,
+            ] {
+                if Some(test_dir) == input_dir {
+                    continue;
+                }
                 let (tdx, tdy) = test_dir.offset();
                 let tx = belt_pos.x + tdx;
                 let ty = belt_pos.y + tdy;
@@ -146,17 +162,24 @@ pub fn advance_belt_slots(
             }
 
             if !output_dirs.is_empty() {
-                let counter = splitter_query.get(*belt_entity)
-                    .map(|(_,_,s)| s.counter).unwrap_or(0);
+                let counter = splitter_query
+                    .get(*belt_entity)
+                    .map(|(_, _, s)| s.counter)
+                    .unwrap_or(0);
                 let start_idx = counter as usize % output_dirs.len();
                 for offset in 0..output_dirs.len() {
                     let idx = (start_idx + offset) % output_dirs.len();
                     let (odx, ody) = output_dirs[idx].offset();
                     let out_x = belt_pos.x + odx;
                     let out_y = belt_pos.y + ody;
-                    let Some(&target) = belt_map.get(&(out_x, out_y)) else { continue; };
+                    let Some(&target) = belt_map.get(&(out_x, out_y)) else {
+                        continue;
+                    };
                     let Ok([(_, _, mut bs), (_, _, mut target_bs)]) =
-                        belt_query.get_many_mut([*belt_entity, target]) else { continue; };
+                        belt_query.get_many_mut([*belt_entity, target])
+                    else {
+                        continue;
+                    };
                     if bs.items[last].is_some() {
                         if target_bs.items[0].is_none() {
                             let mut moved = bs.items[last].take().unwrap();
@@ -178,13 +201,19 @@ pub fn advance_belt_slots(
         if let Some(&sorter_entity) = sorter_map.get(&(belt_pos.x, belt_pos.y)) {
             let sorter = match sorter_query.get(sorter_entity) {
                 Ok((_, _, s)) => s,
-                Err(_) => { continue; }
+                Err(_) => {
+                    continue;
+                }
             };
             let out_tile = {
                 if let Ok((_, _, bs)) = belt_query.get(*belt_entity) {
                     bs.items[last].as_ref().and_then(|item| {
                         let matches_filter = item.resource_id == sorter.filter;
-                        let use_side = if sorter.inverted { !matches_filter } else { matches_filter };
+                        let use_side = if sorter.inverted {
+                            !matches_filter
+                        } else {
+                            matches_filter
+                        };
                         let (out_dx, out_dy) = if use_side {
                             let side_dir = dir.next();
                             side_dir.offset()
@@ -193,9 +222,15 @@ pub fn advance_belt_slots(
                         };
                         let out_x = belt_pos.x + out_dx;
                         let out_y = belt_pos.y + out_dy;
-                        if belt_map.contains_key(&(out_x, out_y)) { Some((out_x, out_y)) } else { None }
+                        if belt_map.contains_key(&(out_x, out_y)) {
+                            Some((out_x, out_y))
+                        } else {
+                            None
+                        }
                     })
-                } else { None }
+                } else {
+                    None
+                }
             };
             if let Some((out_x, out_y)) = out_tile {
                 if let Some(&target) = belt_map.get(&(out_x, out_y)) {
@@ -217,7 +252,9 @@ pub fn advance_belt_slots(
 
         // Normal cross-belt transfer (belt→belt)
         if let Some(&next_belt) = belt_map.get(&(nx, ny)) {
-            if *belt_entity == next_belt { continue; }
+            if *belt_entity == next_belt {
+                continue;
+            }
             if let Ok([(_, _, mut bs), (_, _, mut next_bs)]) =
                 belt_query.get_many_mut([*belt_entity, next_belt])
             {
@@ -256,7 +293,9 @@ pub fn building_output_tick(
     _cfg: Res<MapConfig>,
 ) {
     for (belt_pos, mut bs) in belt_query.iter_mut() {
-        if bs.items[0].is_some() { continue; }
+        if bs.items[0].is_some() {
+            continue;
+        }
         let (odx, ody) = bs.direction.offset();
         let src_x = belt_pos.x - odx;
         let src_y = belt_pos.y - ody;
@@ -264,12 +303,17 @@ pub fn building_output_tick(
             if let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity) {
                 if let Ok(Some(asm)) = assembler_query.get(inv_entity) {
                     if let Some(recipe) = recipes.get(&asm.recipe_id) {
-                        let output_res = recipe.output.iter()
+                        let output_res = recipe
+                            .output
+                            .iter()
                             .find(|(r, _)| inv.get(r) > 0)
                             .map(|(r, _)| r.clone());
                         if let Some(res) = output_res {
                             if inv.remove(&res, 1) {
-                                bs.items[0] = Some(ItemOnBelt { resource_id: res, acc: 0.0 });
+                                bs.items[0] = Some(ItemOnBelt {
+                                    resource_id: res,
+                                    acc: 0.0,
+                                });
                             }
                         }
                         continue;
@@ -278,12 +322,13 @@ pub fn building_output_tick(
                 let first_key = inv.resources.keys().next().cloned();
                 if let Some(res) = first_key {
                     if inv.remove(&res, 1) {
-                        bs.items[0] = Some(ItemOnBelt { resource_id: res, acc: 0.0 });
+                        bs.items[0] = Some(ItemOnBelt {
+                            resource_id: res,
+                            acc: 0.0,
+                        });
                     }
                 }
             }
         }
     }
 }
-
-

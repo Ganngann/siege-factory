@@ -23,17 +23,22 @@ impl EnemyRegistry {
         let parsed: EnemiesToml = toml::from_str(toml_str).expect("failed to parse enemies.toml");
         let mut enemies = HashMap::new();
         for (id, entry) in parsed.enemies {
-            let color = entry.color.as_deref()
+            let color = entry
+                .color
+                .as_deref()
                 .map(parse_hex_color)
                 .unwrap_or(Color::srgb(0.9, 0.2, 0.2));
-            enemies.insert(id.clone(), EnemyDef {
-                id: id.clone(),
-                name: entry.name,
-                hp: entry.hp,
-                speed: entry.speed,
-                damage: entry.damage,
-                color,
-            });
+            enemies.insert(
+                id.clone(),
+                EnemyDef {
+                    id: id.clone(),
+                    name: entry.name,
+                    hp: entry.hp,
+                    speed: entry.speed,
+                    damage: entry.damage,
+                    color,
+                },
+            );
         }
         Self { enemies }
     }

@@ -1,16 +1,16 @@
-use std::collections::HashSet;
-use bevy::prelude::*;
-use bevy::render::mesh::{Indices, PrimitiveTopology};
-use bevy::asset::RenderAssetUsages;
 use crate::core::game_state::GameState;
-use crate::economy::components::ResourceDeposit;
 use crate::economy::components::PeacefulMode;
+use crate::economy::components::ResourceDeposit;
 use crate::economy::components::UiIsBlocking;
 use crate::economy::resource::ResourceRegistry;
 use crate::map::components::*;
 use crate::map::config::MapConfig;
-use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
+use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 use crate::rendering::{ShapeCache, TextureCache};
+use bevy::asset::RenderAssetUsages;
+use bevy::prelude::*;
+use bevy::render::mesh::{Indices, PrimitiveTopology};
+use std::collections::HashSet;
 
 #[derive(Component)]
 pub struct ChunkMarker(pub i32, pub i32);
@@ -28,19 +28,30 @@ impl Plugin for MapPlugin {
         let dep_max_per = cfg.deposit_max_per_chunk;
         let dep_dist = cfg.deposit_distribution.clone();
         app.insert_resource(cfg);
-        app.insert_resource(ChunkGrid::new(seed, dep_min, dep_max, dep_chance, dep_min_per, dep_max_per, dep_dist));
+        app.insert_resource(ChunkGrid::new(
+            seed,
+            dep_min,
+            dep_max,
+            dep_chance,
+            dep_min_per,
+            dep_max_per,
+            dep_dist,
+        ));
         app.insert_resource(HoveredTile::default());
-        app.add_systems(OnEnter(GameState::Playing), setup_map.run_if(crate::save_load::is_fresh_game));
+        app.add_systems(
+            OnEnter(GameState::Playing),
+            setup_map.run_if(crate::save_load::is_fresh_game),
+        );
         app.add_systems(OnExit(GameState::Playing), cleanup_map);
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             update_hovered_tile.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
+        app.add_systems(
+            Update,
             update_visible_chunks.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update,
-            recenter_on_hq.run_if(in_state(GameState::Playing)),
-        );
+        app.add_systems(Update, recenter_on_hq.run_if(in_state(GameState::Playing)));
     }
 }
 
@@ -61,10 +72,18 @@ fn setup_map(
     let hq_cy = hy.div_euclid(chunk_size);
     let existing = HashSet::new();
     spawn_chunks_in_range(
-        &mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes,
-        &mut materials, &mut meshes, &textures,
-        hq_cx - margin_chunks, hq_cx + margin_chunks,
-        hq_cy - margin_chunks, hq_cy + margin_chunks,
+        &mut commands,
+        &mut chunk_grid,
+        &cfg,
+        &res_registry,
+        &shapes,
+        &mut materials,
+        &mut meshes,
+        &textures,
+        hq_cx - margin_chunks,
+        hq_cx + margin_chunks,
+        hq_cy - margin_chunks,
+        hq_cy + margin_chunks,
         &existing,
     );
 }
@@ -124,9 +143,8 @@ pub fn build_chunk_mesh(cx: i32, cy: i32, tile_size: f32) -> (Mesh, Mesh) {
                 [x + s, y + s, 0.0],
                 [x, y + s, 0.0],
             ];
-            let quad_indices = |base: u32| -> [u32; 6] {
-                [base, base + 1, base + 2, base, base + 2, base + 3]
-            };
+            let quad_indices =
+                |base: u32| -> [u32; 6] { [base, base + 1, base + 2, base, base + 2, base + 3] };
 
             if (wx + wy) % 2 == 0 {
                 pos_even.extend_from_slice(&quad_positions);
@@ -149,7 +167,10 @@ fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
     let normals = vec![[0.0, 0.0, 1.0]; positions.len()];
     let uvs = vec![[0.0, 0.0]; positions.len()];
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
@@ -221,7 +242,10 @@ pub fn spawn_single_chunk_visuals(
         if let Some(handle) = textures.base.get(resource) {
             commands.spawn((
                 ChunkMember(cx, cy),
-                ResourceDeposit { resource: resource.clone(), amount },
+                ResourceDeposit {
+                    resource: resource.clone(),
+                    amount,
+                },
                 Sprite {
                     image: handle.clone(),
                     custom_size: Some(Vec2::new(tile_size * 0.8, tile_size * 0.8)),
@@ -231,13 +255,17 @@ pub fn spawn_single_chunk_visuals(
                 TilePosition { x: wx, y: wy },
             ));
         } else {
-            let color = res_registry.get_opt(resource)
+            let color = res_registry
+                .get_opt(resource)
                 .map(|d| d.color)
                 .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
             let dep_color = materials.add(color);
             commands.spawn((
                 ChunkMember(cx, cy),
-                ResourceDeposit { resource: resource.clone(), amount },
+                ResourceDeposit {
+                    resource: resource.clone(),
+                    amount,
+                },
                 Mesh2d(shapes.circle.clone()),
                 MeshMaterial2d(dep_color),
                 Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
@@ -249,7 +277,10 @@ pub fn spawn_single_chunk_visuals(
     // Spawn decorations (trees, rocks) on random empty ground tiles
     let mut rng = SimpleRng::new(chunk_hash);
     let deco_count = 4 + (rng.next() as usize % 5); // 4-8 per chunk
-    let deco_kinds = [("tree", Color::srgb(0.15, 0.45, 0.15)), ("rock", Color::srgb(0.4, 0.4, 0.4))];
+    let deco_kinds = [
+        ("tree", Color::srgb(0.15, 0.45, 0.15)),
+        ("rock", Color::srgb(0.4, 0.4, 0.4)),
+    ];
     for _ in 0..deco_count {
         let dx = rng.next() % CHUNK_SIZE as u64;
         let dy = rng.next() % CHUNK_SIZE as u64;
@@ -261,7 +292,11 @@ pub fn spawn_single_chunk_visuals(
         let wy = world_oy + dy as i32;
         let kind_idx = rng.next() as usize % deco_kinds.len();
         let (kind_name, color) = &deco_kinds[kind_idx];
-        let mesh = if *kind_name == "tree" { shapes.triangle.clone() } else { shapes.circle.clone() };
+        let mesh = if *kind_name == "tree" {
+            shapes.triangle.clone()
+        } else {
+            shapes.circle.clone()
+        };
         let z = if *kind_name == "tree" { 0.3 } else { 0.2 };
         let mat = materials.add(*color);
         commands.spawn((
@@ -284,7 +319,10 @@ impl SimpleRng {
         Self { state: seed }
     }
     fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.state = self
+            .state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.state >> 33
     }
 }
@@ -309,7 +347,18 @@ fn spawn_chunks_in_range(
             if existing.contains(&(cx, cy)) {
                 continue;
             }
-            spawn_single_chunk_visuals(commands, chunk_grid, cfg, res_registry, shapes, materials, meshes, textures, cx, cy);
+            spawn_single_chunk_visuals(
+                commands,
+                chunk_grid,
+                cfg,
+                res_registry,
+                shapes,
+                materials,
+                meshes,
+                textures,
+                cx,
+                cy,
+            );
         }
     }
 }
@@ -330,12 +379,24 @@ fn update_visible_chunks(
     textures: Res<TextureCache>,
     _peaceful: Res<PeacefulMode>,
 ) {
-    let Ok((cam, cam_transform)) = camera.single() else { return };
+    let Ok((cam, cam_transform)) = camera.single() else {
+        return;
+    };
     let Ok(window) = window.single() else { return };
 
     let global_tf = GlobalTransform::from(*cam_transform);
-    let Some(top_left) = cam.viewport_to_world_2d(&global_tf, Vec2::new(0.0, 0.0)).ok() else { return };
-    let Some(bottom_right) = cam.viewport_to_world_2d(&global_tf, Vec2::new(window.width(), window.height())).ok() else { return };
+    let Some(top_left) = cam
+        .viewport_to_world_2d(&global_tf, Vec2::new(0.0, 0.0))
+        .ok()
+    else {
+        return;
+    };
+    let Some(bottom_right) = cam
+        .viewport_to_world_2d(&global_tf, Vec2::new(window.width(), window.height()))
+        .ok()
+    else {
+        return;
+    };
 
     let tile_size = cfg.tile_size;
     let chunk_size = CHUNK_SIZE as i32;
@@ -364,15 +425,19 @@ fn update_visible_chunks(
 
     for (entity, marker) in existing_markers.iter() {
         let (cx, cy) = (marker.0, marker.1);
-        if cx < min_cx - despawn_margin || cx > max_cx + despawn_margin
-            || cy < min_cy - despawn_margin || cy > max_cy + despawn_margin
+        if cx < min_cx - despawn_margin
+            || cx > max_cx + despawn_margin
+            || cy < min_cy - despawn_margin
+            || cy > max_cy + despawn_margin
         {
             to_despawn.push(entity);
             let world_ox = cx * chunk_size;
             let world_oy = cy * chunk_size;
             for (_dep_entity, deposit, pos) in existing_deposits.iter() {
-                if pos.x >= world_ox && pos.x < world_ox + CHUNK_SIZE as i32
-                    && pos.y >= world_oy && pos.y < world_oy + CHUNK_SIZE as i32
+                if pos.x >= world_ox
+                    && pos.x < world_ox + CHUNK_SIZE as i32
+                    && pos.y >= world_oy
+                    && pos.y < world_oy + CHUNK_SIZE as i32
                 {
                     let dx = (pos.x - world_ox) as u32;
                     let dy = (pos.y - world_oy) as u32;
@@ -384,8 +449,10 @@ fn update_visible_chunks(
 
     for (entity, member) in existing_members.iter() {
         let (cx, cy) = (member.0, member.1);
-        if cx < min_cx - despawn_margin || cx > max_cx + despawn_margin
-            || cy < min_cy - despawn_margin || cy > max_cy + despawn_margin
+        if cx < min_cx - despawn_margin
+            || cx > max_cx + despawn_margin
+            || cy < min_cy - despawn_margin
+            || cy > max_cy + despawn_margin
         {
             to_despawn.push(entity);
         }
@@ -406,9 +473,19 @@ fn update_visible_chunks(
     }
 
     spawn_chunks_in_range(
-        &mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes,
-        &mut materials, &mut meshes, &textures,
-        min_cx, max_cx, min_cy, max_cy, &spawned,
+        &mut commands,
+        &mut chunk_grid,
+        &cfg,
+        &res_registry,
+        &shapes,
+        &mut materials,
+        &mut meshes,
+        &textures,
+        min_cx,
+        max_cx,
+        min_cy,
+        max_cy,
+        &spawned,
     );
 }
 
@@ -419,8 +496,14 @@ fn cleanup_map(
     cameras: Query<Entity, With<Camera2d>>,
     mut chunk_grid: ResMut<ChunkGrid>,
 ) {
-    for entity in markers.iter() { commands.entity(entity).despawn(); }
-    for entity in members.iter() { commands.entity(entity).despawn(); }
-    for entity in cameras.iter() { commands.entity(entity).despawn(); }
+    for entity in markers.iter() {
+        commands.entity(entity).despawn();
+    }
+    for entity in members.iter() {
+        commands.entity(entity).despawn();
+    }
+    for entity in cameras.iter() {
+        commands.entity(entity).despawn();
+    }
     chunk_grid.clear();
 }

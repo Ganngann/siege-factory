@@ -1,6 +1,6 @@
-use bevy::prelude::*;
 use crate::economy::components::Direction;
 use crate::map::components::TilePosition;
+use bevy::prelude::*;
 
 #[derive(Event)]
 pub struct DeconstructAreaEvent {

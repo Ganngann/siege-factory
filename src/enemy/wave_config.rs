@@ -28,14 +28,20 @@ impl WaveConfig {
     pub fn load() -> Self {
         let toml_str = include_str!("../../data/waves.toml");
         let parsed: WavesToml = toml::from_str(toml_str).expect("failed to parse waves.toml");
-        let waves = parsed.waves.iter().map(|w| {
-            WaveDef {
-                enemies: w.enemies.iter().map(|e| WaveEntry {
-                    kind: e.kind.clone(),
-                    count: e.count,
-                }).collect(),
-            }
-        }).collect();
+        let waves = parsed
+            .waves
+            .iter()
+            .map(|w| WaveDef {
+                enemies: w
+                    .enemies
+                    .iter()
+                    .map(|e| WaveEntry {
+                        kind: e.kind.clone(),
+                        count: e.count,
+                    })
+                    .collect(),
+            })
+            .collect();
         Self {
             win_waves: parsed.game.win_waves,
             wave_interval_sec: parsed.game.wave_interval_sec,

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-use crate::economy::components::{Assembler, Active};
-use crate::economy::resource::Inventory;
+use crate::economy::components::{Active, Assembler};
 use crate::economy::recipe::RecipeRegistry;
+use crate::economy::resource::Inventory;
 
 pub fn assembler_tick(
     time: Res<Time>,
@@ -10,14 +10,18 @@ pub fn assembler_tick(
     mut assembler_query: Query<(&mut Assembler, &mut Inventory, &Active)>,
 ) {
     for (mut assembler, mut inventory, active) in assembler_query.iter_mut() {
-        if !active.0 { continue; }
+        if !active.0 {
+            continue;
+        }
         let recipe = match recipes.get(&assembler.recipe_id) {
             Some(r) => r,
             None => continue,
         };
 
         // Check: enough inputs in inventory?
-        let can_produce = recipe.input.iter()
+        let can_produce = recipe
+            .input
+            .iter()
             .all(|(req_resource, req_amount)| inventory.get(req_resource) >= *req_amount);
 
         if !can_produce {

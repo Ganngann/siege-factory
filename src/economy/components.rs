@@ -1,6 +1,6 @@
+use crate::economy::resource::ResourceId;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::economy::resource::ResourceId;
 
 #[derive(Component)]
 pub struct HQ;
@@ -121,7 +121,13 @@ pub struct BuildingPanel {
 
 impl Default for BuildingPanel {
     fn default() -> Self {
-        Self { inspected: None, root: None, overlay: None, recipe_selector: None, dirty: false }
+        Self {
+            inspected: None,
+            root: None,
+            overlay: None,
+            recipe_selector: None,
+            dirty: false,
+        }
     }
 }
 
@@ -238,7 +244,9 @@ pub struct AlertText;
 #[derive(Component)]
 pub struct RecipeSelectorRoot;
 #[derive(Component)]
-pub struct RecipeSelectorItem { pub recipe_id: String }
+pub struct RecipeSelectorItem {
+    pub recipe_id: String,
+}
 #[derive(Component)]
 pub struct RecipeCategoryLabel;
 
@@ -251,3 +259,15 @@ pub struct SorterResourceButton {
 #[derive(Component)]
 pub struct SorterInvertButton;
 
+// ── Farm panel ──
+
+#[derive(Component)]
+pub struct FarmCropText;
+#[derive(Component)]
+pub struct FarmCultivatorCountText;
+#[derive(Component)]
+pub struct FarmRecruitButton;
+#[derive(Component)]
+pub struct FarmCropSelectButton {
+    pub crop_type: String,
+}

@@ -3,6 +3,10 @@ label = "Production"
 items = ["miner", "furnace", "assembler"]
 
 [[menu]]
+label = "Agriculture"
+items = ["farm"]
+
+[[menu]]
 label = "Logistique"
 items = [
     "belt",

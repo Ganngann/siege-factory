@@ -1,5 +1,5 @@
 use siege_factory::economy::building::BuildingRegistry;
-use siege_factory::economy::resource::{ResourceId, Inventory};
+use siege_factory::economy::resource::{Inventory, ResourceId};
 use siege_factory::economy::unit_config::UnitConfig;
 use siege_factory::map::tile_grid::ChunkGrid;
 
@@ -43,7 +43,11 @@ fn unit_config_loads() {
     let cfg = UnitConfig::load();
     assert!(cfg.units.contains_key("soldier"), "Missing soldier");
     assert!(cfg.units.contains_key("worker"), "Missing worker");
-    assert!(cfg.units.len() >= 2, "Expected at least 2 units, got {}", cfg.units.len());
+    assert!(
+        cfg.units.len() >= 2,
+        "Expected at least 2 units, got {}",
+        cfg.units.len()
+    );
 }
 
 // ── Economy tests ──
@@ -114,7 +118,11 @@ fn production_timer_cycles_correctly() {
 // ── ChunkGrid generation tests ──
 
 fn test_dist() -> Vec<(String, u32)> {
-    vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)]
+    vec![
+        ("iron_ore".to_string(), 50),
+        ("copper_ore".to_string(), 35),
+        ("coal".to_string(), 15),
+    ]
 }
 
 #[test]
@@ -142,13 +150,22 @@ fn chunk_grid_stores_seed() {
 
 #[test]
 fn resource_id_display_name() {
-    assert_eq!(ResourceId("iron_ore".to_string()).display_name(), "Iron Ore");
-    assert_eq!(ResourceId("copper_plate".to_string()).display_name(), "Copper Plate");
+    assert_eq!(
+        ResourceId("iron_ore".to_string()).display_name(),
+        "Iron Ore"
+    );
+    assert_eq!(
+        ResourceId("copper_plate".to_string()).display_name(),
+        "Copper Plate"
+    );
     assert_eq!(ResourceId("ore".to_string()).display_name(), "Ore");
 }
 
 #[test]
 fn resource_id_eq() {
     assert_eq!(ResourceId("ore".to_string()), ResourceId("ore".to_string()));
-    assert_ne!(ResourceId("ore".to_string()), ResourceId("iron_ore".to_string()));
+    assert_ne!(
+        ResourceId("ore".to_string()),
+        ResourceId("iron_ore".to_string())
+    );
 }

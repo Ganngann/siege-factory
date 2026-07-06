@@ -18,3 +18,13 @@ speed = 80.0
 mine_interval_sec = 3.0
 color = "#E6CC33"
 visual = "circle"
+
+[cultivator]
+name = "Cultivator"
+kind = "cultivator"
+cost = { ore = 8 }
+hp = 10
+speed = 60.0
+carry_capacity = 5
+color = "#5A8C2A"
+visual = "circle"

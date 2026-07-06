@@ -1,7 +1,7 @@
+use crate::core::utils::parse_hex_color;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::core::utils::parse_hex_color;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ResourceId(pub String);
@@ -42,15 +42,23 @@ pub struct ResourceRegistry {
 impl ResourceRegistry {
     pub fn load() -> Self {
         let toml_str = include_str!("../../data/resources.toml");
-        let parsed: ResourcesToml = toml::from_str(toml_str).expect("failed to parse resources.toml");
+        let parsed: ResourcesToml =
+            toml::from_str(toml_str).expect("failed to parse resources.toml");
         let mut resources = HashMap::new();
         for (key, entry) in parsed.resources {
-            resources.insert(key.clone(), ResourceDef {
-                id: key,
-                name: entry.name,
-                max_stack: entry.max_stack,
-                color: entry.color.as_deref().map(parse_hex_color).unwrap_or(Color::srgb(0.5, 0.5, 0.5)),
-            });
+            resources.insert(
+                key.clone(),
+                ResourceDef {
+                    id: key,
+                    name: entry.name,
+                    max_stack: entry.max_stack,
+                    color: entry
+                        .color
+                        .as_deref()
+                        .map(parse_hex_color)
+                        .unwrap_or(Color::srgb(0.5, 0.5, 0.5)),
+                },
+            );
         }
         Self { resources }
     }
@@ -84,11 +92,17 @@ pub struct Inventory {
 
 impl Inventory {
     pub fn new() -> Self {
-        Self { resources: HashMap::new(), capacity: 0 }
+        Self {
+            resources: HashMap::new(),
+            capacity: 0,
+        }
     }
 
     pub fn with_capacity(capacity: u32) -> Self {
-        Self { resources: HashMap::new(), capacity }
+        Self {
+            resources: HashMap::new(),
+            capacity,
+        }
     }
 
     pub fn get(&self, resource: &ResourceId) -> u32 {

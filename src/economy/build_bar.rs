@@ -1,19 +1,18 @@
-use bevy::prelude::*;
 use crate::core::tooltip::TooltipText;
 use crate::core::utils::silent_despawn;
-use crate::rendering::TextureCache;
 use crate::economy::building::BuildingRegistry;
-use crate::economy::unit_config::UnitConfig;
-use crate::economy::resource::Inventory;
 use crate::economy::components::{
-    BuildMode, DeconstructMode, HQ,
-    MenuBarPanel, BreadcrumbText, BackButton, ScrollButton, MenuItemButton,
+    BackButton, BreadcrumbText, BuildMode, DeconstructMode, HQ, MenuBarPanel, MenuItemButton,
+    ScrollButton,
 };
 use crate::economy::menu::{
-    MenuDef, MenuState, MenuItems, MenuAction, FlatItemKind, MenuEntry,
-    PAGE_SIZE,
+    FlatItemKind, MenuAction, MenuDef, MenuEntry, MenuItems, MenuState, PAGE_SIZE,
 };
+use crate::economy::resource::Inventory;
+use crate::economy::unit_config::UnitConfig;
+use crate::rendering::TextureCache;
 use crate::unit::SpawnUnitEvent;
+use bevy::prelude::*;
 
 const PANEL_HEIGHT: f32 = 90.0;
 const ITEM_WIDTH: f32 = 90.0;
@@ -45,8 +44,11 @@ pub fn spawn_menu_bar(
     textures: Res<TextureCache>,
 ) {
     *menu_items = crate::economy::menu::flat_items_at(
-        &menu_def.root, &menu_state.stack, menu_state.scroll,
-        &registry, &unit_cfg,
+        &menu_def.root,
+        &menu_state.stack,
+        menu_state.scroll,
+        &registry,
+        &unit_cfg,
     );
 
     build_menu_bar(&mut commands, &menu_items, &textures);
@@ -65,8 +67,11 @@ pub fn refresh_menu_bar(
     panel_query: Query<Entity, With<MenuBarPanel>>,
 ) {
     let new_items = crate::economy::menu::flat_items_at(
-        &menu_def.root, &menu_state.stack, menu_state.scroll,
-        &registry, &unit_cfg,
+        &menu_def.root,
+        &menu_state.stack,
+        menu_state.scroll,
+        &registry,
+        &unit_cfg,
     );
     if *menu_items == new_items {
         return;
@@ -198,7 +203,10 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                             ));
                         });
                     } else {
-                        row.spawn(Node { width: Val::Px(24.0), ..default() });
+                        row.spawn(Node {
+                            width: Val::Px(24.0),
+                            ..default()
+                        });
                     }
 
                     // Item buttons
@@ -283,7 +291,10 @@ fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures: &Te
                             ));
                         });
                     } else {
-                        row.spawn(Node { width: Val::Px(24.0), ..default() });
+                        row.spawn(Node {
+                            width: Val::Px(24.0),
+                            ..default()
+                        });
                     }
                 });
         });
@@ -293,7 +304,8 @@ impl PartialEq for MenuItems {
     fn eq(&self, other: &Self) -> bool {
         self.items.len() == other.items.len()
             && self.items.iter().zip(other.items.iter()).all(|(a, b)| {
-                a.label == b.label && std::mem::discriminant(&a.kind) == std::mem::discriminant(&b.kind)
+                a.label == b.label
+                    && std::mem::discriminant(&a.kind) == std::mem::discriminant(&b.kind)
             })
             && self.has_back == other.has_back
             && self.breadcrumb == other.breadcrumb
@@ -336,14 +348,27 @@ pub fn menu_navigation(
     }
 
     let digit_keys = [
-        KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4, KeyCode::Digit5,
-        KeyCode::Digit6, KeyCode::Digit7, KeyCode::Digit8, KeyCode::Digit9,
+        KeyCode::Digit2,
+        KeyCode::Digit3,
+        KeyCode::Digit4,
+        KeyCode::Digit5,
+        KeyCode::Digit6,
+        KeyCode::Digit7,
+        KeyCode::Digit8,
+        KeyCode::Digit9,
         KeyCode::Digit0,
     ];
     for (slot, key) in digit_keys.iter().enumerate() {
         if keys.just_pressed(*key) {
             if let Some(item) = menu_items.items.get(slot) {
-                activate_item(item, &mut menu_state, &menu_def, &mut build_mode, &mut deconstruct, &mut commands);
+                activate_item(
+                    item,
+                    &mut menu_state,
+                    &menu_def,
+                    &mut build_mode,
+                    &mut deconstruct,
+                    &mut commands,
+                );
             }
         }
     }
@@ -375,35 +400,75 @@ pub fn menu_bar_interaction(
     for (interaction, button) in &query {
         if *interaction == Interaction::Pressed {
             if let Some(item) = menu_items.items.get(button.index) {
-                activate_item(item, &mut menu_state, &menu_def, &mut build_mode, &mut deconstruct, &mut commands);
+                activate_item(
+                    item,
+                    &mut menu_state,
+                    &menu_def,
+                    &mut build_mode,
+                    &mut deconstruct,
+                    &mut commands,
+                );
             }
         }
         if *interaction == Interaction::Hovered {
             if let Some(item) = menu_items.items.get(button.index) {
                 tooltip.0 = Some(match &item.kind {
                     FlatItemKind::Action(action) => match action {
-                        MenuAction::Build(id) => {
-                            registry.get(id).map(|def| {
-                                let mut parts = vec![format!("{}  HP:{}  Cost:{}", def.name, def.hp, item.cost_str)];
-                                if def.requires_deposit { parts.push("Requires ore deposit".into()); }
-                                if let Some(ref p) = def.production { parts.push(format!("Produces {} every {:.1}s", p.resource.display_name(), p.interval_sec)); }
-                                if let Some(ref b) = def.belt { parts.push(format!("{} slots, speed {:.1}", b.slots, b.speed)); }
-                                if let Some(ref c) = def.combat { parts.push(format!("Dmg {}  Range {:.0}  Rate {:.1}s", c.damage, c.range.sqrt(), c.fire_rate_sec)); }
-                                parts.join("  |  ")
-                            }).unwrap_or_default()
-                        }
-                        MenuAction::Spawn(id) => {
-                            unit_cfg.get(id).map(|def| {
-                                let mut parts = vec![format!("{}  HP:{}  Cost:{}", def.name, def.hp, item.cost_str)];
-                                if def.kind == "combat" {
-                                    parts.push(format!("Dmg {}  Range {:.0}  Rate {:.1}s", def.damage, def.range_tiles, def.fire_rate_sec));
-                                } else if def.kind == "harvester" {
-                                    parts.push(format!("Speed {:.0}  Mine interval {:.1}s", def.speed, def.mine_interval_sec));
+                        MenuAction::Build(id) => registry
+                            .get(id)
+                            .map(|def| {
+                                let mut parts = vec![format!(
+                                    "{}  HP:{}  Cost:{}",
+                                    def.name, def.hp, item.cost_str
+                                )];
+                                if def.requires_deposit {
+                                    parts.push("Requires ore deposit".into());
+                                }
+                                if let Some(ref p) = def.production {
+                                    parts.push(format!(
+                                        "Produces {} every {:.1}s",
+                                        p.resource.display_name(),
+                                        p.interval_sec
+                                    ));
+                                }
+                                if let Some(ref b) = def.belt {
+                                    parts.push(format!("{} slots, speed {:.1}", b.slots, b.speed));
+                                }
+                                if let Some(ref c) = def.combat {
+                                    parts.push(format!(
+                                        "Dmg {}  Range {:.0}  Rate {:.1}s",
+                                        c.damage,
+                                        c.range.sqrt(),
+                                        c.fire_rate_sec
+                                    ));
                                 }
                                 parts.join("  |  ")
-                            }).unwrap_or_default()
+                            })
+                            .unwrap_or_default(),
+                        MenuAction::Spawn(id) => unit_cfg
+                            .get(id)
+                            .map(|def| {
+                                let mut parts = vec![format!(
+                                    "{}  HP:{}  Cost:{}",
+                                    def.name, def.hp, item.cost_str
+                                )];
+                                if def.kind == "combat" {
+                                    parts.push(format!(
+                                        "Dmg {}  Range {:.0}  Rate {:.1}s",
+                                        def.damage, def.range_tiles, def.fire_rate_sec
+                                    ));
+                                } else if def.kind == "harvester" {
+                                    parts.push(format!(
+                                        "Speed {:.0}  Mine interval {:.1}s",
+                                        def.speed, def.mine_interval_sec
+                                    ));
+                                }
+                                parts.join("  |  ")
+                            })
+                            .unwrap_or_default(),
+                        MenuAction::Delete => {
+                            "[Delete] Deconstruct mode — click a building to dismantle".into()
                         }
-                        MenuAction::Delete => "[Delete] Deconstruct mode — click a building to dismantle".into(),
                     },
                     FlatItemKind::SubMenu => format!("{} › (click to enter)", item.label),
                 });
@@ -423,7 +488,11 @@ pub fn menu_bar_interaction(
 
     for (interaction, scroll) in &scroll_query {
         if *interaction == Interaction::Pressed {
-            let max = if menu_items.total_items > PAGE_SIZE { menu_items.total_items - PAGE_SIZE } else { 0 };
+            let max = if menu_items.total_items > PAGE_SIZE {
+                menu_items.total_items - PAGE_SIZE
+            } else {
+                0
+            };
             if scroll.0 < 0 {
                 menu_state.scroll = menu_state.scroll.saturating_sub(1);
             } else if menu_state.scroll < max {
@@ -453,7 +522,11 @@ fn activate_item(
                 menu_state.scroll = 0;
                 // Auto-select first item in the submenu
                 let new_level = crate::economy::menu::items_at(&menu_def.root, &menu_state.stack);
-                if let Some(MenuEntry::Action { action: first_action, .. }) = new_level.first() {
+                if let Some(MenuEntry::Action {
+                    action: first_action,
+                    ..
+                }) = new_level.first()
+                {
                     match first_action {
                         MenuAction::Build(id) => {
                             build_mode.0 = Some(id.clone());
@@ -479,7 +552,9 @@ fn activate_item(
             }
             MenuAction::Delete => {
                 deconstruct.0 = !deconstruct.0;
-                if deconstruct.0 { build_mode.0 = None; }
+                if deconstruct.0 {
+                    build_mode.0 = None;
+                }
             }
         },
     }
@@ -502,14 +577,20 @@ pub fn update_menu_bar(
     let has_deconstruct = deconstruct.0;
 
     for (button, mut bg, mut border) in button_query.iter_mut() {
-        let Some(item) = menu_items.items.get(button.index) else { continue; };
+        let Some(item) = menu_items.items.get(button.index) else {
+            continue;
+        };
         match &item.kind {
             FlatItemKind::Action(action) => match action {
                 MenuAction::Build(id) => {
                     let is_active = build_mode.0.as_ref() == Some(id);
-                    let affordable = hq_inv.and_then(|inv| {
-                        registry.get(id).map(|def| def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount))
-                    }).unwrap_or(false);
+                    let affordable = hq_inv
+                        .and_then(|inv| {
+                            registry.get(id).map(|def| {
+                                def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount)
+                            })
+                        })
+                        .unwrap_or(false);
 
                     *border = BorderColor::all(if is_active {
                         Color::srgb(0.3, 1.0, 0.3)
@@ -518,13 +599,25 @@ pub fn update_menu_bar(
                     } else {
                         Color::srgba(1.0, 1.0, 1.0, 0.2)
                     });
-                    bg.0 = if affordable { item.color } else { Color::srgb(0.3, 0.3, 0.3) };
+                    bg.0 = if affordable {
+                        item.color
+                    } else {
+                        Color::srgb(0.3, 0.3, 0.3)
+                    };
                 }
                 MenuAction::Spawn(id) => {
-                    let affordable = hq_inv.and_then(|inv| {
-                        unit_cfg.get(id).map(|def| def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount))
-                    }).unwrap_or(false);
-                    bg.0 = if affordable { item.color } else { Color::srgb(0.3, 0.3, 0.3) };
+                    let affordable = hq_inv
+                        .and_then(|inv| {
+                            unit_cfg.get(id).map(|def| {
+                                def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount)
+                            })
+                        })
+                        .unwrap_or(false);
+                    bg.0 = if affordable {
+                        item.color
+                    } else {
+                        Color::srgb(0.3, 0.3, 0.3)
+                    };
                 }
                 MenuAction::Delete => {
                     *border = BorderColor::all(if deconstruct.0 {
@@ -535,7 +628,9 @@ pub fn update_menu_bar(
                     bg.0 = item.color;
                 }
             },
-            FlatItemKind::SubMenu => { bg.0 = item.color; }
+            FlatItemKind::SubMenu => {
+                bg.0 = item.color;
+            }
         }
     }
 }

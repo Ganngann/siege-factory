@@ -30,8 +30,13 @@ pub fn cursor_to_tile(
     let window = windows.single().ok()?;
     let cursor = window.cursor_position()?;
     let (cam, cam_tf) = camera.single().ok()?;
-    let world_pos = cam.viewport_to_world_2d(&GlobalTransform::from(*cam_tf), cursor).ok()?;
+    let world_pos = cam
+        .viewport_to_world_2d(&GlobalTransform::from(*cam_tf), cursor)
+        .ok()?;
     let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
-    Some(TilePosition { x: tile_x, y: tile_y })
+    Some(TilePosition {
+        x: tile_x,
+        y: tile_y,
+    })
 }

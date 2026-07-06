@@ -26,9 +26,10 @@ impl KeyBindings {
     }
 
     pub fn get(&self, action: &str) -> InputBinding {
-        self.map.get(action).copied().unwrap_or_else(|| {
-            panic!("action '{action}' not found in keybindings")
-        })
+        self.map
+            .get(action)
+            .copied()
+            .unwrap_or_else(|| panic!("action '{action}' not found in keybindings"))
     }
 
     pub fn key(&self, action: &str) -> KeyCode {

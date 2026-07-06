@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::core::toast::ToastQueue;
 use crate::economy::components::{HQ, PeacefulMode};
-use crate::enemy::components::{Enemy, WaveState, Health, LastWave};
+use crate::enemy::components::{Enemy, Health, LastWave, WaveState};
 use crate::enemy::registry::EnemyRegistry;
 use crate::enemy::wave_config::WaveConfig;
 use crate::map::components::TilePosition;
@@ -39,7 +39,9 @@ pub fn spawn_enemies(
     map_cfg: Res<MapConfig>,
     peaceful: Res<PeacefulMode>,
 ) {
-    if peaceful.0 { return; }
+    if peaceful.0 {
+        return;
+    }
     let tile_size = map_cfg.tile_size;
 
     let max_enemies = (wave.wave * cfg.max_enemies_base).min(cfg.max_enemies_cap);
@@ -84,7 +86,10 @@ pub fn spawn_enemies(
 
     commands.spawn((
         Enemy { kind: kind.clone() },
-        Health { current: enemy_hp, max: enemy_hp },
+        Health {
+            current: enemy_hp,
+            max: enemy_hp,
+        },
         Transform::from_xyz(
             sx as f32 * tile_size + tile_size / 2.0,
             sy as f32 * tile_size + tile_size / 2.0,
@@ -118,7 +123,10 @@ pub fn reset_wave(
 ) {
     *wave = WaveState::default();
     if let Ok(entity) = hq.single() {
-        commands.entity(entity).insert(Health { current: cfg.hq_hp, max: cfg.hq_hp });
+        commands.entity(entity).insert(Health {
+            current: cfg.hq_hp,
+            max: cfg.hq_hp,
+        });
     }
 }
 

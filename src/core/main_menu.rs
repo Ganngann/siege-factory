@@ -118,9 +118,9 @@ impl MainMenuDef {
                         let action = match ti.action.as_str() {
                             "StartGame" => MenuAction::StartGame,
                             "StartPeaceful" => MenuAction::StartPeaceful,
-                            "OpenScreen" => MenuAction::OpenScreen(
-                                ti.target.clone().unwrap_or_default(),
-                            ),
+                            "OpenScreen" => {
+                                MenuAction::OpenScreen(ti.target.clone().unwrap_or_default())
+                            }
                             "Back" => MenuAction::Back,
                             "Quit" => MenuAction::Quit,
                             "LoadGame" => MenuAction::LoadGame,
@@ -156,7 +156,11 @@ fn build_rebind_items(bindings: &KeyBindings) -> Vec<(String, String, MenuAction
         .into_iter()
         .map(|(action, binding)| {
             let label = format!("{}  :  {}", action, binding_to_str(binding));
-            (format!("rebind_{}", action), label, MenuAction::Rebind(action))
+            (
+                format!("rebind_{}", action),
+                label,
+                MenuAction::Rebind(action),
+            )
         })
         .collect();
     items.push(("back".to_string(), "Back".to_string(), MenuAction::Back));
@@ -178,7 +182,9 @@ fn spawn_current_screen(
     camera_exists: bool,
 ) {
     let screen_id = nav.stack.last().cloned().unwrap_or_default();
-    let Some(screen) = def.screens.get(&screen_id) else { return };
+    let Some(screen) = def.screens.get(&screen_id) else {
+        return;
+    };
 
     if !camera_exists {
         commands.spawn((Camera2d, MenuCamera));
@@ -239,28 +245,29 @@ fn spawn_current_screen(
                 } else {
                     Color::srgb(0.6, 0.6, 0.7)
                 };
-                parent.spawn((
-                    MenuRoot,
-                    MenuItemComp(id.clone(), action.clone()),
-                    MenuIndex(idx),
-                    Button,
-                    Interaction::default(),
-                    Node {
-                        padding: UiRect::axes(Val::Px(20.0), Val::Px(4.0)),
-                        min_width: Val::Px(300.0),
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    BackgroundColor(Color::NONE),
-                ))
-                .with_children(|p| {
-                    p.spawn((
+                parent
+                    .spawn((
                         MenuRoot,
-                        Text::new(label.as_str()),
-                        TextFont::from_font_size(20.0),
-                        TextColor(color),
-                    ));
-                });
+                        MenuItemComp(id.clone(), action.clone()),
+                        MenuIndex(idx),
+                        Button,
+                        Interaction::default(),
+                        Node {
+                            padding: UiRect::axes(Val::Px(20.0), Val::Px(4.0)),
+                            min_width: Val::Px(300.0),
+                            justify_content: JustifyContent::Center,
+                            ..default()
+                        },
+                        BackgroundColor(Color::NONE),
+                    ))
+                    .with_children(|p| {
+                        p.spawn((
+                            MenuRoot,
+                            Text::new(label.as_str()),
+                            TextFont::from_font_size(20.0),
+                            TextColor(color),
+                        ));
+                    });
             }
         });
 }
@@ -309,27 +316,35 @@ pub fn menu_navigation(
         for entity in &root_query {
             silent_despawn(&mut commands, entity);
         }
-        spawn_current_screen(&mut commands, &def, &nav, &bindings, !camera_query.is_empty());
+        spawn_current_screen(
+            &mut commands,
+            &def,
+            &nav,
+            &bindings,
+            !camera_query.is_empty(),
+        );
         *last_nav = nav.stack.clone();
         return;
     }
 
     // Get current screen items list
     let screen_id = nav.stack.last().cloned().unwrap_or_default();
-    let Some(screen) = def.screens.get(&screen_id) else { return };
+    let Some(screen) = def.screens.get(&screen_id) else {
+        return;
+    };
 
     let items: Vec<MenuItemAction> = if screen_id == "keybindings" {
         build_rebind_items(&bindings)
             .into_iter()
-                .map(|(_id, _, action)| MenuItemAction { action })
+            .map(|(_id, _, action)| MenuItemAction { action })
             .collect()
     } else {
         screen
             .items
             .iter()
-                .map(|it| MenuItemAction {
-                    action: it.action.clone(),
-                })
+            .map(|it| MenuItemAction {
+                action: it.action.clone(),
+            })
             .collect()
     };
 
@@ -389,14 +404,13 @@ pub fn menu_navigation(
     }
 
     // ── Activate item ──
-    let activate_idx = mouse_pressed
-        .or_else(|| {
-            if keys.just_pressed(KeyCode::Enter) {
-                Some(nav.selection)
-            } else {
-                None
-            }
-        });
+    let activate_idx = mouse_pressed.or_else(|| {
+        if keys.just_pressed(KeyCode::Enter) {
+            Some(nav.selection)
+        } else {
+            None
+        }
+    });
 
     if let Some(idx) = activate_idx {
         let Some(item) = items.get(idx) else { return };
@@ -446,8 +460,6 @@ pub fn menu_navigation(
 struct MenuItemAction {
     action: MenuAction,
 }
-
-
 
 /// Handles key capture during rebind mode.
 pub fn menu_rebind_handler(
@@ -512,7 +524,10 @@ pub fn menu_rebind_handler(
 
     // Try to capture a key (skip common navigation keys)
     for key in keys.get_just_pressed() {
-        if matches!(key, KeyCode::Enter | KeyCode::ArrowUp | KeyCode::ArrowDown | KeyCode::Escape) {
+        if matches!(
+            key,
+            KeyCode::Enter | KeyCode::ArrowUp | KeyCode::ArrowDown | KeyCode::Escape
+        ) {
             continue;
         }
         let binding = InputBinding::Key(*key);

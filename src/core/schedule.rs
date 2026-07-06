@@ -1,9 +1,9 @@
-use bevy::prelude::*;
 use crate::core::game_state::GameState;
 use crate::core::input::KeyBindings;
 use crate::core::main_menu::{self, MainMenuDef, MenuNav, RebindState};
 use crate::core::settings::Settings;
 use crate::economy::components::BuildMode;
+use bevy::prelude::*;
 
 pub struct CorePlugin;
 
@@ -21,11 +21,15 @@ impl Plugin for CorePlugin {
         app.insert_resource(RebindState::default());
         app.init_state::<GameState>();
         app.add_systems(OnExit(GameState::Menu), main_menu::despawn_menu_ui);
-        app.add_systems(Update, (
-            game_state_transition,
-            main_menu::menu_navigation,
-            main_menu::menu_rebind_handler,
-        ).run_if(in_state(GameState::Menu)));
+        app.add_systems(
+            Update,
+            (
+                game_state_transition,
+                main_menu::menu_navigation,
+                main_menu::menu_rebind_handler,
+            )
+                .run_if(in_state(GameState::Menu)),
+        );
     }
 }
 
@@ -36,10 +40,7 @@ fn game_state_transition(
     bindings: Res<KeyBindings>,
     mut build_mode: Option<ResMut<BuildMode>>,
 ) {
-    let mode_active = build_mode
-        .as_ref()
-        .map(|m| m.0.is_some())
-        .unwrap_or(false);
+    let mode_active = build_mode.as_ref().map(|m| m.0.is_some()).unwrap_or(false);
 
     match state.get() {
         GameState::Menu => {
@@ -92,7 +93,10 @@ mod tests {
     fn initial_state_is_menu() {
         let mut app = test_app();
         app.update();
-        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Menu);
+        assert_eq!(
+            **app.world().resource::<State<GameState>>(),
+            GameState::Menu
+        );
     }
 
     #[test]
@@ -101,20 +105,30 @@ mod tests {
         app.update();
 
         app.update();
-        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Menu);
+        assert_eq!(
+            **app.world().resource::<State<GameState>>(),
+            GameState::Menu
+        );
     }
 
     #[test]
     fn escape_cancels_build_mode_before_forfeit() {
         let mut app = test_app();
-        app.world_mut().resource_mut::<NextState<GameState>>().set(GameState::Playing);
+        app.world_mut()
+            .resource_mut::<NextState<GameState>>()
+            .set(GameState::Playing);
         app.update();
 
         app.world_mut().resource_mut::<BuildMode>().0 = Some("wall".to_string());
-        app.world_mut().resource_mut::<ButtonInput<KeyCode>>().press(KeyCode::Escape);
+        app.world_mut()
+            .resource_mut::<ButtonInput<KeyCode>>()
+            .press(KeyCode::Escape);
         app.update();
         // Build mode cancelled, still Playing
-        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Playing);
+        assert_eq!(
+            **app.world().resource::<State<GameState>>(),
+            GameState::Playing
+        );
         assert!(app.world().resource::<BuildMode>().0.is_none());
     }
 
@@ -122,8 +136,13 @@ mod tests {
     fn nextstate_set_triggers_transition() {
         let mut app = test_app();
         app.update();
-        app.world_mut().resource_mut::<NextState<GameState>>().set(GameState::Playing);
+        app.world_mut()
+            .resource_mut::<NextState<GameState>>()
+            .set(GameState::Playing);
         app.update();
-        assert_eq!(**app.world().resource::<State<GameState>>(), GameState::Playing);
+        assert_eq!(
+            **app.world().resource::<State<GameState>>(),
+            GameState::Playing
+        );
     }
 }

@@ -1,0 +1,3 @@
+- fog of war, il faut découvrir la carte.
+- il faut des belt virage 45°
+- 

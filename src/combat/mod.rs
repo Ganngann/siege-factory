@@ -1,7 +1,7 @@
-use bevy::prelude::*;
 use crate::core::game_state::GameState;
-use crate::enemy::{Health, Enemy as EnemyComponent};
+use crate::enemy::{Enemy as EnemyComponent, Health};
 use crate::events::DespawnEnemy;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct Projectile {
@@ -14,7 +14,10 @@ pub struct CombatPlugin;
 
 impl Plugin for CombatPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, move_and_hit_projectiles.run_if(in_state(GameState::Playing)));
+        app.add_systems(
+            Update,
+            move_and_hit_projectiles.run_if(in_state(GameState::Playing)),
+        );
     }
 }
 

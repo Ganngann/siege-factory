@@ -1,8 +1,8 @@
+use crate::core::utils::config_dir;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use crate::core::utils::config_dir;
 
 #[derive(Resource, Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -58,5 +58,3 @@ impl Settings {
         }
     }
 }
-
-

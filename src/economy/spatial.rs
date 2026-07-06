@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use bevy::prelude::*;
 use crate::economy::components::{Building, OccupiedTiles};
+use bevy::prelude::*;
+use std::collections::HashMap;
 
 #[derive(Resource, Default)]
 pub struct SpatialRegistry {

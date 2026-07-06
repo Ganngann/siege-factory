@@ -70,8 +70,10 @@ fn keep_group(svg: &str, id: &str) -> Option<String> {
 
     let vb = extract_viewbox_str(svg);
 
-    let mut result = format!(r#"<svg xmlns="http://www.w3.org/2000/svg" {} width="{}" height="{}">"#,
-        vb.map(|s| format!(r#"viewBox="{}""#, s)).unwrap_or_default(),
+    let mut result = format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" {} width="{}" height="{}">"#,
+        vb.map(|s| format!(r#"viewBox="{}""#, s))
+            .unwrap_or_default(),
         extract_viewbox(&svg).0,
         extract_viewbox(&svg).1,
     );
@@ -115,12 +117,21 @@ fn render_png(svg: &str, out_path: &Path, w: u32, h: u32) {
     let mut pixmap = match resvg::tiny_skia::Pixmap::new(w, h) {
         Some(p) => p,
         None => {
-            eprintln!("tiny_skia: failed to create pixmap {}x{} for {}", w, h, out_path.display());
+            eprintln!(
+                "tiny_skia: failed to create pixmap {}x{} for {}",
+                w,
+                h,
+                out_path.display()
+            );
             return;
         }
     };
 
-    resvg::render(&tree, resvg::tiny_skia::Transform::default(), &mut pixmap.as_mut());
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::default(),
+        &mut pixmap.as_mut(),
+    );
     if let Err(e) = pixmap.save_png(out_path) {
         eprintln!("Failed to save {}: {}", out_path.display(), e);
     }
@@ -131,12 +142,26 @@ fn generate_manifest(out: &Path) {
     for entry in fs::read_dir(out).unwrap() {
         let entry = entry.unwrap();
         if entry.path().extension().map_or(false, |e| e == "png") {
-            entries.push(entry.path().file_stem().unwrap().to_str().unwrap().to_string());
+            entries.push(
+                entry
+                    .path()
+                    .file_stem()
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
+            );
         }
     }
     entries.sort();
-    let content = format!("[\n{}\n]",
-        entries.iter().map(|e| format!("  \"{}\"", e)).collect::<Vec<_>>().join(",\n"));
+    let content = format!(
+        "[\n{}\n]",
+        entries
+            .iter()
+            .map(|e| format!("  \"{}\"", e))
+            .collect::<Vec<_>>()
+            .join(",\n")
+    );
     fs::write(out.join("manifest.ron"), content).unwrap();
     eprintln!("Generated {} textures", entries.len());
 }

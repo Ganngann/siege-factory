@@ -12,7 +12,7 @@
 ## Phase 2 — Contenu étendu
 
 ### Économie & Production
-- [ ] **Ressources cultivables** (note #10) : agriculture, fermes, plantations
+- [x] **Ressources cultivables** (note #10) : agriculture, fermes, cultivateurs, cultures (blé/bois), récolte, livraison, spirale
 - [ ] **Arbre de technologies** (note #12) : `data/techs.toml`, déblocages progressifs de recettes et QoL
 - [ ] **Système d'électricité** (note #14) : réseau électrique, générateurs, consommateurs, coupures
 - [ ] **Belts souterrains / aériens** (note #15) : variantes de belts passant sous/par-dessus les autres bâtiments

@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-use serde::Deserialize;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::unit_config::UnitConfig;
+use bevy::prelude::*;
+use serde::Deserialize;
 
 // ── Menu action (leaf) ──
 
@@ -106,7 +106,11 @@ enum TomlMenuItem {
 
 // ── Resolve helpers ──
 
-fn resolve_item_id(id: &str, registry: &BuildingRegistry, unit_cfg: &UnitConfig) -> Option<MenuEntry> {
+fn resolve_item_id(
+    id: &str,
+    registry: &BuildingRegistry,
+    unit_cfg: &UnitConfig,
+) -> Option<MenuEntry> {
     if let Some(def) = registry.buildings.iter().find(|b| b.id == id && !b.hidden) {
         return Some(MenuEntry::Action {
             label: def.name.clone(),
@@ -129,7 +133,9 @@ impl MenuDef {
         let toml_str = include_str!("../../data/menu.toml");
         let parsed: MenuToml = toml::from_str(toml_str).expect("failed to parse menu.toml");
 
-        let root = parsed.menu.into_iter()
+        let root = parsed
+            .menu
+            .into_iter()
             .filter_map(|entry| resolve_root_entry(entry, registry, unit_cfg))
             .collect();
 
@@ -137,30 +143,54 @@ impl MenuDef {
     }
 }
 
-fn resolve_root_entry(entry: TomlMenuCategory, registry: &BuildingRegistry, unit_cfg: &UnitConfig) -> Option<MenuEntry> {
-    let resolved: Vec<MenuEntry> = entry.items.into_iter()
+fn resolve_root_entry(
+    entry: TomlMenuCategory,
+    registry: &BuildingRegistry,
+    unit_cfg: &UnitConfig,
+) -> Option<MenuEntry> {
+    let resolved: Vec<MenuEntry> = entry
+        .items
+        .into_iter()
         .filter_map(|item| resolve_menu_item(item, registry, unit_cfg))
         .collect();
-    if resolved.is_empty() { return None; }
-    Some(MenuEntry::SubMenu { label: entry.label, items: resolved })
+    if resolved.is_empty() {
+        return None;
+    }
+    Some(MenuEntry::SubMenu {
+        label: entry.label,
+        items: resolved,
+    })
 }
 
-fn resolve_menu_item(item: TomlMenuItem, registry: &BuildingRegistry, unit_cfg: &UnitConfig) -> Option<MenuEntry> {
+fn resolve_menu_item(
+    item: TomlMenuItem,
+    registry: &BuildingRegistry,
+    unit_cfg: &UnitConfig,
+) -> Option<MenuEntry> {
     match item {
         TomlMenuItem::String(id) => resolve_item_id(&id, registry, unit_cfg),
         TomlMenuItem::SubMenu { label, items } => {
-            let resolved: Vec<MenuEntry> = items.into_iter()
+            let resolved: Vec<MenuEntry> = items
+                .into_iter()
                 .filter_map(|item| resolve_menu_item(item, registry, unit_cfg))
                 .collect();
-            if resolved.is_empty() { return None; }
-            Some(MenuEntry::SubMenu { label, items: resolved })
+            if resolved.is_empty() {
+                return None;
+            }
+            Some(MenuEntry::SubMenu {
+                label,
+                items: resolved,
+            })
         }
         TomlMenuItem::SpecialAction { action, label } => {
             let menu_action = match action.as_str() {
                 "delete" => MenuAction::Delete,
                 _ => return None,
             };
-            Some(MenuEntry::Action { label, action: menu_action })
+            Some(MenuEntry::Action {
+                label,
+                action: menu_action,
+            })
         }
     }
 }
@@ -213,21 +243,27 @@ pub fn flat_items_at(
                 let (cost_str, color, texture_stem) = match action {
                     MenuAction::Build(id) => {
                         if let Some(def) = registry.get(id) {
-                            (format_cost(&def.cost), def.color, Some(def.texture_stem.clone()))
+                            (
+                                format_cost(&def.cost),
+                                def.color,
+                                Some(def.texture_stem.clone()),
+                            )
                         } else {
                             (String::new(), Color::srgb(0.4, 0.4, 0.5), None)
                         }
                     }
                     MenuAction::Spawn(id) => {
                         if let Some(def) = unit_cfg.get(id) {
-                            (format_unit_cost(&def.cost), def.color, Some(def.texture_stem.clone()))
+                            (
+                                format_unit_cost(&def.cost),
+                                def.color,
+                                Some(def.texture_stem.clone()),
+                            )
                         } else {
                             (String::new(), Color::srgb(0.3, 0.35, 0.4), None)
                         }
                     }
-                    MenuAction::Delete => {
-                        (String::new(), Color::srgb(0.8, 0.2, 0.2), None)
-                    }
+                    MenuAction::Delete => (String::new(), Color::srgb(0.8, 0.2, 0.2), None),
                 };
                 items.push(FlatItem {
                     label: label.clone(),

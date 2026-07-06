@@ -1,6 +1,6 @@
-use bevy::prelude::*;
-use crate::economy::resource::{ResourceRegistry, Inventory};
 use crate::economy::components::HQ;
+use crate::economy::resource::{Inventory, ResourceRegistry};
+use bevy::prelude::*;
 
 pub fn resource_count_ui(
     hq_query: Query<&Inventory, With<HQ>>,

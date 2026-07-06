@@ -1,3 +1,4 @@
+pub mod agriculture;
 pub mod combat;
 pub mod core;
 pub mod economy;
@@ -28,6 +29,7 @@ pub fn run() {
         .add_plugins(EconomyPlugin)
         .add_plugins(enemy::EnemyPlugin)
         .add_plugins(unit::UnitPlugin)
+        .add_plugins(agriculture::AgriculturePlugin)
         .add_plugins(CombatPlugin)
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(RenderPlugin)

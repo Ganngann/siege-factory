@@ -1,19 +1,21 @@
-use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
-use std::collections::HashMap;
-use bevy::prelude::*;
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::economy::belt::BeltSlots;
-use crate::economy::resource::ResourceId;
 use crate::economy::building::BuildingRegistry;
-use crate::economy::components::{Building, Direction, HpBarChild, HasHpBar, BuildMode, Unit, PeacefulMode};
+use crate::economy::components::{
+    BuildMode, Building, Direction, HasHpBar, HpBarChild, PeacefulMode, Unit,
+};
+use crate::economy::resource::ResourceId;
 use crate::economy::unit_config::UnitConfig;
-use crate::enemy::components::{Enemy, Health, WaveState, WaveCounterText, GameOverUi};
+use crate::enemy::components::{Enemy, GameOverUi, Health, WaveCounterText, WaveState};
 use crate::enemy::registry::EnemyRegistry;
 use crate::events::SpawnProjectileEvent;
 use crate::map::components::HoveredTile;
 use crate::map::config::MapConfig;
 use crate::unit::{Soldier, Worker};
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
+use bevy::prelude::*;
+use std::collections::HashMap;
 
 // ── Shape cache (Mesh2d fallback for ghosts, projectiles, etc.) ──
 
@@ -110,10 +112,7 @@ impl TextureCache {
     }
 }
 
-fn setup_texture_cache(
-    mut commands: Commands,
-    mut images: ResMut<Assets<Image>>,
-) {
+fn setup_texture_cache(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     let building_stems = all_texture_stems();
     let item_stems = all_item_stems();
     let total = building_stems.len() + item_stems.len();
@@ -123,24 +122,26 @@ fn setup_texture_cache(
 
     for stem in &building_stems {
         let s = stem.as_str();
-        base.insert(stem.clone(), load_png(&mut images, s, "base").unwrap_or_default());
+        base.insert(
+            stem.clone(),
+            load_png(&mut images, s, "base").unwrap_or_default(),
+        );
         owner.insert(stem.clone(), load_png(&mut images, s, "owner"));
         level.insert(stem.clone(), load_png(&mut images, s, "level"));
     }
 
     for stem in &item_stems {
         let s = stem.as_str();
-        base.insert(stem.clone(), load_png(&mut images, s, "base").unwrap_or_default());
+        base.insert(
+            stem.clone(),
+            load_png(&mut images, s, "base").unwrap_or_default(),
+        );
     }
 
     commands.insert_resource(TextureCache { base, owner, level });
 }
 
-fn load_png(
-    images: &mut Assets<Image>,
-    stem: &str,
-    layer: &str,
-) -> Option<Handle<Image>> {
+fn load_png(images: &mut Assets<Image>, stem: &str, layer: &str) -> Option<Handle<Image>> {
     let path = format!("assets/textures/{}_{}.png", stem, layer);
     let data = std::fs::read(&path).ok()?;
     match Image::from_buffer(
@@ -149,8 +150,7 @@ fn load_png(
         bevy::image::CompressedImageFormats::NONE,
         true,
         bevy::image::ImageSampler::Default,
-        bevy::asset::RenderAssetUsages::MAIN_WORLD
-            | bevy::asset::RenderAssetUsages::RENDER_WORLD,
+        bevy::asset::RenderAssetUsages::MAIN_WORLD | bevy::asset::RenderAssetUsages::RENDER_WORLD,
     ) {
         Ok(img) => Some(images.add(img)),
         Err(e) => {
@@ -162,21 +162,48 @@ fn load_png(
 
 pub fn all_texture_stems() -> Vec<String> {
     vec![
-        "belt_east", "belt_north", "belt_turn_en",
-        "miner_east", "miner_east_tall", "miner_east_2x2", "miner_east_3x2", "miner_east_3x3",
-        "assembler_east", "turret_east", "storage", "furnace",
-        "splitter_east", "sorter_east",
-        "wall_h", "wall_v", "hq_east",
-        "soldier", "worker",
-    ].into_iter().map(String::from).collect()
+        "belt_east",
+        "belt_north",
+        "belt_turn_en",
+        "miner_east",
+        "miner_east_tall",
+        "miner_east_2x2",
+        "miner_east_3x2",
+        "miner_east_3x3",
+        "assembler_east",
+        "turret_east",
+        "storage",
+        "furnace",
+        "splitter_east",
+        "sorter_east",
+        "wall_h",
+        "wall_v",
+        "hq_east",
+        "soldier",
+        "worker",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect()
 }
 
 pub fn all_item_stems() -> Vec<String> {
     vec![
-        "ore", "iron_ore", "copper_ore", "coal",
-        "iron_plate", "copper_plate", "steel",
-        "gear", "circuit", "ammo", "energy",
-    ].into_iter().map(String::from).collect()
+        "ore",
+        "iron_ore",
+        "copper_ore",
+        "coal",
+        "iron_plate",
+        "copper_plate",
+        "steel",
+        "gear",
+        "circuit",
+        "ammo",
+        "energy",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect()
 }
 
 // ── RenderPlugin ──
@@ -188,21 +215,20 @@ impl Plugin for RenderPlugin {
         app.init_resource::<ShapeCache>();
         app.init_resource::<PreviewMaterials>();
         app.add_systems(Startup, setup_texture_cache);
-        app.add_systems(Update, (
-            tile_highlight,
-            ensure_hp_bars,
-            update_hp_bars,
-        ));
+        app.add_systems(Update, (tile_highlight, ensure_hp_bars, update_hp_bars));
         app.add_observer(spawn_projectile_visual);
-        app.add_systems(Update, (
-            sync_belt_slot_sprites,
-            attach_enemy_visuals,
-            attach_building_visuals,
-            attach_unit_visuals,
-            animate_belt_positions,
-            wave_counter_ui,
-            fps_overlay,
-        ));
+        app.add_systems(
+            Update,
+            (
+                sync_belt_slot_sprites,
+                attach_enemy_visuals,
+                attach_building_visuals,
+                attach_unit_visuals,
+                animate_belt_positions,
+                wave_counter_ui,
+                fps_overlay,
+            ),
+        );
         app.add_systems(OnEnter(GameState::GameOver), spawn_game_over_ui);
         app.add_systems(OnExit(GameState::GameOver), despawn_game_over_ui);
     }
@@ -240,21 +266,21 @@ pub fn wave_counter_ui(
     }
 }
 
-pub fn spawn_game_over_ui(
-    mut commands: Commands,
-    wave: Res<WaveState>,
-) {
+pub fn spawn_game_over_ui(mut commands: Commands, wave: Res<WaveState>) {
     commands.spawn((Camera2d, GameOverUi));
     commands
-        .spawn((GameOverUi, Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
-            display: Display::Flex,
-            flex_direction: FlexDirection::Column,
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..default()
-        }))
+        .spawn((
+            GameOverUi,
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                display: Display::Flex,
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+        ))
         .with_children(|parent| {
             parent.spawn((
                 GameOverUi,
@@ -268,7 +294,12 @@ pub fn spawn_game_over_ui(
                 TextFont::from_font_size(24.0),
                 TextColor(Color::WHITE),
             ));
-            parent.spawn((GameOverUi, Text::new(""), TextFont::default(), TextColor(Color::WHITE)));
+            parent.spawn((
+                GameOverUi,
+                Text::new(""),
+                TextFont::default(),
+                TextColor(Color::WHITE),
+            ));
             parent.spawn((
                 GameOverUi,
                 Text::new("Press R to restart  |  ESC for main menu"),
@@ -314,14 +345,16 @@ fn sync_belt_slot_sprites(
             } else {
                 bs.slot_positions[slot_idx - 1]
             };
-            let entity = commands.spawn((
-                Sprite {
-                    image: tex,
-                    custom_size: Some(Vec2::new(20.0, 20.0)),
-                    ..default()
-                },
-                Transform::from_translation(Vec3::new(entry.x, entry.y, 2.5)),
-            )).id();
+            let entity = commands
+                .spawn((
+                    Sprite {
+                        image: tex,
+                        custom_size: Some(Vec2::new(20.0, 20.0)),
+                        ..default()
+                    },
+                    Transform::from_translation(Vec3::new(entry.x, entry.y, 2.5)),
+                ))
+                .id();
             bs.slot_sprites[slot_idx] = Some(entity);
         }
         for slot_idx in to_destroy {
@@ -368,20 +401,34 @@ fn attach_unit_visuals(
     unit_cfg: Res<UnitConfig>,
 ) {
     for (entity, _unit, worker, _soldier) in units.iter() {
-        let kind = if worker.is_some() { "worker" } else { "soldier" };
-        let stem = unit_cfg.get(kind)
+        let kind = if worker.is_some() {
+            "worker"
+        } else {
+            "soldier"
+        };
+        let stem = unit_cfg
+            .get(kind)
             .map(|d| d.texture_stem.as_str())
             .unwrap_or(kind);
         let img = textures.base(stem);
         let size = Vec2::new(48.0, 48.0);
         commands.entity(entity).insert((
-            Sprite { image: img, custom_size: Some(size), ..default() },
+            Sprite {
+                image: img,
+                custom_size: Some(size),
+                ..default()
+            },
             Visibility::default(),
         ));
         commands.entity(entity).with_children(|parent| {
             if let Some(tex) = textures.owner(stem) {
                 parent.spawn((
-                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() },
+                    Sprite {
+                        image: tex,
+                        custom_size: Some(size),
+                        color: Color::srgb(0.2, 0.4, 0.8),
+                        ..default()
+                    },
                     Transform::default(),
                 ));
             }
@@ -398,46 +445,56 @@ fn attach_building_visuals(
     registry: Res<BuildingRegistry>,
 ) {
     for (entity, building) in buildings.iter() {
-        let Some(def) = registry.get(&building.kind) else { continue };
+        let Some(def) = registry.get(&building.kind) else {
+            continue;
+        };
         let tw = def.tile_size.0 as f32;
         let th = def.tile_size.1 as f32;
         let size = Vec2::new(tw * cfg.tile_size, th * cfg.tile_size);
         let stem = &def.texture_stem;
-        commands.entity(entity).insert((
-            Sprite {
-                image: textures.base(stem),
-                custom_size: Some(size),
-                ..default()
-            },
-        ));
+        commands.entity(entity).insert((Sprite {
+            image: textures.base(stem),
+            custom_size: Some(size),
+            ..default()
+        },));
         commands.entity(entity).with_children(|parent| {
             if let Some(tex) = textures.owner(stem) {
                 parent.spawn((
-                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.4, 0.8), ..default() },
+                    Sprite {
+                        image: tex,
+                        custom_size: Some(size),
+                        color: Color::srgb(0.2, 0.4, 0.8),
+                        ..default()
+                    },
                     Transform::default(),
                 ));
             }
             if let Some(tex) = textures.level(stem) {
                 parent.spawn((
-                    Sprite { image: tex, custom_size: Some(size), color: Color::srgb(0.2, 0.8, 0.2), ..default() },
+                    Sprite {
+                        image: tex,
+                        custom_size: Some(size),
+                        color: Color::srgb(0.2, 0.8, 0.2),
+                        ..default()
+                    },
                     Transform::default(),
                 ));
             }
         });
     }
     for (entity, building, _slots) in belts.iter() {
-        let Some(def) = registry.get(&building.kind) else { continue };
+        let Some(def) = registry.get(&building.kind) else {
+            continue;
+        };
         let tw = def.tile_size.0 as f32;
         let th = def.tile_size.1 as f32;
         let size = Vec2::new(tw * cfg.tile_size, th * cfg.tile_size);
         let stem = &def.texture_stem;
-        commands.entity(entity).insert((
-            Sprite {
-                image: textures.base(stem),
-                custom_size: Some(size),
-                ..default()
-            },
-        ));
+        commands.entity(entity).insert((Sprite {
+            image: textures.base(stem),
+            custom_size: Some(size),
+            ..default()
+        },));
     }
 }
 
@@ -449,7 +506,8 @@ fn attach_enemy_visuals(
     enemies_registry: Res<EnemyRegistry>,
 ) {
     for (entity, enemy) in enemies.iter() {
-        let color = enemies_registry.get(&enemy.kind)
+        let color = enemies_registry
+            .get(&enemy.kind)
             .map(|d| d.color)
             .unwrap_or(Color::srgb(0.9, 0.2, 0.2));
         commands.entity(entity).insert((
@@ -530,13 +588,16 @@ fn ensure_hp_bars(
     entities: Query<(Entity, &Health), (Without<HasHpBar>, Without<HpBarChild>)>,
 ) {
     for (entity, _health) in &entities {
-        commands.entity(entity).insert(HasHpBar).with_children(|parent| {
-            parent.spawn((
-                HpBarChild,
-                Sprite::from_color(Color::srgb(0.3, 1.0, 0.3), Vec2::new(24.0, 3.0)),
-                Transform::from_xyz(0.0, 20.0, 10.0),
-            ));
-        });
+        commands
+            .entity(entity)
+            .insert(HasHpBar)
+            .with_children(|parent| {
+                parent.spawn((
+                    HpBarChild,
+                    Sprite::from_color(Color::srgb(0.3, 1.0, 0.3), Vec2::new(24.0, 3.0)),
+                    Transform::from_xyz(0.0, 20.0, 10.0),
+                ));
+            });
     }
 }
 

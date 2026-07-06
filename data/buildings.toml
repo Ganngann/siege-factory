@@ -106,3 +106,12 @@ visual = "diamond"
 slots = 2
 speed = 2.0
 texture_stem = "sorter_east"
+
+[buildings.farm]
+name = "Farm"
+cost = { ore = 15 }
+hp = 100
+tile_size = { w = 1, h = 1 }
+color = "#5A8C2A"
+visual = "square"
+inventory_capacity = 64

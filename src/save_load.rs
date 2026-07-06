@@ -3,23 +3,23 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use crate::agriculture::components::Farm;
 use crate::combat::Projectile;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
 use crate::core::utils::{config_dir, silent_despawn};
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::components::{
-    Assembler, Building, Direction, Ghost, HQ, Miner, OccupiedTiles,
-    ResourceDeposit, Splitter, Storage, Sorter, TurretCombat,
-    Unit, HpBarChild, PeacefulMode, PanelModal, Active,
+    Active, Assembler, Building, Direction, Ghost, HQ, HpBarChild, Miner, OccupiedTiles,
+    PanelModal, PeacefulMode, ResourceDeposit, Sorter, Splitter, Storage, TurretCombat, Unit,
 };
-use crate::economy::resource::{ResourceId, Inventory, ResourceRegistry};
+use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
 use crate::economy::ui::ResourceCountText;
 use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveState};
 use crate::map::components::{ChunkMember, TilePosition};
 use crate::map::config::MapConfig;
-use crate::map::systems::{spawn_single_chunk_visuals, ChunkMarker};
-use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
+use crate::map::systems::{ChunkMarker, spawn_single_chunk_visuals};
+use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 use crate::rendering::{ShapeCache, TextureCache};
 use crate::unit::{Soldier, Worker, WorkerState};
 
@@ -52,47 +52,103 @@ pub struct SaveData {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct CameraSave { pub x: f32, pub y: f32, pub scale: f32 }
-
-#[derive(Serialize, Deserialize)]
-pub struct WaveSave { pub timer: f32, pub wave: u32, pub spawn_timer: f32, pub last_wave: u32 }
-
-#[derive(Serialize, Deserialize)]
-pub struct BuildingSave {
-    pub kind: String, pub tile_x: i32, pub tile_y: i32,
-    pub occupied: Vec<(i32, i32)>,
-    pub hp: Option<(u32, u32)>,
-    pub inventory: Option<Vec<(String, u32)>>, pub inventory_capacity: u32,
-    pub assembler: Option<AssemblerSave>, pub turret: Option<TurretSave>,
-    pub belt: Option<BeltSave>, pub storage: bool,
-    pub splitter: Option<SplitterSave>, pub sorter: Option<SorterSave>,
+pub struct CameraSave {
+    pub x: f32,
+    pub y: f32,
+    pub scale: f32,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct AssemblerSave { pub production_timer: f32, pub interval: f32, pub recipe_id: String }
+pub struct WaveSave {
+    pub timer: f32,
+    pub wave: u32,
+    pub spawn_timer: f32,
+    pub last_wave: u32,
+}
 
 #[derive(Serialize, Deserialize)]
-pub struct TurretSave { pub damage: u32, pub range_sq: f32, pub fire_interval: f32, pub timer: f32, pub projectile_speed: f32 }
+pub struct FarmSave {
+    pub crop_types: Vec<String>,
+}
 
 #[derive(Serialize, Deserialize)]
-pub struct BeltSave { pub direction: Direction, pub speed: f32, pub slots: Vec<Option<BeltItemSave>> }
+pub struct BuildingSave {
+    pub kind: String,
+    pub tile_x: i32,
+    pub tile_y: i32,
+    pub occupied: Vec<(i32, i32)>,
+    pub hp: Option<(u32, u32)>,
+    pub inventory: Option<Vec<(String, u32)>>,
+    pub inventory_capacity: u32,
+    pub assembler: Option<AssemblerSave>,
+    pub turret: Option<TurretSave>,
+    pub belt: Option<BeltSave>,
+    pub storage: bool,
+    pub splitter: Option<SplitterSave>,
+    pub sorter: Option<SorterSave>,
+    pub farm: Option<FarmSave>,
+}
 
 #[derive(Serialize, Deserialize)]
-pub struct BeltItemSave { pub resource: String, pub acc: f32 }
+pub struct AssemblerSave {
+    pub production_timer: f32,
+    pub interval: f32,
+    pub recipe_id: String,
+}
 
 #[derive(Serialize, Deserialize)]
-pub struct SplitterSave { pub counter: u32, pub outputs: u32, pub input_direction: Option<Direction> }
+pub struct TurretSave {
+    pub damage: u32,
+    pub range_sq: f32,
+    pub fire_interval: f32,
+    pub timer: f32,
+    pub projectile_speed: f32,
+}
 
 #[derive(Serialize, Deserialize)]
-pub struct SorterSave { pub filter: String, pub inverted: bool }
+pub struct BeltSave {
+    pub direction: Direction,
+    pub speed: f32,
+    pub slots: Vec<Option<BeltItemSave>>,
+}
 
 #[derive(Serialize, Deserialize)]
-pub struct EnemySave { pub kind: String, pub x: f32, pub y: f32, pub hp: u32, pub max_hp: u32 }
+pub struct BeltItemSave {
+    pub resource: String,
+    pub acc: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SplitterSave {
+    pub counter: u32,
+    pub outputs: u32,
+    pub input_direction: Option<Direction>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SorterSave {
+    pub filter: String,
+    pub inverted: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct EnemySave {
+    pub kind: String,
+    pub x: f32,
+    pub y: f32,
+    pub hp: u32,
+    pub max_hp: u32,
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct UnitSave {
-    pub kind: String, pub x: f32, pub y: f32, pub hp: u32, pub max_hp: u32,
-    pub soldier_cooldown: Option<f32>, pub worker_timer: Option<f32>,
+    pub kind: String,
+    pub x: f32,
+    pub y: f32,
+    pub hp: u32,
+    pub max_hp: u32,
+    pub soldier_cooldown: Option<f32>,
+    pub worker_timer: Option<f32>,
     pub worker_state: Option<WorkerStateSave>,
 }
 
@@ -143,25 +199,49 @@ fn save_game(
     camera: Query<&Transform, With<Camera2d>>,
     tile_positions: Query<&TilePosition>,
     buildings: Query<(
-        &Building, &TilePosition, &OccupiedTiles,
-        Option<&Health>, Option<&Inventory>,
-        Option<&Assembler>, Option<&TurretCombat>,
-        Option<&BeltSlots>, Option<&Storage>,
-        Option<&Splitter>, Option<&Sorter>,
+        &Building,
+        &TilePosition,
+        &OccupiedTiles,
+        Option<&Health>,
+        Option<&Inventory>,
+        Option<&Assembler>,
+        Option<&TurretCombat>,
+        Option<&BeltSlots>,
+        Option<&Storage>,
+        Option<&Splitter>,
+        Option<&Sorter>,
+        Option<&Farm>,
     )>,
     enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
-    units: Query<(&Transform, &Health, &TilePosition, Option<&Soldier>, Option<&Worker>), With<Unit>>,
+    units: Query<
+        (
+            &Transform,
+            &Health,
+            &TilePosition,
+            Option<&Soldier>,
+            Option<&Worker>,
+        ),
+        With<Unit>,
+    >,
 ) {
-    if !keys.just_pressed(KeyCode::F5) && !save_req.0 { return; }
+    if !keys.just_pressed(KeyCode::F5) && !save_req.0 {
+        return;
+    }
     save_req.0 = false;
 
     let mut data = SaveData {
         version: 1,
         game_seed: chunk_grid.seed(),
-        camera: CameraSave { x: 0.0, y: 0.0, scale: 1.0 },
+        camera: CameraSave {
+            x: 0.0,
+            y: 0.0,
+            scale: 1.0,
+        },
         wave: WaveSave {
-            timer: wave.timer, wave: wave.wave,
-            spawn_timer: wave.spawn_timer, last_wave: last_wave.0,
+            timer: wave.timer,
+            wave: wave.wave,
+            spawn_timer: wave.spawn_timer,
+            last_wave: last_wave.0,
         },
         chunk_deposits: HashMap::new(),
         buildings: Vec::new(),
@@ -187,61 +267,124 @@ fn save_game(
         );
         let original = ref_grid.ensure_chunk(*cx, *cy).deposits.clone();
         if chunk.deposits != original {
-            data.chunk_deposits.insert((*cx, *cy), chunk.deposits.clone());
+            data.chunk_deposits
+                .insert((*cx, *cy), chunk.deposits.clone());
         }
     }
 
-    for (building, pos, occupied, hp, inventory, assembler,
-         turret, belt, storage, splitter, sorter) in buildings.iter() {
+    for (
+        building,
+        pos,
+        occupied,
+        hp,
+        inventory,
+        assembler,
+        turret,
+        belt,
+        storage,
+        splitter,
+        sorter,
+        farm,
+    ) in buildings.iter()
+    {
         let belt_save = belt.map(|b| {
-            let slots: Vec<Option<BeltItemSave>> = b.items.iter().map(|item| {
-                item.as_ref().map(|i| BeltItemSave {
-                    resource: i.resource_id.0.clone(), acc: i.acc,
+            let slots: Vec<Option<BeltItemSave>> = b
+                .items
+                .iter()
+                .map(|item| {
+                    item.as_ref().map(|i| BeltItemSave {
+                        resource: i.resource_id.0.clone(),
+                        acc: i.acc,
+                    })
                 })
-            }).collect();
-            BeltSave { direction: b.direction, speed: b.speed, slots }
+                .collect();
+            BeltSave {
+                direction: b.direction,
+                speed: b.speed,
+                slots,
+            }
         });
         data.buildings.push(BuildingSave {
             kind: building.kind.clone(),
-            tile_x: pos.x, tile_y: pos.y,
+            tile_x: pos.x,
+            tile_y: pos.y,
             occupied: occupied.0.clone(),
             hp: hp.map(|h| (h.current, h.max)),
-            inventory: inventory.map(|inv| inv.resources.iter().map(|(r, a)| (r.0.clone(), *a)).collect()),
+            inventory: inventory.map(|inv| {
+                inv.resources
+                    .iter()
+                    .map(|(r, a)| (r.0.clone(), *a))
+                    .collect()
+            }),
             inventory_capacity: inventory.map(|inv| inv.capacity).unwrap_or(0),
-            assembler: assembler.map(|a| AssemblerSave { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() }),
-            turret: turret.map(|t| TurretSave { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer, projectile_speed: t.projectile_speed }),
-            belt: belt_save, storage: storage.is_some(),
-            splitter: splitter.map(|s| SplitterSave { counter: s.counter, outputs: s.outputs, input_direction: s.input_direction }),
-            sorter: sorter.map(|s| SorterSave { filter: s.filter.0.clone(), inverted: s.inverted }),
+            assembler: assembler.map(|a| AssemblerSave {
+                production_timer: a.production_timer,
+                interval: a.interval,
+                recipe_id: a.recipe_id.clone(),
+            }),
+            turret: turret.map(|t| TurretSave {
+                damage: t.damage,
+                range_sq: t.range_sq,
+                fire_interval: t.fire_interval,
+                timer: t.timer,
+                projectile_speed: t.projectile_speed,
+            }),
+            belt: belt_save,
+            storage: storage.is_some(),
+            splitter: splitter.map(|s| SplitterSave {
+                counter: s.counter,
+                outputs: s.outputs,
+                input_direction: s.input_direction,
+            }),
+            sorter: sorter.map(|s| SorterSave {
+                filter: s.filter.0.clone(),
+                inverted: s.inverted,
+            }),
+            farm: farm.map(|f| FarmSave {
+                crop_types: f.crop_types.clone(),
+            }),
         });
     }
 
     for (enemy, tf, hp, _) in enemies.iter() {
         data.enemies.push(EnemySave {
             kind: enemy.kind.clone(),
-            x: tf.translation.x, y: tf.translation.y,
-            hp: hp.current, max_hp: hp.max,
+            x: tf.translation.x,
+            y: tf.translation.y,
+            hp: hp.current,
+            max_hp: hp.max,
         });
     }
 
     for (tf, hp, _pos, soldier, worker) in units.iter() {
-        let kind = if soldier.is_some() { "soldier" } else { "worker" };
+        let kind = if soldier.is_some() {
+            "soldier"
+        } else {
+            "worker"
+        };
         let worker_state = worker.map(|w| match &w.state {
             WorkerState::Idle => WorkerStateSave::Idle,
-            WorkerState::MovingToDeposit(e) => {
-                tile_positions.get(*e).map(|pos| WorkerStateSave::MovingToDeposit {
-                    target_tx: pos.x, target_ty: pos.y
-                }).unwrap_or(WorkerStateSave::Idle)
-            }
-            WorkerState::Mining(e) => {
-                tile_positions.get(*e).map(|pos| WorkerStateSave::Mining {
-                    target_tx: pos.x, target_ty: pos.y
-                }).unwrap_or(WorkerStateSave::Idle)
-            }
+            WorkerState::MovingToDeposit(e) => tile_positions
+                .get(*e)
+                .map(|pos| WorkerStateSave::MovingToDeposit {
+                    target_tx: pos.x,
+                    target_ty: pos.y,
+                })
+                .unwrap_or(WorkerStateSave::Idle),
+            WorkerState::Mining(e) => tile_positions
+                .get(*e)
+                .map(|pos| WorkerStateSave::Mining {
+                    target_tx: pos.x,
+                    target_ty: pos.y,
+                })
+                .unwrap_or(WorkerStateSave::Idle),
         });
         data.units.push(UnitSave {
-            kind: kind.to_string(), x: tf.translation.x, y: tf.translation.y,
-            hp: hp.current, max_hp: hp.max,
+            kind: kind.to_string(),
+            x: tf.translation.x,
+            y: tf.translation.y,
+            hp: hp.current,
+            max_hp: hp.max,
             soldier_cooldown: soldier.map(|s| s.attack_cooldown),
             worker_timer: worker.map(|w| w.mining_timer),
             worker_state,
@@ -286,11 +429,21 @@ fn cleanup_world(
             silent_despawn(&mut commands, *sprite_entity);
         }
     }
-    for e in buildings.iter().chain(enemies.iter()).chain(units.iter())
-        .chain(deposits.iter()).chain(markers.iter()).chain(members.iter())
-        .chain(cameras.iter()).chain(ghosts.iter())
-        .chain(hp_bars.iter()).chain(menus.iter()).chain(popups.iter())
-        .chain(ui_texts.iter()).chain(pause_menus.iter()).chain(projectiles.iter())
+    for e in buildings
+        .iter()
+        .chain(enemies.iter())
+        .chain(units.iter())
+        .chain(deposits.iter())
+        .chain(markers.iter())
+        .chain(members.iter())
+        .chain(cameras.iter())
+        .chain(ghosts.iter())
+        .chain(hp_bars.iter())
+        .chain(menus.iter())
+        .chain(popups.iter())
+        .chain(ui_texts.iter())
+        .chain(pause_menus.iter())
+        .chain(projectiles.iter())
     {
         silent_despawn(&mut commands, e);
     }
@@ -307,14 +460,22 @@ fn read_save_file(
         Some(p) => PathBuf::from(p),
         None => return,
     };
-    *save_mgr = SaveManager { load_requested: None };
+    *save_mgr = SaveManager {
+        load_requested: None,
+    };
     let content = match std::fs::read_to_string(&path) {
         Ok(c) => c,
-        Err(e) => { toast.0.push(format!("Load failed: {e}")); return; }
+        Err(e) => {
+            toast.0.push(format!("Load failed: {e}"));
+            return;
+        }
     };
     let data: SaveData = match ron::from_str(&content) {
         Ok(d) => d,
-        Err(e) => { toast.0.push(format!("Save file corrupt: {e}")); return; }
+        Err(e) => {
+            toast.0.push(format!("Save file corrupt: {e}"));
+            return;
+        }
     };
     buf.data = Some(data);
 }
@@ -330,7 +491,10 @@ fn load_chunks(
     textures: Res<TextureCache>,
     mut commands: Commands,
 ) {
-    let data = match &buf.data { Some(d) => d, None => return };
+    let data = match &buf.data {
+        Some(d) => d,
+        None => return,
+    };
     chunk_grid.clear();
     chunk_grid.set_seed(data.game_seed);
     for ((cx, cy), deposits) in &data.chunk_deposits {
@@ -338,25 +502,38 @@ fn load_chunks(
         chunk.deposits = deposits.clone();
     }
 
-    let (hx, hy) = data.buildings.iter().find(|b| b.kind == "hq")
-        .map(|b| (b.tile_x, b.tile_y)).unwrap_or((0, 0));
+    let (hx, hy) = data
+        .buildings
+        .iter()
+        .find(|b| b.kind == "hq")
+        .map(|b| (b.tile_x, b.tile_y))
+        .unwrap_or((0, 0));
     let chunk_size = CHUNK_SIZE as i32;
     let hq_cx = hx.div_euclid(chunk_size);
     let hq_cy = hy.div_euclid(chunk_size);
 
     for cx in (hq_cx - 10)..=(hq_cx + 10) {
         for cy in (hq_cy - 10)..=(hq_cy + 10) {
-            spawn_single_chunk_visuals(&mut commands, &mut chunk_grid, &cfg, &res_registry, &shapes, &mut materials, &mut meshes, &textures, cx, cy);
+            spawn_single_chunk_visuals(
+                &mut commands,
+                &mut chunk_grid,
+                &cfg,
+                &res_registry,
+                &shapes,
+                &mut materials,
+                &mut meshes,
+                &textures,
+                cx,
+                cy,
+            );
         }
     }
 }
 
-fn spawn_fresh_camera(
-    mut commands: Commands,
-    cfg: Res<MapConfig>,
-    buf: Res<LoadBuffer>,
-) {
-    if buf.data.is_some() { return; }
+fn spawn_fresh_camera(mut commands: Commands, cfg: Res<MapConfig>, buf: Res<LoadBuffer>) {
+    if buf.data.is_some() {
+        return;
+    }
     let (hx, hy) = cfg.hq_position;
     commands.spawn((
         Camera2d,
@@ -376,25 +553,31 @@ fn spawn_fresh_camera(
     ));
 }
 
-fn load_camera(
-    buf: Res<LoadBuffer>,
-    mut commands: Commands,
-) {
-    let data = match &buf.data { Some(d) => d, None => return };
+fn load_camera(buf: Res<LoadBuffer>, mut commands: Commands) {
+    let data = match &buf.data {
+        Some(d) => d,
+        None => return,
+    };
     commands.spawn((
         Camera2d,
         bevy::ui::IsDefaultUiCamera,
-        Transform::from_xyz(data.camera.x, data.camera.y, 100.0).with_scale(Vec3::splat(data.camera.scale)),
-        bevy_pancam::PanCam { grab_buttons: vec![MouseButton::Middle], speed: 500.0, min_scale: 0.3, max_scale: 3.0, ..default() },
+        Transform::from_xyz(data.camera.x, data.camera.y, 100.0)
+            .with_scale(Vec3::splat(data.camera.scale)),
+        bevy_pancam::PanCam {
+            grab_buttons: vec![MouseButton::Middle],
+            speed: 500.0,
+            min_scale: 0.3,
+            max_scale: 3.0,
+            ..default()
+        },
     ));
 }
 
-fn load_buildings(
-    buf: Res<LoadBuffer>,
-    mut commands: Commands,
-    cfg: Res<MapConfig>,
-) {
-    let data = match &buf.data { Some(d) => d, None => return };
+fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>) {
+    let data = match &buf.data {
+        Some(d) => d,
+        None => return,
+    };
     let tile_size = cfg.tile_size;
 
     for bs in &data.buildings {
@@ -403,129 +586,248 @@ fn load_buildings(
         let cy = (bs.tile_y as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
         let inv = if let Some(ref items) = bs.inventory {
             let mut i = Inventory::with_capacity(bs.inventory_capacity);
-            for (res, amount) in items { i.add(&ResourceId(res.clone()), *amount); }
+            for (res, amount) in items {
+                i.add(&ResourceId(res.clone()), *amount);
+            }
             i
-        } else if bs.inventory_capacity > 0 { Inventory::with_capacity(bs.inventory_capacity) }
-        else { Inventory::new() };
+        } else if bs.inventory_capacity > 0 {
+            Inventory::with_capacity(bs.inventory_capacity)
+        } else {
+            Inventory::new()
+        };
         let tf = Transform::from_xyz(cx, cy, 2.0);
-        let tile_pos = TilePosition { x: bs.tile_x, y: bs.tile_y };
+        let tile_pos = TilePosition {
+            x: bs.tile_x,
+            y: bs.tile_y,
+        };
         let occupied = OccupiedTiles(bs.occupied.clone());
-        let building = Building { kind: bs.kind.clone(), name: bs.kind.clone() };
+        let building = Building {
+            kind: bs.kind.clone(),
+            name: bs.kind.clone(),
+        };
 
         if bs.kind == "hq" {
-            commands.spawn((
-                HQ, building, inv, occupied, tf, tile_pos, Active(true),
-            ));
+            commands.spawn((HQ, building, inv, occupied, tf, tile_pos, Active(true)));
         } else if bs.kind == "miner" {
             let a = bs.assembler.as_ref().unwrap();
             commands.spawn((
                 Miner,
-                Assembler { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() },
-                building, inv, occupied, tf, tile_pos, Active(true),
+                Assembler {
+                    production_timer: a.production_timer,
+                    interval: a.interval,
+                    recipe_id: a.recipe_id.clone(),
+                },
+                building,
+                inv,
+                occupied,
+                tf,
+                tile_pos,
+                Active(true),
             ));
-        } else if bs.kind == "assembler" || bs.kind == "furnace" {
+        } else if bs.assembler.is_some() {
             let a = bs.assembler.as_ref().unwrap();
             commands.spawn((
-                Assembler { production_timer: a.production_timer, interval: a.interval, recipe_id: a.recipe_id.clone() },
-                building, inv, occupied, tf, tile_pos, Active(true),
+                Assembler {
+                    production_timer: a.production_timer,
+                    interval: a.interval,
+                    recipe_id: a.recipe_id.clone(),
+                },
+                building,
+                inv,
+                occupied,
+                tf,
+                tile_pos,
+                Active(true),
+            ));
+        } else if bs.farm.is_some() {
+            let f = bs.farm.as_ref().unwrap();
+            commands.spawn((
+                Farm {
+                    crop_index: 0,
+                    crop_types: f.crop_types.clone(),
+                },
+                building,
+                inv,
+                occupied,
+                tf,
+                tile_pos,
+                Active(true),
             ));
         } else if bs.belt.is_some() || bs.splitter.is_some() || bs.sorter.is_some() {
             let b = bs.belt.as_ref().unwrap();
             let slot_positions = crate::economy::belt::compute_slot_positions(
-                bs.tile_x, bs.tile_y, b.direction, b.slots.len() as u32, tile_size);
+                bs.tile_x,
+                bs.tile_y,
+                b.direction,
+                b.slots.len() as u32,
+                tile_size,
+            );
             let angle = match b.direction {
                 Direction::East => 0.0,
                 Direction::North => std::f32::consts::FRAC_PI_2,
                 Direction::West => std::f32::consts::PI,
                 Direction::South => -std::f32::consts::FRAC_PI_2,
             };
-            let belt_tf = Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle));
+            let belt_tf =
+                Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(angle));
             let mut items: Vec<Option<ItemOnBelt>> = Vec::new();
             for item_save in &b.slots {
                 if let Some(item) = item_save {
-                    items.push(Some(ItemOnBelt { resource_id: ResourceId(item.resource.clone()), acc: item.acc }));
-                } else { items.push(None); }
+                    items.push(Some(ItemOnBelt {
+                        resource_id: ResourceId(item.resource.clone()),
+                        acc: item.acc,
+                    }));
+                } else {
+                    items.push(None);
+                }
             }
             let slot_sprites: Vec<Option<Entity>> = vec![None; items.len()];
-            let belt_comp = BeltSlots { direction: b.direction, items, slot_sprites, slot_positions, speed: b.speed };
+            let belt_comp = BeltSlots {
+                direction: b.direction,
+                items,
+                slot_sprites,
+                slot_positions,
+                speed: b.speed,
+            };
             if let Some(sp) = &bs.splitter {
                 commands.spawn((
-                    belt_comp, building, inv, occupied, belt_tf, tile_pos,
-                    Splitter { counter: sp.counter, outputs: sp.outputs, input_direction: sp.input_direction },
+                    belt_comp,
+                    building,
+                    inv,
+                    occupied,
+                    belt_tf,
+                    tile_pos,
+                    Splitter {
+                        counter: sp.counter,
+                        outputs: sp.outputs,
+                        input_direction: sp.input_direction,
+                    },
                     Active(true),
                 ));
             } else if let Some(so) = &bs.sorter {
                 commands.spawn((
-                    belt_comp, building, inv, occupied, belt_tf, tile_pos,
-                    Sorter { filter: ResourceId(so.filter.clone()), inverted: so.inverted },
+                    belt_comp,
+                    building,
+                    inv,
+                    occupied,
+                    belt_tf,
+                    tile_pos,
+                    Sorter {
+                        filter: ResourceId(so.filter.clone()),
+                        inverted: so.inverted,
+                    },
                     Active(true),
                 ));
             } else {
                 commands.spawn((
-                    belt_comp, building, inv, occupied, belt_tf, tile_pos,
+                    belt_comp,
+                    building,
+                    inv,
+                    occupied,
+                    belt_tf,
+                    tile_pos,
                     Active(true),
                 ));
             }
         } else if bs.kind == "turret" {
             let t = bs.turret.as_ref().unwrap();
             commands.spawn((
-                TurretCombat { damage: t.damage, range_sq: t.range_sq, fire_interval: t.fire_interval, timer: t.timer, projectile_speed: t.projectile_speed },
-                building, inv, occupied, tf, tile_pos, Active(true),
+                TurretCombat {
+                    damage: t.damage,
+                    range_sq: t.range_sq,
+                    fire_interval: t.fire_interval,
+                    timer: t.timer,
+                    projectile_speed: t.projectile_speed,
+                },
+                building,
+                inv,
+                occupied,
+                tf,
+                tile_pos,
+                Active(true),
             ));
         } else if bs.storage {
-            commands.spawn((
-                Storage, building, inv, occupied, tf, tile_pos, Active(true),
-            ));
+            commands.spawn((Storage, building, inv, occupied, tf, tile_pos, Active(true)));
         } else {
-            commands.spawn((
-                building, inv, occupied, tf, tile_pos, Active(true),
-            ));
+            commands.spawn((building, inv, occupied, tf, tile_pos, Active(true)));
         }
     }
 }
 
-fn load_enemies(
-    buf: Res<LoadBuffer>,
-    mut commands: Commands,
-    cfg: Res<MapConfig>,
-) {
-    let data = match &buf.data { Some(d) => d, None => return };
+fn load_enemies(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>) {
+    let data = match &buf.data {
+        Some(d) => d,
+        None => return,
+    };
     for es in &data.enemies {
-        let entity = commands.spawn((
-            EnemyComponent { kind: es.kind.clone() }, Health { current: es.hp, max: es.max_hp },
-            Transform::from_xyz(es.x, es.y, 3.0),
-            TilePosition { x: (es.x / cfg.tile_size) as i32, y: (es.y / cfg.tile_size) as i32 },
-        )).id();
+        let entity = commands
+            .spawn((
+                EnemyComponent {
+                    kind: es.kind.clone(),
+                },
+                Health {
+                    current: es.hp,
+                    max: es.max_hp,
+                },
+                Transform::from_xyz(es.x, es.y, 3.0),
+                TilePosition {
+                    x: (es.x / cfg.tile_size) as i32,
+                    y: (es.y / cfg.tile_size) as i32,
+                },
+            ))
+            .id();
         commands.entity(entity).with_children(|parent| {
             parent.spawn((
                 HpBarChild,
-                Sprite { custom_size: Some(Vec2::new(24.0, 3.0)), color: Color::srgb(0.2, 1.0, 0.2), ..default() },
+                Sprite {
+                    custom_size: Some(Vec2::new(24.0, 3.0)),
+                    color: Color::srgb(0.2, 1.0, 0.2),
+                    ..default()
+                },
                 Transform::from_xyz(0.0, 20.0, 1.0),
             ));
         });
     }
 }
 
-fn load_units(
-    buf: Res<LoadBuffer>,
-    mut commands: Commands,
-    cfg: Res<MapConfig>,
-) {
-    let data = match &buf.data { Some(d) => d, None => return };
+fn load_units(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>) {
+    let data = match &buf.data {
+        Some(d) => d,
+        None => return,
+    };
     for us in &data.units {
         if us.kind == "worker" {
             commands.spawn((
-                Worker { state: WorkerState::Idle, mining_timer: us.worker_timer.unwrap_or(0.0) },
-                Unit, Health { current: us.hp, max: us.max_hp },
+                Worker {
+                    state: WorkerState::Idle,
+                    mining_timer: us.worker_timer.unwrap_or(0.0),
+                },
+                Unit,
+                Health {
+                    current: us.hp,
+                    max: us.max_hp,
+                },
                 Transform::from_xyz(us.x, us.y, 2.5),
-                TilePosition { x: (us.x / cfg.tile_size) as i32, y: (us.y / cfg.tile_size) as i32 },
+                TilePosition {
+                    x: (us.x / cfg.tile_size) as i32,
+                    y: (us.y / cfg.tile_size) as i32,
+                },
             ));
         } else {
             commands.spawn((
-                Soldier { attack_cooldown: us.soldier_cooldown.unwrap_or(0.0) },
-                Unit, Health { current: us.hp, max: us.max_hp },
+                Soldier {
+                    attack_cooldown: us.soldier_cooldown.unwrap_or(0.0),
+                },
+                Unit,
+                Health {
+                    current: us.hp,
+                    max: us.max_hp,
+                },
                 Transform::from_xyz(us.x, us.y, 2.5),
-                TilePosition { x: (us.x / cfg.tile_size) as i32, y: (us.y / cfg.tile_size) as i32 },
+                TilePosition {
+                    x: (us.x / cfg.tile_size) as i32,
+                    y: (us.y / cfg.tile_size) as i32,
+                },
             ));
         }
     }
@@ -540,11 +842,14 @@ fn load_finalize(
     mut next_state: ResMut<NextState<GameState>>,
     mut toast: ResMut<ToastQueue>,
 ) {
-    let data = match &buf.data { Some(d) => d, None => {
-        buf.data = None;
-        next_state.set(GameState::Menu);
-        return;
-    }};
+    let data = match &buf.data {
+        Some(d) => d,
+        None => {
+            buf.data = None;
+            next_state.set(GameState::Menu);
+            return;
+        }
+    };
     wave.timer = data.wave.timer;
     wave.wave = data.wave.wave;
     wave.spawn_timer = data.wave.spawn_timer;
@@ -589,60 +894,136 @@ fn spawn_pause_menu(
     panel_query: Query<Entity, With<PauseMenuRoot>>,
 ) {
     if show.0 && panel_query.is_empty() {
-        let _ = commands.spawn((
-            PauseMenuRoot,
-            Node { position_type: PositionType::Absolute, width: Val::Percent(100.0), height: Val::Percent(100.0),
-                display: Display::Flex, flex_direction: FlexDirection::Column, align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center, ..default() },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.6)),
-            Pickable::default(),
-        )).with_children(|parent| {
-            parent.spawn((
-                Node { display: Display::Flex, flex_direction: FlexDirection::Column, align_items: AlignItems::Center,
-                    padding: UiRect::all(Val::Px(24.0)), row_gap: Val::Px(8.0), ..default() },
-                BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.9)),
-                Outline { width: Val::Px(2.0), offset: Val::ZERO, color: Color::srgb(0.4, 0.4, 0.5) },
-            )).with_children(|panel| {
-                panel.spawn((Text::new("PAUSED"), TextFont::from_font_size(28.0), TextColor(Color::srgb(0.8, 0.8, 1.0)),
-                    Node { margin: UiRect::bottom(Val::Px(12.0)), ..default() }));
-                // Save button
-                panel.spawn((
-                    SaveButton, Button,
-                    Node { width: Val::Px(200.0), height: Val::Px(40.0), align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center, ..default() },
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
-                )).with_children(|btn| {
-                    btn.spawn((Text::new("Save Game"), TextFont::from_font_size(16.0), TextColor(Color::WHITE)));
-                });
-                // Load button
-                panel.spawn((
-                    LoadButton, Button,
-                    Node { width: Val::Px(200.0), height: Val::Px(40.0), align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center, ..default() },
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
-                )).with_children(|btn| {
-                    btn.spawn((Text::new("Load Game"), TextFont::from_font_size(16.0), TextColor(Color::WHITE)));
-                });
-                // Resume button
-                panel.spawn((
-                    ResumeButton, Button,
-                    Node { width: Val::Px(200.0), height: Val::Px(40.0), align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center, ..default() },
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
-                )).with_children(|btn| {
-                    btn.spawn((Text::new("Resume"), TextFont::from_font_size(16.0), TextColor(Color::WHITE)));
-                });
-                // Quit button
-                panel.spawn((
-                    QuitButton, Button,
-                    Node { width: Val::Px(200.0), height: Val::Px(40.0), align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center, ..default() },
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
-                )).with_children(|btn| {
-                    btn.spawn((Text::new("Main Menu"), TextFont::from_font_size(16.0), TextColor(Color::WHITE)));
-                });
+        let _ = commands
+            .spawn((
+                PauseMenuRoot,
+                Node {
+                    position_type: PositionType::Absolute,
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    display: Display::Flex,
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    ..default()
+                },
+                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.6)),
+                Pickable::default(),
+            ))
+            .with_children(|parent| {
+                parent
+                    .spawn((
+                        Node {
+                            display: Display::Flex,
+                            flex_direction: FlexDirection::Column,
+                            align_items: AlignItems::Center,
+                            padding: UiRect::all(Val::Px(24.0)),
+                            row_gap: Val::Px(8.0),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.9)),
+                        Outline {
+                            width: Val::Px(2.0),
+                            offset: Val::ZERO,
+                            color: Color::srgb(0.4, 0.4, 0.5),
+                        },
+                    ))
+                    .with_children(|panel| {
+                        panel.spawn((
+                            Text::new("PAUSED"),
+                            TextFont::from_font_size(28.0),
+                            TextColor(Color::srgb(0.8, 0.8, 1.0)),
+                            Node {
+                                margin: UiRect::bottom(Val::Px(12.0)),
+                                ..default()
+                            },
+                        ));
+                        // Save button
+                        panel
+                            .spawn((
+                                SaveButton,
+                                Button,
+                                Node {
+                                    width: Val::Px(200.0),
+                                    height: Val::Px(40.0),
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                            ))
+                            .with_children(|btn| {
+                                btn.spawn((
+                                    Text::new("Save Game"),
+                                    TextFont::from_font_size(16.0),
+                                    TextColor(Color::WHITE),
+                                ));
+                            });
+                        // Load button
+                        panel
+                            .spawn((
+                                LoadButton,
+                                Button,
+                                Node {
+                                    width: Val::Px(200.0),
+                                    height: Val::Px(40.0),
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                            ))
+                            .with_children(|btn| {
+                                btn.spawn((
+                                    Text::new("Load Game"),
+                                    TextFont::from_font_size(16.0),
+                                    TextColor(Color::WHITE),
+                                ));
+                            });
+                        // Resume button
+                        panel
+                            .spawn((
+                                ResumeButton,
+                                Button,
+                                Node {
+                                    width: Val::Px(200.0),
+                                    height: Val::Px(40.0),
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                            ))
+                            .with_children(|btn| {
+                                btn.spawn((
+                                    Text::new("Resume"),
+                                    TextFont::from_font_size(16.0),
+                                    TextColor(Color::WHITE),
+                                ));
+                            });
+                        // Quit button
+                        panel
+                            .spawn((
+                                QuitButton,
+                                Button,
+                                Node {
+                                    width: Val::Px(200.0),
+                                    height: Val::Px(40.0),
+                                    align_items: AlignItems::Center,
+                                    justify_content: JustifyContent::Center,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
+                            ))
+                            .with_children(|btn| {
+                                btn.spawn((
+                                    Text::new("Main Menu"),
+                                    TextFont::from_font_size(16.0),
+                                    TextColor(Color::WHITE),
+                                ));
+                            });
+                    });
             });
-        });
     } else if !show.0 {
         for entity in &panel_query {
             silent_despawn(&mut commands, entity);
@@ -655,7 +1036,9 @@ fn resume_interaction(
     mut show: ResMut<ShowPauseMenu>,
 ) {
     for interaction in &query {
-        if *interaction == Interaction::Pressed { show.0 = false; }
+        if *interaction == Interaction::Pressed {
+            show.0 = false;
+        }
     }
 }
 
@@ -719,30 +1102,40 @@ impl Plugin for SaveLoadPlugin {
         app.insert_resource(IsFreshGame(true));
 
         // Loading: clean slate then rebuild from save file
-        app.add_systems(OnEnter(GameState::Loading), (
-            cleanup_world,
-            read_save_file,
-            load_chunks,
-            load_camera,
-            load_buildings,
-            load_enemies,
-            load_units,
-            load_finalize,
-        ).chain());
+        app.add_systems(
+            OnEnter(GameState::Loading),
+            (
+                cleanup_world,
+                read_save_file,
+                load_chunks,
+                load_camera,
+                load_buildings,
+                load_enemies,
+                load_units,
+                load_finalize,
+            )
+                .chain(),
+        );
 
         // Fresh game: spawn camera at HQ position
-        app.add_systems(OnEnter(GameState::Playing),
-            spawn_fresh_camera.run_if(is_fresh_game));
+        app.add_systems(
+            OnEnter(GameState::Playing),
+            spawn_fresh_camera.run_if(is_fresh_game),
+        );
         app.add_systems(OnExit(GameState::Playing), cleanup_pause_menu);
 
-        app.add_systems(Update, (
-            save_game,
-            toggle_pause_menu,
-            spawn_pause_menu,
-            resume_interaction,
-            quit_interaction,
-            save_interaction,
-            load_interaction,
-        ).run_if(in_state(GameState::Playing)));
+        app.add_systems(
+            Update,
+            (
+                save_game,
+                toggle_pause_menu,
+                spawn_pause_menu,
+                resume_interaction,
+                quit_interaction,
+                save_interaction,
+                load_interaction,
+            )
+                .run_if(in_state(GameState::Playing)),
+        );
     }
 }

@@ -1,16 +1,15 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::GameState;
-use crate::economy::unit_config::UnitConfig;
 use crate::economy::components::{HQ, ResourceDeposit, Unit};
-use crate::economy::resource::{ResourceId, Inventory};
-use crate::enemy::{Health, Enemy as EnemyComponent};
+use crate::economy::resource::{Inventory, ResourceId};
+use crate::economy::unit_config::UnitConfig;
 use crate::enemy::combat::find_closest_enemy;
+use crate::enemy::{Enemy as EnemyComponent, Health};
 use crate::events::{DespawnDeposit, SpawnProjectileEvent};
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
-use crate::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
-
+use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 
 #[derive(Event)]
 pub struct SpawnUnitEvent(pub String);
@@ -20,10 +19,10 @@ pub struct UnitPlugin;
 impl Plugin for UnitPlugin {
     fn build(&self, app: &mut App) {
         app.add_observer(spawn_unit_on_trigger);
-        app.add_systems(Update, (
-            soldier_auto_attack,
-            worker_harvest,
-        ).run_if(in_state(GameState::Playing)));
+        app.add_systems(
+            Update,
+            (soldier_auto_attack, worker_harvest).run_if(in_state(GameState::Playing)),
+        );
     }
 }
 
@@ -64,14 +63,27 @@ fn spawn_unit_by_id(
 
     if def.kind == "harvester" {
         commands.spawn((
-            Worker { state: WorkerState::Idle, mining_timer: 0.0 },
-            Unit, Health { current: hp, max: hp },
+            Worker {
+                state: WorkerState::Idle,
+                mining_timer: 0.0,
+            },
+            Unit,
+            Health {
+                current: hp,
+                max: hp,
+            },
             Transform::from_translation(hq_pos + offset),
         ));
     } else {
         commands.spawn((
-            Soldier { attack_cooldown: 0.0 },
-            Unit, Health { current: hp, max: hp },
+            Soldier {
+                attack_cooldown: 0.0,
+            },
+            Unit,
+            Health {
+                current: hp,
+                max: hp,
+            },
             Transform::from_translation(hq_pos + offset),
         ));
     }
@@ -90,7 +102,9 @@ fn spawn_unit_on_trigger(
     };
     let id = &on.event().0;
     if let Some(def) = unit_cfg.get(id) {
-        let cost_ore = def.cost.iter()
+        let cost_ore = def
+            .cost
+            .iter()
             .find(|c| c.resource.0 == "ore")
             .map(|c| c.amount)
             .unwrap_or(0);
@@ -114,8 +128,8 @@ fn soldier_auto_attack(
         Some(d) => d,
         None => return,
     };
-    let range_sq = (soldier_def.range_tiles * cfg.tile_size)
-        * (soldier_def.range_tiles * cfg.tile_size);
+    let range_sq =
+        (soldier_def.range_tiles * cfg.tile_size) * (soldier_def.range_tiles * cfg.tile_size);
     let damage = soldier_def.damage;
     let fire_rate = soldier_def.fire_rate_sec;
 
@@ -125,9 +139,8 @@ fn soldier_auto_attack(
             continue;
         }
 
-        let enemy_positions: Vec<(Entity, Vec3)> = enemies.iter()
-            .map(|(e, t)| (e, t.translation))
-            .collect();
+        let enemy_positions: Vec<(Entity, Vec3)> =
+            enemies.iter().map(|(e, t)| (e, t.translation)).collect();
 
         let target = find_closest_enemy(soldier_pos.translation, &enemy_positions, range_sq);
 

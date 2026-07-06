@@ -1,7 +1,7 @@
+use crate::economy::resource::ResourceId;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
-use crate::economy::resource::ResourceId;
 
 #[derive(Debug, Clone)]
 pub struct RecipeDef {
@@ -23,19 +23,26 @@ impl RecipeRegistry {
         let parsed: RecipesToml = toml::from_str(toml_str).expect("failed to parse recipes.toml");
         let mut recipes = HashMap::new();
         for (id, entry) in parsed.recipes {
-            let input = entry.input.iter()
+            let input = entry
+                .input
+                .iter()
                 .map(|(k, v)| (ResourceId(k.to_lowercase()), *v))
                 .collect();
-            let output = entry.output.iter()
+            let output = entry
+                .output
+                .iter()
                 .map(|(k, v)| (ResourceId(k.to_lowercase()), *v))
                 .collect();
-            recipes.insert(id.clone(), RecipeDef {
-                id,
-                category: entry.category,
-                input,
-                output,
-                time_sec: entry.time_sec,
-            });
+            recipes.insert(
+                id.clone(),
+                RecipeDef {
+                    id,
+                    category: entry.category,
+                    input,
+                    output,
+                    time_sec: entry.time_sec,
+                },
+            );
         }
         Self { recipes }
     }

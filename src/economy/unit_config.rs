@@ -1,7 +1,7 @@
+use crate::economy::resource::ResourceId;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
-use crate::economy::resource::ResourceId;
 
 #[derive(Debug, Clone)]
 pub struct UnitCost {
@@ -25,6 +25,7 @@ pub struct UnitDef {
     pub projectile_speed: f32,
     pub speed: f32,
     pub mine_interval_sec: f32,
+    pub carry_capacity: u32,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -37,7 +38,10 @@ use crate::core::utils::parse_hex_color;
 fn parse_cost(cost: &HashMap<String, u32>) -> Vec<UnitCost> {
     let mut result = Vec::new();
     for (key, amount) in cost {
-        result.push(UnitCost { resource: ResourceId(key.to_lowercase()), amount: *amount });
+        result.push(UnitCost {
+            resource: ResourceId(key.to_lowercase()),
+            amount: *amount,
+        });
     }
     result
 }
@@ -45,8 +49,8 @@ fn parse_cost(cost: &HashMap<String, u32>) -> Vec<UnitCost> {
 impl UnitConfig {
     pub fn load() -> Self {
         let toml_str = include_str!("../../data/units.toml");
-        let parsed: HashMap<String, UnitEntry> = toml::from_str(toml_str)
-            .expect("failed to parse units.toml");
+        let parsed: HashMap<String, UnitEntry> =
+            toml::from_str(toml_str).expect("failed to parse units.toml");
         let mut units = HashMap::new();
         for (id, entry) in parsed {
             let def = UnitDef {
@@ -64,6 +68,7 @@ impl UnitConfig {
                 projectile_speed: entry.projectile_speed.unwrap_or(300.0),
                 speed: entry.speed.unwrap_or(0.0),
                 mine_interval_sec: entry.mine_interval_sec.unwrap_or(0.0),
+                carry_capacity: entry.carry_capacity.unwrap_or(5),
             };
             units.insert(id, def);
         }
@@ -100,4 +105,6 @@ struct UnitEntry {
     speed: Option<f32>,
     #[serde(default)]
     mine_interval_sec: Option<f32>,
+    #[serde(default)]
+    carry_capacity: Option<u32>,
 }

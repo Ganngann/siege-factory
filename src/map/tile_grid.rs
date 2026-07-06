@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use bevy::prelude::Resource;
 use crate::map::components::TileType;
+use bevy::prelude::Resource;
+use std::collections::HashMap;
 
 pub const CHUNK_SIZE: u32 = 32;
 
@@ -33,9 +33,13 @@ impl ChunkGrid {
         deposit_distribution: Vec<(String, u32)>,
     ) -> Self {
         Self {
-            chunks: HashMap::new(), seed,
-            deposit_min_amount, deposit_max_amount,
-            deposit_spawn_chance_pct, deposit_min_per_chunk, deposit_max_per_chunk,
+            chunks: HashMap::new(),
+            seed,
+            deposit_min_amount,
+            deposit_max_amount,
+            deposit_spawn_chance_pct,
+            deposit_min_per_chunk,
+            deposit_max_per_chunk,
             deposit_distribution,
         }
     }
@@ -48,7 +52,19 @@ impl ChunkGrid {
         let min_per = self.deposit_min_per_chunk;
         let max_per = self.deposit_max_per_chunk;
         let dist = self.deposit_distribution.clone();
-        self.chunks.entry((cx, cy)).or_insert_with(|| generate_chunk(seed, cx, cy, min_amt, max_amt, spawn_chance, min_per, max_per, dist))
+        self.chunks.entry((cx, cy)).or_insert_with(|| {
+            generate_chunk(
+                seed,
+                cx,
+                cy,
+                min_amt,
+                max_amt,
+                spawn_chance,
+                min_per,
+                max_per,
+                dist,
+            )
+        })
     }
 
     pub fn ensure_chunk_mut(&mut self, cx: i32, cy: i32) -> &mut Chunk {
@@ -59,7 +75,19 @@ impl ChunkGrid {
         let min_per = self.deposit_min_per_chunk;
         let max_per = self.deposit_max_per_chunk;
         let dist = self.deposit_distribution.clone();
-        self.chunks.entry((cx, cy)).or_insert_with(|| generate_chunk(seed, cx, cy, min_amt, max_amt, spawn_chance, min_per, max_per, dist))
+        self.chunks.entry((cx, cy)).or_insert_with(|| {
+            generate_chunk(
+                seed,
+                cx,
+                cy,
+                min_amt,
+                max_amt,
+                spawn_chance,
+                min_per,
+                max_per,
+                dist,
+            )
+        })
     }
 
     pub fn tile_type_at(&mut self, x: i32, y: i32) -> TileType {
@@ -71,7 +99,10 @@ impl ChunkGrid {
     }
 
     pub fn chunk_containing(&self, x: i32, y: i32) -> (i32, i32) {
-        (x.div_euclid(CHUNK_SIZE as i32), y.div_euclid(CHUNK_SIZE as i32))
+        (
+            x.div_euclid(CHUNK_SIZE as i32),
+            y.div_euclid(CHUNK_SIZE as i32),
+        )
     }
 
     pub fn generated_chunks(&self) -> impl Iterator<Item = &(i32, i32)> {
@@ -126,10 +157,14 @@ impl ChunkGrid {
 }
 
 fn generate_chunk(
-    seed: u64, cx: i32, cy: i32,
-    deposit_min_amount: u32, deposit_max_amount: u32,
+    seed: u64,
+    cx: i32,
+    cy: i32,
+    deposit_min_amount: u32,
+    deposit_max_amount: u32,
     deposit_spawn_chance_pct: u32,
-    deposit_min_per_chunk: u32, deposit_max_per_chunk: u32,
+    deposit_min_per_chunk: u32,
+    deposit_max_per_chunk: u32,
     deposit_distribution: Vec<(String, u32)>,
 ) -> Chunk {
     use std::hash::{Hash, Hasher};
@@ -169,11 +204,16 @@ fn generate_chunk(
         for _ in 0..count {
             let dx = (rng.next() % CHUNK_SIZE as u64) as u32;
             let dy = (rng.next() % CHUNK_SIZE as u64) as u32;
-            let amount = deposit_min_amount + (rng.next() as u32 % (deposit_max_amount - deposit_min_amount + 1));
+            let amount = deposit_min_amount
+                + (rng.next() as u32 % (deposit_max_amount - deposit_min_amount + 1));
             let pick = rng.next() as u32 % total_weight;
             let mut cumulative = 0u32;
-            let resource = deposit_distribution.iter()
-                .find(|(_, w)| { cumulative += w; pick < cumulative })
+            let resource = deposit_distribution
+                .iter()
+                .find(|(_, w)| {
+                    cumulative += w;
+                    pick < cumulative
+                })
                 .map(|(r, _)| r.clone())
                 .unwrap_or_else(|| "iron_ore".to_string());
             tiles[dy as usize][dx as usize] = TileType::Resource;
@@ -194,7 +234,10 @@ struct SimpleRng {
 
 impl SimpleRng {
     fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.state = self
+            .state
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.state >> 33
     }
 }
@@ -205,7 +248,11 @@ mod tests {
 
     #[test]
     fn same_seed_same_chunk() {
-        let dist = vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)];
+        let dist = vec![
+            ("iron_ore".to_string(), 50),
+            ("copper_ore".to_string(), 35),
+            ("coal".to_string(), 15),
+        ];
         let mut a = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist.clone());
         let mut b = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist.clone());
         let chunk_a = a.ensure_chunk(0, 0).clone();
@@ -216,16 +263,27 @@ mod tests {
 
     #[test]
     fn deterministic_generation() {
-        let dist = vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)];
+        let dist = vec![
+            ("iron_ore".to_string(), 50),
+            ("copper_ore".to_string(), 35),
+            ("coal".to_string(), 15),
+        ];
         let mut g1 = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist.clone());
         let mut g2 = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist.clone());
         assert_eq!(g1.ensure_chunk(0, 0).tiles, g2.ensure_chunk(0, 0).tiles);
-        assert_eq!(g1.ensure_chunk(0, 0).deposits, g2.ensure_chunk(0, 0).deposits);
+        assert_eq!(
+            g1.ensure_chunk(0, 0).deposits,
+            g2.ensure_chunk(0, 0).deposits
+        );
     }
 
     #[test]
     fn different_chunks_are_independent() {
-        let dist = vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)];
+        let dist = vec![
+            ("iron_ore".to_string(), 50),
+            ("copper_ore".to_string(), 35),
+            ("coal".to_string(), 15),
+        ];
         let mut grid = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist.clone());
         let _ = grid.ensure_chunk(1, 0).clone();
         let c0 = grid.ensure_chunk(0, 0).clone();
@@ -233,13 +291,23 @@ mod tests {
         let mut grid2 = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist.clone());
         let c0_fresh = grid2.ensure_chunk(0, 0).clone();
 
-        assert_eq!(c0.tiles, c0_fresh.tiles, "tiles must be independent of generation order");
-        assert_eq!(c0.deposits, c0_fresh.deposits, "deposits must be independent of generation order");
+        assert_eq!(
+            c0.tiles, c0_fresh.tiles,
+            "tiles must be independent of generation order"
+        );
+        assert_eq!(
+            c0.deposits, c0_fresh.deposits,
+            "deposits must be independent of generation order"
+        );
     }
 
     #[test]
     fn chunk_containing_rounds_correctly() {
-        let dist = vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)];
+        let dist = vec![
+            ("iron_ore".to_string(), 50),
+            ("copper_ore".to_string(), 35),
+            ("coal".to_string(), 15),
+        ];
         let grid = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist);
         assert_eq!(grid.chunk_containing(0, 0), (0, 0));
         assert_eq!(grid.chunk_containing(31, 31), (0, 0));
@@ -249,7 +317,11 @@ mod tests {
 
     #[test]
     fn tile_type_at_auto_generates_chunk() {
-        let dist = vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)];
+        let dist = vec![
+            ("iron_ore".to_string(), 50),
+            ("copper_ore".to_string(), 35),
+            ("coal".to_string(), 15),
+        ];
         let mut grid = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist);
         let tt = grid.tile_type_at(100, 200);
         assert!(tt == TileType::Ground || tt == TileType::Resource);
@@ -257,7 +329,11 @@ mod tests {
 
     #[test]
     fn deposits_are_valid() {
-        let dist = vec![("iron_ore".to_string(), 50), ("copper_ore".to_string(), 35), ("coal".to_string(), 15)];
+        let dist = vec![
+            ("iron_ore".to_string(), 50),
+            ("copper_ore".to_string(), 35),
+            ("coal".to_string(), 15),
+        ];
         let mut grid = ChunkGrid::new(42, 50, 150, 35, 2, 5, dist);
         let chunk = grid.ensure_chunk(0, 0);
         for &(dx, dy, amount, _) in &chunk.deposits {

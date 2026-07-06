@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::economy::building::BuildingRegistry;
-use crate::economy::components::{HQ, Building, OccupiedTiles, Active};
-use crate::economy::resource::{ResourceId, Inventory};
+use crate::economy::components::{Active, Building, HQ, OccupiedTiles};
+use crate::economy::resource::{Inventory, ResourceId};
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 
@@ -35,7 +35,10 @@ pub fn setup_hq(
 
     commands.spawn((
         HQ,
-        Building { kind: "hq".to_string(), name: "HQ".to_string() },
+        Building {
+            kind: "hq".to_string(),
+            name: "HQ".to_string(),
+        },
         inv,
         OccupiedTiles(occupied),
         Active(true),
