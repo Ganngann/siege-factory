@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::economy::components::{Assembler, Building, Direction, Sorter, Splitter};
+use crate::economy::components::{Assembler, Building, Direction, Sorter, Splitter, UnbuiltBuilding};
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::spatial::SpatialRegistry;
@@ -47,7 +47,10 @@ pub fn advance_belt_slots(
     time: Res<Time<Fixed>>,
     spatial: Res<SpatialRegistry>,
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
-    mut inventory_query: Query<(Entity, &mut Inventory), (With<Building>, Without<BeltSlots>)>,
+    mut inventory_query: Query<
+        (Entity, &mut Inventory),
+        (With<Building>, Without<BeltSlots>, Without<UnbuiltBuilding>),
+    >,
     mut splitter_query: Query<(Entity, &TilePosition, &mut Splitter)>,
     sorter_query: Query<(Entity, &TilePosition, &Sorter)>,
 ) {
@@ -271,10 +274,11 @@ pub fn advance_belt_slots(
             if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
                 if let Some(ref item) = bs.items[last] {
                     if item.acc >= slot_duration {
-                        let taken = bs.items[last].take().unwrap();
+                        let resource = item.resource_id.clone();
                         if let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity) {
                             if !inv.is_full() {
-                                inv.add(&taken.resource_id, 1);
+                                inv.add(&resource, 1);
+                                bs.items[last] = None;
                             }
                         }
                     }
@@ -287,7 +291,10 @@ pub fn advance_belt_slots(
 pub fn building_output_tick(
     spatial: Res<SpatialRegistry>,
     mut belt_query: Query<(&TilePosition, &mut BeltSlots)>,
-    mut inventory_query: Query<(Entity, &mut Inventory), (With<Building>, Without<BeltSlots>)>,
+    mut inventory_query: Query<
+        (Entity, &mut Inventory),
+        (With<Building>, Without<BeltSlots>, Without<UnbuiltBuilding>),
+    >,
     assembler_query: Query<Option<&Assembler>>,
     recipes: Res<RecipeRegistry>,
     _cfg: Res<MapConfig>,

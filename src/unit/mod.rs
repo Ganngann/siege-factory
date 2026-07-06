@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::GameState;
-use crate::economy::components::{HQ, ResourceDeposit, Unit};
+use crate::economy::components::{Player, ResourceDeposit, Unit};
 use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::unit_config::UnitConfig;
 use crate::enemy::combat::find_closest_enemy;
@@ -93,24 +93,21 @@ fn spawn_unit_by_id(
 fn spawn_unit_on_trigger(
     on: On<SpawnUnitEvent>,
     unit_cfg: Res<UnitConfig>,
-    mut hq_query: Query<(&Transform, &mut Inventory), With<HQ>>,
+    mut player_query: Query<(&Transform, &mut Inventory), With<Player>>,
     mut commands: Commands,
 ) {
-    let (hq_transform, mut inv) = match hq_query.single_mut() {
+    let (player_transform, mut inv) = match player_query.single_mut() {
         Ok(q) => q,
         Err(_) => return,
     };
     let id = &on.event().0;
     if let Some(def) = unit_cfg.get(id) {
-        let cost_ore = def
-            .cost
-            .iter()
-            .find(|c| c.resource.0 == "ore")
-            .map(|c| c.amount)
-            .unwrap_or(0);
-        if inv.get(&ResourceId("ore".to_string())) >= cost_ore {
-            inv.remove(&ResourceId("ore".to_string()), cost_ore);
-            spawn_unit_by_id(&mut commands, &unit_cfg, id, hq_transform.translation);
+        let can_afford = def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount);
+        if can_afford {
+            for c in &def.cost {
+                inv.remove(&c.resource, c.amount);
+            }
+            spawn_unit_by_id(&mut commands, &unit_cfg, id, player_transform.translation);
         }
     }
 }
@@ -164,7 +161,7 @@ fn worker_harvest(
     mut chunk_grid: ResMut<ChunkGrid>,
     mut workers: Query<(Entity, &mut Transform, &mut Worker)>,
     mut deposits: Query<(Entity, &mut ResourceDeposit, &Transform, &TilePosition), Without<Worker>>,
-    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    mut player_query: Query<&mut Inventory, With<Player>>,
     mut commands: Commands,
 ) {
     let tile_size = cfg.tile_size;
@@ -175,7 +172,7 @@ fn worker_harvest(
     let speed = worker_def.speed;
     let mine_interval = worker_def.mine_interval_sec;
 
-    let mut hq_inv = match hq_query.single_mut() {
+    let mut player_inv = match player_query.single_mut() {
         Ok(inv) => inv,
         Err(_) => return,
     };
@@ -231,7 +228,7 @@ fn worker_harvest(
                             if !cfg.infinite_deposits {
                                 deposit.amount = deposit.amount.saturating_sub(1);
                             }
-                            hq_inv.add(&ResourceId(deposit.resource.clone()), 1);
+                            player_inv.add(&ResourceId(deposit.resource.clone()), 1);
                         }
                     }
                     if !cfg.infinite_deposits && deposit.amount == 0 {

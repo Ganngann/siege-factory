@@ -1,4 +1,4 @@
-use crate::economy::components::{HQ, OccupiedTiles};
+use crate::economy::components::Player;
 use crate::economy::spatial::SpatialRegistry;
 use crate::enemy::components::Enemy;
 use crate::enemy::registry::EnemyRegistry;
@@ -11,8 +11,8 @@ fn bfs(
     start: (i32, i32),
     goal: (i32, i32),
     blocked: &HashSet<(i32, i32)>,
+    max_nodes: usize,
 ) -> Option<Vec<(i32, i32)>> {
-    const MAX_NODES: usize = 50_000;
     let mut visited = HashSet::new();
     let mut parent: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
     let mut queue = VecDeque::new();
@@ -25,7 +25,7 @@ fn bfs(
     queue.push_back(start);
 
     while let Some(pos) = queue.pop_front() {
-        if visited.len() > MAX_NODES {
+        if visited.len() > max_nodes {
             return None;
         }
         if pos == goal {
@@ -53,31 +53,23 @@ fn bfs(
 pub fn move_enemies(
     mut set: ParamSet<(
         Query<(Entity, &Enemy, &mut Transform, &mut TilePosition)>,
-        Query<&TilePosition, With<HQ>>,
+        Query<&TilePosition, With<Player>>,
     )>,
     time: Res<Time>,
     spatial: Res<SpatialRegistry>,
-    hq_tiles_query: Query<&OccupiedTiles, With<HQ>>,
     enemies_registry: Res<EnemyRegistry>,
     cfg: Res<MapConfig>,
 ) {
     let tile_size = cfg.tile_size;
 
-    let hq_pos = match set.p1().single() {
+    let player_pos = match set.p1().single() {
         Ok(p) => *p,
         Err(_) => return,
     };
-    let goal = (hq_pos.x, hq_pos.y);
+    let goal = (player_pos.x, player_pos.y);
 
-    // Build blocked set from spatial registry, excluding HQ tiles
-    let hq_tiles: HashSet<(i32, i32)> = hq_tiles_query
-        .iter()
-        .flat_map(|t| t.0.iter().copied())
-        .collect();
-    let mut blocked: HashSet<(i32, i32)> = spatial.occupied_tiles().copied().collect();
-    for tile in &hq_tiles {
-        blocked.remove(tile);
-    }
+    // Build blocked set from spatial registry
+    let blocked: HashSet<(i32, i32)> = spatial.occupied_tiles().copied().collect();
 
     for (_entity, enemy, mut transform, mut pos) in set.p0().iter_mut() {
         let enemy_speed = enemies_registry
@@ -90,7 +82,7 @@ pub fn move_enemies(
             continue;
         }
 
-        let path = bfs(start, goal, &blocked);
+        let path = bfs(start, goal, &blocked, cfg.pathfinding_max_nodes);
         let target = match path {
             Some(ref p) if !p.is_empty() => (p[0].0, p[0].1),
             _ => continue,

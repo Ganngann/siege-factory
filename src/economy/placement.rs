@@ -5,9 +5,9 @@ use crate::economy::belt::{BeltSlots, compute_slot_positions};
 use crate::economy::building::{BuildingCost, BuildingRegistry};
 use crate::economy::components::{
     Active, Archive, Assembler, BeltDirection, BeltDrag, BuildMode, BuildPreview, Building,
-    DeconstructDrag, DeconstructMode, Direction, DiscoveredRecipes, Ghost, HQ, Miner,
-    OccupiedTiles, PowerConsumer, PowerPole, PowerProducer, ProductionCounter, ResourceDeposit,
-    Sorter, Splitter, Storage, TurretCombat, UiIsBlocking,
+    DeconstructDrag, DeconstructMode, Direction, DiscoveredRecipes, Ghost, Miner, OccupiedTiles,
+    Player, PowerConsumer, PowerPole, PowerProducer, ProductionCounter, ResourceDeposit, Sorter,
+    Splitter, Storage, TurretCombat, UiIsBlocking, UnbuiltBuilding,
 };
 
 use crate::economy::resource::{Inventory, ResourceId};
@@ -217,7 +217,7 @@ pub fn handle_deconstruct_click_v2(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     building_query: Query<(&Building, &TilePosition)>,
-    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    mut player_query: Query<&mut Inventory, With<Player>>,
     keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
@@ -274,8 +274,8 @@ pub fn handle_deconstruct_click_v2(
     for c in &def.cost {
         let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
         if refund > 0 {
-            if let Ok(mut hq_inv) = hq_query.single_mut() {
-                hq_inv.add(&c.resource, refund);
+            if let Ok(mut player_inv) = player_query.single_mut() {
+                player_inv.add(&c.resource, refund);
             }
             refund_names.push(format!("{} {}", refund, c.resource.display_name()));
         }
@@ -679,7 +679,7 @@ pub fn on_belt_drag_completed(
     on: On<BeltDragCompleted>,
     mut commands: Commands,
     mut belt_write: Query<(&TilePosition, &mut BeltSlots)>,
-    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    mut player_query: Query<&mut Inventory, With<Player>>,
     registry: Res<BuildingRegistry>,
     cfg: Res<MapConfig>,
     mut toast_queue: ResMut<ToastQueue>,
@@ -691,7 +691,7 @@ pub fn on_belt_drag_completed(
     let tile_size = cfg.tile_size;
 
     if !ev.new_tiles.is_empty() {
-        let mut hq_inv = match hq_query.single_mut() {
+        let mut player_inv = match player_query.single_mut() {
             Ok(inv) => inv,
             Err(_) => return,
         };
@@ -703,11 +703,11 @@ pub fn on_belt_drag_completed(
                 amount: c.amount * ev.new_tiles.len() as u32,
             })
             .collect();
-        if !can_afford(&hq_inv, &scaled_cost) {
+        if !can_afford(&player_inv, &scaled_cost) {
             toast_queue.0.push("Not enough resources".to_string());
             return;
         }
-        deduct_cost(&mut hq_inv, &scaled_cost);
+        deduct_cost(&mut player_inv, &scaled_cost);
     }
 
     if ev.new_tiles.is_empty() && ev.existing.is_empty() {
@@ -773,10 +773,11 @@ pub fn on_belt_drag_completed(
                     Active(true),
                 ));
             } else if def.id == "sorter" {
+                let filter = def.default_filter.clone().unwrap_or_else(|| "iron_ore".to_string());
                 commands.spawn((
                     belt_components,
                     Sorter {
-                        filter: ResourceId("iron_ore".to_string()),
+                        filter: ResourceId(filter),
                         inverted: false,
                     },
                     Active(true),
@@ -868,7 +869,7 @@ pub fn on_deconstruct_area(
     spatial: Res<SpatialRegistry>,
     building_query: Query<(&Building, &OccupiedTiles)>,
     belt_slots_query: Query<&BeltSlots>,
-    mut hq_query: Query<&mut Inventory, With<HQ>>,
+    mut player_query: Query<&mut Inventory, With<Player>>,
     registry: Res<BuildingRegistry>,
     mut toast_queue: ResMut<ToastQueue>,
 ) {
@@ -894,8 +895,8 @@ pub fn on_deconstruct_area(
             for c in &def.cost {
                 let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
                 if refund > 0 {
-                    if let Ok(mut hq_inv) = hq_query.single_mut() {
-                        hq_inv.add(&c.resource, refund);
+                    if let Ok(mut player_inv) = player_query.single_mut() {
+                        player_inv.add(&c.resource, refund);
                     }
                     refund_names.push(format!("{} {}", refund, c.resource.display_name()));
                 }
@@ -921,7 +922,7 @@ pub fn on_deconstruct_area(
     }
 }
 
-// ── Build click ──
+// ── Build click (blueprint placement) ──
 
 #[allow(clippy::too_many_arguments)]
 pub fn handle_build_click(
@@ -932,7 +933,6 @@ pub fn handle_build_click(
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     deposits: Query<(Entity, &TilePosition, &ResourceDeposit)>,
-    mut hq_query: Query<&mut Inventory, With<HQ>>,
     keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
@@ -993,17 +993,6 @@ pub fn handle_build_click(
             return;
         }
 
-        let mut hq_inv = match hq_query.single_mut() {
-            Ok(inv) => inv,
-            Err(_) => return,
-        };
-
-        if !can_afford(&hq_inv, &def.cost) {
-            toast_queue.0.push("Not enough ore".to_string());
-            return;
-        }
-
-        deduct_cost(&mut hq_inv, &def.cost);
         if !cfg.infinite_deposits {
             let cx = tx.div_euclid(CHUNK_SIZE as i32);
             let cy = ty.div_euclid(CHUNK_SIZE as i32);
@@ -1023,6 +1012,7 @@ pub fn handle_build_click(
             .map(|p| p.interval_sec)
             .unwrap_or(2.0);
         let mut e = commands.spawn((
+            UnbuiltBuilding,
             Miner,
             Building {
                 kind: def.id.clone(),
@@ -1037,11 +1027,15 @@ pub fn handle_build_click(
                 interval,
                 recipe_id: mine_recipe,
             },
-            Active(true),
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
         ));
-        if def.power_consumption > 0.0 { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
+        if def.power_consumption > 0.0 {
+            e.insert(PowerConsumer {
+                draw: def.power_consumption,
+                satisfied: false,
+            });
+        }
         return;
     }
 
@@ -1059,22 +1053,11 @@ pub fn handle_build_click(
         }
     }
 
-    let mut hq_inv = match hq_query.single_mut() {
-        Ok(inv) => inv,
-        Err(_) => return,
-    };
-
-    if !can_afford(&hq_inv, &def.cost) {
-        toast_queue.0.push("Not enough ore".to_string());
-        return;
-    }
-
-    deduct_cost(&mut hq_inv, &def.cost);
-
     let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
     let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
 
     let base = (
+        UnbuiltBuilding,
         Building {
             kind: def.id.clone(),
             name: def.name.clone(),
@@ -1082,7 +1065,6 @@ pub fn handle_build_click(
         OccupiedTiles(footprint),
         TilePosition { x: tx, y: ty },
         Transform::from_xyz(cx, cy, 2.0),
-        Active(true),
     );
 
     let inv = if def.inventory_capacity > 0 {
@@ -1095,39 +1077,35 @@ pub fn handle_build_click(
     let do_power_producer = def.power_generation > 0.0;
     let do_power_pole = def.power_pole_range > 0.0;
 
-    if def.id == "assembler" || def.id == "furnace"
-        || def.id == "blast_furnace" || def.id == "assembly_crane"
-        || def.id == "alchemy_lab" || def.id == "electronics_lab"
-        || def.id == "foundry" || def.id == "guild_hall"
-        || def.id == "enchanting_array" || def.id == "pumpjack"
-    {
-        let recipe_id = match def.id.as_str() {
-            "furnace" | "blast_furnace" => "iron_plate",
-            "assembler" => "ammo_craft",
-            "assembly_crane" => "gear",
-            "alchemy_lab" => "petroleum_gas",
-            "electronics_lab" => "advanced_circuit",
-            "foundry" => "iron_beam",
-            "guild_hall" => "bread",
-            "enchanting_array" => "scroll_of_haste",
-            "pumpjack" => "pump_crude_oil",
-            _ => "gear",
-        };
+    if let Some(default_recipe) = &def.default_recipe {
         let interval = def.production_interval.unwrap_or(2.0);
         let mut e = commands.spawn((
             base,
             Assembler {
                 production_timer: 0.0,
                 interval,
-                recipe_id: recipe_id.to_string(),
+                recipe_id: default_recipe.clone(),
             },
             inv,
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
         ));
-        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
-        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
-        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
+        if do_power_consumer {
+            e.insert(PowerConsumer {
+                draw: def.power_consumption,
+                satisfied: false,
+            });
+        }
+        if do_power_producer {
+            e.insert(PowerProducer {
+                output: def.power_generation,
+            });
+        }
+        if do_power_pole {
+            e.insert(PowerPole {
+                range: def.power_pole_range,
+            });
+        }
     } else if def.id == "turret" {
         let stats = def.combat.as_ref().expect("turret def missing combat");
         let mut e = commands.spawn((
@@ -1141,37 +1119,105 @@ pub fn handle_build_click(
                 projectile_speed: stats.projectile_speed,
             },
         ));
-        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
-        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
-        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
+        if do_power_consumer {
+            e.insert(PowerConsumer {
+                draw: def.power_consumption,
+                satisfied: false,
+            });
+        }
+        if do_power_producer {
+            e.insert(PowerProducer {
+                output: def.power_generation,
+            });
+        }
+        if do_power_pole {
+            e.insert(PowerPole {
+                range: def.power_pole_range,
+            });
+        }
     } else if def.id == "storage" {
         let mut e = commands.spawn((base, inv, Storage));
-        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
-        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
-        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
+        if do_power_consumer {
+            e.insert(PowerConsumer {
+                draw: def.power_consumption,
+                satisfied: false,
+            });
+        }
+        if do_power_producer {
+            e.insert(PowerProducer {
+                output: def.power_generation,
+            });
+        }
+        if do_power_pole {
+            e.insert(PowerPole {
+                range: def.power_pole_range,
+            });
+        }
     } else if def.id == "farm" {
+        let crop_types = def.crop_types.clone();
         let mut e = commands.spawn((
             base,
             inv,
             Farm {
                 crop_index: 0,
-                crop_types: vec!["wheat".to_string(), "wood".to_string(), "rubber".to_string()],
+                crop_types,
             },
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
         ));
-        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
-        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
-        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
+        if do_power_consumer {
+            e.insert(PowerConsumer {
+                draw: def.power_consumption,
+                satisfied: false,
+            });
+        }
+        if do_power_producer {
+            e.insert(PowerProducer {
+                output: def.power_generation,
+            });
+        }
+        if do_power_pole {
+            e.insert(PowerPole {
+                range: def.power_pole_range,
+            });
+        }
     } else if def.id == "archive" {
         let mut e = commands.spawn((base, inv, Archive));
-        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
-        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
-        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
+        if do_power_consumer {
+            e.insert(PowerConsumer {
+                draw: def.power_consumption,
+                satisfied: false,
+            });
+        }
+        if do_power_producer {
+            e.insert(PowerProducer {
+                output: def.power_generation,
+            });
+        }
+        if do_power_pole {
+            e.insert(PowerPole {
+                range: def.power_pole_range,
+            });
+        }
     } else {
         let mut e = commands.spawn((base, inv));
-        if do_power_consumer { e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false }); }
-        if do_power_producer { e.insert(PowerProducer { output: def.power_generation }); }
-        if do_power_pole { e.insert(PowerPole { range: def.power_pole_range }); }
+        if do_power_consumer {
+            e.insert(PowerConsumer {
+                draw: def.power_consumption,
+                satisfied: false,
+            });
+        }
+        if do_power_producer {
+            e.insert(PowerProducer {
+                output: def.power_generation,
+            });
+        }
+        if do_power_pole {
+            e.insert(PowerPole {
+                range: def.power_pole_range,
+            });
+        }
     }
 }
+
+// Auto-construction is now handled by the builder state machine in player.rs

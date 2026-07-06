@@ -1,9 +1,3 @@
-[resources.ore]
-name = "Ore"
-max_stack = 999
-color = "#B35F33"
-icon = "textures/ui/icons/icon_ore.png"
-
 [resources.ammo]
 name = "Ammo"
 max_stack = 999

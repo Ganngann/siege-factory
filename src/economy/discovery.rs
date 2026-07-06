@@ -18,6 +18,7 @@ pub struct DiscoveryDef {
 #[derive(Debug, Clone, Resource)]
 pub struct DiscoveryRegistry {
     pub discoveries: Vec<DiscoveryDef>,
+    pub starter_recipes: Vec<String>,
 }
 
 impl DiscoveryRegistry {
@@ -37,6 +38,7 @@ impl DiscoveryRegistry {
                     message: e.message,
                 })
                 .collect(),
+            starter_recipes: parsed.starter_recipes.recipes,
         }
     }
 }
@@ -45,6 +47,20 @@ impl DiscoveryRegistry {
 struct DiscoveriesToml {
     #[serde(rename = "discovery")]
     discovery: Vec<DiscoveryEntry>,
+    #[serde(default)]
+    starter_recipes: StarterRecipes,
+}
+
+#[derive(Deserialize)]
+struct StarterRecipes {
+    #[serde(default)]
+    recipes: Vec<String>,
+}
+
+impl Default for StarterRecipes {
+    fn default() -> Self {
+        Self { recipes: Vec::new() }
+    }
 }
 
 #[derive(Deserialize)]
@@ -63,30 +79,14 @@ pub struct GlobalArchive {
 }
 
 impl GlobalArchive {
+    pub fn new(starter_recipes: &[String]) -> Self {
+        Self {
+            unlocked_recipes: starter_recipes.iter().cloned().collect(),
+        }
+    }
+
     pub fn is_unlocked(&self, recipe_id: &str) -> bool {
         self.unlocked_recipes.contains(recipe_id)
-    }
-}
-
-impl Default for GlobalArchive {
-    fn default() -> Self {
-        Self {
-            unlocked_recipes: HashSet::from([
-                "mine_iron_ore".to_string(),
-                "mine_copper_ore".to_string(),
-                "mine_coal".to_string(),
-                "mine_stone".to_string(),
-                "mine_sand".to_string(),
-                "mine_sulfur".to_string(),
-                "pump_crude_oil".to_string(),
-                "iron_plate".to_string(),
-                "copper_plate".to_string(),
-                "gear".to_string(),
-                "circuit".to_string(),
-                "copper_wire".to_string(),
-                "ammo_craft".to_string(),
-            ]),
-        }
     }
 }
 

@@ -14,9 +14,12 @@ pub struct MapConfig {
     pub deposit_max_per_chunk: u32,
     pub deposit_distribution: Vec<(String, u32)>,
     pub infinite_deposits: bool,
-    pub hq_position: (i32, i32),
-    pub hq_start_ore: u32,
-    pub hq_hp: u32,
+    pub player_start_position: (i32, i32),
+    pub player_hp: u32,
+    pub player_speed: f32,
+    pub builder_speed: f32,
+    pub builder_reach: f32,
+    pub pathfinding_max_nodes: usize,
 }
 
 impl MapConfig {
@@ -37,9 +40,12 @@ impl MapConfig {
             deposit_max_per_chunk: parsed.deposits.max_per_chunk,
             deposit_distribution: distribution,
             infinite_deposits: parsed.deposits.infinite,
-            hq_position: (parsed.hq.position.x, parsed.hq.position.y),
-            hq_start_ore: parsed.hq.start_ore,
-            hq_hp: parsed.hq.hp,
+            player_start_position: (parsed.player.position.x, parsed.player.position.y),
+            player_hp: parsed.player.hp,
+            player_speed: parsed.player.speed,
+            builder_speed: parsed.player.builder_speed,
+            builder_reach: parsed.player.builder_reach,
+            pathfinding_max_nodes: parsed.map.pathfinding_max_nodes as usize,
         }
     }
 }
@@ -48,7 +54,7 @@ impl MapConfig {
 struct MapToml {
     map: MapEntry,
     deposits: DepositsEntry,
-    hq: HqEntry,
+    player: PlayerEntry,
 }
 
 #[derive(Deserialize)]
@@ -56,7 +62,11 @@ struct MapEntry {
     tile_size: f32,
     seed: u64,
     chunk_size: u32,
+    #[serde(default = "default_pathfinding_nodes")]
+    pathfinding_max_nodes: u64,
 }
+
+fn default_pathfinding_nodes() -> u64 { 50000 }
 
 #[derive(Deserialize)]
 struct DepositsEntry {
@@ -70,11 +80,20 @@ struct DepositsEntry {
 }
 
 #[derive(Deserialize)]
-struct HqEntry {
-    start_ore: u32,
+struct PlayerEntry {
     hp: u32,
+    #[serde(default = "default_player_speed")]
+    speed: f32,
+    #[serde(default = "default_builder_speed")]
+    builder_speed: f32,
+    #[serde(default = "default_builder_reach")]
+    builder_reach: f32,
     position: PosEntry,
 }
+
+fn default_player_speed() -> f32 { 250.0 }
+fn default_builder_speed() -> f32 { 300.0 }
+fn default_builder_reach() -> f32 { 8.0 }
 
 #[derive(Deserialize)]
 struct PosEntry {

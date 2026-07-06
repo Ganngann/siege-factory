@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd633"/>
+      <stop offset="100%" stop-color="#cc8800"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- Shadow -->
+    <ellipse cx="32" cy="50" rx="16" ry="4" fill="#111" opacity="0.25"/>
+
+    <!-- Tracks / treads -->
+    <rect x="12" y="26" width="8" height="18" rx="4" fill="#4a4a4a" stroke="#3e3e3e" stroke-width="1"/>
+    <rect x="44" y="26" width="8" height="18" rx="4" fill="#4a4a4a" stroke="#3e3e3e" stroke-width="1"/>
+
+    <!-- Track wheels -->
+    <circle cx="16" cy="30" r="2.5" fill="#666" stroke="#555" stroke-width="0.5"/>
+    <circle cx="16" cy="40" r="2.5" fill="#666" stroke="#555" stroke-width="0.5"/>
+    <circle cx="48" cy="30" r="2.5" fill="#666" stroke="#555" stroke-width="0.5"/>
+    <circle cx="48" cy="40" r="2.5" fill="#666" stroke="#555" stroke-width="0.5"/>
+
+    <!-- Traxx lines -->
+    <line x1="16" y1="33" x2="16" y2="37" stroke="#777" stroke-width="0.5"/>
+    <line x1="48" y1="33" x2="48" y2="37" stroke="#777" stroke-width="0.5"/>
+
+    <!-- Main body -->
+    <rect x="20" y="16" width="24" height="26" rx="10" fill="url(#bodyGrad)" stroke="#b37800" stroke-width="1"/>
+
+    <!-- Top highlight -->
+    <ellipse cx="32" cy="20" rx="8" ry="3" fill="none" stroke="#ffeb66" stroke-width="0.5" opacity="0.4"/>
+
+    <!-- Face panel -->
+    <rect x="24" y="22" width="16" height="12" rx="4" fill="#d49400" stroke="#b37800" stroke-width="0.5"/>
+
+    <!-- Big cute eyes -->
+    <ellipse cx="29" cy="27" rx="4" ry="4.5" fill="white" stroke="#555" stroke-width="0.5"/>
+    <ellipse cx="39" cy="27" rx="4" ry="4.5" fill="white" stroke="#555" stroke-width="0.5"/>
+
+    <!-- Pupils -->
+    <circle cx="30" cy="27" r="2.5" fill="#222"/>
+    <circle cx="40" cy="27" r="2.5" fill="#222"/>
+
+    <!-- Eye highlights -->
+    <circle cx="30.5" cy="26" r="1" fill="white"/>
+    <circle cx="40.5" cy="26" r="1" fill="white"/>
+
+    <!-- Rosy cheeks -->
+    <circle cx="22" cy="30" r="2" fill="#ff8844" opacity="0.4"/>
+    <circle cx="46" cy="30" r="2" fill="#ff8844" opacity="0.4"/>
+
+    <!-- Smile -->
+    <path d="M 28 32 Q 32 35 36 32" fill="none" stroke="#555" stroke-width="0.8" stroke-linecap="round"/>
+
+    <!-- Antenna on top -->
+    <line x1="32" y1="16" x2="32" y2="6" stroke="#888" stroke-width="1.5"/>
+    <circle cx="32" cy="4" r="2.5" fill="#ff4444" stroke="#cc0000" stroke-width="0.5"/>
+    <circle cx="31" cy="3" r="0.8" fill="#ff8888"/>
+
+    <!-- Side ears / bumps -->
+    <circle cx="18" cy="20" r="3.5" fill="#d49400" stroke="#b37800" stroke-width="0.5"/>
+    <circle cx="46" cy="20" r="3.5" fill="#d49400" stroke="#b37800" stroke-width="0.5"/>
+
+    <!-- Left arm (tool arm) -->
+    <rect x="8" y="30" width="10" height="5" rx="2" fill="url(#bodyGrad)" stroke="#b37800" stroke-width="1"/>
+
+    <!-- Wrench tool -->
+    <rect x="3" y="29" width="6" height="7" rx="1" fill="#777" stroke="#555" stroke-width="0.5"/>
+    <rect x="2" y="31" width="8" height="3" rx="0.5" fill="#888" stroke="#555" stroke-width="0.5"/>
+
+    <!-- Right arm -->
+    <rect x="46" y="30" width="10" height="5" rx="2" fill="url(#bodyGrad)" stroke="#b37800" stroke-width="1"/>
+
+    <!-- Right hand -->
+    <circle cx="56" cy="32" r="3" fill="#cc8800" stroke="#b37800" stroke-width="0.5"/>
+
+    <!-- Status light -->
+    <circle cx="34" cy="38" r="1.5" fill="#00cc00"/>
+  </g>
+
+  <g id="owner_color">
+    <rect x="26" y="36" width="12" height="3" rx="1" fill="white"/>
+  </g>
+
+  <g id="level_color">
+    <rect x="38" y="4" width="6" height="3" rx="0.5" fill="white"/>
+  </g>
+</svg>

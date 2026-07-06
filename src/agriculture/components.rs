@@ -38,6 +38,7 @@ pub struct Crop {
     pub resource: String,
     pub timer: f32,
     pub duration: f32,
+    pub color: Color,
 }
 
 #[derive(Deserialize, Clone)]

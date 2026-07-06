@@ -1,6 +1,6 @@
 [soldier]
 name = "Soldier"
-cost = { ore = 10 }
+cost = { iron_ore = 10 }
 hp = 30
 damage = 8
 range_tiles = 3.0
@@ -12,7 +12,7 @@ visual = "pentagon"
 [worker]
 name = "Worker"
 kind = "harvester"
-cost = { ore = 5 }
+cost = { iron_ore = 5 }
 hp = 15
 speed = 80.0
 mine_interval_sec = 3.0
@@ -22,7 +22,7 @@ visual = "circle"
 [cultivator]
 name = "Cultivator"
 kind = "cultivator"
-cost = { ore = 8 }
+cost = { iron_ore = 8 }
 hp = 10
 speed = 60.0
 carry_capacity = 5

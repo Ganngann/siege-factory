@@ -3,20 +3,20 @@ use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::BuildingRegistry;
-use crate::economy::components::HQ;
+use crate::economy::components::Player;
+use crate::economy::player::PlayerWorldPos;
 use crate::economy::components::{
     Active, ActiveToggleButton, AlertText, Assembler, BuildMode, Building, BuildingPanel,
     BuildingTitleText, CapacityBarFill, CapacityBarText, CloseButton, ConnectionRowText,
     DeconstructMode, DiscoveredRecipes, DragHandle, FarmCropSelectButton, FarmCropText,
     FarmCultivatorCountText, FarmRecruitButton, FlowInputText, FlowOutputText, HpBarFill, HpText,
-    PanelModal, PanelOverlay, PowerConsumer, PowerStatusText, ProgressBarBg, ProgressBarFill,
-    RecipeCategoryLabel, RecipeChangeButton, RecipeNameText, RecipeSelectorItem, RecipeSelectorRoot,
-    ResourceDeposit, Sorter, SorterInvertButton, SorterResourceButton, StatRowText, StatusText,
-    UiIsBlocking,
+    OccupiedTiles, PanelModal, PanelOverlay, PowerConsumer, PowerStatusText, ProgressBarBg, ProgressBarFill,
+    RecipeCategoryLabel, RecipeChangeButton, RecipeNameText, RecipeSelectorItem,
+    RecipeSelectorRoot, ResourceDeposit, Sorter, SorterInvertButton, SorterResourceButton,
+    StatRowText, StatusText, UiIsBlocking,
 };
 use crate::economy::discovery::GlobalArchive;
 use crate::economy::recipe::RecipeRegistry;
-use crate::economy::resource::ResourceId;
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::unit_config::UnitConfig;
@@ -25,21 +25,10 @@ use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use bevy::prelude::*;
 
-// ── Colors ──
-
-const BG_SECTION: Color = Color::srgb(0.10, 0.10, 0.18);
-const BG_MODAL: Color = Color::srgba(0.08, 0.08, 0.16, 0.97);
-const ACCENT: Color = Color::srgb(0.30, 0.55, 1.00);
-const TEXT_PRIMARY: Color = Color::srgb(0.90, 0.90, 1.00);
-const TEXT_SECONDARY: Color = Color::srgb(0.60, 0.60, 0.75);
-const TEXT_GREEN: Color = Color::srgb(0.40, 0.85, 0.40);
-const TEXT_YELLOW: Color = Color::srgb(0.85, 0.85, 0.35);
-const BTN_CLOSE: Color = Color::srgb(0.50, 0.12, 0.12);
-const BTN_ACTIVE: Color = Color::srgb(0.15, 0.45, 0.15);
-const BTN_INACTIVE: Color = Color::srgb(0.30, 0.15, 0.15);
-const HP_GREEN: Color = Color::srgb(0.20, 0.65, 0.20);
-const BAR_BG: Color = Color::srgb(0.15, 0.15, 0.22);
-const SEPARATOR: Color = Color::srgb(0.20, 0.20, 0.30);
+use crate::economy::window::{
+    spawn_window, ACCENT, BAR_BG, BG_SECTION, BG_WINDOW, BTN_ACTIVE, BTN_CLOSE, BTN_INACTIVE,
+    HP_GREEN, SEPARATOR, TEXT_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_YELLOW,
+};
 
 // ── Open / close panel ──
 
@@ -85,11 +74,16 @@ fn open_panel(
     panel.dirty = false;
 
     let modal_size = Vec2::new(800.0, 560.0);
-    let show_recipes = kind == "assembler" || kind == "furnace"
-        || kind == "blast_furnace" || kind == "assembly_crane"
-        || kind == "alchemy_lab" || kind == "electronics_lab"
-        || kind == "foundry" || kind == "guild_hall"
-        || kind == "enchanting_array" || kind == "pumpjack";
+    let show_recipes = kind == "assembler"
+        || kind == "furnace"
+        || kind == "blast_furnace"
+        || kind == "assembly_crane"
+        || kind == "alchemy_lab"
+        || kind == "electronics_lab"
+        || kind == "foundry"
+        || kind == "guild_hall"
+        || kind == "enchanting_array"
+        || kind == "pumpjack";
     let is_farm = kind == "farm";
 
     let overlay = commands
@@ -147,100 +141,14 @@ fn spawn_panel_ui(
     let right_w = panel_w * 0.38;
     let show_sorter = kind == "sorter";
 
-    commands
-        .spawn((
-            PanelModal,
-            Node {
-                position_type: PositionType::Absolute,
-                left: Val::Px((1280.0 - modal_size.x) / 2.0),
-                top: Val::Px((720.0 - modal_size.y) / 2.0),
-                flex_direction: FlexDirection::Column,
-                width: Val::Px(modal_size.x),
-                height: Val::Px(modal_size.y),
-                overflow: Overflow::clip(),
-                ..default()
-            },
-            BackgroundColor(BG_MODAL),
-            Outline {
-                width: Val::Px(1.0),
-                offset: Val::ZERO,
-                color: Color::srgb(0.30, 0.30, 0.45),
-            },
-            ZIndex(101),
-        ))
-        .with_children(|parent| {
-            // ── Header ──
-            parent
-                .spawn((
-                    DragHandle,
-                    Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Px(40.0),
-                        flex_direction: FlexDirection::Row,
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::SpaceBetween,
-                        padding: UiRect::horizontal(Val::Px(14.0)),
-                        border: UiRect::bottom(Val::Px(1.0)),
-                        ..default()
-                    },
-                    BackgroundColor(BG_SECTION),
-                    BorderColor {
-                        top: SEPARATOR,
-                        bottom: SEPARATOR,
-                        left: SEPARATOR,
-                        right: SEPARATOR,
-                    },
-                ))
-                .with_children(|header| {
-                    header.spawn((
-                        BuildingTitleText,
-                        Text::new(format!("{}  #{}", building.name, entity.to_bits() % 1000)),
-                        TextFont::from_font_size(18.0),
-                        TextColor(TEXT_PRIMARY),
-                    ));
-                    header
-                        .spawn((
-                            ActiveToggleButton,
-                            Button,
-                            Node {
-                                width: Val::Px(60.0),
-                                height: Val::Px(26.0),
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-                                margin: UiRect::right(Val::Px(8.0)),
-                                ..default()
-                            },
-                            BackgroundColor(BTN_ACTIVE),
-                        ))
-                        .with_children(|btn| {
-                            btn.spawn((
-                                Text::new("[ON]"),
-                                TextFont::from_font_size(12.0),
-                                TextColor(TEXT_GREEN),
-                            ));
-                        });
-                    header
-                        .spawn((
-                            CloseButton,
-                            Button,
-                            Node {
-                                width: Val::Px(28.0),
-                                height: Val::Px(28.0),
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-                                ..default()
-                            },
-                            BackgroundColor(BTN_CLOSE),
-                        ))
-                        .with_children(|btn| {
-                            btn.spawn((
-                                Text::new("X"),
-                                TextFont::from_font_size(16.0),
-                                TextColor(Color::WHITE),
-                            ));
-                        });
-                });
+    let x = (1280.0 - modal_size.x) / 2.0;
+    let y = (720.0 - modal_size.y) / 2.0;
 
+    spawn_window(
+        commands,
+        &format!("{}  #{}", building.name, entity.to_bits() % 1000),
+        modal_size.x, modal_size.y, x, y, None,
+        |parent| {
             // ── Status bar ──
             parent
                 .spawn((
@@ -326,6 +234,7 @@ fn spawn_panel_ui(
                             });
 
                             spawn_section(left, "INVENTORY", |sec| {
+                                // Capacity bar
                                 sec.spawn((
                                     Node {
                                         width: Val::Percent(100.0),
@@ -356,6 +265,46 @@ fn spawn_panel_ui(
                                         ..default()
                                     },
                                 ));
+                                // Building inventory grid (3×2 slots)
+                                const S2: f32 = 40.0;
+                                const G2: f32 = 3.0;
+                                sec.spawn((
+                                    crate::economy::components::InventoryGrid { cols: 3, rows: 2, owner: entity },
+                                    Node {
+                                        width: Val::Px(3.0 * (S2 + G2) + G2 * 2.0),
+                                        padding: bevy::ui::UiRect::all(Val::Px(G2)),
+                                        display: Display::Flex,
+                                        flex_wrap: FlexWrap::Wrap,
+                                        align_content: AlignContent::FlexStart,
+                                        ..default()
+                                    },
+                                    BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.9)),
+                                ))
+                                .with_children(|g| {
+                                    for i in 0..6 {
+                                        g.spawn((
+                                            crate::economy::components::InventorySlot { index: i },
+                                            Button,
+                                            Node {
+                                                width: Val::Px(S2),
+                                                height: Val::Px(S2),
+                                                flex_shrink: 0.0,
+                                                margin: bevy::ui::UiRect::axes(Val::Px(G2 / 2.0), Val::Px(G2 / 2.0)),
+                                                border: bevy::ui::UiRect::all(Val::Px(1.0)),
+                                                display: Display::Flex,
+                                                flex_direction: FlexDirection::Column,
+                                                align_items: AlignItems::Center,
+                                                justify_content: JustifyContent::Center,
+                                                ..default()
+                                            },
+                                            BorderColor::all(Color::srgba(0.3, 0.3, 0.4, 1.0)),
+                                            BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
+                                            Text::new(String::new()),
+                                            TextFont::from_font_size(9.0),
+                                            TextColor(Color::WHITE),
+                                        ));
+                                    }
+                                });
                             });
 
                             spawn_section(left, "CONNECTIONS", |sec| {
@@ -613,10 +562,10 @@ fn spawn_panel_ui(
                                 ));
                             });
                         });
-                });
+                        });
         })
-        .id()
 }
+
 
 fn spawn_deposit_panel(
     commands: &mut Commands,
@@ -674,7 +623,7 @@ fn spawn_deposit_panel(
                 overflow: Overflow::clip(),
                 ..default()
             },
-            BackgroundColor(BG_MODAL),
+            BackgroundColor(BG_WINDOW),
             Outline {
                 width: Val::Px(1.0),
                 offset: Val::ZERO,
@@ -1138,9 +1087,15 @@ pub fn update_panel_power(
     power_query: Query<Option<&PowerConsumer>>,
     mut power_text: Query<&mut Text, With<PowerStatusText>>,
 ) {
-    let Some(inspected) = panel.inspected else { return };
-    let Ok(power) = power_query.get(inspected) else { return };
-    let Ok(mut pt) = power_text.single_mut() else { return };
+    let Some(inspected) = panel.inspected else {
+        return;
+    };
+    let Ok(power) = power_query.get(inspected) else {
+        return;
+    };
+    let Ok(mut pt) = power_text.single_mut() else {
+        return;
+    };
 
     let msg = match power {
         Some(pc) if pc.satisfied => format!("Power: OK ({:.0} kW)", pc.draw),
@@ -1157,14 +1112,13 @@ pub fn building_inspect_click(
     mut panel: ResMut<BuildingPanel>,
     build_mode: Res<BuildMode>,
     deconstruct: Res<DeconstructMode>,
-    keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
-    bindings: Res<KeyBindings>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform)>,
     cfg: Res<MapConfig>,
+    player_pos: Res<PlayerWorldPos>,
     spatial: Res<SpatialRegistry>,
-    building_query: Query<&Building>,
+    building_query: Query<(&Building, Option<&OccupiedTiles>)>,
     deposit_query: Query<(Entity, &ResourceDeposit, &TilePosition)>,
     resource_registry: Res<ResourceRegistry>,
     reg: Res<BuildingRegistry>,
@@ -1176,7 +1130,7 @@ pub fn building_inspect_click(
     if build_mode.0.is_some() || deconstruct.0 {
         return;
     }
-    if !bindings.just_pressed("place", &keys, &buttons) {
+    if !buttons.just_pressed(MouseButton::Left) {
         return;
     }
 
@@ -1195,34 +1149,34 @@ pub fn building_inspect_click(
     let tile_x = ((world_pos.x + tile_size / 2.0) / tile_size).floor() as i32;
     let tile_y = ((world_pos.y + tile_size / 2.0) / tile_size).floor() as i32;
 
-    // Check deposits first (they are NOT in SpatialRegistry)
-    if let Some((deposit_entity, deposit, _)) = deposit_query
-        .iter()
-        .find(|(_, _, pos)| pos.x == tile_x && pos.y == tile_y)
-    {
-        if panel.inspected == Some(deposit_entity) {
+    let interact_range_sq = (3.0 * cfg.tile_size).powi(2);
+
+    // Check buildings first (they occupy tiles in SpatialRegistry)
+    if let Some(entity) = spatial.at(tile_x, tile_y) {
+        if panel.inspected == Some(entity) {
             close_panel(commands, panel);
             return;
         }
-        spawn_deposit_panel(
-            &mut commands,
-            &mut *panel,
-            deposit_entity,
-            deposit,
-            &resource_registry,
-        );
-        return;
-    }
 
-    let Some(entity) = spatial.at(tile_x, tile_y) else {
-        return;
-    };
-    if panel.inspected == Some(entity) {
-        close_panel(commands, panel);
-        return;
-    }
+        let Ok((building, occupied)) = building_query.get(entity) else {
+            return;
+        };
 
-    if let Ok(building) = building_query.get(entity) {
+        // Check proximity using footprint
+        let footprint: Vec<(i32, i32)> = occupied
+            .map(|o| o.0.clone())
+            .unwrap_or_else(|| vec![(tile_x, tile_y)]);
+        let in_proximity = footprint.iter().any(|(tx, ty)| {
+            let wx = *tx as f32 * tile_size + tile_size / 2.0;
+            let wy = *ty as f32 * tile_size + tile_size / 2.0;
+            let dx = player_pos.0.x - wx;
+            let dy = player_pos.0.y - wy;
+            dx * dx + dy * dy <= interact_range_sq
+        });
+        if !in_proximity {
+            return;
+        }
+
         let farm_crop_types = if building.kind == "farm" {
             vec!["wheat".to_string(), "wood".to_string()]
         } else {
@@ -1237,6 +1191,35 @@ pub fn building_inspect_click(
             &resource_registry,
             &reg,
             farm_crop_types,
+        );
+        return;
+    }
+
+    // Fallback: check deposits (they are NOT in SpatialRegistry)
+    if let Some((deposit_entity, deposit, pos)) = deposit_query
+        .iter()
+        .find(|(_, _, pos)| pos.x == tile_x && pos.y == tile_y)
+    {
+        if panel.inspected == Some(deposit_entity) {
+            close_panel(commands, panel);
+            return;
+        }
+
+        // Check proximity (deposit is single tile)
+        let wx = pos.x as f32 * tile_size + tile_size / 2.0;
+        let wy = pos.y as f32 * tile_size + tile_size / 2.0;
+        let dx = player_pos.0.x - wx;
+        let dy = player_pos.0.y - wy;
+        if dx * dx + dy * dy > interact_range_sq {
+            return;
+        }
+
+        spawn_deposit_panel(
+            &mut commands,
+            &mut *panel,
+            deposit_entity,
+            deposit,
+            &resource_registry,
         );
     }
 }
@@ -1801,7 +1784,7 @@ pub fn farm_recruit_system(
     farm_query: Query<&Farm>,
     farm_tf_query: Query<&Transform, With<Farm>>,
     unit_cfg: Res<UnitConfig>,
-    mut hq_inv_query: Query<&mut Inventory, With<HQ>>,
+    mut player_inv_query: Query<&mut Inventory, With<Player>>,
     cfg: Res<MapConfig>,
     mut toast_queue: ResMut<ToastQueue>,
 ) {
@@ -1819,21 +1802,18 @@ pub fn farm_recruit_system(
         let Some(def) = unit_cfg.get("cultivator") else {
             continue;
         };
-        let cost_ore = def
-            .cost
-            .iter()
-            .find(|c| c.resource.0 == "ore")
-            .map(|c| c.amount)
-            .unwrap_or(8);
-        let mut hq_inv = match hq_inv_query.single_mut() {
+        let mut player_inv = match player_inv_query.single_mut() {
             Ok(inv) => inv,
             Err(_) => continue,
         };
-        if hq_inv.get(&ResourceId("ore".to_string())) < cost_ore {
-            toast_queue.0.push("Not enough ore".to_string());
+        let can_afford = def.cost.iter().all(|c| player_inv.get(&c.resource) >= c.amount);
+        if !can_afford {
+            toast_queue.0.push("Not enough resources".to_string());
             continue;
         }
-        hq_inv.remove(&ResourceId("ore".to_string()), cost_ore);
+        for c in &def.cost {
+            player_inv.remove(&c.resource, c.amount);
+        }
 
         let tile_size = cfg.tile_size;
         let spawn_pos = if let Ok(tf) = farm_tf_query.get(inspected) {
@@ -1886,6 +1866,55 @@ pub fn update_farm_cultivator_count(
 ) {
     if let Ok(mut ct) = count_text.single_mut() {
         ct.0 = format!("Cultivators:  {}", cultivator_query.iter().count());
+    }
+}
+
+// ── Manual resource transfer (T = take from building, P = put to building) ──
+
+pub fn resource_transfer(
+    keys: Res<ButtonInput<KeyCode>>,
+    panel: Res<BuildingPanel>,
+    mut building_inv_query: Query<&mut Inventory, Without<Player>>,
+    mut player_inv_query: Query<&mut Inventory, With<Player>>,
+    mut toast_queue: ResMut<ToastQueue>,
+) {
+    let Some(inspected) = panel.inspected else {
+        return;
+    };
+    let Ok(mut player_inv) = player_inv_query.single_mut() else {
+        return;
+    };
+
+    if keys.just_pressed(KeyCode::KeyT) {
+        // Take 1 unit of first resource from building → player
+        if let Ok(mut build_inv) = building_inv_query.get_mut(inspected) {
+            let resource = build_inv.resources.iter().find(|&(_, amt)| *amt > 0).map(|(r, _)| r.clone());
+            if let Some(rid) = resource {
+                build_inv.remove(&rid, 1);
+                player_inv.add(&rid, 1);
+                toast_queue.0.push(format!("Pris 1 {}", rid.display_name()));
+            } else {
+                toast_queue.0.push("Rien à prendre".to_string());
+            }
+        }
+    }
+
+    if keys.just_pressed(KeyCode::KeyP) {
+        // Put 1 unit of first resource from player → building
+        if let Ok(mut build_inv) = building_inv_query.get_mut(inspected) {
+            let resource = player_inv.resources.iter().find(|&(_, amt)| *amt > 0).map(|(r, _)| r.clone());
+            if let Some(rid) = resource {
+                if build_inv.capacity > 0 && build_inv.is_full() {
+                    toast_queue.0.push("Bâtiment plein".to_string());
+                    return;
+                }
+                player_inv.remove(&rid, 1);
+                build_inv.add(&rid, 1);
+                toast_queue.0.push(format!("Déposé 1 {}", rid.display_name()));
+            } else {
+                toast_queue.0.push("Rien à déposer".to_string());
+            }
+        }
     }
 }
 

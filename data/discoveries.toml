@@ -1,6 +1,23 @@
 # NOTE: building field uses lowercase TOML key (matching building.kind)
 # Casing bug was: used "Furnace" but code expects "furnace"
 
+[starter_recipes]
+recipes = [
+    "mine_iron_ore",
+    "mine_copper_ore",
+    "mine_coal",
+    "mine_stone",
+    "mine_sand",
+    "mine_sulfur",
+    "pump_crude_oil",
+    "iron_plate",
+    "copper_plate",
+    "gear",
+    "circuit",
+    "copper_wire",
+    "ammo_craft",
+]
+
 [[discovery]]
 building = "furnace"
 threshold = 1

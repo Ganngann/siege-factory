@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::economy::components::{HQ, PowerConsumer, TurretCombat};
+use crate::economy::components::{Player, PowerConsumer, TurretCombat, UnbuiltBuilding};
 use crate::enemy::components::{Enemy, Health};
 use crate::enemy::registry::EnemyRegistry;
 use crate::events::{DespawnEnemy, SpawnProjectileEvent};
@@ -22,40 +22,42 @@ pub fn find_closest_enemy(pos: Vec3, enemies: &[(Entity, Vec3)], range_sq: f32) 
     target
 }
 
-pub fn enemies_damage_hq(
+pub fn enemies_damage_player(
     enemies: Query<(Entity, &Enemy, &TilePosition)>,
-    mut hq: Query<(&mut Health, &TilePosition), With<HQ>>,
+    mut player_query: Query<(&mut Health, &TilePosition), With<Player>>,
     enemies_registry: Res<EnemyRegistry>,
     mut commands: Commands,
 ) {
-    let (mut hq_health, hq_pos) = match hq.single_mut() {
-        Ok(h) => h,
-        Err(_) => return,
+    let Ok((mut player_health, player_pos)) = player_query.single_mut() else {
+        return;
     };
 
     for (entity, enemy, pos) in enemies.iter() {
-        if pos.x == hq_pos.x && pos.y == hq_pos.y {
+        if pos.x == player_pos.x && pos.y == player_pos.y {
             let damage = enemies_registry
                 .get(&enemy.kind)
                 .map(|d| d.damage)
                 .unwrap_or(10);
             commands.trigger(DespawnEnemy(entity));
-            hq_health.current = hq_health.current.saturating_sub(damage);
+            player_health.current = player_health.current.saturating_sub(damage);
         }
     }
-
-    // HQ is indestructible — no GameOver trigger
 }
 
 pub fn turret_shoot(
     mut commands: Commands,
-    mut turrets: Query<(&Transform, &mut TurretCombat, Option<&PowerConsumer>)>,
+    mut turrets: Query<
+        (&Transform, &mut TurretCombat, Option<&PowerConsumer>),
+        Without<UnbuiltBuilding>,
+    >,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     time: Res<Time>,
 ) {
     for (turret_pos, mut combat, power) in turrets.iter_mut() {
         if let Some(pc) = power {
-            if !pc.satisfied { continue; }
+            if !pc.satisfied {
+                continue;
+            }
         }
         combat.timer += time.delta_secs();
         if combat.timer < combat.fire_interval {

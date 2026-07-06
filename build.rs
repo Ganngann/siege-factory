@@ -13,6 +13,7 @@ fn main() {
     process_dir(&src.join("buildings"), &out);
     process_dir(&src.join("units"), &out);
     process_dir(&src.join("items"), &out);
+    process_dir(&src.join("enemies"), &out);
 
     generate_manifest(&out);
 }

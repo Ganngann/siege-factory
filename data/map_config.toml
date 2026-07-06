@@ -2,6 +2,7 @@
 tile_size = 32.0
 seed = 42
 chunk_size = 32
+pathfinding_max_nodes = 50000
 
 [deposits]
 min_amount = 50
@@ -15,7 +16,9 @@ iron_ore = 50
 copper_ore = 35
 coal = 15
 
-[hq]
-start_ore = 20000
+[player]
 hp = 100
+speed = 250.0
+builder_speed = 300.0
+builder_reach = 8.0
 position = { x = 0, y = 0 }

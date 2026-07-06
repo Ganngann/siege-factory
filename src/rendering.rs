@@ -3,12 +3,13 @@ use crate::core::game_state::GameState;
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    BuildMode, Building, Direction, HasHpBar, HpBarChild, PeacefulMode, Unit,
+    BuildMode, Building, Direction, HasHpBar, HpBarChild, PeacefulMode, UnbuiltBuilding, Unit,
 };
-use crate::economy::resource::ResourceId;
+use crate::economy::resource::{ResourceId, ResourceRegistry};
 use crate::economy::unit_config::UnitConfig;
 use crate::enemy::components::{Enemy, GameOverUi, Health, WaveCounterText, WaveState};
 use crate::enemy::registry::EnemyRegistry;
+
 use crate::events::SpawnProjectileEvent;
 use crate::map::components::HoveredTile;
 use crate::map::config::MapConfig;
@@ -112,10 +113,17 @@ impl TextureCache {
     }
 }
 
-fn setup_texture_cache(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
-    let building_stems = all_texture_stems();
-    let item_stems = all_item_stems();
-    let total = building_stems.len() + item_stems.len();
+fn setup_texture_cache(
+    mut commands: Commands,
+    mut images: ResMut<Assets<Image>>,
+    building_registry: Res<BuildingRegistry>,
+    resource_registry: Res<ResourceRegistry>,
+    enemy_registry: Res<EnemyRegistry>,
+) {
+    let building_stems = collect_building_stems(&building_registry);
+    let item_stems = collect_item_stems(&resource_registry);
+    let enemy_stems = collect_enemy_stems(&enemy_registry);
+    let total = building_stems.len() + item_stems.len() + enemy_stems.len();
     let mut base = HashMap::with_capacity(total);
     let mut owner = HashMap::with_capacity(total);
     let mut level = HashMap::with_capacity(total);
@@ -131,6 +139,14 @@ fn setup_texture_cache(mut commands: Commands, mut images: ResMut<Assets<Image>>
     }
 
     for stem in &item_stems {
+        let s = stem.as_str();
+        base.insert(
+            stem.clone(),
+            load_png(&mut images, s, "base").unwrap_or_default(),
+        );
+    }
+
+    for stem in &enemy_stems {
         let s = stem.as_str();
         base.insert(
             stem.clone(),
@@ -160,50 +176,24 @@ fn load_png(images: &mut Assets<Image>, stem: &str, layer: &str) -> Option<Handl
     }
 }
 
-pub fn all_texture_stems() -> Vec<String> {
-    vec![
-        "belt_east",
-        "belt_north",
-        "belt_turn_en",
-        "miner_east",
-        "miner_east_tall",
-        "miner_east_2x2",
-        "miner_east_3x2",
-        "miner_east_3x3",
-        "assembler_east",
-        "turret_east",
-        "storage",
-        "furnace",
-        "splitter_east",
-        "sorter_east",
-        "wall_h",
+fn collect_building_stems(registry: &BuildingRegistry) -> Vec<String> {
+    let extra = [
+        "belt_north", "belt_turn_en",
+        "miner_east_tall", "miner_east_2x2", "miner_east_3x2", "miner_east_3x3",
         "wall_v",
-        "hq_east",
-        "soldier",
-        "worker",
-    ]
-    .into_iter()
-    .map(String::from)
-    .collect()
+        "soldier", "worker", "cultivator", "player", "builder",
+    ];
+    let mut stems: Vec<String> = registry.buildings.iter().map(|b| b.texture_stem.clone()).collect();
+    stems.extend(extra.iter().map(|&s| s.to_string()));
+    stems
 }
 
-pub fn all_item_stems() -> Vec<String> {
-    vec![
-        "ore",
-        "iron_ore",
-        "copper_ore",
-        "coal",
-        "iron_plate",
-        "copper_plate",
-        "steel",
-        "gear",
-        "circuit",
-        "ammo",
-        "energy",
-    ]
-    .into_iter()
-    .map(String::from)
-    .collect()
+fn collect_item_stems(registry: &ResourceRegistry) -> Vec<String> {
+    registry.resources.keys().cloned().collect()
+}
+
+fn collect_enemy_stems(registry: &EnemyRegistry) -> Vec<String> {
+    registry.enemies.keys().cloned().collect()
 }
 
 // ── RenderPlugin ──
@@ -438,7 +428,14 @@ fn attach_unit_visuals(
 
 fn attach_building_visuals(
     mut commands: Commands,
-    buildings: Query<(Entity, &Building), (Without<Sprite>, Without<BeltSlots>)>,
+    buildings: Query<
+        (Entity, &Building),
+        (Without<Sprite>, Without<BeltSlots>, Without<UnbuiltBuilding>),
+    >,
+    unbuilt: Query<
+        (Entity, &Building),
+        (With<UnbuiltBuilding>, Without<Sprite>, Without<BeltSlots>),
+    >,
     belts: Query<(Entity, &Building, &BeltSlots), Without<Sprite>>,
     cfg: Res<MapConfig>,
     textures: Res<TextureCache>,
@@ -482,6 +479,23 @@ fn attach_building_visuals(
             }
         });
     }
+
+    for (entity, building) in unbuilt.iter() {
+        let Some(def) = registry.get(&building.kind) else {
+            continue;
+        };
+        let tw = def.tile_size.0 as f32;
+        let th = def.tile_size.1 as f32;
+        let size = Vec2::new(tw * cfg.tile_size, th * cfg.tile_size);
+        let stem = &def.texture_stem;
+        commands.entity(entity).insert((Sprite {
+            image: textures.base(stem),
+            custom_size: Some(size),
+            color: Color::srgba(1.0, 0.3, 0.3, 0.5),
+            ..default()
+        },));
+    }
+
     for (entity, building, _slots) in belts.iter() {
         let Some(def) = registry.get(&building.kind) else {
             continue;
@@ -500,19 +514,23 @@ fn attach_building_visuals(
 
 fn attach_enemy_visuals(
     mut commands: Commands,
-    enemies: Query<(Entity, &Enemy), Without<Mesh2d>>,
-    shapes: Res<ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    enemies_registry: Res<EnemyRegistry>,
+    enemies: Query<(Entity, &Enemy), Without<Sprite>>,
+    textures: Res<TextureCache>,
 ) {
     for (entity, enemy) in enemies.iter() {
-        let color = enemies_registry
-            .get(&enemy.kind)
-            .map(|d| d.color)
-            .unwrap_or(Color::srgb(0.9, 0.2, 0.2));
+        let stem = &enemy.kind;
+        let tex = textures.base(stem);
+        let size = match stem as &str {
+            "boss" => 48.0,
+            "tank" => 36.0,
+            _ => 28.0,
+        };
         commands.entity(entity).insert((
-            Mesh2d(shapes.circle.clone()),
-            MeshMaterial2d(materials.add(color)),
+            Sprite {
+                image: tex,
+                custom_size: Some(Vec2::new(size, size)),
+                ..default()
+            },
         ));
     }
 }

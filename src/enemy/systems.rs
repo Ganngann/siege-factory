@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::toast::ToastQueue;
-use crate::economy::components::{HQ, PeacefulMode};
+use crate::economy::components::{PeacefulMode, Player};
 use crate::enemy::components::{Enemy, Health, LastWave, WaveState};
 use crate::enemy::registry::EnemyRegistry;
 use crate::enemy::wave_config::WaveConfig;
@@ -32,7 +32,7 @@ pub fn spawn_enemies(
     mut commands: Commands,
     mut wave: ResMut<WaveState>,
     time: Res<Time>,
-    hq: Query<&TilePosition, With<HQ>>,
+    player_query: Query<&TilePosition, With<Player>>,
     existing: Query<Entity, With<Enemy>>,
     enemies_registry: Res<EnemyRegistry>,
     cfg: Res<WaveConfig>,
@@ -59,7 +59,7 @@ pub fn spawn_enemies(
     }
     wave.spawn_timer = (cfg.spawn_interval_sec / wave.wave as f32).max(cfg.spawn_timer_min);
 
-    let hq_pos = match hq.single() {
+    let player_pos = match player_query.single() {
         Ok(p) => p,
         Err(_) => return,
     };
@@ -79,8 +79,8 @@ pub fn spawn_enemies(
     let mut rng = rand::thread_rng();
     let angle = rng.gen_range(0.0..std::f32::consts::TAU);
     let spawn_dist = 25.0;
-    let sx = (hq_pos.x as f32 + angle.cos() * spawn_dist).round() as i32;
-    let sy = (hq_pos.y as f32 + angle.sin() * spawn_dist).round() as i32;
+    let sx = (player_pos.x as f32 + angle.cos() * spawn_dist).round() as i32;
+    let sy = (player_pos.y as f32 + angle.sin() * spawn_dist).round() as i32;
 
     let enemy_hp = def.hp + (wave.wave - 1) * cfg.hp_per_wave;
 
@@ -118,14 +118,15 @@ pub fn cleanup_game_entities(
 pub fn reset_wave(
     mut commands: Commands,
     mut wave: ResMut<WaveState>,
-    hq: Query<Entity, With<HQ>>,
+    player_query: Query<Entity, With<Player>>,
     cfg: Res<MapConfig>,
+    wave_cfg: Res<WaveConfig>,
 ) {
-    *wave = WaveState::default();
-    if let Ok(entity) = hq.single() {
+    *wave = WaveState::new(wave_cfg.first_wave_delay);
+    if let Ok(entity) = player_query.single() {
         commands.entity(entity).insert(Health {
-            current: cfg.hq_hp,
-            max: cfg.hq_hp,
+            current: cfg.player_hp,
+            max: cfg.player_hp,
         });
     }
 }

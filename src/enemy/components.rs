@@ -22,21 +22,21 @@ pub struct WaveState {
 }
 
 impl WaveState {
-    pub fn total_remaining(&self) -> u32 {
-        self.spawn_queue.iter().map(|e| e.count).sum()
-    }
-}
-
-impl Default for WaveState {
-    fn default() -> Self {
+    pub fn new(first_delay: f32) -> Self {
         Self {
-            timer: 3.0,
+            timer: first_delay,
             wave: 1,
             spawn_timer: 0.0,
             spawn_queue: Vec::new(),
         }
     }
+
+    pub fn total_remaining(&self) -> u32 {
+        self.spawn_queue.iter().map(|e| e.count).sum()
+    }
 }
+
+// WaveState uses WaveConfig::first_wave_delay for its initial timer,
 
 #[derive(Component)]
 pub struct WaveCounterText;

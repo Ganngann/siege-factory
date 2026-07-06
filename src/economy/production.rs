@@ -38,6 +38,14 @@ pub fn assembler_tick(
             continue;
         }
 
+        // Don't produce if inventory is full (capacity > 0)
+        if inventory.capacity > 0 {
+            let total_output: u32 = recipe.output.iter().map(|(_, a)| a).sum();
+            if inventory.total() + total_output > inventory.capacity {
+                continue;
+            }
+        }
+
         assembler.production_timer += time.delta_secs();
         if assembler.production_timer >= recipe.time_sec {
             for (req_resource, req_amount) in &recipe.input {

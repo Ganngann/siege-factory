@@ -1,4 +1,5 @@
 use crate::core::game_state::GameState;
+use crate::enemy::wave_config::WaveConfig;
 use crate::enemy::{Enemy as EnemyComponent, Health};
 use crate::events::DespawnEnemy;
 use bevy::prelude::*;
@@ -24,10 +25,11 @@ impl Plugin for CombatPlugin {
 fn move_and_hit_projectiles(
     time: Res<Time>,
     mut commands: Commands,
+    wave_cfg: Res<WaveConfig>,
     mut projectiles: Query<(Entity, &mut Transform, &Projectile), Without<EnemyComponent>>,
     mut targets: Query<(&mut Health, &Transform), (With<EnemyComponent>, Without<Projectile>)>,
 ) {
-    let hit_dist = 10.0;
+    let hit_dist = wave_cfg.projectile_hit_distance;
     let mut to_despawn = Vec::new();
 
     for (proj_entity, mut transform, projectile) in projectiles.iter_mut() {

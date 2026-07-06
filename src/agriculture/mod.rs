@@ -187,14 +187,16 @@ fn cultivator_ai(
                         let idx = first_crop_index.min(first_crop_types.len().saturating_sub(1));
                         first_crop_types[idx].clone()
                     });
+                    let crop_color = get_crop_color(&crop_registry, &resource);
                     commands.spawn((
                         Crop {
                             resource: resource.clone(),
                             timer: 0.0,
                             duration: get_growth_time(&crop_registry, &resource),
+                            color: crop_color,
                         },
                         Sprite {
-                            color: Color::srgb(0.2, 0.6, 0.2),
+                            color: dim_color(crop_color, 0.5),
                             custom_size: Some(Vec2::new(tile_size * 0.6, tile_size * 0.6)),
                             ..default()
                         },
@@ -297,9 +299,9 @@ fn crop_growth(time: Res<Time>, mut crops: Query<&mut Crop>) {
 fn update_crop_visual(mut crops: Query<(&Crop, &mut Sprite)>) {
     for (crop, mut sprite) in crops.iter_mut() {
         let target = if crop.timer >= crop.duration {
-            Color::srgb(0.9, 0.8, 0.2)
+            crop.color
         } else {
-            Color::srgb(0.2, 0.6, 0.2)
+            dim_color(crop.color, 0.5)
         };
         if sprite.color != target {
             sprite.color = target;
@@ -419,4 +421,16 @@ fn get_growth_time(crop_registry: &CropRegistry, resource: &str) -> f32 {
         .get(resource)
         .map(|d| d.growth_time)
         .unwrap_or(15.0)
+}
+
+fn get_crop_color(crop_registry: &CropRegistry, resource: &str) -> Color {
+    crop_registry
+        .get(resource)
+        .map(|d| crate::core::utils::parse_hex_color(&d.color))
+        .unwrap_or(Color::srgb(0.2, 0.6, 0.2))
+}
+
+fn dim_color(c: Color, factor: f32) -> Color {
+    let srgba = c.to_srgba();
+    Color::srgb(srgba.red * factor, srgba.green * factor, srgba.blue * factor)
 }

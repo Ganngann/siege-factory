@@ -6,6 +6,64 @@ use serde::{Deserialize, Serialize};
 pub struct HQ;
 
 #[derive(Component)]
+pub struct Player;
+
+#[derive(Component)]
+pub struct Builder {
+    pub state: BuilderState,
+}
+
+#[derive(Clone)]
+pub enum BuilderState {
+    Idle,
+    MovingToBuilding(Entity),
+    ReturningToPlayer,
+}
+
+#[derive(Component)]
+pub struct UnbuiltBuilding;
+
+// ── Inventory UI components ──
+
+#[derive(Component)]
+pub struct InventoryGrid {
+    pub cols: usize,
+    pub rows: usize,
+    pub owner: Entity,
+}
+
+#[derive(Component)]
+pub struct InventorySlot {
+    pub index: usize,
+}
+
+#[derive(Component)]
+pub struct DraggedItemVisual;
+
+#[derive(Resource, Default)]
+pub struct DragState {
+    pub active: bool,
+    pub source_slot: Option<Entity>,
+    pub source_owner: Option<Entity>,
+    pub resource: Option<crate::economy::resource::ResourceId>,
+    pub amount: u32,
+    pub visual: Option<Entity>,
+}
+
+impl DragState {
+    pub fn reset(&mut self) {
+        self.active = false;
+        self.source_slot = None;
+        self.source_owner = None;
+        self.resource = None;
+        self.amount = 0;
+        self.visual = None;
+    }
+}
+
+// ── End inventory UI components ──
+
+#[derive(Component)]
 pub struct ResourceDeposit {
     pub resource: String,
     pub amount: u32,

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3388ee"/>
+      <stop offset="100%" stop-color="#1a5aaa"/>
+    </linearGradient>
+    <linearGradient id="hatGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd633"/>
+      <stop offset="100%" stop-color="#cc8800"/>
+    </linearGradient>
+  </defs>
+
+  <g id="base">
+    <!-- Shadow -->
+    <ellipse cx="32" cy="52" rx="14" ry="3" fill="#111" opacity="0.3"/>
+
+    <!-- Legs -->
+    <rect x="26" y="40" width="6" height="12" rx="2" fill="#1a5090" stroke="#0d3d6b" stroke-width="1"/>
+    <rect x="36" y="40" width="6" height="12" rx="2" fill="#1a5090" stroke="#0d3d6b" stroke-width="1"/>
+
+    <!-- Boots -->
+    <rect x="24" y="50" width="10" height="4" rx="1.5" fill="#0d3d6b" stroke="#092a4f" stroke-width="0.5"/>
+    <rect x="34" y="50" width="10" height="4" rx="1.5" fill="#0d3d6b" stroke="#092a4f" stroke-width="0.5"/>
+
+    <!-- Torso -->
+    <rect x="24" y="22" width="20" height="20" rx="3" fill="url(#bodyGrad)" stroke="#1a5090" stroke-width="1"/>
+
+    <!-- Chest plate -->
+    <rect x="26" y="26" width="16" height="8" rx="1" fill="#4a9eff" stroke="#2266bb" stroke-width="0.5"/>
+
+    <!-- Tool belt -->
+    <rect x="24" y="38" width="20" height="3" rx="1" fill="#7a5a3a" stroke="#5a3a1a" stroke-width="0.5"/>
+    <rect x="28" y="38" width="3" height="3" rx="0.5" fill="#9a7a5a"/>
+    <rect x="37" y="38" width="3" height="3" rx="0.5" fill="#9a7a5a"/>
+
+    <!-- Arms -->
+    <rect x="15" y="24" width="7" height="16" rx="2" fill="#1a5aaa" stroke="#0d3d6b" stroke-width="1"/>
+    <rect x="46" y="26" width="7" height="14" rx="2" fill="#1a5aaa" stroke="#0d3d6b" stroke-width="1"/>
+
+    <!-- Hands -->
+    <circle cx="18" cy="40" r="3" fill="#d4a574" stroke="#b08050" stroke-width="0.5"/>
+    <circle cx="50" cy="40" r="3" fill="#d4a574" stroke="#b08050" stroke-width="0.5"/>
+
+    <!-- Blueprint tablet in left hand -->
+    <rect x="8" y="32" width="10" height="7" rx="1" fill="#4488cc" stroke="#2266aa" stroke-width="0.5"/>
+    <rect x="10" y="34" width="6" height="2" fill="#88bbee" opacity="0.7"/>
+    <line x1="10" y1="37" x2="14" y2="37" stroke="#88bbee" stroke-width="0.5" opacity="0.7"/>
+
+    <!-- Neck -->
+    <rect x="30" y="16" width="8" height="6" rx="1" fill="#d4a574" stroke="#b08050" stroke-width="0.5"/>
+
+    <!-- Head -->
+    <circle cx="34" cy="13" r="8" fill="#d4a574" stroke="#b08050" stroke-width="1"/>
+
+    <!-- Yellow hard hat -->
+    <path d="M 24 13 Q 24 3 34 3 Q 44 3 44 13" fill="url(#hatGrad)" stroke="#b37800" stroke-width="1"/>
+    <rect x="22" y="12" width="24" height="2" rx="1" fill="#d49400" stroke="#b37800" stroke-width="0.5"/>
+
+    <!-- Hat highlight -->
+    <path d="M 28 7 Q 34 5 40 7" fill="none" stroke="#ffeb66" stroke-width="0.5" opacity="0.6"/>
+
+    <!-- Safety glasses/goggles -->
+    <rect x="29" y="10" width="12" height="4" rx="1.5" fill="#2a4a6a" stroke="#66aaff" stroke-width="0.5" opacity="0.8"/>
+
+    <!-- Direction indicator on hard hat -->
+    <polygon points="34,3 32,0 36,0" fill="#88ccff"/>
+
+    <!-- Shoulder accents -->
+    <circle cx="23" cy="23" r="2" fill="#4a9eff" stroke="#2266bb" stroke-width="0.5"/>
+    <circle cx="48" cy="25" r="2" fill="#4a9eff" stroke="#2266bb" stroke-width="0.5"/>
+  </g>
+
+  <g id="owner_color">
+    <rect x="28" y="28" width="12" height="4" rx="1" fill="white"/>
+  </g>
+
+  <g id="level_color">
+    <rect x="36" y="6" width="4" height="3" rx="0.5" fill="white"/>
+  </g>
+</svg>

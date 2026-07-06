@@ -10,12 +10,12 @@ use crate::core::toast::ToastQueue;
 use crate::core::utils::{config_dir, silent_despawn};
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::components::{
-    Active, Assembler, Building, Direction, Ghost, HQ, HpBarChild, Miner, OccupiedTiles,
-    PanelModal, PeacefulMode, PowerConsumer, ResourceDeposit, Sorter, Splitter, Storage,
-    TurretCombat, Unit,
+    Active, Assembler, Building, Direction, Ghost, HpBarChild, Miner, OccupiedTiles, PanelModal,
+    PeacefulMode, Player, PowerConsumer, ResourceDeposit, Sorter, Splitter, Storage, TurretCombat,
+    UnbuiltBuilding, Unit,
 };
 use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
-use crate::economy::ui::ResourceCountText;
+use crate::economy::ui::InventoryPanel;
 use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveState};
 use crate::map::components::{ChunkMember, TilePosition};
 use crate::map::config::MapConfig;
@@ -214,7 +214,7 @@ fn save_game(
         Option<&Sorter>,
         Option<&Farm>,
         Option<&PowerConsumer>,
-    )>,
+    ), Without<UnbuiltBuilding>>,
     enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
     units: Query<
         (
@@ -425,7 +425,7 @@ fn cleanup_world(
     hp_bars: Query<Entity, With<HpBarChild>>,
     menus: Query<Entity, With<crate::economy::components::MenuBarPanel>>,
     popups: Query<Entity, With<PanelModal>>,
-    ui_texts: Query<Entity, With<ResourceCountText>>,
+    ui_texts: Query<Entity, With<InventoryPanel>>,
     pause_menus: Query<Entity, With<PauseMenuRoot>>,
     projectiles: Query<Entity, With<Projectile>>,
 ) {
@@ -539,7 +539,7 @@ fn spawn_fresh_camera(mut commands: Commands, cfg: Res<MapConfig>, buf: Res<Load
     if buf.data.is_some() {
         return;
     }
-    let (hx, hy) = cfg.hq_position;
+    let (hx, hy) = cfg.player_start_position;
     commands.spawn((
         Camera2d,
         bevy::ui::IsDefaultUiCamera,
@@ -612,11 +612,24 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
         };
 
         let insert_power = |mut e: EntityCommands, draw: f32| {
-            e.insert(PowerConsumer { draw, satisfied: false });
+            e.insert(PowerConsumer {
+                draw,
+                satisfied: false,
+            });
         };
 
         if bs.kind == "hq" {
-            commands.spawn((HQ, building, inv, occupied, tf, tile_pos, Active(true)));
+            commands.spawn((
+                Player,
+                building,
+                inv,
+                tf,
+                tile_pos,
+                Health {
+                    current: cfg.player_hp,
+                    max: cfg.player_hp,
+                },
+            ));
         } else if bs.kind == "miner" {
             let a = bs.assembler.as_ref().unwrap();
             let e = commands.spawn((
@@ -633,7 +646,9 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
                 tile_pos,
                 Active(true),
             ));
-            if let Some(d) = bs.power_draw { insert_power(e, d); }
+            if let Some(d) = bs.power_draw {
+                insert_power(e, d);
+            }
         } else if bs.assembler.is_some() {
             let a = bs.assembler.as_ref().unwrap();
             let e = commands.spawn((
@@ -649,7 +664,9 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
                 tile_pos,
                 Active(true),
             ));
-            if let Some(d) = bs.power_draw { insert_power(e, d); }
+            if let Some(d) = bs.power_draw {
+                insert_power(e, d);
+            }
         } else if bs.farm.is_some() {
             let f = bs.farm.as_ref().unwrap();
             commands.spawn((

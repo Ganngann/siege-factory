@@ -7,6 +7,8 @@ pub mod discovery;
 pub mod inspect;
 pub mod menu;
 pub mod placement;
+pub mod player;
+pub mod window;
 pub mod power;
 pub mod production;
 pub mod recipe;
@@ -28,7 +30,7 @@ use components::{Building, PeacefulMode, UiIsBlocking};
 use menu::{MenuItems, MenuState};
 use resource::ResourceRegistry;
 use spatial::SpatialRegistry;
-use ui::ResourceCountText;
+use ui::InventoryPanel;
 
 pub fn update_ui_blocking(
     mut blocking: ResMut<UiIsBlocking>,
@@ -61,8 +63,9 @@ impl Plugin for EconomyPlugin {
         app.insert_resource(ResourceRegistry::load());
         app.insert_resource(DefaultSettings::load());
         app.insert_resource(recipe::RecipeRegistry::load());
-        app.insert_resource(discovery::DiscoveryRegistry::load());
-        app.insert_resource(discovery::GlobalArchive::default());
+        let discovery_registry = discovery::DiscoveryRegistry::load();
+        app.insert_resource(discovery::GlobalArchive::new(&discovery_registry.starter_recipes));
+        app.insert_resource(discovery_registry);
 
         // Load registries + derive MenuDef in dependency order (avoids double-load)
         let building_registry = building::BuildingRegistry::load();
@@ -81,13 +84,15 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::DeconstructMode>();
         app.init_resource::<components::DeconstructDrag>();
         app.init_resource::<components::BuildingPanel>();
-        app.init_resource::<inspect::PanelDrag>();
+        app.init_resource::<window::WindowDrag>();
         app.init_resource::<PeacefulMode>();
         app.init_resource::<MenuState>();
         app.init_resource::<MenuItems>();
         app.init_resource::<ToastQueue>();
         app.init_resource::<TooltipText>();
         app.init_resource::<UiIsBlocking>();
+        app.init_resource::<player::PlayerWorldPos>();
+        app.init_resource::<components::DragState>();
         app.insert_resource(Time::<Fixed>::from_hz(20.0));
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
@@ -98,7 +103,7 @@ impl Plugin for EconomyPlugin {
         app.add_systems(
             OnEnter(GameState::Playing),
             (
-                setup::setup_hq.run_if(crate::save_load::is_fresh_game),
+                player::setup_player.run_if(crate::save_load::is_fresh_game),
                 build_bar::spawn_menu_bar,
             ),
         );
@@ -110,6 +115,7 @@ impl Plugin for EconomyPlugin {
                 cleanup_buildings,
                 build_bar::cleanup_menu_bar,
                 inspect::cleanup_popup,
+                ui::cleanup_inventory_panel,
             ),
         );
         app.add_systems(
@@ -153,6 +159,26 @@ impl Plugin for EconomyPlugin {
             placement::deconstruct_drag_preview.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(
+            Update,
+            player::player_movement.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            player::camera_follow_player.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            player::builder_work.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            player::finish_construction.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            player::player_mine.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
             FixedUpdate,
             belt::advance_belt_slots.run_if(in_state(GameState::Playing)),
         );
@@ -175,7 +201,27 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
-            ui::resource_count_ui.run_if(in_state(GameState::Playing)),
+            ui::toggle_inventory_panel.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            ui::update_inventory_grids.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            ui::drag_start.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            ui::drag_update.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            ui::drag_end.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            window::close_window_system.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(
             Update,
@@ -239,7 +285,11 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
-            inspect::drag_panel_system.run_if(in_state(GameState::Playing)),
+            inspect::resource_transfer.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            window::drag_window_system.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(
             Update,
@@ -285,7 +335,7 @@ fn cleanup_buildings(
 
 fn cleanup_playing_ui(
     mut commands: Commands,
-    query: Query<Entity, With<ResourceCountText>>,
+    query: Query<Entity, With<InventoryPanel>>,
     camera: Query<Entity, With<Camera2d>>,
     waves: Query<Entity, With<crate::enemy::components::WaveCounterText>>,
     fps: Query<Entity, With<crate::rendering::FpsOverlay>>,

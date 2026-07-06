@@ -51,7 +51,10 @@ impl Plugin for MapPlugin {
             Update,
             update_visible_chunks.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update, recenter_on_hq.run_if(in_state(GameState::Playing)));
+        app.add_systems(
+            Update,
+            recenter_on_player.run_if(in_state(GameState::Playing)),
+        );
     }
 }
 
@@ -65,11 +68,11 @@ fn setup_map(
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<TextureCache>,
 ) {
-    let (hx, hy) = cfg.hq_position;
+    let (px, py) = cfg.player_start_position;
     let chunk_size = CHUNK_SIZE as i32;
     let margin_chunks = 10;
-    let hq_cx = hx.div_euclid(chunk_size);
-    let hq_cy = hy.div_euclid(chunk_size);
+    let player_cx = px.div_euclid(chunk_size);
+    let player_cy = py.div_euclid(chunk_size);
     let existing = HashSet::new();
     spawn_chunks_in_range(
         &mut commands,
@@ -80,15 +83,15 @@ fn setup_map(
         &mut materials,
         &mut meshes,
         &textures,
-        hq_cx - margin_chunks,
-        hq_cx + margin_chunks,
-        hq_cy - margin_chunks,
-        hq_cy + margin_chunks,
+        player_cx - margin_chunks,
+        player_cx + margin_chunks,
+        player_cy - margin_chunks,
+        player_cy + margin_chunks,
         &existing,
     );
 }
 
-fn recenter_on_hq(
+fn recenter_on_player(
     keys: Res<ButtonInput<KeyCode>>,
     mut camera: Query<&mut Transform, With<Camera2d>>,
     cfg: Res<MapConfig>,
@@ -96,10 +99,10 @@ fn recenter_on_hq(
     if !keys.just_pressed(KeyCode::KeyH) {
         return;
     }
-    let (hx, hy) = cfg.hq_position;
+    let (px, py) = cfg.player_start_position;
     if let Ok(mut tf) = camera.single_mut() {
-        tf.translation.x = hx as f32 * cfg.tile_size + cfg.tile_size / 2.0;
-        tf.translation.y = hy as f32 * cfg.tile_size + cfg.tile_size / 2.0;
+        tf.translation.x = px as f32 * cfg.tile_size + cfg.tile_size / 2.0;
+        tf.translation.y = py as f32 * cfg.tile_size + cfg.tile_size / 2.0;
     }
 }
 

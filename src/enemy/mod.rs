@@ -17,9 +17,10 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(WaveState::default());
+        let wave_cfg = WaveConfig::load();
+        app.insert_resource(WaveState::new(wave_cfg.first_wave_delay));
         app.insert_resource(EnemyRegistry::load());
-        app.insert_resource(WaveConfig::load());
+        app.insert_resource(wave_cfg);
         app.insert_resource(LastWave(1));
         app.add_systems(
             OnEnter(GameState::Playing),
@@ -32,7 +33,7 @@ impl Plugin for EnemyPlugin {
                 systems::wave_timer,
                 systems::spawn_enemies,
                 ai::move_enemies,
-                combat::enemies_damage_hq,
+                combat::enemies_damage_player,
                 combat::turret_shoot,
                 systems::wave_announcement,
             )

@@ -51,6 +51,9 @@ pub struct BuildingDef {
     pub inventory_capacity: u32,
     pub hidden: bool,
     pub drag_placement: bool,
+    pub default_recipe: Option<String>,
+    pub default_filter: Option<String>,
+    pub crop_types: Vec<String>,
     pub recipe_categories: Vec<String>,
     pub power_consumption: f32,
     pub power_generation: f32,
@@ -157,6 +160,9 @@ impl BuildingRegistry {
                     .unwrap_or(defaults.inventory_capacity),
                 hidden: entry.hidden,
                 drag_placement: entry.drag_placement,
+                default_recipe: entry.default_recipe.clone(),
+                default_filter: entry.default_filter.clone(),
+                crop_types: entry.crop_types.clone(),
                 recipe_categories,
                 power_consumption: entry.power_consumption,
                 power_generation: entry.power_generation,
@@ -224,6 +230,12 @@ struct BuildingEntry {
     hidden: bool,
     #[serde(default)]
     drag_placement: bool,
+    #[serde(default)]
+    default_recipe: Option<String>,
+    #[serde(default)]
+    default_filter: Option<String>,
+    #[serde(default)]
+    crop_types: Vec<String>,
     #[serde(default)]
     recipe_categories: Vec<String>,
     #[serde(default)]

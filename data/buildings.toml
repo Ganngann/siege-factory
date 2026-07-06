@@ -15,7 +15,7 @@ texture_stem = "hq_east"
 
 [buildings.miner]
 name = "Miner"
-cost = { ore = 10 }
+cost = { iron_ore = 10 }
 hp = 100
 tile_size = { w = 1, h = 1 }
 color = "#993300"
@@ -27,18 +27,19 @@ texture_stem = "miner_east"
 
 [buildings.furnace]
 name = "Furnace"
-cost = { ore = 12 }
+cost = { iron_ore = 12 }
 hp = 80
 tile_size = { w = 1, h = 1 }
 color = "#884422"
 visual = "diamond"
 recipe_categories = ["smelting"]
 production_interval = 3.0
+default_recipe = "iron_plate"
 power_consumption = 8.0
 
 [buildings.assembler]
 name = "Assembler"
-cost = { ore = 15 }
+cost = { iron_ore = 15 }
 hp = 80
 tile_size = { w = 1, h = 1 }
 color = "#4D99CC"
@@ -46,11 +47,12 @@ visual = "diamond"
 recipe_categories = ["crafting"]
 texture_stem = "assembler_east"
 production_interval = 2.0
+default_recipe = "ammo_craft"
 power_consumption = 12.0
 
 [buildings.belt]
 name = "Belt"
-cost = { ore = 3 }
+cost = { iron_ore = 3 }
 hp = 20
 tile_size = { w = 1, h = 1 }
 color = "#808080"
@@ -62,7 +64,7 @@ texture_stem = "belt_east"
 
 [buildings.wall]
 name = "Wall"
-cost = { ore = 5 }
+cost = { iron_ore = 5 }
 hp = 300
 tile_size = { w = 1, h = 1 }
 color = "#4D4D4D"
@@ -72,7 +74,7 @@ texture_stem = "wall_h"
 
 [buildings.turret]
 name = "Turret"
-cost = { ore = 20, ammo = 5 }
+cost = { iron_ore = 20, ammo = 5 }
 hp = 120
 tile_size = { w = 1, h = 1 }
 color = "#E63333"
@@ -83,7 +85,7 @@ texture_stem = "turret_east"
 
 [buildings.storage]
 name = "Storage"
-cost = { ore = 25 }
+cost = { iron_ore = 25 }
 hp = 150
 tile_size = { w = 1, h = 1 }
 color = "#CC9900"
@@ -92,7 +94,7 @@ inventory_capacity = 64
 
 [buildings.splitter]
 name = "Splitter"
-cost = { ore = 8 }
+cost = { iron_ore = 8 }
 hp = 30
 tile_size = { w = 1, h = 1 }
 color = "#AAAA00"
@@ -104,19 +106,20 @@ texture_stem = "splitter_east"
 
 [buildings.sorter]
 name = "Sorter"
-cost = { ore = 10 }
+cost = { iron_ore = 10 }
 hp = 30
 tile_size = { w = 1, h = 1 }
 color = "#66AA66"
 visual = "diamond"
 slots = 2
 speed = 2.0
+default_filter = "iron_ore"
 power_consumption = 4.0
 texture_stem = "sorter_east"
 
 [buildings.burner_generator]
 name = "Burner Generator"
-cost = { ore = 20 }
+cost = { iron_ore = 20 }
 hp = 80
 tile_size = { w = 1, h = 1 }
 color = "#DD6622"
@@ -126,7 +129,7 @@ power_generation = 50.0
 
 [buildings.power_pole]
 name = "Power Pole"
-cost = { ore = 5 }
+cost = { iron_ore = 5 }
 hp = 10
 tile_size = { w = 1, h = 1 }
 color = "#888888"
@@ -135,12 +138,13 @@ power_pole_range = 5.0
 
 [buildings.farm]
 name = "Farm"
-cost = { ore = 15 }
+cost = { iron_ore = 15 }
 hp = 100
 tile_size = { w = 1, h = 1 }
 color = "#5A8C2A"
 visual = "square"
 inventory_capacity = 64
+crop_types = ["wheat", "wood", "rubber"]
 
 [buildings.archive]
 name = "Archive"
@@ -163,6 +167,7 @@ color = "#444455"
 visual = "square"
 recipe_categories = ["pumping"]
 production_interval = 3.0
+default_recipe = "pump_crude_oil"
 power_consumption = 15.0
 
 [buildings.blast_furnace]
@@ -174,6 +179,7 @@ color = "#AA4422"
 visual = "diamond"
 recipe_categories = ["smelting"]
 production_interval = 1.5
+default_recipe = "iron_plate"
 power_consumption = 20.0
 
 [buildings.assembly_crane]
@@ -185,6 +191,7 @@ color = "#3377AA"
 visual = "rectangle"
 recipe_categories = ["crafting"]
 production_interval = 1.0
+default_recipe = "gear"
 power_consumption = 25.0
 
 [buildings.alchemy_lab]
@@ -196,6 +203,7 @@ color = "#664488"
 visual = "diamond"
 recipe_categories = ["refining"]
 production_interval = 3.0
+default_recipe = "petroleum_gas"
 power_consumption = 20.0
 
 [buildings.electronics_lab]
@@ -207,6 +215,7 @@ color = "#33AA88"
 visual = "diamond"
 recipe_categories = ["electronics"]
 production_interval = 3.0
+default_recipe = "advanced_circuit"
 power_consumption = 30.0
 
 [buildings.foundry]
@@ -218,6 +227,7 @@ color = "#888855"
 visual = "square"
 recipe_categories = ["forging"]
 production_interval = 3.0
+default_recipe = "iron_beam"
 power_consumption = 25.0
 
 [buildings.guild_hall]
@@ -229,6 +239,7 @@ color = "#CC8844"
 visual = "square"
 recipe_categories = ["cooking"]
 production_interval = 3.0
+default_recipe = "bread"
 power_consumption = 5.0
 
 [buildings.enchanting_array]
@@ -240,6 +251,7 @@ color = "#DD66CC"
 visual = "diamond"
 recipe_categories = ["enchanting"]
 production_interval = 4.0
+default_recipe = "scroll_of_haste"
 power_consumption = 30.0
 
 # === NEW BUILDINGS (belt-based) ===

@@ -2,7 +2,7 @@ use crate::core::tooltip::TooltipText;
 use crate::core::utils::silent_despawn;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    BackButton, BreadcrumbText, BuildMode, DeconstructMode, HQ, MenuBarPanel, MenuItemButton,
+    BackButton, BreadcrumbText, BuildMode, DeconstructMode, MenuBarPanel, MenuItemButton, Player,
     ScrollButton,
 };
 use crate::economy::menu::{
@@ -566,13 +566,13 @@ fn activate_item(
 pub fn update_menu_bar(
     build_mode: Res<BuildMode>,
     deconstruct: Res<DeconstructMode>,
-    hq_query: Query<&Inventory, With<HQ>>,
+    player_query: Query<&Inventory, With<Player>>,
     registry: Res<BuildingRegistry>,
     unit_cfg: Res<UnitConfig>,
     menu_items: Res<MenuItems>,
     mut button_query: Query<(&MenuItemButton, &mut BackgroundColor, &mut BorderColor)>,
 ) {
-    let hq_inv = hq_query.single().ok();
+    let player_inv = player_query.single().ok();
     let has_build_mode = build_mode.0.is_some();
     let has_deconstruct = deconstruct.0;
 
@@ -584,7 +584,7 @@ pub fn update_menu_bar(
             FlatItemKind::Action(action) => match action {
                 MenuAction::Build(id) => {
                     let is_active = build_mode.0.as_ref() == Some(id);
-                    let affordable = hq_inv
+                    let affordable = player_inv
                         .and_then(|inv| {
                             registry.get(id).map(|def| {
                                 def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount)
@@ -606,7 +606,7 @@ pub fn update_menu_bar(
                     };
                 }
                 MenuAction::Spawn(id) => {
-                    let affordable = hq_inv
+                    let affordable = player_inv
                         .and_then(|inv| {
                             unit_cfg.get(id).map(|def| {
                                 def.cost.iter().all(|c| inv.get(&c.resource) >= c.amount)
