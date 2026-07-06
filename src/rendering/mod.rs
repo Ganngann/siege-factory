@@ -1,8 +1,10 @@
 pub mod cache;
+pub mod config;
 pub mod hud;
 pub mod visuals;
 
 pub use cache::*;
+pub use config::*;
 pub use hud::*;
 pub use visuals::*;
 
@@ -13,6 +15,7 @@ pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
+        app.insert_resource(VisualsConfig::load());
         app.init_resource::<ShapeCache>();
         app.init_resource::<PreviewMaterials>();
         app.add_systems(Startup, setup_texture_cache);

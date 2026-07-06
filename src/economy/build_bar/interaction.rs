@@ -4,7 +4,7 @@ use crate::economy::components::{
     BackButton, BuildMode, DeconstructMode, MenuItemButton, Player, ScrollButton,
 };
 use crate::economy::menu::{
-    FlatItemKind, MenuAction, MenuDef, MenuEntry, MenuItems, MenuState, PAGE_SIZE,
+    FlatItemKind, MenuAction, MenuDef, MenuEntry, MenuItems, MenuState,
 };
 use crate::economy::resource::Inventory;
 use crate::economy::unit_config::UnitConfig;
@@ -184,8 +184,8 @@ pub fn menu_bar_interaction(
 
     for (interaction, scroll) in &scroll_query {
         if *interaction == Interaction::Pressed {
-            let max = if menu_items.total_items > PAGE_SIZE {
-                menu_items.total_items - PAGE_SIZE
+            let max = if menu_items.total_items > menu_def.page_size {
+                menu_items.total_items - menu_def.page_size
             } else {
                 0
             };

@@ -10,6 +10,7 @@ use crate::events::SpawnProjectileEvent;
 use crate::map::components::HoveredTile;
 use crate::map::config::MapConfig;
 use crate::unit::{Soldier, Worker};
+use crate::rendering::config::VisualsConfig;
 use crate::rendering::{ShapeCache, TextureCache};
 use bevy::prelude::*;
 
@@ -21,6 +22,7 @@ pub fn tile_highlight(
     build_mode: Res<BuildMode>,
     hovered: Res<HoveredTile>,
     cfg: Res<MapConfig>,
+    config: Res<VisualsConfig>,
     existing: Query<Entity, With<TileHighlight>>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -38,11 +40,16 @@ pub fn tile_highlight(
     commands.spawn((
         TileHighlight,
         Mesh2d(shapes.square.clone()),
-        MeshMaterial2d(materials.add(Color::srgba(1.0, 1.0, 1.0, 0.15))),
+        MeshMaterial2d(materials.add(Color::srgba(
+            config.tile_highlight.color.to_srgba().red,
+            config.tile_highlight.color.to_srgba().green,
+            config.tile_highlight.color.to_srgba().blue,
+            config.tile_highlight.alpha,
+        ))),
         Transform::from_xyz(
             pos.x as f32 * cfg.tile_size,
             pos.y as f32 * cfg.tile_size,
-            0.5,
+            config.tile_highlight.z,
         ),
     ));
 }
@@ -50,6 +57,7 @@ pub fn tile_highlight(
 pub fn ensure_hp_bars(
     mut commands: Commands,
     entities: Query<(Entity, &Health), (Without<HasHpBar>, Without<HpBarChild>)>,
+    config: Res<VisualsConfig>,
 ) {
     for (entity, _health) in &entities {
         commands
@@ -58,8 +66,8 @@ pub fn ensure_hp_bars(
             .with_children(|parent| {
                 parent.spawn((
                     HpBarChild,
-                    Sprite::from_color(Color::srgb(0.3, 1.0, 0.3), Vec2::new(24.0, 3.0)),
-                    Transform::from_xyz(0.0, 20.0, 10.0),
+                    Sprite::from_color(config.hp_bar.color_high, Vec2::new(config.hp_bar.width, config.hp_bar.height)),
+                    Transform::from_xyz(0.0, config.hp_bar.y_offset, config.hp_bar.z),
                 ));
             });
     }
@@ -68,20 +76,21 @@ pub fn ensure_hp_bars(
 pub fn update_hp_bars(
     health_q: Query<(&Health, &Children)>,
     mut sprite_q: Query<&mut Sprite, With<HpBarChild>>,
+    config: Res<VisualsConfig>,
 ) {
     for (health, children) in health_q.iter() {
         for child in children.iter() {
             if let Ok(mut sprite) = sprite_q.get_mut(child) {
                 let ratio = health.current as f32 / health.max as f32;
                 let color = if ratio > 0.6 {
-                    Color::srgb(0.3, 1.0, 0.3)
+                    config.hp_bar.color_high
                 } else if ratio > 0.3 {
-                    Color::srgb(1.0, 0.8, 0.2)
+                    config.hp_bar.color_mid
                 } else {
-                    Color::srgb(1.0, 0.2, 0.2)
+                    config.hp_bar.color_low
                 };
                 sprite.color = color;
-                sprite.custom_size = Some(Vec2::new(24.0 * ratio, 3.0));
+                sprite.custom_size = Some(Vec2::new(config.hp_bar.width * ratio, config.hp_bar.height));
             }
         }
     }
@@ -91,6 +100,7 @@ pub fn sync_belt_slot_sprites(
     mut commands: Commands,
     textures: Res<TextureCache>,
     cfg: Res<MapConfig>,
+    config: Res<VisualsConfig>,
     mut belt_query: Query<&mut BeltSlots>,
 ) {
     for mut bs in belt_query.iter_mut() {
@@ -122,10 +132,10 @@ pub fn sync_belt_slot_sprites(
                 .spawn((
                     Sprite {
                         image: tex,
-                        custom_size: Some(Vec2::new(20.0, 20.0)),
+                        custom_size: Some(Vec2::new(config.belt_item.width, config.belt_item.height)),
                         ..default()
                     },
-                    Transform::from_translation(Vec3::new(entry.x, entry.y, 2.5)),
+                    Transform::from_translation(Vec3::new(entry.x, entry.y, config.belt_item.z)),
                 ))
                 .id();
             bs.slot_sprites[slot_idx] = Some(entity);
@@ -141,6 +151,7 @@ pub fn sync_belt_slot_sprites(
 pub fn animate_belt_positions(
     time: Res<Time>,
     cfg: Res<MapConfig>,
+    config: Res<VisualsConfig>,
     belt_query: Query<&BeltSlots>,
     mut sprite_query: Query<&mut Transform>,
 ) {
@@ -156,10 +167,10 @@ pub fn animate_belt_positions(
                     let diff = target - current;
                     let step = bs.speed * tile_size * dt;
                     if diff.length() <= step {
-                        transform.translation = Vec3::new(target.x, target.y, 2.5);
+                        transform.translation = Vec3::new(target.x, target.y, config.belt_item.z);
                     } else {
                         let new_pos = current + diff.normalize() * step;
-                        transform.translation = Vec3::new(new_pos.x, new_pos.y, 2.5);
+                        transform.translation = Vec3::new(new_pos.x, new_pos.y, config.belt_item.z);
                     }
                 }
             }
@@ -172,6 +183,7 @@ pub fn attach_unit_visuals(
     units: Query<(Entity, &Unit, Option<&Worker>, Option<&Soldier>), Without<Sprite>>,
     textures: Res<TextureCache>,
     unit_cfg: Res<UnitConfig>,
+    config: Res<VisualsConfig>,
 ) {
     for (entity, _unit, worker, _soldier) in units.iter() {
         let kind = if worker.is_some() {
@@ -184,7 +196,7 @@ pub fn attach_unit_visuals(
             .map(|d| d.texture_stem.as_str())
             .unwrap_or(kind);
         let img = textures.base(stem);
-        let size = Vec2::new(48.0, 48.0);
+        let size = Vec2::new(config.unit.width, config.unit.height);
         commands.entity(entity).insert((
             Sprite {
                 image: img,
@@ -199,7 +211,7 @@ pub fn attach_unit_visuals(
                     Sprite {
                         image: tex,
                         custom_size: Some(size),
-                        color: Color::srgb(0.2, 0.4, 0.8),
+                        color: config.unit.owner_color,
                         ..default()
                     },
                     Transform::default(),
@@ -223,6 +235,7 @@ pub fn attach_building_visuals(
     cfg: Res<MapConfig>,
     textures: Res<TextureCache>,
     registry: Res<BuildingRegistry>,
+    config: Res<VisualsConfig>,
 ) {
     for (entity, building) in buildings.iter() {
         let Some(def) = registry.get(&building.kind) else {
@@ -243,7 +256,7 @@ pub fn attach_building_visuals(
                     Sprite {
                         image: tex,
                         custom_size: Some(size),
-                        color: Color::srgb(0.2, 0.4, 0.8),
+                        color: config.building.owner_color,
                         ..default()
                     },
                     Transform::default(),
@@ -254,7 +267,7 @@ pub fn attach_building_visuals(
                     Sprite {
                         image: tex,
                         custom_size: Some(size),
-                        color: Color::srgb(0.2, 0.8, 0.2),
+                        color: config.building.level_color,
                         ..default()
                     },
                     Transform::default(),
@@ -274,7 +287,7 @@ pub fn attach_building_visuals(
         commands.entity(entity).insert((Sprite {
             image: textures.base(stem),
             custom_size: Some(size),
-            color: Color::srgba(1.0, 0.3, 0.3, 0.5),
+            color: Color::srgba(config.ghost.tint_r, config.ghost.tint_g, config.ghost.tint_b, config.ghost.tint_a),
             ..default()
         },));
     }
@@ -299,14 +312,17 @@ pub fn attach_enemy_visuals(
     mut commands: Commands,
     enemies: Query<(Entity, &Enemy), Without<Sprite>>,
     textures: Res<TextureCache>,
+    config: Res<VisualsConfig>,
 ) {
     for (entity, enemy) in enemies.iter() {
         let stem = &enemy.kind;
         let tex = textures.base(stem);
-        let size = match stem as &str {
-            "boss" => 48.0,
-            "tank" => 36.0,
-            _ => 28.0,
+        let size = if stem == "boss" {
+            config.enemy.boss_size
+        } else if stem == "tank" {
+            config.enemy.tank_size
+        } else {
+            config.enemy.default_size
         };
         commands.entity(entity).insert((
             Sprite {
@@ -323,6 +339,7 @@ pub fn spawn_projectile_visual(
     mut commands: Commands,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    config: Res<VisualsConfig>,
 ) {
     let ev = on.event();
     commands.spawn((
@@ -333,7 +350,7 @@ pub fn spawn_projectile_visual(
         },
         Mesh2d(shapes.circle.clone()),
         MeshMaterial2d(materials.add(ev.color)),
-        Transform::from_translation(ev.origin).with_scale(Vec3::splat(0.3)),
+        Transform::from_translation(ev.origin).with_scale(Vec3::splat(config.projectile.scale)),
     ));
 }
 

@@ -5,10 +5,11 @@ use crate::map::components::{ChunkMember, Decoration, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::rng::{SimpleRng, chunk_hash};
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
+use crate::rendering::config::VisualsConfig;
 use crate::rendering::{ShapeCache, TextureCache};
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::{
-    Assets, Camera, Color, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d,
+    Assets, Camera, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d,
     MeshMaterial2d, Query, Res, ResMut, Sprite, Transform, Vec2, Window, default,
 };
 use bevy::render::mesh::{Indices, PrimitiveTopology};
@@ -84,6 +85,7 @@ pub fn spawn_single_chunk_visuals(
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
     textures: &TextureCache,
+    visuals: &VisualsConfig,
     cx: i32,
     cy: i32,
 ) {
@@ -94,8 +96,8 @@ pub fn spawn_single_chunk_visuals(
     let (mesh_even, mesh_odd) = build_chunk_mesh(cx, cy, tile_size);
     let chunk = chunk_grid.ensure_chunk(cx, cy);
 
-    let mat_even = materials.add(Color::srgb(0.25, 0.35, 0.25));
-    let mat_odd = materials.add(Color::srgb(0.18, 0.28, 0.18));
+    let mat_even = materials.add(visuals.chunk_colors.even);
+    let mat_odd = materials.add(visuals.chunk_colors.odd);
 
     commands.spawn(super::ChunkMarker(cx, cy));
     commands.spawn((
@@ -133,17 +135,17 @@ pub fn spawn_single_chunk_visuals(
                 },
                 Sprite {
                     image: handle.clone(),
-                    custom_size: Some(Vec2::new(tile_size * 0.8, tile_size * 0.8)),
+                    custom_size: Some(Vec2::new(tile_size * visuals.deposit_sprite.scale_ratio, tile_size * visuals.deposit_sprite.scale_ratio)),
                     ..default()
                 },
-                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
+                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, visuals.deposit_sprite.z),
                 TilePosition { x: wx, y: wy },
             ));
         } else {
             let color = res_registry
                 .get_opt(&d.resource)
                 .map(|d| d.color)
-                .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
+                .unwrap_or(visuals.deposit_sprite.fallback_color);
             let dep_color = materials.add(color);
             commands.spawn((
                 ChunkMember(cx, cy),
@@ -153,17 +155,17 @@ pub fn spawn_single_chunk_visuals(
                 },
                 Mesh2d(shapes.circle.clone()),
                 MeshMaterial2d(dep_color),
-                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, 0.5),
+                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, visuals.deposit_sprite.z),
                 TilePosition { x: wx, y: wy },
             ));
         }
     }
 
     let mut rng = SimpleRng::new(chunk_hash);
-    let deco_count = 4 + (rng.next() as usize % 5);
+    let deco_count = cfg.decoration_min_count as usize + (rng.next() as usize % cfg.decoration_count_variance as usize);
     let deco_kinds = [
-        ("tree", Color::srgb(0.15, 0.45, 0.15)),
-        ("rock", Color::srgb(0.4, 0.4, 0.4)),
+        ("tree", visuals.decoration.tree_color),
+        ("rock", visuals.decoration.rock_color),
     ];
     for _ in 0..deco_count {
         let dx = rng.next() % CHUNK_SIZE;
@@ -181,7 +183,7 @@ pub fn spawn_single_chunk_visuals(
         } else {
             shapes.circle.clone()
         };
-        let z = if *kind_name == "tree" { 0.3 } else { 0.2 };
+        let z = if *kind_name == "tree" { visuals.decoration.tree_z } else { visuals.decoration.rock_z };
         let mat = materials.add(*color);
         commands.spawn((
             ChunkMember(cx, cy),
@@ -203,6 +205,7 @@ pub fn spawn_chunks_in_range(
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
     textures: &TextureCache,
+    visuals: &VisualsConfig,
     min_cx: i32,
     max_cx: i32,
     min_cy: i32,
@@ -223,6 +226,7 @@ pub fn spawn_chunks_in_range(
                 materials,
                 meshes,
                 textures,
+                visuals,
                 cx,
                 cy,
             );
@@ -245,6 +249,7 @@ pub fn update_visible_chunks(
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<TextureCache>,
     _peaceful: Res<PeacefulMode>,
+    visuals: Res<VisualsConfig>,
 ) {
     let Ok((cam, cam_transform)) = camera.single() else {
         return;
@@ -286,7 +291,7 @@ pub fn update_visible_chunks(
         spawned.insert((marker.0, marker.1));
     }
 
-    let despawn_margin = 3;
+    let despawn_margin = cfg.despawn_margin;
     let mut deposit_updates: Vec<((i32, i32, u32, u32), u32)> = Vec::new();
     let mut to_despawn: Vec<Entity> = Vec::new();
 
@@ -348,6 +353,7 @@ pub fn update_visible_chunks(
         &mut materials,
         &mut meshes,
         &textures,
+        &visuals,
         min_cx,
         max_cx,
         min_cy,

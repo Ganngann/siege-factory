@@ -82,6 +82,7 @@ pub struct DefaultSettings {
     pub refund_ratio: f32,
     pub repair_cost_ratio: f32,
     pub inventory_capacity: u32,
+    pub default_projectile_speed: f32,
 }
 
 impl DefaultSettings {
@@ -92,6 +93,7 @@ impl DefaultSettings {
             refund_ratio: parsed.defaults.refund_ratio,
             repair_cost_ratio: parsed.defaults.repair_cost_ratio,
             inventory_capacity: parsed.defaults.inventory_capacity,
+            default_projectile_speed: parsed.defaults.default_projectile_speed,
         }
     }
 }
@@ -202,6 +204,8 @@ struct DefaultsEntry {
     refund_ratio: f32,
     repair_cost_ratio: f32,
     inventory_capacity: u32,
+    #[serde(default = "default_projectile_speed")]
+    default_projectile_speed: f32,
 }
 
 #[derive(Deserialize)]

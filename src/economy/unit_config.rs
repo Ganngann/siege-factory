@@ -21,6 +21,10 @@ pub struct UnitDef {
     pub speed: f32,
     pub mine_interval_sec: f32,
     pub carry_capacity: u32,
+    pub spawn_offset_x: f32,
+    pub spawn_offset_y: f32,
+    pub spawn_offset_z: f32,
+    pub projectile_color: Color,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -63,6 +67,10 @@ impl UnitConfig {
                 speed: entry.speed.unwrap_or(0.0),
                 mine_interval_sec: entry.mine_interval_sec.unwrap_or(0.0),
                 carry_capacity: entry.carry_capacity.unwrap_or(5),
+                spawn_offset_x: entry.spawn_offset_x.unwrap_or(0.0),
+                spawn_offset_y: entry.spawn_offset_y.unwrap_or(0.0),
+                spawn_offset_z: entry.spawn_offset_z.unwrap_or(2.5),
+                projectile_color: entry.projectile_color.as_deref().map(parse_hex_color).unwrap_or(Color::srgb(0.3, 1.0, 0.3)),
             };
             units.insert(id, def);
         }
@@ -101,4 +109,12 @@ struct UnitEntry {
     mine_interval_sec: Option<f32>,
     #[serde(default)]
     carry_capacity: Option<u32>,
+    #[serde(default)]
+    spawn_offset_x: Option<f32>,
+    #[serde(default)]
+    spawn_offset_y: Option<f32>,
+    #[serde(default)]
+    spawn_offset_z: Option<f32>,
+    #[serde(default)]
+    projectile_color: Option<String>,
 }

@@ -122,12 +122,12 @@ pub fn builder_work(
 
     let speed = cfg.builder_speed;
     let reach_dist = cfg.builder_reach;
-    let range_sq = (5.0 * cfg.tile_size).powi(2);
+    let range_sq = (cfg.builder_range_tiles * cfg.tile_size).powi(2);
 
     match builder.state.clone() {
         BuilderState::Idle => {
             // Move toward player when idle
-            let offset = Vec3::new(-24.0, -24.0, 0.0);
+            let offset = Vec3::new(cfg.builder_idle_offset_x, cfg.builder_idle_offset_y, 0.0);
             let target = player_tf.translation + offset;
             let d = target - builder_tf.translation;
             let dist = d.length();
@@ -245,7 +245,7 @@ pub fn builder_work(
         }
 
         BuilderState::ReturningToPlayer => {
-            let offset = Vec3::new(-24.0, -24.0, 0.0);
+            let offset = Vec3::new(cfg.builder_idle_offset_x, cfg.builder_idle_offset_y, 0.0);
             let target = player_tf.translation + offset;
             let d = target - builder_tf.translation;
             let dist = d.length();

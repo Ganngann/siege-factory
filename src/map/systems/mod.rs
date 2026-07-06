@@ -71,10 +71,11 @@ fn setup_map(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<crate::rendering::TextureCache>,
+    visuals: Res<crate::rendering::config::VisualsConfig>,
 ) {
     let (px, py) = cfg.player_start_position;
     let chunk_size = CHUNK_SIZE as i32;
-    let margin_chunks = 10;
+    let margin_chunks = cfg.initial_margin;
     let player_cx = px.div_euclid(chunk_size);
     let player_cy = py.div_euclid(chunk_size);
     let existing = std::collections::HashSet::new();
@@ -87,6 +88,7 @@ fn setup_map(
         &mut materials,
         &mut meshes,
         &textures,
+        &visuals,
         player_cx - margin_chunks,
         player_cx + margin_chunks,
         player_cy - margin_chunks,

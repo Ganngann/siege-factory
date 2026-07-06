@@ -8,6 +8,9 @@ hp_per_wave = 5
 max_enemies_base = 2
 max_enemies_cap = 20
 projectile_hit_distance = 10.0
+spawn_distance = 25.0
+enemy_arrival_threshold = 2.0
+enemy_spawn_z = 3.0
 
 [[waves]]
 interval_sec = 60.0

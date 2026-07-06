@@ -34,6 +34,7 @@ pub fn spawn_menu_bar(
         menu_state.scroll,
         &registry,
         &unit_cfg,
+        &menu_def,
     );
 
     build_menu_bar(&mut commands, &menu_items, &textures);
@@ -55,6 +56,7 @@ pub fn refresh_menu_bar(
         menu_state.scroll,
         &registry,
         &unit_cfg,
+        &menu_def,
     );
     if *menu_items == new_items {
         return;

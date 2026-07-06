@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-const TOAST_LIFETIME: f32 = 3.0;
+use crate::rendering::config::VisualsConfig;
 
 #[derive(Component)]
 pub struct ToastMessage {
@@ -15,17 +15,18 @@ pub fn toast_system(
     mut queue: ResMut<ToastQueue>,
     time: Res<Time>,
     mut toasts: Query<(Entity, &mut ToastMessage)>,
+    config: Res<VisualsConfig>,
 ) {
     for msg in queue.0.drain(..) {
         commands.spawn((
-            ToastMessage { timer: TOAST_LIFETIME },
+            ToastMessage { timer: config.toast.lifetime },
             Text::new(msg),
-            TextFont::from_font_size(16.0),
-            TextColor(Color::srgb(1.0, 0.85, 0.3)),
+            TextFont::from_font_size(config.toast.font_size),
+            TextColor(config.toast.color),
             TextLayout::justify(Justify::Center),
             Node {
                 position_type: PositionType::Absolute,
-                bottom: Val::Px(90.0),
+                bottom: Val::Px(config.toast.bottom_px),
                 left: Val::Percent(50.0),
                 justify_content: JustifyContent::Center,
                 ..default()

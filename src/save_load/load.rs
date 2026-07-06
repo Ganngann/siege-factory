@@ -18,6 +18,7 @@ use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::map::systems::spawn_single_chunk_visuals;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
+use crate::rendering::config::VisualsConfig;
 use crate::rendering::{ShapeCache, TextureCache};
 use crate::unit::{Worker, WorkerState};
 
@@ -62,6 +63,7 @@ pub fn load_chunks(
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<TextureCache>,
     mut commands: Commands,
+    visuals: Res<VisualsConfig>,
 ) {
     let data = load_data!(buf);
     chunk_grid.clear();
@@ -92,6 +94,7 @@ pub fn load_chunks(
                 &mut materials,
                 &mut meshes,
                 &textures,
+                &visuals,
                 cx,
                 cy,
             );

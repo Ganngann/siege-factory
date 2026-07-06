@@ -24,6 +24,9 @@ pub struct WaveConfig {
     pub max_enemies_base: u32,
     pub max_enemies_cap: u32,
     pub projectile_hit_distance: f32,
+    pub spawn_distance: f32,
+    pub enemy_arrival_threshold: f32,
+    pub enemy_spawn_z: f32,
     pub waves: Vec<WaveDef>,
 }
 
@@ -54,6 +57,9 @@ impl WaveConfig {
             max_enemies_base: parsed.game.max_enemies_base,
             max_enemies_cap: parsed.game.max_enemies_cap,
             projectile_hit_distance: parsed.game.projectile_hit_distance,
+            spawn_distance: parsed.game.spawn_distance,
+            enemy_arrival_threshold: parsed.game.enemy_arrival_threshold,
+            enemy_spawn_z: parsed.game.enemy_spawn_z,
             waves,
         }
     }
@@ -88,6 +94,15 @@ struct GameEntry {
     max_enemies_cap: u32,
     #[serde(default = "default_hit_distance")]
     projectile_hit_distance: f32,
+    #[serde(default = "default_spawn_distance")]
+    spawn_distance: f32,
+    #[serde(default = "default_enemy_arrival_threshold")]
+    enemy_arrival_threshold: f32,
+    #[serde(default = "default_enemy_spawn_z")]
+    enemy_spawn_z: f32,
 }
 
 fn default_hit_distance() -> f32 { 10.0 }
+fn default_spawn_distance() -> f32 { 25.0 }
+fn default_enemy_arrival_threshold() -> f32 { 2.0 }
+fn default_enemy_spawn_z() -> f32 { 3.0 }

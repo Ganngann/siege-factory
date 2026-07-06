@@ -50,6 +50,7 @@ pub enum FlatItemKind {
 #[derive(Debug, Clone, Resource)]
 pub struct MenuDef {
     pub root: Vec<MenuEntry>,
+    pub page_size: usize,
 }
 
 #[derive(Debug, Default, Resource)]
@@ -77,14 +78,23 @@ pub struct MenuItems {
 }
 
 /// Number of visible slots (keys 2-0 = 9 slots).
-pub const PAGE_SIZE: usize = 9;
 
 // ── TOML types ──
 
 #[derive(Deserialize)]
 struct MenuToml {
+    #[serde(default)]
+    settings: MenuSettings,
     menu: Vec<TomlMenuCategory>,
 }
+
+#[derive(Default, Deserialize)]
+struct MenuSettings {
+    #[serde(default = "default_page_size")]
+    page_size: usize,
+}
+
+fn default_page_size() -> usize { 9 }
 
 #[derive(Deserialize)]
 struct TomlMenuCategory {
@@ -133,6 +143,7 @@ fn resolve_item_id(
 impl MenuDef {
     pub fn load(registry: &BuildingRegistry, unit_cfg: &UnitConfig) -> Self {
         let parsed: MenuToml = load_toml!("../../data/menu.toml", MenuToml);
+        let page_size = parsed.settings.page_size;
 
         let root = parsed
             .menu
@@ -140,7 +151,7 @@ impl MenuDef {
             .filter_map(|entry| resolve_root_entry(entry, registry, unit_cfg))
             .collect();
 
-        Self { root }
+        Self { root, page_size }
     }
 }
 
@@ -234,11 +245,12 @@ pub fn flat_items_at(
     scroll: usize,
     registry: &BuildingRegistry,
     unit_cfg: &UnitConfig,
+    menu_def: &MenuDef,
 ) -> MenuItems {
     let level = items_at(entries, stack);
 
     let mut items = Vec::new();
-    for entry in level.iter().skip(scroll).take(PAGE_SIZE) {
+    for entry in level.iter().skip(scroll).take(menu_def.page_size) {
         match entry {
             MenuEntry::Action { label, action } => {
                 let (cost_str, color, texture_stem) = match action {
@@ -289,7 +301,7 @@ pub fn flat_items_at(
     let total_items = level.len();
     let has_back = !stack.is_empty();
     let can_scroll_left = scroll > 0;
-    let can_scroll_right = (scroll + PAGE_SIZE) < total_items;
+    let can_scroll_right = (scroll + menu_def.page_size) < total_items;
     let breadcrumb = breadcrumb_at(entries, stack);
 
     MenuItems {

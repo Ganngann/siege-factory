@@ -4,6 +4,7 @@ use crate::economy::spatial::SpatialRegistry;
 use crate::enemy::components::Enemy;
 use crate::enemy::registry::EnemyRegistry;
 use crate::map::components::TilePosition;
+use crate::enemy::wave_config::WaveConfig;
 use crate::map::config::MapConfig;
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -60,6 +61,7 @@ pub fn move_enemies(
     spatial: Res<SpatialRegistry>,
     enemies_registry: Res<EnemyRegistry>,
     cfg: Res<MapConfig>,
+    wave_cfg: Res<WaveConfig>,
 ) {
     let tile_size = cfg.tile_size;
 
@@ -96,7 +98,7 @@ pub fn move_enemies(
         let dy = target_wy - transform.translation.y;
         let dist = (dx * dx + dy * dy).sqrt();
 
-        if dist < 2.0 {
+        if dist < wave_cfg.enemy_arrival_threshold {
             pos.x = target.0;
             pos.y = target.1;
             transform.translation.x = target_wx;

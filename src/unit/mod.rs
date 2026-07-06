@@ -58,11 +58,7 @@ fn spawn_unit_by_id(
         None => return false,
     };
     let hp = def.hp;
-    let offset = if def.kind == UNIT_KIND_HARVESTER {
-        Vec3::new(-40.0, 0.0, 2.5)
-    } else {
-        Vec3::new(40.0, 0.0, 2.5)
-    };
+    let offset = Vec3::new(def.spawn_offset_x, def.spawn_offset_y, def.spawn_offset_z);
 
     if def.kind == UNIT_KIND_HARVESTER {
         commands.spawn((
@@ -151,7 +147,7 @@ fn soldier_auto_attack(
                 speed: soldier_def.projectile_speed,
                 damage,
                 origin: soldier_pos.translation,
-                color: Color::srgb(0.3, 1.0, 0.3),
+                color: soldier_def.projectile_color,
             });
         }
     }

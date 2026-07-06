@@ -21,6 +21,14 @@ pub struct MapConfig {
     pub builder_speed: f32,
     pub builder_reach: f32,
     pub pathfinding_max_nodes: usize,
+    pub initial_margin: i32,
+    pub despawn_margin: i32,
+    pub inspect_range_tiles: f32,
+    pub builder_range_tiles: f32,
+    pub builder_idle_offset_x: f32,
+    pub builder_idle_offset_y: f32,
+    pub decoration_min_count: u32,
+    pub decoration_count_variance: u32,
 }
 
 impl MapConfig {
@@ -46,6 +54,14 @@ impl MapConfig {
             builder_speed: parsed.player.builder_speed,
             builder_reach: parsed.player.builder_reach,
             pathfinding_max_nodes: parsed.map.pathfinding_max_nodes as usize,
+            initial_margin: parsed.chunk.initial_margin,
+            despawn_margin: parsed.chunk.despawn_margin,
+            inspect_range_tiles: parsed.player.inspect_range_tiles,
+            builder_range_tiles: parsed.player.builder_range_tiles,
+            builder_idle_offset_x: parsed.player.builder_idle_offset_x,
+            builder_idle_offset_y: parsed.player.builder_idle_offset_y,
+            decoration_min_count: parsed.decoration.min_count,
+            decoration_count_variance: parsed.decoration.count_variance,
         }
     }
 }
@@ -55,6 +71,10 @@ struct MapToml {
     map: MapEntry,
     deposits: DepositsEntry,
     player: PlayerEntry,
+    #[serde(default)]
+    chunk: ChunkEntry,
+    #[serde(default)]
+    decoration: DecorationEntry,
 }
 
 #[derive(Deserialize)]
@@ -89,14 +109,47 @@ struct PlayerEntry {
     #[serde(default = "default_builder_reach")]
     builder_reach: f32,
     position: PosEntry,
+    #[serde(default = "default_inspect_range_tiles")]
+    inspect_range_tiles: f32,
+    #[serde(default = "default_builder_range_tiles")]
+    builder_range_tiles: f32,
+    #[serde(default = "default_builder_idle_offset_x")]
+    builder_idle_offset_x: f32,
+    #[serde(default = "default_builder_idle_offset_y")]
+    builder_idle_offset_y: f32,
 }
 
 fn default_player_speed() -> f32 { 250.0 }
 fn default_builder_speed() -> f32 { 300.0 }
 fn default_builder_reach() -> f32 { 8.0 }
+fn default_inspect_range_tiles() -> f32 { 3.0 }
+fn default_builder_range_tiles() -> f32 { 5.0 }
+fn default_builder_idle_offset_x() -> f32 { -24.0 }
+fn default_builder_idle_offset_y() -> f32 { -24.0 }
 
 #[derive(Deserialize)]
 struct PosEntry {
     x: i32,
     y: i32,
 }
+
+#[derive(Default, Deserialize)]
+struct ChunkEntry {
+    #[serde(default = "default_initial_margin")]
+    initial_margin: i32,
+    #[serde(default = "default_despawn_margin")]
+    despawn_margin: i32,
+}
+
+#[derive(Default, Deserialize)]
+struct DecorationEntry {
+    #[serde(default = "default_decoration_min_count")]
+    min_count: u32,
+    #[serde(default = "default_decoration_count_variance")]
+    count_variance: u32,
+}
+
+fn default_initial_margin() -> i32 { 10 }
+fn default_despawn_margin() -> i32 { 3 }
+fn default_decoration_min_count() -> u32 { 4 }
+fn default_decoration_count_variance() -> u32 { 5 }

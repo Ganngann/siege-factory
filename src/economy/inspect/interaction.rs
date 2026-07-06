@@ -17,8 +17,6 @@ use bevy::prelude::*;
 
 use super::{close_panel, open_panel, spawn_deposit_panel};
 
-const BUILDING_KIND_FARM: &str = "farm";
-
 // ── Click detection ──
 
 pub fn building_inspect_click(
@@ -52,7 +50,7 @@ pub fn building_inspect_click(
         return;
     };
 
-    let interact_range_sq = (3.0 * cfg.tile_size).powi(2);
+    let interact_range_sq = (cfg.inspect_range_tiles * cfg.tile_size).powi(2);
 
     // Check buildings first (they occupy tiles in SpatialRegistry)
     if let Some(entity) = spatial.at(tile_x, tile_y) {
@@ -80,11 +78,7 @@ pub fn building_inspect_click(
             return;
         }
 
-        let farm_crop_types = if building.kind == BUILDING_KIND_FARM {
-            vec!["wheat".to_string(), "wood".to_string()]
-        } else {
-            Vec::new()
-        };
+        let farm_crop_types = reg.get(&building.kind).map(|d| d.crop_types.clone()).unwrap_or_default();
         open_panel(
             commands,
             panel,

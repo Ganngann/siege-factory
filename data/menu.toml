@@ -1,3 +1,6 @@
+[settings]
+page_size = 9
+
 [[menu]]
 label = "Production"
 items = [

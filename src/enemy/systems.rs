@@ -79,7 +79,7 @@ pub fn spawn_enemies(
     use rand::Rng;
     let mut rng = rand::thread_rng();
     let angle = rng.gen_range(0.0..std::f32::consts::TAU);
-    let spawn_dist = 25.0;
+    let spawn_dist = cfg.spawn_distance;
     let sx = (player_pos.x as f32 + angle.cos() * spawn_dist).round() as i32;
     let sy = (player_pos.y as f32 + angle.sin() * spawn_dist).round() as i32;
 
@@ -93,7 +93,7 @@ pub fn spawn_enemies(
         },
         {
             let pos = tile_to_world(sx, sy, tile_size);
-            Transform::from_xyz(pos.x, pos.y, 3.0)
+            Transform::from_xyz(pos.x, pos.y, cfg.enemy_spawn_z)
         },
         TilePosition { x: sx, y: sy },
     ));
