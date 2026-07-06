@@ -8,7 +8,7 @@ use crate::economy::player::PlayerWorldPos;
 use crate::economy::components::{
     Active, ActiveToggleButton, AlertText, Assembler, BuildMode, Building, BuildingPanel,
     BuildingTitleText, CapacityBarFill, CapacityBarText, CloseButton, ConnectionRowText,
-    DeconstructMode, DiscoveredRecipes, DragHandle, FarmCropSelectButton, FarmCropText,
+    DeconstructMode, DiscoveredRecipes, FarmCropSelectButton, FarmCropText,
     FarmCultivatorCountText, FarmRecruitButton, FlowInputText, FlowOutputText, HpBarFill, HpText,
     OccupiedTiles, PanelModal, PanelOverlay, PowerConsumer, PowerStatusText, ProgressBarBg, ProgressBarFill,
     RecipeCategoryLabel, RecipeChangeButton, RecipeNameText, RecipeSelectorItem,
@@ -27,8 +27,8 @@ use crate::map::config::MapConfig;
 use bevy::prelude::*;
 
 use crate::economy::window::{
-    spawn_window, ACCENT, BAR_BG, BG_SECTION, BG_WINDOW, BTN_ACTIVE, BTN_CLOSE, BTN_INACTIVE,
-    HP_GREEN, SEPARATOR, TEXT_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_YELLOW,
+    spawn_window, ACCENT, BAR_BG, BG_SECTION, BTN_ACTIVE, BTN_CLOSE, BTN_INACTIVE,
+    HP_GREEN, TEXT_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_YELLOW,
 };
 
 // ── Open / close panel ──
@@ -611,78 +611,15 @@ fn spawn_deposit_panel(
         ))
         .id();
 
-    let root = commands
-        .spawn((
-            PanelModal,
-            Node {
-                position_type: PositionType::Absolute,
-                left: Val::Px((1280.0 - 400.0) / 2.0),
-                top: Val::Px((720.0 - 200.0) / 2.0),
-                flex_direction: FlexDirection::Column,
-                width: Val::Px(400.0),
-                height: Val::Px(200.0),
-                overflow: Overflow::clip(),
-                ..default()
-            },
-            BackgroundColor(BG_WINDOW),
-            Outline {
-                width: Val::Px(1.0),
-                offset: Val::ZERO,
-                color: Color::srgb(0.30, 0.30, 0.45),
-            },
-            ZIndex(101),
-        ))
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    DragHandle,
-                    Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Px(40.0),
-                        flex_direction: FlexDirection::Row,
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::SpaceBetween,
-                        padding: UiRect::horizontal(Val::Px(14.0)),
-                        border: UiRect::bottom(Val::Px(1.0)),
-                        ..default()
-                    },
-                    BackgroundColor(BG_SECTION),
-                    BorderColor {
-                        top: SEPARATOR,
-                        bottom: SEPARATOR,
-                        left: SEPARATOR,
-                        right: SEPARATOR,
-                    },
-                ))
-                .with_children(|header| {
-                    header.spawn((
-                        BuildingTitleText,
-                        Text::new(format!("Resource Deposit: {}", resource_name)),
-                        TextFont::from_font_size(16.0),
-                        TextColor(TEXT_PRIMARY),
-                    ));
-                    header
-                        .spawn((
-                            CloseButton,
-                            Button,
-                            Node {
-                                width: Val::Px(28.0),
-                                height: Val::Px(28.0),
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-                                ..default()
-                            },
-                            BackgroundColor(BTN_CLOSE),
-                        ))
-                        .with_children(|btn| {
-                            btn.spawn((
-                                Text::new("X"),
-                                TextFont::from_font_size(16.0),
-                                TextColor(Color::WHITE),
-                            ));
-                        });
-                });
-
+    let root = spawn_window(
+        commands,
+        &format!("Resource Deposit: {}", resource_name),
+        400.0,
+        200.0,
+        (1280.0 - 400.0) / 2.0,
+        (720.0 - 200.0) / 2.0,
+        None,
+        |parent| {
             parent
                 .spawn((Node {
                     width: Val::Percent(100.0),
@@ -707,8 +644,9 @@ fn spawn_deposit_panel(
                         TextColor(TEXT_GREEN),
                     ));
                 });
-        })
-        .id();
+        },
+    );
+    commands.entity(root).insert(PanelModal);
 
     commands.entity(overlay).add_child(root);
     panel.overlay = Some(overlay);
@@ -869,9 +807,7 @@ pub fn update_panel_production(
                         .input
                         .iter()
                         .map(|(rid, amt)| {
-                            let name = resource_registry
-                                .get_opt(&rid.0)
-                                .map_or(rid.0.as_str(), |r| &r.name);
+                            let name = resource_registry.display_name(rid);
                             format!("{} x{}", name, amt)
                         })
                         .collect();
@@ -883,9 +819,7 @@ pub fn update_panel_production(
                     .output
                     .iter()
                     .map(|(rid, amt)| {
-                        let name = resource_registry
-                            .get_opt(&rid.0)
-                            .map_or(rid.0.as_str(), |r| &r.name);
+                        let name = resource_registry.display_name(rid);
                         format!("{}  \u{d7}{}", name, amt)
                     })
                     .collect();
@@ -945,9 +879,7 @@ pub fn update_panel_inventory(
             let mut sorted: Vec<_> = inv.resources.iter().collect();
             sorted.sort_by(|a, b| b.1.cmp(a.1));
             for (rid, amount) in sorted.iter().take(5) {
-                let name = resource_registry
-                    .get_opt(&rid.0)
-                    .map_or(rid.0.as_str(), |r| &r.name);
+                let name = resource_registry.display_name(rid);
                 lines.push(format!("{}: {}", name, amount));
             }
             if inv.resources.len() > 5 {
@@ -1526,9 +1458,7 @@ fn spawn_recipe_selector(
                         .input
                         .iter()
                         .map(|(rid, amt)| {
-                            let name = resource_registry
-                                .get_opt(&rid.0)
-                                .map_or(rid.0.as_str(), |r| &r.name);
+                            let name = resource_registry.display_name(rid);
                             format!("{} x{}", name, amt)
                         })
                         .collect::<Vec<_>>()
@@ -1537,9 +1467,7 @@ fn spawn_recipe_selector(
                         .output
                         .iter()
                         .map(|(rid, amt)| {
-                            let name = resource_registry
-                                .get_opt(&rid.0)
-                                .map_or(rid.0.as_str(), |r| &r.name);
+                            let name = resource_registry.display_name(rid);
                             format!("{} x{}", name, amt)
                         })
                         .collect::<Vec<_>>()

@@ -1,5 +1,6 @@
 use crate::core::utils::parse_hex_color;
 use crate::economy::resource::{Cost, ResourceId};
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -64,9 +65,7 @@ pub struct DefaultSettings {
 
 impl DefaultSettings {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/buildings.toml");
-        let parsed: BuildingsToml =
-            toml::from_str(toml_str).expect("failed to parse buildings.toml");
+        let parsed: BuildingsToml = load_toml!("../../data/buildings.toml", BuildingsToml);
         Self {
             can_deconstruct: parsed.defaults.can_deconstruct,
             refund_ratio: parsed.defaults.refund_ratio,
@@ -83,9 +82,7 @@ pub struct BuildingRegistry {
 
 impl BuildingRegistry {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/buildings.toml");
-        let parsed: BuildingsToml =
-            toml::from_str(toml_str).expect("failed to parse buildings.toml");
+        let parsed: BuildingsToml = load_toml!("../../data/buildings.toml", BuildingsToml);
         let defaults = &parsed.defaults;
         let mut buildings = Vec::new();
         for (id, entry) in parsed.buildings {

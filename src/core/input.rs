@@ -1,3 +1,4 @@
+use crate::load_toml;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
@@ -14,8 +15,7 @@ pub struct KeyBindings {
 
 impl KeyBindings {
     pub fn load() -> Self {
-        let raw: BindingsToml = toml::from_str(include_str!("../../data/keybindings.toml"))
-            .expect("failed to parse data/keybindings.toml");
+        let raw: BindingsToml = load_toml!("../../data/keybindings.toml", BindingsToml);
         let mut map = HashMap::new();
         for (action, name) in raw.bindings {
             let binding = parse_input_binding(&name)

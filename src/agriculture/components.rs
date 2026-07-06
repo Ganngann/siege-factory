@@ -1,3 +1,4 @@
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 
@@ -56,12 +57,11 @@ pub struct CropRegistry {
 
 impl CropRegistry {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/crops.toml");
         #[derive(Deserialize)]
         struct CropToml {
             crops: std::collections::HashMap<String, CropDef>,
         }
-        let parsed: CropToml = toml::from_str(toml_str).expect("failed to parse crops.toml");
+        let parsed: CropToml = load_toml!("../../data/crops.toml", CropToml);
         Self {
             crops: parsed.crops,
         }

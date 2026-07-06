@@ -1,4 +1,5 @@
 use crate::economy::resource::ResourceId;
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -19,8 +20,7 @@ pub struct RecipeRegistry {
 
 impl RecipeRegistry {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/recipes.toml");
-        let parsed: RecipesToml = toml::from_str(toml_str).expect("failed to parse recipes.toml");
+        let parsed: RecipesToml = load_toml!("../../data/recipes.toml", RecipesToml);
         let mut recipes = HashMap::new();
         for (id, entry) in parsed.recipes {
             let input = entry

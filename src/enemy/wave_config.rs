@@ -1,3 +1,4 @@
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 
@@ -28,8 +29,7 @@ pub struct WaveConfig {
 
 impl WaveConfig {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/waves.toml");
-        let parsed: WavesToml = toml::from_str(toml_str).expect("failed to parse waves.toml");
+        let parsed: WavesToml = load_toml!("../../data/waves.toml", WavesToml);
         let waves = parsed
             .waves
             .iter()

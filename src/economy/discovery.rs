@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::collections::HashSet;
 
 use crate::core::toast::ToastQueue;
+use crate::load_toml;
 use crate::economy::components::{Building, DiscoveredRecipes, ProductionCounter};
 use crate::economy::resource::ResourceRegistry;
 
@@ -23,9 +24,7 @@ pub struct DiscoveryRegistry {
 
 impl DiscoveryRegistry {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/discoveries.toml");
-        let parsed: DiscoveriesToml =
-            toml::from_str(toml_str).expect("failed to parse discoveries.toml");
+        let parsed: DiscoveriesToml = load_toml!("../../data/discoveries.toml", DiscoveriesToml);
         Self {
             discoveries: parsed
                 .discovery

@@ -1,3 +1,4 @@
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -24,8 +25,7 @@ pub struct MapConfig {
 
 impl MapConfig {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/map_config.toml");
-        let parsed: MapToml = toml::from_str(toml_str).expect("failed to parse map_config.toml");
+        let parsed: MapToml = load_toml!("../../data/map_config.toml", MapToml);
         let mut distribution: Vec<(String, u32)> =
             parsed.deposits.distribution.into_iter().collect();
         distribution.sort_by(|a, b| b.1.cmp(&a.1));

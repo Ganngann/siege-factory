@@ -224,6 +224,29 @@ impl Plugin for RenderPlugin {
     }
 }
 
+fn spawn_hud_node(
+    commands: &mut Commands,
+    text: &str,
+    font_size: f32,
+    color: Color,
+    x: f32,
+    y: f32,
+) -> Entity {
+    commands
+        .spawn((
+            Text::new(text),
+            TextFont::from_font_size(font_size),
+            TextColor(color),
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(x),
+                top: Val::Px(y),
+                ..default()
+            },
+        ))
+        .id()
+}
+
 pub fn wave_counter_ui(
     wave: Res<WaveState>,
     enemies: Query<Entity, With<Enemy>>,
@@ -241,18 +264,21 @@ pub fn wave_counter_ui(
     if let Ok((_, mut text)) = text_query.single_mut() {
         text.0 = msg;
     } else {
-        commands.spawn((
-            WaveCounterText,
-            Text::new(msg),
-            TextFont::from_font_size(16.0),
-            TextColor(Color::srgb(1.0, 0.6, 0.2)),
-            Node {
-                position_type: PositionType::Absolute,
-                top: Val::Px(10.0),
-                right: Val::Px(10.0),
-                ..default()
-            },
-        ));
+        let entity = spawn_hud_node(
+            &mut commands,
+            &msg,
+            16.0,
+            Color::srgb(1.0, 0.6, 0.2),
+            0.0,
+            10.0,
+        );
+        commands.entity(entity).insert(Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(10.0),
+            right: Val::Px(10.0),
+            ..default()
+        });
+        commands.entity(entity).insert(WaveCounterText);
     }
 }
 
@@ -659,17 +685,14 @@ fn fps_overlay(
     if let Ok((_, mut text)) = text_query.single_mut() {
         text.0 = format!("FPS: {}", fps);
     } else {
-        commands.spawn((
-            FpsOverlay,
-            Text::new(format!("FPS: {}", fps)),
-            TextFont::from_font_size(14.0),
-            TextColor(Color::srgb(0.0, 1.0, 0.0)),
-            Node {
-                position_type: PositionType::Absolute,
-                top: Val::Px(10.0),
-                left: Val::Px(10.0),
-                ..default()
-            },
-        ));
+        let entity = spawn_hud_node(
+            &mut commands,
+            &format!("FPS: {}", fps),
+            14.0,
+            Color::srgb(0.0, 1.0, 0.0),
+            10.0,
+            10.0,
+        );
+        commands.entity(entity).insert(FpsOverlay);
     }
 }

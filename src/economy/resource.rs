@@ -1,4 +1,5 @@
 use crate::core::utils::parse_hex_color;
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -47,9 +48,7 @@ pub struct ResourceRegistry {
 
 impl ResourceRegistry {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/resources.toml");
-        let parsed: ResourcesToml =
-            toml::from_str(toml_str).expect("failed to parse resources.toml");
+        let parsed: ResourcesToml = load_toml!("../../data/resources.toml", ResourcesToml);
         let mut resources = HashMap::new();
         for (key, entry) in parsed.resources {
             resources.insert(
@@ -75,6 +74,13 @@ impl ResourceRegistry {
 
     pub fn get_opt(&self, id: &str) -> Option<&ResourceDef> {
         self.resources.get(id)
+    }
+
+    pub fn display_name<'a>(&'a self, id: &'a ResourceId) -> &'a str {
+        match self.resources.get(&id.0) {
+            Some(r) => &r.name,
+            None => &id.0,
+        }
     }
 }
 

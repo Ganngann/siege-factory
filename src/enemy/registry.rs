@@ -1,3 +1,4 @@
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -19,8 +20,7 @@ pub struct EnemyRegistry {
 
 impl EnemyRegistry {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/enemies.toml");
-        let parsed: EnemiesToml = toml::from_str(toml_str).expect("failed to parse enemies.toml");
+        let parsed: EnemiesToml = load_toml!("../../data/enemies.toml", EnemiesToml);
         let mut enemies = HashMap::new();
         for (id, entry) in parsed.enemies {
             let color = entry

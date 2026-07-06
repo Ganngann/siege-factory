@@ -1,4 +1,5 @@
 use crate::economy::building::BuildingRegistry;
+use crate::load_toml;
 use crate::economy::resource::Cost;
 use crate::economy::unit_config::UnitConfig;
 use bevy::prelude::*;
@@ -131,8 +132,7 @@ fn resolve_item_id(
 
 impl MenuDef {
     pub fn load(registry: &BuildingRegistry, unit_cfg: &UnitConfig) -> Self {
-        let toml_str = include_str!("../../data/menu.toml");
-        let parsed: MenuToml = toml::from_str(toml_str).expect("failed to parse menu.toml");
+        let parsed: MenuToml = load_toml!("../../data/menu.toml", MenuToml);
 
         let root = parsed
             .menu

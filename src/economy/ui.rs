@@ -2,10 +2,7 @@ use crate::economy::components::{
     DragState, DraggedItemVisual, InventoryGrid, InventorySlot, Player,
 };
 use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
-use crate::economy::components::{CloseButton, DragHandle};
-use crate::economy::window::{
-    BG_SECTION, BG_WINDOW, BTN_CLOSE, SEPARATOR, TEXT_PRIMARY, WindowRoot,
-};
+use crate::economy::window::{spawn_window, BG_SECTION};
 use bevy::prelude::*;
 use bevy::ui::widget::ImageNode;
 
@@ -40,80 +37,8 @@ pub fn toggle_inventory_panel(
     let w = 280.0;
     let h = rows as f32 * (SLOT_SIZE + SLOT_GAP) + SLOT_GAP + 50.0;
 
-    commands
-        .spawn((
-            WindowRoot,
-            InventoryPanel,
-            Node {
-                position_type: PositionType::Absolute,
-                left: Val::Px(100.0),
-                top: Val::Px(80.0),
-                flex_direction: FlexDirection::Column,
-                width: Val::Px(w),
-                height: Val::Px(h),
-                overflow: Overflow::clip(),
-                ..default()
-            },
-            BackgroundColor(BG_WINDOW),
-            Outline {
-                width: Val::Px(1.0),
-                offset: Val::ZERO,
-                color: Color::srgb(0.30, 0.30, 0.45),
-            },
-            ZIndex(101),
-        ))
-        .with_children(|parent| {
-            // Header
-            parent
-                .spawn((
-                    DragHandle,
-                    Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Px(36.0),
-                        flex_direction: FlexDirection::Row,
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::SpaceBetween,
-                        padding: UiRect::horizontal(Val::Px(12.0)),
-                        border: UiRect::bottom(Val::Px(1.0)),
-                        ..default()
-                    },
-                    BackgroundColor(BG_SECTION),
-                    BorderColor {
-                        top: SEPARATOR,
-                        bottom: SEPARATOR,
-                        left: SEPARATOR,
-                        right: SEPARATOR,
-                    },
-                ))
-                .with_children(|header| {
-                    header.spawn((
-                        Text::new("Inventaire"),
-                        TextFont::from_font_size(16.0),
-                        TextColor(TEXT_PRIMARY),
-                    ));
-                    header
-                        .spawn((
-                            CloseButton,
-                            Button,
-                            Node {
-                                width: Val::Px(26.0),
-                                height: Val::Px(26.0),
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-                                ..default()
-                            },
-                            BackgroundColor(BTN_CLOSE),
-                        ))
-                        .with_children(|btn| {
-                            btn.spawn((
-                                Text::new("X"),
-                                TextFont::from_font_size(14.0),
-                                TextColor(Color::WHITE),
-                            ));
-                        });
-                });
-            // Grid
-            parent.spawn((
+    let panel_root = spawn_window(&mut commands, "Inventaire", w, h, 100.0, 80.0, None, |parent| {
+        parent.spawn((
                 InventoryGrid { cols, rows, owner: player_entity },
                 Node {
                     width: Val::Px(cols as f32 * (SLOT_SIZE + SLOT_GAP) + SLOT_GAP * 2.0),
@@ -152,8 +77,8 @@ pub fn toggle_inventory_panel(
                     ));
                 }
             });
-        },
-    );
+    });
+    commands.entity(panel_root).insert(InventoryPanel);
 }
 
 // ── Update slot visuals from inventory data ──

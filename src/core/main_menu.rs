@@ -1,3 +1,4 @@
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -104,8 +105,7 @@ pub struct MenuRebindPrompt;
 
 impl MainMenuDef {
     pub fn load() -> Self {
-        let raw: MenuToml = toml::from_str(include_str!("../../data/main_menu.toml"))
-            .expect("failed to parse data/main_menu.toml");
+        let raw: MenuToml = load_toml!("../../data/main_menu.toml", MenuToml);
 
         let screens = raw
             .screen

@@ -1,4 +1,5 @@
 use crate::economy::resource::{Cost, ResourceId};
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -42,9 +43,8 @@ fn parse_cost(cost: &HashMap<String, u32>) -> Vec<Cost> {
 
 impl UnitConfig {
     pub fn load() -> Self {
-        let toml_str = include_str!("../../data/units.toml");
         let parsed: HashMap<String, UnitEntry> =
-            toml::from_str(toml_str).expect("failed to parse units.toml");
+            load_toml!("../../data/units.toml", HashMap<String, UnitEntry>);
         let mut units = HashMap::new();
         for (id, entry) in parsed {
             let def = UnitDef {
