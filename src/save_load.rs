@@ -9,10 +9,11 @@ use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
 use crate::core::utils::{config_dir, silent_despawn, tile_to_world};
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
+use crate::economy::building::{BuildingRegistry, attach_power_components};
 use crate::economy::components::{
     Active, Assembler, Building, Direction, Ghost, HpBarChild, Miner, OccupiedTiles, PanelModal,
-    PeacefulMode, Player, PowerConsumer, ResourceDeposit, Sorter, Splitter, Storage, TurretCombat,
-    UnbuiltBuilding, Unit,
+    PeacefulMode, Player, PowerConsumer, PowerPole, PowerProducer, ResourceDeposit, Sorter,
+    Splitter, Storage, TurretCombat, UnbuiltBuilding, Unit,
 };
 use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
 use crate::economy::ui::InventoryPanel;
@@ -89,6 +90,10 @@ pub struct BuildingSave {
     pub sorter: Option<SorterSave>,
     pub farm: Option<FarmSave>,
     pub power_draw: Option<f32>,
+    #[serde(default)]
+    pub power_generation: f32,
+    #[serde(default)]
+    pub power_pole_range: f32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -214,6 +219,8 @@ fn save_game(
         Option<&Sorter>,
         Option<&Farm>,
         Option<&PowerConsumer>,
+        Option<&PowerProducer>,
+        Option<&PowerPole>,
     ), Without<UnbuiltBuilding>>,
     enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
     units: Query<
@@ -289,6 +296,8 @@ fn save_game(
         sorter,
         farm,
         power_consumer,
+        power_producer,
+        power_pole,
     ) in buildings.iter()
     {
         let belt_save = belt.map(|b| {
@@ -348,6 +357,8 @@ fn save_game(
                 crop_types: f.crop_types.clone(),
             }),
             power_draw: power_consumer.map(|pc| pc.draw),
+            power_generation: power_producer.map_or(0.0, |pp| pp.output),
+            power_pole_range: power_pole.map_or(0.0, |pp| pp.range),
         });
     }
 
@@ -577,7 +588,7 @@ fn load_camera(buf: Res<LoadBuffer>, mut commands: Commands) {
     ));
 }
 
-fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>) {
+fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>, registry: Res<BuildingRegistry>) {
     let data = match &buf.data {
         Some(d) => d,
         None => return,
@@ -610,13 +621,6 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
             name: bs.kind.clone(),
         };
 
-        let insert_power = |mut e: EntityCommands, draw: f32| {
-            e.insert(PowerConsumer {
-                draw,
-                satisfied: false,
-            });
-        };
-
         if bs.kind == "hq" {
             commands.spawn((
                 Player,
@@ -631,7 +635,7 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
             ));
         } else if bs.kind == "miner" {
             let a = bs.assembler.as_ref().unwrap();
-            let e = commands.spawn((
+            let mut e = commands.spawn((
                 Miner,
                 Assembler {
                     production_timer: a.production_timer,
@@ -645,12 +649,12 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
                 tile_pos,
                 Active(true),
             ));
-            if let Some(d) = bs.power_draw {
-                insert_power(e, d);
+            if let Some(def) = registry.get(&bs.kind) {
+                attach_power_components(&mut e, def);
             }
         } else if bs.assembler.is_some() {
             let a = bs.assembler.as_ref().unwrap();
-            let e = commands.spawn((
+            let mut e = commands.spawn((
                 Assembler {
                     production_timer: a.production_timer,
                     interval: a.interval,
@@ -663,8 +667,8 @@ fn load_buildings(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
                 tile_pos,
                 Active(true),
             ));
-            if let Some(d) = bs.power_draw {
-                insert_power(e, d);
+            if let Some(def) = registry.get(&bs.kind) {
+                attach_power_components(&mut e, def);
             }
         } else if bs.farm.is_some() {
             let f = bs.farm.as_ref().unwrap();

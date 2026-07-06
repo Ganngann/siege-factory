@@ -1,4 +1,5 @@
 use crate::core::utils::parse_hex_color;
+use crate::economy::components::{PowerConsumer, PowerPole, PowerProducer};
 use crate::economy::resource::{Cost, ResourceId};
 use crate::load_toml;
 use bevy::prelude::*;
@@ -53,6 +54,26 @@ pub struct BuildingDef {
     pub power_consumption: f32,
     pub power_generation: f32,
     pub power_pole_range: f32,
+}
+
+/// Common power component attachment logic.
+pub fn attach_power_components(entity: &mut EntityCommands, def: &BuildingDef) {
+    if def.power_consumption > 0.0 {
+        entity.insert(PowerConsumer {
+            draw: def.power_consumption,
+            satisfied: false,
+        });
+    }
+    if def.power_generation > 0.0 {
+        entity.insert(PowerProducer {
+            output: def.power_generation,
+        });
+    }
+    if def.power_pole_range > 0.0 {
+        entity.insert(PowerPole {
+            range: def.power_pole_range,
+        });
+    }
 }
 
 #[derive(Debug, Clone, Resource)]

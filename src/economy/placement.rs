@@ -2,13 +2,13 @@ use crate::agriculture::components::{Crop, Farm};
 use crate::core::input::KeyBindings;
 use crate::core::toast::ToastQueue;
 use crate::economy::belt::{BeltSlots, compute_slot_positions};
-use crate::economy::building::BuildingRegistry;
+use crate::economy::building::{BuildingDef, BuildingRegistry, attach_power_components};
 use crate::economy::resource::Cost;
 use crate::economy::components::{
     Active, Archive, Assembler, BeltDirection, BeltDrag, BuildMode, BuildPreview, Building,
     DeconstructDrag, DeconstructMode, Direction, DiscoveredRecipes, Ghost, Miner, OccupiedTiles,
-    Player, PowerConsumer, PowerPole, PowerProducer, ProductionCounter, ResourceDeposit, Sorter,
-    Splitter, Storage, TurretCombat, UiIsBlocking, UnbuiltBuilding,
+    Player, ProductionCounter, ResourceDeposit, Sorter, Splitter, Storage, TurretCombat,
+    UiIsBlocking, UnbuiltBuilding,
 };
 
 use crate::economy::resource::{Inventory, ResourceId};
@@ -272,24 +272,11 @@ pub fn handle_deconstruct_click_v2(
         return;
     }
 
-    let mut refund_names = Vec::new();
-    for c in &def.cost {
-        let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
-        if refund > 0 {
-            if let Ok(mut player_inv) = player_query.single_mut() {
-                player_inv.add(&c.resource, refund);
-            }
-            refund_names.push(format!("{} {}", refund, c.resource.display_name()));
-        }
-    }
-
-    if let Ok(belt_slots) = belt_slots_query.get(entity) {
-        for sprite_entity in belt_slots.slot_sprites.iter().flatten() {
-            commands.entity(*sprite_entity).despawn();
-        }
-    }
-
-    commands.entity(entity).despawn();
+    let refund_names = if let Ok(mut player_inv) = player_query.single_mut() {
+        deconstruct_entity(def, &mut player_inv, &mut commands, &belt_slots_query, entity)
+    } else {
+        return;
+    };
     toast_queue.0.push(format!(
         "{} dismantled (+{})",
         building.name,
@@ -569,6 +556,32 @@ fn deduct_cost(hq_inv: &mut Inventory, cost: &[Cost]) {
     for c in cost {
         hq_inv.remove(&c.resource, c.amount);
     }
+}
+
+/// Refund resources, despawn belt sprites, and despawn the entity.
+/// Returns per-resource refund strings for toast messages.
+fn deconstruct_entity(
+    def: &BuildingDef,
+    player_inv: &mut Inventory,
+    commands: &mut Commands,
+    belt_slots_query: &Query<&BeltSlots>,
+    entity: Entity,
+) -> Vec<String> {
+    let mut refund_names = Vec::new();
+    for c in &def.cost {
+        let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
+        if refund > 0 {
+            player_inv.add(&c.resource, refund);
+            refund_names.push(format!("{} {}", refund, c.resource.display_name()));
+        }
+    }
+    if let Ok(belt_slots) = belt_slots_query.get(entity) {
+        for sprite_entity in belt_slots.slot_sprites.iter().flatten() {
+            commands.entity(*sprite_entity).despawn();
+        }
+    }
+    commands.entity(entity).despawn();
+    refund_names
 }
 
 // ── Belt click/drag ──
@@ -883,34 +896,27 @@ pub fn on_deconstruct_area(
     let mut count = 0u32;
     let mut refund_names: Vec<String> = Vec::new();
 
-    for entity in entities {
-        let Ok((building, _tiles)) = building_query.get(entity) else {
-            continue;
-        };
-
-        if let Some(def) = registry.get(&building.kind) {
-            if !def.can_deconstruct {
+    if let Ok(mut player_inv) = player_query.single_mut() {
+        for entity in entities {
+            let Ok((building, _tiles)) = building_query.get(entity) else {
                 continue;
-            }
-            for c in &def.cost {
-                let refund = (c.amount as f32 * def.refund_ratio).ceil() as u32;
-                if refund > 0 {
-                    if let Ok(mut player_inv) = player_query.single_mut() {
-                        player_inv.add(&c.resource, refund);
-                    }
-                    refund_names.push(format!("{} {}", refund, c.resource.display_name()));
+            };
+
+            if let Some(def) = registry.get(&building.kind) {
+                if !def.can_deconstruct {
+                    continue;
                 }
+                let mut names = deconstruct_entity(
+                    def,
+                    &mut player_inv,
+                    &mut commands,
+                    &belt_slots_query,
+                    entity,
+                );
+                refund_names.append(&mut names);
             }
+            count += 1;
         }
-
-        if let Ok(belt_slots) = belt_slots_query.get(entity) {
-            for sprite_entity in belt_slots.slot_sprites.iter().flatten() {
-                commands.entity(*sprite_entity).despawn();
-            }
-        }
-
-        commands.entity(entity).despawn();
-        count += 1;
     }
 
     if count > 0 {
@@ -1029,12 +1035,7 @@ pub fn handle_build_click(
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
         ));
-        if def.power_consumption > 0.0 {
-            e.insert(PowerConsumer {
-                draw: def.power_consumption,
-                satisfied: false,
-            });
-        }
+        attach_power_components(&mut e, &def);
         return;
     }
 
@@ -1072,10 +1073,6 @@ pub fn handle_build_click(
         Inventory::new()
     };
 
-    let do_power_consumer = def.power_consumption > 0.0;
-    let do_power_producer = def.power_generation > 0.0;
-    let do_power_pole = def.power_pole_range > 0.0;
-
     if let Some(default_recipe) = &def.default_recipe {
         let interval = def.production_interval.unwrap_or(2.0);
         let mut e = commands.spawn((
@@ -1089,22 +1086,7 @@ pub fn handle_build_click(
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
         ));
-        if do_power_consumer {
-            e.insert(PowerConsumer {
-                draw: def.power_consumption,
-                satisfied: false,
-            });
-        }
-        if do_power_producer {
-            e.insert(PowerProducer {
-                output: def.power_generation,
-            });
-        }
-        if do_power_pole {
-            e.insert(PowerPole {
-                range: def.power_pole_range,
-            });
-        }
+        attach_power_components(&mut e, &def);
     } else if def.id == "turret" {
         let stats = def.combat.as_ref().expect("turret def missing combat");
         let mut e = commands.spawn((
@@ -1118,40 +1100,10 @@ pub fn handle_build_click(
                 projectile_speed: stats.projectile_speed,
             },
         ));
-        if do_power_consumer {
-            e.insert(PowerConsumer {
-                draw: def.power_consumption,
-                satisfied: false,
-            });
-        }
-        if do_power_producer {
-            e.insert(PowerProducer {
-                output: def.power_generation,
-            });
-        }
-        if do_power_pole {
-            e.insert(PowerPole {
-                range: def.power_pole_range,
-            });
-        }
+        attach_power_components(&mut e, &def);
     } else if def.id == "storage" {
         let mut e = commands.spawn((base, inv, Storage));
-        if do_power_consumer {
-            e.insert(PowerConsumer {
-                draw: def.power_consumption,
-                satisfied: false,
-            });
-        }
-        if do_power_producer {
-            e.insert(PowerProducer {
-                output: def.power_generation,
-            });
-        }
-        if do_power_pole {
-            e.insert(PowerPole {
-                range: def.power_pole_range,
-            });
-        }
+        attach_power_components(&mut e, &def);
     } else if def.id == "farm" {
         let crop_types = def.crop_types.clone();
         let mut e = commands.spawn((
@@ -1164,58 +1116,13 @@ pub fn handle_build_click(
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
         ));
-        if do_power_consumer {
-            e.insert(PowerConsumer {
-                draw: def.power_consumption,
-                satisfied: false,
-            });
-        }
-        if do_power_producer {
-            e.insert(PowerProducer {
-                output: def.power_generation,
-            });
-        }
-        if do_power_pole {
-            e.insert(PowerPole {
-                range: def.power_pole_range,
-            });
-        }
+        attach_power_components(&mut e, &def);
     } else if def.id == "archive" {
         let mut e = commands.spawn((base, inv, Archive));
-        if do_power_consumer {
-            e.insert(PowerConsumer {
-                draw: def.power_consumption,
-                satisfied: false,
-            });
-        }
-        if do_power_producer {
-            e.insert(PowerProducer {
-                output: def.power_generation,
-            });
-        }
-        if do_power_pole {
-            e.insert(PowerPole {
-                range: def.power_pole_range,
-            });
-        }
+        attach_power_components(&mut e, &def);
     } else {
         let mut e = commands.spawn((base, inv));
-        if do_power_consumer {
-            e.insert(PowerConsumer {
-                draw: def.power_consumption,
-                satisfied: false,
-            });
-        }
-        if do_power_producer {
-            e.insert(PowerProducer {
-                output: def.power_generation,
-            });
-        }
-        if do_power_pole {
-            e.insert(PowerPole {
-                range: def.power_pole_range,
-            });
-        }
+        attach_power_components(&mut e, &def);
     }
 }
 
