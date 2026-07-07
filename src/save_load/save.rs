@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use crate::agriculture::components::Farm;
 use crate::core::toast::ToastQueue;
+use crate::core::tutorial::TutorialState;
 use crate::economy::belt::BeltSlots;
 use crate::economy::components::{
     Assembler, Building, OccupiedTiles, PowerConsumer, PowerPole, PowerProducer, Sorter, Splitter,
@@ -28,6 +29,7 @@ pub fn save_game(
     wave: Res<WaveState>,
     last_wave: Res<LastWave>,
     camera: Query<&Transform, (With<Camera2d>, Without<MinimapCamera>)>,
+    tutorial: Res<TutorialState>,
     tile_positions: Query<&TilePosition>,
     buildings: Query<
         (
@@ -85,6 +87,10 @@ pub fn save_game(
         buildings: Vec::new(),
         enemies: Vec::new(),
         units: Vec::new(),
+        tutorial: super::TutorialSave {
+            current_index: tutorial.current_index,
+            completed: tutorial.completed,
+        },
     };
 
     if let Ok(tf) = camera.single() {

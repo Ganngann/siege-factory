@@ -2,10 +2,13 @@ pub mod archive;
 pub mod belt;
 pub mod build_bar;
 pub mod building;
+pub mod capsule;
 pub mod components;
+pub mod data_pad;
 pub mod discovery;
 pub mod discovery_components;
 pub mod game_components;
+pub mod ground_items;
 pub mod inspect;
 pub mod menu;
 pub mod placement;
@@ -113,11 +116,14 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::DragState>();
         app.init_resource::<crate::core::tutorial::TutorialState>();
         app.init_resource::<crate::core::tutorial::TutorialConditions>();
+        app.init_resource::<crate::core::tutorial::TutorialHighlightEntity>();
+        app.init_resource::<capsule::CapsuleConfig>();
         app.insert_resource(tiered_structure::ProgressionLogRegistry::default());
         app.insert_resource(Time::<Fixed>::from_hz(20.0));
         app.configure_sets(Update, PlayingSystems.run_if(in_state(GameState::Playing)));
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
+        app.add_observer(ground_items::spawn_ground_item_visual);
         app.add_systems(
             PreUpdate,
             update_ui_blocking.run_if(in_state(GameState::Playing)),
@@ -126,6 +132,7 @@ impl Plugin for EconomyPlugin {
             OnEnter(GameState::Playing),
             (
                 player::setup_player.run_if(crate::save_load::is_fresh_game),
+                capsule::spawn_capsule.run_if(crate::save_load::is_fresh_game),
                 build_bar::spawn_menu_bar,
             ),
         );
@@ -182,6 +189,9 @@ impl Plugin for EconomyPlugin {
         app.add_systems(Update, player::finish_construction.in_set(PlayingSystems));
         app.add_systems(Update, player::player_mine.in_set(PlayingSystems));
         app.add_systems(Update, player::player_pickup_belt.in_set(PlayingSystems));
+        app.add_systems(Update, capsule::update_capsule_visual.in_set(PlayingSystems));
+        app.add_systems(Update, ground_items::player_pickup_ground_items.in_set(PlayingSystems));
+        app.add_systems(Update, data_pad::interact_data_pad.in_set(PlayingSystems));
         app.add_systems(
             Update,
             tiered_structure::structure_interact.in_set(PlayingSystems),
@@ -304,6 +314,7 @@ impl Plugin for EconomyPlugin {
                 crate::core::tutorial::track_item_crafted,
                 crate::core::tutorial::track_building_placed,
                 crate::core::tutorial::tutorial_tick,
+                crate::core::tutorial::tutorial_highlight_system,
             )
                 .run_if(in_state(GameState::Playing))
                 .in_set(PlayingSystems),

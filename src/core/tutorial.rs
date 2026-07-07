@@ -9,6 +9,9 @@ use crate::economy::player::PlayerWorldPos;
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::Inventory;
 use crate::map::components::TilePosition;
+use crate::map::config::MapConfig;
+use crate::rendering::config::VisualsConfig;
+use crate::rendering::ShapeCache;
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct TutorialStepDef {
@@ -17,6 +20,20 @@ pub struct TutorialStepDef {
     pub condition: String,
     #[serde(default)]
     pub params: HashMap<String, String>,
+    #[serde(default)]
+    pub highlight: Option<HighlightDef>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct HighlightDef {
+    #[serde(rename = "type")]
+    pub target_type: String,
+    #[serde(default)]
+    pub target_id: Option<String>,
+    #[serde(default)]
+    pub tile_x: Option<i32>,
+    #[serde(default)]
+    pub tile_y: Option<i32>,
 }
 
 #[derive(Resource, Default)]
@@ -261,5 +278,76 @@ fn evaluate_condition(
             warn!("Unknown tutorial condition: {}", condition);
             true
         }
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct TutorialHighlightEntity(pub Option<Entity>);
+
+pub fn tutorial_highlight_system(
+    mut commands: Commands,
+    state: Res<TutorialState>,
+    mut highlight_entity: ResMut<TutorialHighlightEntity>,
+    shapes: Res<ShapeCache>,
+    config: Res<VisualsConfig>,
+    cfg: Res<MapConfig>,
+    building_q: Query<(&Building, &TilePosition)>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    if state.completed || state.steps.is_empty() {
+        if let Some(entity) = highlight_entity.0.take() {
+            commands.entity(entity).despawn();
+        }
+        return;
+    }
+
+    let step = &state.steps[state.current_index];
+    let Some(ref highlight) = step.highlight else {
+        if let Some(entity) = highlight_entity.0.take() {
+            commands.entity(entity).despawn();
+        }
+        return;
+    };
+
+    let target_tile = match highlight.target_type.as_str() {
+        "structure" => {
+            let id = highlight.target_id.as_deref().unwrap_or("");
+            building_q
+                .iter()
+                .find(|(b, _)| b.kind == id)
+                .map(|(_, tp)| *tp)
+        }
+        "tile" => {
+            let tx = highlight.tile_x.unwrap_or(0);
+            let ty = highlight.tile_y.unwrap_or(0);
+            Some(TilePosition { x: tx, y: ty })
+        }
+        _ => None,
+    };
+
+    let Some(tile) = target_tile else {
+        if let Some(entity) = highlight_entity.0.take() {
+            commands.entity(entity).despawn();
+        }
+        return;
+    };
+
+    let world_x = tile.x as f32 * cfg.tile_size;
+    let world_y = tile.y as f32 * cfg.tile_size;
+    let z = config.tile_highlight.z + 0.1;
+
+    if let Some(entity) = highlight_entity.0 {
+        commands
+            .entity(entity)
+            .insert(Transform::from_xyz(world_x, world_y, z));
+    } else {
+        let entity = commands
+            .spawn((
+                Mesh2d(shapes.diamond.clone()),
+                MeshMaterial2d(materials.add(Color::srgba(1.0, 0.8, 0.2, 0.4))),
+                Transform::from_xyz(world_x, world_y, z),
+            ))
+            .id();
+        highlight_entity.0 = Some(entity);
     }
 }

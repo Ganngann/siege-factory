@@ -3,6 +3,13 @@ use crate::map::components::TilePosition;
 use bevy::prelude::*;
 
 #[derive(Event)]
+pub struct SpawnGroundItemEvent {
+    pub resource_id: String,
+    pub amount: u32,
+    pub position: TilePosition,
+}
+
+#[derive(Event)]
 pub struct DeconstructAreaEvent {
     pub start: TilePosition,
     pub end: TilePosition,

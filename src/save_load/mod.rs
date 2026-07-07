@@ -53,6 +53,14 @@ pub struct SaveData {
     pub buildings: Vec<BuildingSave>,
     pub enemies: Vec<EnemySave>,
     pub units: Vec<UnitSave>,
+    #[serde(default)]
+    pub tutorial: TutorialSave,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct TutorialSave {
+    pub current_index: usize,
+    pub completed: bool,
 }
 
 #[derive(Serialize, Deserialize)]

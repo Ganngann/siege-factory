@@ -179,3 +179,20 @@ pub struct CurrentTier(pub usize);
 
 #[derive(Resource, Default)]
 pub struct PeacefulMode(pub bool);
+
+#[derive(Component)]
+pub struct Capsule;
+
+#[derive(Component)]
+pub struct GroundItemStack {
+    pub resource_id: String,
+    pub amount: u32,
+}
+
+#[derive(Component)]
+pub struct DataPad {
+    pub log_id: String,
+}
+
+#[derive(Component)]
+pub struct DataPadRead;

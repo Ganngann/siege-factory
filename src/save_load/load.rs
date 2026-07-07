@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use crate::agriculture::components::Farm;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
+use crate::core::tutorial::TutorialState;
 use crate::core::utils::tile_to_world;
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::building::{BuildingRegistry, attach_power_components};
@@ -477,6 +478,7 @@ pub fn load_finalize(
     mut fresh_game: ResMut<IsFreshGame>,
     mut next_state: ResMut<NextState<GameState>>,
     mut toast: ResMut<ToastQueue>,
+    mut tutorial: ResMut<TutorialState>,
 ) {
     let data = match &buf.data {
         Some(d) => d,
@@ -492,6 +494,8 @@ pub fn load_finalize(
     last_wave.0 = data.wave.last_wave;
     peaceful.0 = true;
     fresh_game.0 = false;
+    tutorial.current_index = data.tutorial.current_index;
+    tutorial.completed = data.tutorial.completed;
     buf.data = None;
     next_state.set(GameState::Playing);
     toast.0.push("Game loaded".to_string());

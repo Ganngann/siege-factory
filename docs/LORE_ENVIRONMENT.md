@@ -12,7 +12,6 @@ Mélancolique mais pas glauque. Chaque machine qui s'allume est une victoire sil
 - Ruines végétalisées : routes brisées, bâtiments effondrés, béton couvert de lierre et de mousse
 - Les constructions du joueur (propres, métalliques, lumineuses) contrastent avec un décor rouillé et vert
 - La capsule centrale : design épuré, verre fumé, métal blanc — clairement plus avancée que tout ce qui l'entoure
-- Cycle jour/nuit : lumière chaude le jour, brume froide la nuit
 
 ## Storytelling
 - Aucun dialogue, aucun PNJ. Le joueur est seul.

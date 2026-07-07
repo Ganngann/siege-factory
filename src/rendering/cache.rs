@@ -188,7 +188,11 @@ fn collect_building_stems(registry: &BuildingRegistry) -> Vec<String> {
     let mut stems: Vec<String> = registry
         .buildings
         .iter()
-        .map(|b| b.texture_stem.clone())
+        .flat_map(|b| {
+            let mut s = vec![b.texture_stem.clone()];
+            s.extend(b.tiers.iter().map(|t| t.texture.clone()));
+            s
+        })
         .collect();
     stems.extend(extra.iter().map(|&s| s.to_string()));
     stems
