@@ -1,5 +1,5 @@
 use crate::map::components::TileType;
-use bevy::prelude::Resource;
+use bevy::prelude::{Handle, Mesh, Resource};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -23,6 +23,8 @@ pub struct Chunk {
 #[derive(Debug, Clone, Resource)]
 pub struct ChunkGrid {
     chunks: HashMap<(i32, i32), Chunk>,
+    pub chunk_mesh_cache: HashMap<(i32, i32), (Handle<Mesh>, Handle<Mesh>)>,
+    pub pending_spawns: Vec<(i32, i32)>,
     seed: u64,
     pub deposit_min_amount: u32,
     pub deposit_max_amount: u32,
@@ -44,6 +46,8 @@ impl ChunkGrid {
     ) -> Self {
         Self {
             chunks: HashMap::new(),
+            chunk_mesh_cache: HashMap::new(),
+            pending_spawns: Vec::new(),
             seed,
             deposit_min_amount,
             deposit_max_amount,
@@ -156,6 +160,8 @@ impl ChunkGrid {
 
     pub fn clear(&mut self) {
         self.chunks.clear();
+        self.chunk_mesh_cache.clear();
+        self.pending_spawns.clear();
     }
 
     pub fn set_deposit_amount(&mut self, cx: i32, cy: i32, dx: u32, dy: u32, amount: u32) {

@@ -224,7 +224,7 @@ impl Plugin for SaveLoadPlugin {
                 .chain(),
         );
 
-        // Fresh game: spawn camera at HQ position
+        // Fresh game: spawn camera at player position
         app.add_systems(
             OnEnter(GameState::Playing),
             spawn_fresh_camera.run_if(is_fresh_game),

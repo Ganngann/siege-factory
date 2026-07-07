@@ -3,9 +3,6 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Component)]
-pub struct HQ;
-
-#[derive(Component)]
 pub struct Player;
 
 #[derive(Component)]
@@ -167,6 +164,12 @@ pub struct Sorter {
     pub filter: ResourceId,
     pub inverted: bool,
 }
+
+#[derive(Component)]
+pub struct MiningProgressChild;
+
+#[derive(Component)]
+pub struct HasMiningProgress;
 
 #[derive(Component)]
 pub struct Active(pub bool);

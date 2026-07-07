@@ -37,6 +37,13 @@ spawn_z = 3.0
 [projectile]
 scale = 0.3
 
+[mining_bar]
+width = 24.0
+height = 3.0
+y_offset = 16.0
+z = 10.0
+color = "#FFAA33"
+
 [toast]
 lifetime = 3.0
 font_size = 16.0

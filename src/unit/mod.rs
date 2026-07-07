@@ -51,7 +51,7 @@ fn spawn_unit_by_id(
     commands: &mut Commands,
     unit_cfg: &UnitConfig,
     id: &str,
-    hq_pos: Vec3,
+    player_pos: Vec3,
 ) -> bool {
     let def = match unit_cfg.get(id) {
         Some(d) => d,
@@ -71,7 +71,7 @@ fn spawn_unit_by_id(
                 current: hp,
                 max: hp,
             },
-            Transform::from_translation(hq_pos + offset),
+            Transform::from_translation(player_pos + offset),
         ));
     } else {
         commands.spawn((
@@ -83,7 +83,7 @@ fn spawn_unit_by_id(
                 current: hp,
                 max: hp,
             },
-            Transform::from_translation(hq_pos + offset),
+            Transform::from_translation(player_pos + offset),
         ));
     }
     true

@@ -31,9 +31,16 @@ impl Plugin for RenderPlugin {
         app.init_resource::<PreviewMaterials>();
         app.init_resource::<TileHighlightEntity>();
         app.add_systems(Startup, setup_texture_cache);
+        app.insert_resource(FpsUpdateTimer::default());
         app.add_systems(
             Update,
-            (tile_highlight, ensure_hp_bars, update_hp_bars)
+            (
+                tile_highlight,
+                ensure_hp_bars,
+                update_hp_bars,
+                ensure_mining_progress_bars,
+                update_mining_progress_bars,
+            )
                 .run_if(in_state(GameState::Playing)),
         );
         app.add_observer(spawn_projectile_visual);

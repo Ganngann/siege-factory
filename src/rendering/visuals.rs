@@ -2,9 +2,10 @@ use crate::combat::Projectile;
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    BuildMode, Building, Direction, HasHpBar, HpBarChild, UnbuiltBuilding, Unit,
+    BuildMode, Building, Direction, HasHpBar, HpBarChild, Player, UnbuiltBuilding, Unit,
 };
-use crate::economy::game_components::BeltVariant;
+use crate::economy::player::MiningTimer;
+use crate::economy::game_components::{BeltVariant, HasMiningProgress, MiningProgressChild};
 use crate::economy::unit_config::UnitConfig;
 use crate::enemy::components::{Enemy, Health};
 use crate::events::SpawnProjectileEvent;
@@ -12,7 +13,7 @@ use crate::map::components::HoveredTile;
 use crate::map::config::MapConfig;
 use crate::rendering::config::VisualsConfig;
 use crate::rendering::{ShapeCache, TextureCache};
-use crate::unit::{Soldier, Worker};
+use crate::unit::{Soldier, Worker, WorkerState};
 use bevy::prelude::*;
 
 #[derive(Component)]
@@ -88,6 +89,67 @@ pub fn ensure_hp_bars(
                     Transform::from_xyz(0.0, config.hp_bar.y_offset, config.hp_bar.z),
                 ));
             });
+    }
+}
+
+pub fn ensure_mining_progress_bars(
+    mut commands: Commands,
+    workers: Query<Entity, (With<Worker>, Without<HasMiningProgress>)>,
+    players: Query<Entity, (With<Player>, Without<HasMiningProgress>)>,
+    config: Res<VisualsConfig>,
+) {
+    for entity in workers.iter().chain(players.iter()) {
+        commands
+            .entity(entity)
+            .insert(HasMiningProgress)
+            .with_children(|parent| {
+                parent.spawn((
+                    MiningProgressChild,
+                    Sprite::from_color(
+                        config.mining_bar.color,
+                        Vec2::new(config.mining_bar.width, config.mining_bar.height),
+                    ),
+                    Transform::from_xyz(0.0, config.mining_bar.y_offset, config.mining_bar.z),
+                ));
+            });
+    }
+}
+
+pub fn update_mining_progress_bars(
+    workers: Query<(&Worker, &Children)>,
+    players: Query<&Children, (With<Player>, Without<Worker>)>,
+    mut sprite_q: Query<&mut Sprite, With<MiningProgressChild>>,
+    config: Res<VisualsConfig>,
+    unit_cfg: Res<UnitConfig>,
+    mining_timer: Res<MiningTimer>,
+    map_cfg: Res<MapConfig>,
+) {
+    let interval = unit_cfg
+        .get("worker")
+        .map(|d| d.mine_interval_sec)
+        .unwrap_or(3.0);
+    for (worker, children) in workers.iter() {
+        let ratio = if matches!(worker.state, WorkerState::Mining(_)) {
+            (worker.mining_timer / interval).min(1.0)
+        } else {
+            0.0
+        };
+        for child in children.iter() {
+            if let Ok(mut sprite) = sprite_q.get_mut(child) {
+                sprite.custom_size =
+                    Some(Vec2::new(config.mining_bar.width * ratio, config.mining_bar.height));
+            }
+        }
+    }
+
+    let player_ratio = (mining_timer.0 / map_cfg.player_mining_interval).min(1.0);
+    for children in players.iter() {
+        for child in children.iter() {
+            if let Ok(mut sprite) = sprite_q.get_mut(child) {
+                sprite.custom_size =
+                    Some(Vec2::new(config.mining_bar.width * player_ratio, config.mining_bar.height));
+            }
+        }
     }
 }
 

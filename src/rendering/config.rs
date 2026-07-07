@@ -13,6 +13,7 @@ pub struct VisualsConfig {
     pub builder: BuilderVisualConfig,
     pub enemy: EnemyVisualConfig,
     pub projectile: ProjectileConfig,
+    pub mining_bar: MiningBarConfig,
     pub toast: ToastConfig,
     pub tile_highlight: TileHighlightConfig,
     pub deposit_sprite: DepositSpriteConfig,
@@ -73,6 +74,15 @@ pub struct EnemyVisualConfig {
 #[derive(Debug, Clone)]
 pub struct ProjectileConfig {
     pub scale: f32,
+}
+
+#[derive(Debug, Clone)]
+pub struct MiningBarConfig {
+    pub width: f32,
+    pub height: f32,
+    pub y_offset: f32,
+    pub z: f32,
+    pub color: Color,
 }
 
 #[derive(Debug, Clone)]
@@ -168,6 +178,13 @@ impl VisualsConfig {
             projectile: ProjectileConfig {
                 scale: parsed.projectile.scale,
             },
+            mining_bar: MiningBarConfig {
+                width: parsed.mining_bar.width,
+                height: parsed.mining_bar.height,
+                y_offset: parsed.mining_bar.y_offset,
+                z: parsed.mining_bar.z,
+                color: parse_hex_color(&parsed.mining_bar.color),
+            },
             toast: ToastConfig {
                 lifetime: parsed.toast.lifetime,
                 font_size: parsed.toast.font_size,
@@ -217,6 +234,7 @@ struct VisualsToml {
     builder: BuilderEntry,
     enemy: EnemyEntry,
     projectile: ProjectileEntry,
+    mining_bar: MiningBarEntry,
     toast: ToastEntry,
     tile_highlight: TileHighlightEntry,
     deposit_sprite: DepositSpriteEntry,
@@ -271,6 +289,14 @@ struct EnemyEntry {
 #[derive(Deserialize)]
 struct ProjectileEntry {
     scale: f32,
+}
+#[derive(Deserialize)]
+struct MiningBarEntry {
+    width: f32,
+    height: f32,
+    y_offset: f32,
+    z: f32,
+    color: String,
 }
 #[derive(Deserialize)]
 struct ToastEntry {

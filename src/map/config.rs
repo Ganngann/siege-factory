@@ -177,7 +177,7 @@ struct DecorationEntry {
 }
 
 fn default_initial_margin() -> i32 {
-    10
+    15
 }
 fn default_despawn_margin() -> i32 {
     3

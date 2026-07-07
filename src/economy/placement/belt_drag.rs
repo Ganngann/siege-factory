@@ -11,13 +11,13 @@ use bevy::prelude::*;
 const BUILDING_SPLITTER: &str = "splitter";
 const BUILDING_SORTER: &str = "sorter";
 
-fn can_afford(hq_inv: &Inventory, cost: &[Cost]) -> bool {
-    cost.iter().all(|c| hq_inv.get(&c.resource) >= c.amount)
+fn can_afford(player_inv: &Inventory, cost: &[Cost]) -> bool {
+    cost.iter().all(|c| player_inv.get(&c.resource) >= c.amount)
 }
 
-fn deduct_cost(hq_inv: &mut Inventory, cost: &[Cost]) {
+fn deduct_cost(player_inv: &mut Inventory, cost: &[Cost]) {
     for c in cost {
-        hq_inv.remove(&c.resource, c.amount);
+        player_inv.remove(&c.resource, c.amount);
     }
 }
 

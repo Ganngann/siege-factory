@@ -160,7 +160,7 @@ pub fn load_buildings(
     let tile_size = cfg.tile_size;
 
     for bs in &data.buildings {
-        let (tw, th) = if bs.kind == "hq" { (2, 2) } else { (1, 1) };
+        let (tw, th) = registry.get(&bs.kind).map(|d| d.tile_size).unwrap_or((1, 1));
         let cx = (bs.tile_x as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
         let cy = (bs.tile_y as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
         let inv = if let Some(ref items) = bs.inventory {

@@ -132,7 +132,18 @@ pub fn spawn_single_chunk_visuals(
     let tile_size = cfg.tile_size;
 
     let chunk_hash = chunk_hash(cfg.seed, cx, cy);
-    let (mesh_even, mesh_odd) = build_chunk_mesh(cx, cy, tile_size);
+
+    let (handle_even, handle_odd) =
+        if let Some(cached) = chunk_grid.chunk_mesh_cache.get(&(cx, cy)) {
+            (cached.0.clone(), cached.1.clone())
+        } else {
+            let (mesh_even, mesh_odd) = build_chunk_mesh(cx, cy, tile_size);
+            let he = meshes.add(mesh_even);
+            let ho = meshes.add(mesh_odd);
+            chunk_grid.chunk_mesh_cache.insert((cx, cy), (he.clone(), ho.clone()));
+            (he, ho)
+        };
+
     let chunk = chunk_grid.ensure_chunk(cx, cy);
 
     let mat_even = materials.add(visuals.chunk_colors.even);
@@ -141,13 +152,13 @@ pub fn spawn_single_chunk_visuals(
     commands.spawn(super::ChunkMarker(cx, cy));
     commands.spawn((
         ChunkMember(cx, cy),
-        Mesh2d(meshes.add(mesh_even)),
+        Mesh2d(handle_even),
         MeshMaterial2d(mat_even),
         Transform::default(),
     ));
     commands.spawn((
         ChunkMember(cx, cy),
-        Mesh2d(meshes.add(mesh_odd)),
+        Mesh2d(handle_odd),
         MeshMaterial2d(mat_odd),
         Transform::default(),
     ));
@@ -364,7 +375,7 @@ pub fn update_visible_chunks(
     let chunk_size = CHUNK_SIZE as i32;
     let visible_w_tiles = ((bottom_right.x - top_left.x) / tile_size).abs().ceil() as i32;
     let visible_h_tiles = ((bottom_right.y - top_left.y) / tile_size).abs().ceil() as i32;
-    let margin = visible_w_tiles.max(visible_h_tiles).max(chunk_size * 2);
+    let margin = visible_w_tiles.max(visible_h_tiles).max(chunk_size);
 
     let min_tx = (top_left.x / tile_size).floor() as i32 - margin;
     let max_tx = (bottom_right.x / tile_size).ceil() as i32 + margin;
@@ -434,24 +445,42 @@ pub fn update_visible_chunks(
         }
     }
 
-    spawn_chunks_in_range(
-        &mut commands,
-        &mut chunk_grid,
-        &cfg,
-        &res_registry,
-        &global_archive,
-        &shapes,
-        &mut materials,
-        &mut meshes,
-        &textures,
-        &visuals,
-        &preview,
-        min_cx,
-        max_cx,
-        min_cy,
-        max_cy,
-        &spawned,
-    );
+    chunk_grid.pending_spawns.retain(|&(cx, cy)| {
+        cx >= min_cx - despawn_margin
+            && cx <= max_cx + despawn_margin
+            && cy >= min_cy - despawn_margin
+            && cy <= max_cy + despawn_margin
+            && !spawned.contains(&(cx, cy))
+    });
+
+    for cx in min_cx..=max_cx {
+        for cy in min_cy..=max_cy {
+            if !spawned.contains(&(cx, cy))
+                && !chunk_grid.pending_spawns.contains(&(cx, cy))
+            {
+                chunk_grid.pending_spawns.push((cx, cy));
+            }
+        }
+    }
+
+    if let Some(&(cx, cy)) = chunk_grid.pending_spawns.first() {
+        spawn_single_chunk_visuals(
+            &mut commands,
+            &mut chunk_grid,
+            &cfg,
+            &res_registry,
+            &global_archive,
+            &shapes,
+            &mut materials,
+            &mut meshes,
+            &textures,
+            &visuals,
+            &preview,
+            cx,
+            cy,
+        );
+        chunk_grid.pending_spawns.remove(0);
+    }
 }
 
 pub fn reveal_hidden_deposits(

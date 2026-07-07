@@ -113,19 +113,29 @@ pub fn despawn_game_over_ui(mut commands: Commands, query: Query<Entity, With<Ga
 #[derive(Component)]
 pub struct FpsOverlay;
 
+#[derive(Resource)]
+pub struct FpsUpdateTimer(pub Timer);
+
+impl Default for FpsUpdateTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(1.0, TimerMode::Repeating))
+    }
+}
+
 pub fn fps_overlay(
     diagnostics: Res<DiagnosticsStore>,
     mut text_query: Query<(Entity, &mut Text), With<FpsOverlay>>,
     mut commands: Commands,
+    time: Res<Time>,
+    mut timer: ResMut<FpsUpdateTimer>,
 ) {
-    let fps = diagnostics
-        .get(&FrameTimeDiagnosticsPlugin::FPS)
-        .and_then(|d| d.smoothed())
-        .map_or("--".to_string(), |v| format!("{:.0}", v));
+    timer.0.tick(time.delta());
 
-    if let Ok((_, mut text)) = text_query.single_mut() {
-        text.0 = format!("FPS: {}", fps);
-    } else {
+    if text_query.single_mut().is_err() {
+        let fps = diagnostics
+            .get(&FrameTimeDiagnosticsPlugin::FPS)
+            .and_then(|d| d.smoothed())
+            .map_or("--".to_string(), |v| format!("{:.0}", v));
         let entity = spawn_hud_node(
             &mut commands,
             &format!("FPS: {}", fps),
@@ -135,5 +145,19 @@ pub fn fps_overlay(
             10.0,
         );
         commands.entity(entity).insert(FpsOverlay);
+        return;
+    }
+
+    if !timer.0.just_finished() {
+        return;
+    }
+
+    let fps = diagnostics
+        .get(&FrameTimeDiagnosticsPlugin::FPS)
+        .and_then(|d| d.smoothed())
+        .map_or("--".to_string(), |v| format!("{:.0}", v));
+
+    if let Ok((_, mut text)) = text_query.single_mut() {
+        text.0 = format!("FPS: {}", fps);
     }
 }
