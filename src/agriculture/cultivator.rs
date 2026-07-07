@@ -145,7 +145,12 @@ pub fn cultivator_ai(
                         cultivator.carried_amount = carry_capacity;
                         cultivator.state = CultivatorState::Idle;
                     } else {
-                        move_toward(&mut transform.translation, farm_pos, speed, time.delta_secs());
+                        move_toward(
+                            &mut transform.translation,
+                            farm_pos,
+                            speed,
+                            time.delta_secs(),
+                        );
                     }
                 } else {
                     cultivator.state = CultivatorState::Idle;
@@ -187,7 +192,12 @@ pub fn cultivator_ai(
                     }
                     cultivator.state = CultivatorState::Idle;
                 } else {
-                    move_toward(&mut transform.translation, Vec3::new(target_x, target_y, 0.0), speed, time.delta_secs());
+                    move_toward(
+                        &mut transform.translation,
+                        Vec3::new(target_x, target_y, 0.0),
+                        speed,
+                        time.delta_secs(),
+                    );
                 }
             }
 
@@ -222,7 +232,12 @@ pub fn cultivator_ai(
                             cultivator.state = CultivatorState::Idle;
                         }
                     } else {
-                        move_toward(&mut transform.translation, crop_transform.translation, speed, time.delta_secs());
+                        move_toward(
+                            &mut transform.translation,
+                            crop_transform.translation,
+                            speed,
+                            time.delta_secs(),
+                        );
                     }
                 } else {
                     cultivator.state = CultivatorState::Idle;
@@ -250,7 +265,12 @@ pub fn cultivator_ai(
                         cultivator.carried_amount = 0;
                         cultivator.state = CultivatorState::Idle;
                     } else {
-                        move_toward(&mut transform.translation, farm_pos, speed, time.delta_secs());
+                        move_toward(
+                            &mut transform.translation,
+                            farm_pos,
+                            speed,
+                            time.delta_secs(),
+                        );
                     }
                 } else {
                     cultivator.state = CultivatorState::Idle;

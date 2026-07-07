@@ -183,7 +183,9 @@ pub fn drag_window_system(
     }
 
     let Ok(w) = windows.single() else { return };
-    let Some(cursor) = w.cursor_position() else { return };
+    let Some(cursor) = w.cursor_position() else {
+        return;
+    };
 
     if drag.dragging {
         if buttons.just_released(MouseButton::Left) {
@@ -217,8 +219,7 @@ pub fn drag_window_system(
             Val::Px(v) => v,
             _ => continue,
         };
-        if cursor.x >= left && cursor.x <= left + 600.0
-            && cursor.y >= top && cursor.y <= top + 36.0
+        if cursor.x >= left && cursor.x <= left + 600.0 && cursor.y >= top && cursor.y <= top + 36.0
         {
             drag.dragging = true;
             drag.window_entity = Some(entity);
@@ -249,9 +250,9 @@ pub fn close_window_system(
                 commands.entity(current).despawn();
                 break;
             }
-                match parents.get(current) {
-                    Ok(child_of) => current = child_of.0,
-                    Err(_) => break,
+            match parents.get(current) {
+                Ok(child_of) => current = child_of.0,
+                Err(_) => break,
             }
         }
     }

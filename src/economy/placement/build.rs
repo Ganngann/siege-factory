@@ -8,13 +8,14 @@ use crate::economy::components::{
     DiscoveredRecipes, Ghost, Miner, OccupiedTiles, ProductionCounter, ResourceDeposit,
     TurretCombat, UiIsBlocking, UnbuiltBuilding,
 };
-use crate::economy::game_components::Storage;
+use crate::economy::game_components::{Level, Storage};
 use crate::economy::resource::Inventory;
 use crate::economy::spatial::SpatialRegistry;
 use crate::events::DespawnDeposit;
 use crate::map::components::{HoveredTile, TilePosition, cursor_to_tile};
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
+use crate::rendering::minimap::MinimapCamera;
 use crate::rendering::{PreviewMaterials, ShapeCache, direction_arrow};
 use bevy::prelude::*;
 
@@ -374,7 +375,7 @@ pub fn handle_build_click(
     cfg: Res<MapConfig>,
     spatial: Res<SpatialRegistry>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
+    camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     deposits: Query<(Entity, &TilePosition, &ResourceDeposit)>,
     keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
@@ -462,6 +463,7 @@ pub fn handle_build_click(
             },
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
+            Level(def.level),
         ));
         attach_power_components(&mut e, &def);
         return;
@@ -513,9 +515,10 @@ pub fn handle_build_click(
             inv,
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
+            Level(def.level),
         ));
         attach_power_components(&mut e, &def);
-    } else if def.id == BUILDING_TURRET {
+    } else if def.id == BUILDING_TURRET || def.id == "turret_ii" {
         let stats = def.combat.as_ref();
         let mut e = commands.spawn((
             base,
@@ -527,10 +530,11 @@ pub fn handle_build_click(
                 timer: 0.0,
                 projectile_speed: stats.map_or(0.0, |s| s.projectile_speed),
             },
+            Level(def.level),
         ));
         attach_power_components(&mut e, &def);
     } else if def.id == BUILDING_STORAGE {
-        let mut e = commands.spawn((base, inv, Storage));
+        let mut e = commands.spawn((base, inv, Storage, Level(def.level)));
         attach_power_components(&mut e, &def);
     } else if def.id == BUILDING_FARM {
         let crop_types = def.crop_types.clone();
@@ -543,13 +547,14 @@ pub fn handle_build_click(
             },
             ProductionCounter::default(),
             DiscoveredRecipes::default(),
+            Level(def.level),
         ));
         attach_power_components(&mut e, &def);
     } else if def.id == BUILDING_ARCHIVE {
-        let mut e = commands.spawn((base, inv, Archive));
+        let mut e = commands.spawn((base, inv, Archive, Level(def.level)));
         attach_power_components(&mut e, &def);
     } else {
-        let mut e = commands.spawn((base, inv));
+        let mut e = commands.spawn((base, inv, Level(def.level)));
         attach_power_components(&mut e, &def);
     }
 }

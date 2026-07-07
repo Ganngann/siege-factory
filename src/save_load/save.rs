@@ -5,16 +5,20 @@ use crate::agriculture::components::Farm;
 use crate::core::toast::ToastQueue;
 use crate::economy::belt::BeltSlots;
 use crate::economy::components::{
-    Assembler, Building, OccupiedTiles, PowerConsumer, PowerPole, PowerProducer, Sorter,
-    Splitter, Storage, TurretCombat, UnbuiltBuilding, Unit,
+    Assembler, Building, OccupiedTiles, PowerConsumer, PowerPole, PowerProducer, Sorter, Splitter,
+    Storage, TurretCombat, UnbuiltBuilding, Unit,
 };
 use crate::economy::resource::Inventory;
 use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveState};
 use crate::map::components::TilePosition;
 use crate::map::tile_grid::ChunkGrid;
+use crate::rendering::minimap::MinimapCamera;
 use crate::unit::{Soldier, Worker, WorkerState};
 
-use super::{BeltItemSave, BeltSave, BuildingSave, CameraSave, EnemySave, SaveData, SaveRequested, UnitSave, WorkerStateSave, save_path};
+use super::{
+    BeltItemSave, BeltSave, BuildingSave, CameraSave, EnemySave, SaveData, SaveRequested, UnitSave,
+    WorkerStateSave, save_path,
+};
 
 pub fn save_game(
     keys: Res<ButtonInput<KeyCode>>,
@@ -23,25 +27,28 @@ pub fn save_game(
     chunk_grid: Res<ChunkGrid>,
     wave: Res<WaveState>,
     last_wave: Res<LastWave>,
-    camera: Query<&Transform, With<Camera2d>>,
+    camera: Query<&Transform, (With<Camera2d>, Without<MinimapCamera>)>,
     tile_positions: Query<&TilePosition>,
-    buildings: Query<(
-        &Building,
-        &TilePosition,
-        &OccupiedTiles,
-        Option<&Health>,
-        Option<&Inventory>,
-        Option<&Assembler>,
-        Option<&TurretCombat>,
-        Option<&BeltSlots>,
-        Option<&Storage>,
-        Option<&Splitter>,
-        Option<&Sorter>,
-        Option<&Farm>,
-        Option<&PowerConsumer>,
-        Option<&PowerProducer>,
-        Option<&PowerPole>,
-    ), Without<UnbuiltBuilding>>,
+    buildings: Query<
+        (
+            &Building,
+            &TilePosition,
+            &OccupiedTiles,
+            Option<&Health>,
+            Option<&Inventory>,
+            Option<&Assembler>,
+            Option<&TurretCombat>,
+            Option<&BeltSlots>,
+            Option<&Storage>,
+            Option<&Splitter>,
+            Option<&Sorter>,
+            Option<&Farm>,
+            Option<&PowerConsumer>,
+            Option<&PowerProducer>,
+            Option<&PowerPole>,
+        ),
+        Without<UnbuiltBuilding>,
+    >,
     enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
     units: Query<
         (
@@ -74,6 +81,7 @@ pub fn save_game(
             last_wave: last_wave.0,
         },
         chunk_deposits: HashMap::new(),
+        visited: HashMap::new(),
         buildings: Vec::new(),
         enemies: Vec::new(),
         units: Vec::new(),
@@ -99,6 +107,12 @@ pub fn save_game(
         if chunk.deposits != original {
             data.chunk_deposits
                 .insert((*cx, *cy), chunk.deposits.clone());
+        }
+        if !chunk.visited.is_empty() {
+            data.visited.insert(
+                (*cx, *cy),
+                chunk.visited.iter().copied().collect(),
+            );
         }
     }
 

@@ -19,7 +19,9 @@ pub fn toast_system(
 ) {
     for msg in queue.0.drain(..) {
         commands.spawn((
-            ToastMessage { timer: config.toast.lifetime },
+            ToastMessage {
+                timer: config.toast.lifetime,
+            },
             Text::new(msg),
             TextFont::from_font_size(config.toast.font_size),
             TextColor(config.toast.color),

@@ -59,6 +59,7 @@ pub struct PreviewMaterials {
     pub build_invalid: Handle<ColorMaterial>,
     pub indicator_input: Handle<ColorMaterial>,
     pub indicator_output: Handle<ColorMaterial>,
+    pub fog: Handle<ColorMaterial>,
 }
 
 impl FromWorld for PreviewMaterials {
@@ -71,6 +72,7 @@ impl FromWorld for PreviewMaterials {
             build_invalid: materials.add(Color::srgba(0.8, 0.0, 0.0, 0.3)),
             indicator_input: materials.add(Color::srgba(0.0, 1.0, 0.0, 0.7)),
             indicator_output: materials.add(Color::srgba(0.3, 0.6, 1.0, 0.7)),
+            fog: materials.add(Color::srgba(0.0, 0.0, 0.0, 1.0)),
         }
     }
 }
@@ -159,12 +161,24 @@ fn load_png(images: &mut Assets<Image>, stem: &str, layer: &str) -> Option<Handl
 
 fn collect_building_stems(registry: &BuildingRegistry) -> Vec<String> {
     let extra = [
-        "belt_north", "belt_turn_en",
-        "miner_east_tall", "miner_east_2x2", "miner_east_3x2", "miner_east_3x3",
+        "belt_north",
+        "belt_turn_en",
+        "miner_east_tall",
+        "miner_east_2x2",
+        "miner_east_3x2",
+        "miner_east_3x3",
         "wall_v",
-        "soldier", "worker", "cultivator", "player", "builder",
+        "soldier",
+        "worker",
+        "cultivator",
+        "player",
+        "builder",
     ];
-    let mut stems: Vec<String> = registry.buildings.iter().map(|b| b.texture_stem.clone()).collect();
+    let mut stems: Vec<String> = registry
+        .buildings
+        .iter()
+        .map(|b| b.texture_stem.clone())
+        .collect();
     stems.extend(extra.iter().map(|&s| s.to_string()));
     stems
 }

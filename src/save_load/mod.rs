@@ -49,6 +49,7 @@ pub struct SaveData {
     pub camera: CameraSave,
     pub wave: WaveSave,
     pub chunk_deposits: HashMap<(i32, i32), Vec<crate::map::tile_grid::Deposit>>,
+    pub visited: HashMap<(i32, i32), Vec<(u32, u32)>>,
     pub buildings: Vec<BuildingSave>,
     pub enemies: Vec<EnemySave>,
     pub units: Vec<UnitSave>,

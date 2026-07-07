@@ -8,8 +8,8 @@ use crate::core::utils::tile_to_world;
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::building::{BuildingRegistry, attach_power_components};
 use crate::economy::components::{
-    Active, Assembler, Building, Direction, HpBarChild, OccupiedTiles, PeacefulMode, Player,
-    Sorter, Splitter, Storage, TurretCombat, Unit,
+    Active, Assembler, Builder, BuilderState, Building, Direction, HpBarChild, OccupiedTiles,
+    PeacefulMode, Player, Sorter, Splitter, Storage, TurretCombat, Unit,
 };
 use crate::economy::game_components::Miner;
 use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
@@ -58,12 +58,14 @@ pub fn load_chunks(
     mut chunk_grid: ResMut<ChunkGrid>,
     cfg: Res<MapConfig>,
     res_registry: Res<ResourceRegistry>,
+    global_archive: Res<crate::economy::discovery::GlobalArchive>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<TextureCache>,
     mut commands: Commands,
     visuals: Res<VisualsConfig>,
+    preview: Res<crate::rendering::cache::PreviewMaterials>,
 ) {
     let data = load_data!(buf);
     chunk_grid.clear();
@@ -71,6 +73,10 @@ pub fn load_chunks(
     for ((cx, cy), deposits) in &data.chunk_deposits {
         let chunk = chunk_grid.ensure_chunk_mut(*cx, *cy);
         chunk.deposits = deposits.clone();
+    }
+    for ((cx, cy), visited) in &data.visited {
+        let chunk = chunk_grid.ensure_chunk_mut(*cx, *cy);
+        chunk.visited = visited.iter().copied().collect();
     }
 
     let (hx, hy) = data
@@ -90,11 +96,13 @@ pub fn load_chunks(
                 &mut chunk_grid,
                 &cfg,
                 &res_registry,
+                &global_archive,
                 &shapes,
                 &mut materials,
                 &mut meshes,
                 &textures,
                 &visuals,
+                &preview,
                 cx,
                 cy,
             );
@@ -108,8 +116,14 @@ pub fn spawn_camera(commands: &mut Commands, transform: Transform) {
         bevy::ui::IsDefaultUiCamera,
         transform,
         bevy_pancam::PanCam {
-            grab_buttons: vec![MouseButton::Middle],
-            speed: 500.0,
+            grab_buttons: vec![],
+            move_keys: bevy_pancam::DirectionKeys {
+                up: vec![],
+                down: vec![],
+                left: vec![],
+                right: vec![],
+            },
+            speed: 0.0,
             min_scale: 0.3,
             max_scale: 3.0,
             ..default()
@@ -140,6 +154,7 @@ pub fn load_buildings(
     mut commands: Commands,
     cfg: Res<MapConfig>,
     registry: Res<BuildingRegistry>,
+    textures: Res<TextureCache>,
 ) {
     let data = load_data!(buf);
     let tile_size = cfg.tile_size;
@@ -174,12 +189,19 @@ pub fn load_buildings(
             commands.spawn((
                 Player,
                 building,
+                occupied,
                 inv,
                 tf,
                 tile_pos,
                 Health {
                     current: cfg.player_hp,
                     max: cfg.player_hp,
+                },
+                Visibility::default(),
+                Sprite {
+                    image: textures.base("player"),
+                    custom_size: Some(Vec2::new(28.0, 28.0)),
+                    ..default()
                 },
             ));
         } else if bs.kind == "miner" {
@@ -202,7 +224,11 @@ pub fn load_buildings(
                     attach_power_components(&mut e, def);
                 }
             } else {
-                bevy::log::warn!("Skipped miner at ({}, {}): missing assembler data", bs.tile_x, bs.tile_y);
+                bevy::log::warn!(
+                    "Skipped miner at ({}, {}): missing assembler data",
+                    bs.tile_x,
+                    bs.tile_y
+                );
             }
         } else if let Some(a) = &bs.assembler {
             let mut e = commands.spawn((
@@ -311,7 +337,11 @@ pub fn load_buildings(
                     ));
                 }
             } else {
-                bevy::log::warn!("Skipped belt at ({}, {}): missing belt data", bs.tile_x, bs.tile_y);
+                bevy::log::warn!(
+                    "Skipped belt at ({}, {}): missing belt data",
+                    bs.tile_x,
+                    bs.tile_y
+                );
             }
         } else if bs.kind == "turret" {
             if let Some(t) = &bs.turret {
@@ -331,13 +361,35 @@ pub fn load_buildings(
                     Active(true),
                 ));
             } else {
-                bevy::log::warn!("Skipped turret at ({}, {}): missing turret data", bs.tile_x, bs.tile_y);
+                bevy::log::warn!(
+                    "Skipped turret at ({}, {}): missing turret data",
+                    bs.tile_x,
+                    bs.tile_y
+                );
             }
         } else if bs.storage {
             commands.spawn((Storage, building, inv, occupied, tf, tile_pos, Active(true)));
         } else {
             commands.spawn((building, inv, occupied, tf, tile_pos, Active(true)));
         }
+    }
+
+    // Spawn Builder near the HQ
+    if let Some(hq) = data.buildings.iter().find(|b| b.kind == "hq") {
+        let bx = (hq.tile_x as f32 + 0.5) * tile_size;
+        let by = (hq.tile_y as f32 + 0.5) * tile_size;
+        commands.spawn((
+            Builder {
+                state: BuilderState::Idle,
+            },
+            Transform::from_xyz(bx - 20.0, by - 20.0, 4.0),
+            Visibility::default(),
+            Sprite {
+                image: textures.base("builder"),
+                custom_size: Some(Vec2::new(20.0, 20.0)),
+                ..default()
+            },
+        ));
     }
 }
 

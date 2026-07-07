@@ -5,7 +5,9 @@ use crate::economy::menu::MenuItems;
 use crate::rendering::TextureCache;
 use bevy::prelude::*;
 
-use super::{BACK_BUTTON_WIDTH, BORDER_WIDTH, ITEM_HEIGHT, ITEM_WIDTH, PANEL_HEIGHT, SCROLL_BUTTON_WIDTH};
+use super::{
+    BACK_BUTTON_WIDTH, BORDER_WIDTH, ITEM_HEIGHT, ITEM_WIDTH, PANEL_HEIGHT, SCROLL_BUTTON_WIDTH,
+};
 
 fn slot_key(index: usize) -> &'static str {
     match index {

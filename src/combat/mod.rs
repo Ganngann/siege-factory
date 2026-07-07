@@ -45,7 +45,12 @@ fn move_and_hit_projectiles(
                 }
                 to_despawn.push(proj_entity);
             } else {
-                move_toward(&mut transform.translation, target_transform.translation, projectile.speed, time.delta_secs());
+                move_toward(
+                    &mut transform.translation,
+                    target_transform.translation,
+                    projectile.speed,
+                    time.delta_secs(),
+                );
             }
         } else {
             to_despawn.push(proj_entity);

@@ -1,12 +1,13 @@
-pub mod menu;
 pub mod interaction;
+pub mod menu;
 
-pub use menu::*;
 pub use interaction::*;
+pub use menu::*;
 
 use crate::core::utils::silent_despawn;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::MenuBarPanel;
+use crate::economy::discovery::GlobalArchive;
 use crate::economy::menu::{MenuDef, MenuItems, MenuState};
 use crate::economy::unit_config::UnitConfig;
 use crate::rendering::TextureCache;
@@ -27,6 +28,7 @@ pub fn spawn_menu_bar(
     registry: Res<BuildingRegistry>,
     unit_cfg: Res<UnitConfig>,
     textures: Res<TextureCache>,
+    global_archive: Res<GlobalArchive>,
 ) {
     *menu_items = crate::economy::menu::flat_items_at(
         &menu_def.root,
@@ -35,6 +37,7 @@ pub fn spawn_menu_bar(
         &registry,
         &unit_cfg,
         &menu_def,
+        &global_archive,
     );
 
     build_menu_bar(&mut commands, &menu_items, &textures);
@@ -48,6 +51,7 @@ pub fn refresh_menu_bar(
     registry: Res<BuildingRegistry>,
     unit_cfg: Res<UnitConfig>,
     textures: Res<TextureCache>,
+    global_archive: Res<GlobalArchive>,
     panel_query: Query<Entity, With<MenuBarPanel>>,
 ) {
     let new_items = crate::economy::menu::flat_items_at(
@@ -57,6 +61,7 @@ pub fn refresh_menu_bar(
         &registry,
         &unit_cfg,
         &menu_def,
+        &global_archive,
     );
     if *menu_items == new_items {
         return;

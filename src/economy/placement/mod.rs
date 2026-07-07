@@ -6,20 +6,20 @@ pub mod deconstruct;
 pub use deconstruct::*;
 
 use crate::core::input::KeyBindings;
+use crate::economy::belt::BeltSlots;
 use crate::economy::belt::compute_slot_positions;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    BeltDirection, BeltDrag, BuildMode, DeconstructDrag, DeconstructMode, Ghost,
-    UiIsBlocking,
+    BeltDirection, BeltDrag, BuildMode, DeconstructDrag, DeconstructMode, Ghost, UiIsBlocking,
 };
+use crate::economy::components::{Building, OccupiedTiles};
+use crate::economy::spatial::SpatialRegistry;
+use crate::events::DeconstructAreaEvent;
 use crate::map::components::{HoveredTile, TilePosition, cursor_to_tile};
 use crate::map::config::MapConfig;
+use crate::rendering::minimap::MinimapCamera;
 use crate::rendering::{PreviewMaterials, ShapeCache};
-use crate::events::DeconstructAreaEvent;
 use bevy::prelude::*;
-use crate::economy::belt::BeltSlots;
-use crate::economy::components::{OccupiedTiles, Building};
-use crate::economy::spatial::SpatialRegistry;
 
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
@@ -33,7 +33,9 @@ pub fn build_mode_input(
     hovered: Res<HoveredTile>,
     buttons: Res<ButtonInput<MouseButton>>,
 ) {
-    if bindings.just_pressed("build_rotate", &keys, &mouse) && build_mode.0.as_deref() == Some("belt") {
+    if bindings.just_pressed("build_rotate", &keys, &mouse)
+        && build_mode.0.as_deref() == Some("belt")
+    {
         if let Some(pos) = hovered.0 {
             let mut rotated = false;
             for (mut belt, tile_pos) in placed_belts.iter_mut() {
@@ -74,7 +76,7 @@ pub fn track_belt_drag(
     cfg: Res<MapConfig>,
     spatial: Res<SpatialRegistry>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
+    camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     producers: Query<&TilePosition, With<crate::economy::components::Miner>>,
     belt_read: Query<(&TilePosition, &BeltSlots)>,
     buttons: Res<ButtonInput<MouseButton>>,
@@ -132,7 +134,13 @@ pub fn track_belt_drag(
 
         for &(bx, by, base_dir) in &line {
             let dir = if single {
-                build::auto_detect_direction_from_data(bx, by, &producers, &belt_data, crate::economy::components::Direction::East)
+                build::auto_detect_direction_from_data(
+                    bx,
+                    by,
+                    &producers,
+                    &belt_data,
+                    crate::economy::components::Direction::East,
+                )
             } else {
                 base_dir
             };
@@ -233,7 +241,7 @@ pub fn track_deconstruct_drag(
     deconstruct: Res<DeconstructMode>,
     cfg: Res<MapConfig>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
+    camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,

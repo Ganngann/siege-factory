@@ -3,9 +3,7 @@ use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     BackButton, BuildMode, DeconstructMode, MenuItemButton, Player, ScrollButton,
 };
-use crate::economy::menu::{
-    FlatItemKind, MenuAction, MenuDef, MenuEntry, MenuItems, MenuState,
-};
+use crate::economy::menu::{FlatItemKind, MenuAction, MenuDef, MenuEntry, MenuItems, MenuState};
 use crate::economy::resource::Inventory;
 use crate::economy::unit_config::UnitConfig;
 use crate::unit::SpawnUnitEvent;

@@ -5,7 +5,7 @@ use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::Inventory;
 
 pub fn assembler_tick(
-    time: Res<Time>,
+    time: Res<Time<Fixed>>,
     recipes: Res<RecipeRegistry>,
     mut assembler_query: Query<(
         &mut Assembler,

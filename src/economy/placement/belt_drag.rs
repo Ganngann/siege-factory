@@ -1,9 +1,7 @@
 use crate::economy::belt::{BeltSlots, compute_slot_positions};
 use crate::economy::building::BuildingRegistry;
-use crate::economy::components::{
-    Active, Building, OccupiedTiles, Sorter, Splitter,
-};
-use crate::economy::game_components::Player;
+use crate::economy::components::{Active, Building, OccupiedTiles, Sorter, Splitter};
+use crate::economy::game_components::{Level, Player};
 use crate::economy::resource::{Cost, Inventory, ResourceId};
 use crate::events::BeltDragCompleted;
 use crate::map::components::TilePosition;
@@ -103,7 +101,8 @@ pub fn on_belt_drag_completed(
                     slot_positions,
                     speed,
                 },
-                Transform::from_xyz(cx, cy, 2.0).with_rotation(Quat::from_rotation_z(dir.to_angle())),
+                Transform::from_xyz(cx, cy, 2.0)
+                    .with_rotation(Quat::from_rotation_z(dir.to_angle())),
             );
 
             if def.id == BUILDING_SPLITTER {
@@ -114,20 +113,27 @@ pub fn on_belt_drag_completed(
                         outputs: 2,
                         input_direction: None,
                     },
+                    def.belt_variant,
                     Active(true),
+                    Level(def.level),
                 ));
             } else if def.id == BUILDING_SORTER {
-                let filter = def.default_filter.clone().unwrap_or_else(|| "iron_ore".to_string());
+                let filter = def
+                    .default_filter
+                    .clone()
+                    .unwrap_or_else(|| "iron_ore".to_string());
                 commands.spawn((
                     belt_components,
                     Sorter {
                         filter: ResourceId(filter),
                         inverted: false,
                     },
+                    def.belt_variant,
                     Active(true),
+                    Level(def.level),
                 ));
             } else {
-                commands.spawn((belt_components, Active(true)));
+                commands.spawn((belt_components, def.belt_variant, Active(true), Level(def.level)));
             }
         }
     } else if def.drag_placement {
@@ -144,6 +150,7 @@ pub fn on_belt_drag_completed(
                 TilePosition { x: bx, y: by },
                 Transform::from_xyz(cx, cy, 2.0),
                 Active(true),
+                Level(def.level),
             ));
         }
     }

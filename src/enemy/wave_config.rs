@@ -102,7 +102,15 @@ struct GameEntry {
     enemy_spawn_z: f32,
 }
 
-fn default_hit_distance() -> f32 { 10.0 }
-fn default_spawn_distance() -> f32 { 25.0 }
-fn default_enemy_arrival_threshold() -> f32 { 2.0 }
-fn default_enemy_spawn_z() -> f32 { 3.0 }
+fn default_hit_distance() -> f32 {
+    10.0
+}
+fn default_spawn_distance() -> f32 {
+    25.0
+}
+fn default_enemy_arrival_threshold() -> f32 {
+    2.0
+}
+fn default_enemy_spawn_z() -> f32 {
+    3.0
+}

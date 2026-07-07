@@ -1,5 +1,5 @@
-use crate::load_toml;
 use super::types::*;
+use crate::load_toml;
 
 impl MainMenuDef {
     pub fn load() -> Self {

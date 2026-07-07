@@ -45,8 +45,20 @@ pub struct Building {
     pub name: String,
 }
 
+#[derive(Component, Clone, Copy)]
+pub struct Level(pub u32);
+
 #[derive(Component)]
 pub struct Ghost;
+
+#[derive(Component, Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum BeltVariant {
+    #[default]
+    Normal,
+    Underground,
+    Aerial,
+    Curved,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum Direction {

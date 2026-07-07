@@ -3,7 +3,9 @@ use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::economy::components::{Assembler, Building, Direction, Sorter, Splitter, UnbuiltBuilding};
+use crate::economy::components::{
+    Assembler, Building, Direction, Sorter, Splitter, UnbuiltBuilding,
+};
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::spatial::SpatialRegistry;
@@ -44,7 +46,9 @@ pub fn compute_slot_positions(
         .collect()
 }
 
-fn build_pos_map<T: QueryData>(query: &Query<(Entity, &TilePosition, T)>) -> HashMap<(i32, i32), Entity> {
+fn build_pos_map<T: QueryData>(
+    query: &Query<(Entity, &TilePosition, T)>,
+) -> HashMap<(i32, i32), Entity> {
     query
         .iter()
         .map(|(e, pos, _)| ((pos.x, pos.y), e))
@@ -84,7 +88,14 @@ pub fn advance_belt_slots(
         .iter()
         .map(|(e, pos, bs)| {
             let slot_duration = 1.0 / (bs.speed * bs.items.len() as f32);
-            (e, *pos, bs.direction, bs.speed, bs.items.len(), slot_duration)
+            (
+                e,
+                *pos,
+                bs.direction,
+                bs.speed,
+                bs.items.len(),
+                slot_duration,
+            )
         })
         .collect();
 
@@ -104,13 +115,13 @@ pub fn advance_belt_slots(
         if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
             for i in (0..bs.items.len() - 1).rev() {
                 if let Some(ref item) = bs.items[i] {
-                if item.acc >= *slot_duration && bs.items[i + 1].is_none() {
-                    let (left, right) = bs.items.split_at_mut(i + 1);
-                    if let Some(mut item) = left[i].take() {
-                        item.acc -= *slot_duration;
-                        right[0] = Some(item);
+                    if item.acc >= *slot_duration && bs.items[i + 1].is_none() {
+                        let (left, right) = bs.items.split_at_mut(i + 1);
+                        if let Some(mut item) = left[i].take() {
+                            item.acc -= *slot_duration;
+                            right[0] = Some(item);
+                        }
                     }
-                }
                 }
             }
         }
@@ -201,7 +212,13 @@ pub fn advance_belt_slots(
                     };
                     if bs.items[last].is_some() {
                         if target_bs.items[0].is_none() {
-                            transfer_item(&mut bs.items, &mut target_bs.items, last, 0, *slot_duration);
+                            transfer_item(
+                                &mut bs.items,
+                                &mut target_bs.items,
+                                last,
+                                0,
+                                *slot_duration,
+                            );
                             if let Ok((_, _, mut s)) = splitter_query.get_mut(*belt_entity) {
                                 s.counter = s.counter.wrapping_add(1);
                                 s.input_direction = input_dir;
@@ -256,7 +273,13 @@ pub fn advance_belt_slots(
                     {
                         if target_bs.items[0].is_none() {
                             if bs.items[last].is_some() {
-                                transfer_item(&mut bs.items, &mut target_bs.items, last, 0, *slot_duration);
+                                transfer_item(
+                                    &mut bs.items,
+                                    &mut target_bs.items,
+                                    last,
+                                    0,
+                                    *slot_duration,
+                                );
                             }
                         }
                     }

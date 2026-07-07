@@ -1,0 +1,7 @@
+error: unexpected argument '--no-warmup' found
+
+  tip: to pass '--no-warmup' as a value, use '-- --no-warmup'
+
+Usage: cargo.exe run [OPTIONS] [ARGS]...
+
+For more information, try '--help'.

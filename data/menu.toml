@@ -24,8 +24,7 @@ items = ["farm", "arboretum", "guild_hall"]
 [[menu]]
 label = "Logistique"
 items = [
-    "belt",
-    "high_speed_track",
+    { label = "Ceintures", items = ["belt", "underground_belt", "aerial_belt", "curved_belt", "high_speed_track"] },
     { label = "Tris", items = ["splitter", "sorter"] },
     "storage",
     "compactor",

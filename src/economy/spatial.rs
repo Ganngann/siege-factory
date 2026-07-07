@@ -2,9 +2,19 @@ use crate::economy::components::{Building, OccupiedTiles};
 use bevy::prelude::*;
 use std::collections::HashMap;
 
-#[derive(Resource, Default)]
+#[derive(Resource)]
 pub struct SpatialRegistry {
     pub(crate) map: HashMap<(i32, i32), Entity>,
+    pub(crate) dirty: bool,
+}
+
+impl Default for SpatialRegistry {
+    fn default() -> Self {
+        Self {
+            map: HashMap::new(),
+            dirty: true,
+        }
+    }
 }
 
 impl SpatialRegistry {
@@ -42,11 +52,19 @@ impl SpatialRegistry {
 }
 
 /// Rebuilds the spatial registry from all building OccupiedTiles.
-/// Runs once per frame in the First schedule, before all consumers.
+/// Only rebuilds when buildings are added or removed.
 pub fn sync_spatial_registry(
     mut registry: ResMut<SpatialRegistry>,
     query: Query<(Entity, &OccupiedTiles), With<Building>>,
+    mut removals: RemovedComponents<OccupiedTiles>,
+    added: Query<(), Added<OccupiedTiles>>,
 ) {
+    let has_added = !added.is_empty();
+    let has_removed = removals.read().count() > 0;
+    if !registry.dirty && !has_added && !has_removed {
+        return;
+    }
+    registry.dirty = false;
     registry.map.clear();
     registry.map.reserve(query.iter().len() * 2);
     for (entity, tiles) in &query {

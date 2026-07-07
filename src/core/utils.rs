@@ -78,8 +78,7 @@ pub fn move_toward(translation: &mut Vec3, target: Vec3, speed: f32, dt: f32) ->
 macro_rules! load_toml {
     ($path:literal, $ty:ty) => {{
         let toml_str = include_str!($path);
-        toml::from_str::<$ty>(toml_str).unwrap_or_else(|e| {
-            panic!("failed to parse {}: {}", $path, e)
-        })
+        toml::from_str::<$ty>(toml_str)
+            .unwrap_or_else(|e| panic!("failed to parse {}: {}", $path, e))
     }};
 }

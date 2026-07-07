@@ -2,13 +2,14 @@ use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     AlertText, Building, BuildingPanel, CapacityBarFill, CapacityBarText, ConnectionRowText,
     FarmCropSelectButton, FarmCropText, FarmCultivatorCountText, FarmRecruitButton, FlowInputText,
-    FlowOutputText, HpBarFill, HpText, PanelOverlay, PowerStatusText, ProgressBarBg,
-    ProgressBarFill, RecipeChangeButton, RecipeNameText, SorterInvertButton, SorterResourceButton,
-    StatRowText, StatusText,
+    FlowOutputText, FuelBarBg, FuelBarFill, HpBarFill, HpText, PanelOverlay, PowerStatusText,
+    ProgressBarBg, ProgressBarFill, RecipeChangeButton, RecipeNameText, SorterInvertButton,
+    SorterResourceButton, StatRowText, StatusText,
 };
 use crate::economy::resource::ResourceRegistry;
+use crate::economy::ui_components::{UpgradeButton, UpgradeInfoText};
 use crate::economy::window::{
-    spawn_window, ACCENT, BAR_BG, BG_SECTION, HP_GREEN, TEXT_PRIMARY, TEXT_SECONDARY,
+    ACCENT, BAR_BG, BG_SECTION, HP_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, spawn_window,
 };
 use bevy::prelude::*;
 
@@ -19,7 +20,10 @@ fn kind_has_recipes(kind: &str) -> bool {
     matches!(
         kind,
         "assembler"
+            | "assembler_ii"
+            | "assembler_iii"
             | "furnace"
+            | "furnace_ii"
             | "blast_furnace"
             | "assembly_crane"
             | "alchemy_lab"
@@ -38,7 +42,7 @@ pub fn open_panel(
     building: &Building,
     kind: &str,
     resource_registry: &ResourceRegistry,
-    _reg: &BuildingRegistry,
+    reg: &BuildingRegistry,
     farm_crop_types: Vec<String>,
 ) {
     // Close existing panel first
@@ -87,6 +91,7 @@ pub fn open_panel(
         show_recipes,
         is_farm,
         &resource_registry,
+        reg,
         farm_crop_types,
     );
 
@@ -106,6 +111,7 @@ fn spawn_panel_ui(
     show_recipes: bool,
     is_farm: bool,
     resource_registry: &ResourceRegistry,
+    reg: &BuildingRegistry,
     farm_crop_types: Vec<String>,
 ) -> Entity {
     let panel_w = modal_size.x;
@@ -119,7 +125,11 @@ fn spawn_panel_ui(
     spawn_window(
         commands,
         &format!("{}  #{}", building.name, entity.to_bits() % 1000),
-        modal_size.x, modal_size.y, x, y, None,
+        modal_size.x,
+        modal_size.y,
+        x,
+        y,
+        None,
         |parent| {
             spawn_status_bar(parent);
 
@@ -158,6 +168,14 @@ fn spawn_panel_ui(
                             spawn_section(right, "STATS", spawn_stats_content);
                             spawn_section(right, "POWER", spawn_power_content);
 
+                            let is_burner = reg
+                                .get(kind)
+                                .map(|d| d.fuel_burn_interval > 0.0)
+                                .unwrap_or(false);
+                            if is_burner {
+                                spawn_section(right, "FUEL", spawn_burner_content);
+                            }
+
                             if show_recipes {
                                 spawn_section(right, "SETTINGS", spawn_recipe_content);
                             }
@@ -176,9 +194,19 @@ fn spawn_panel_ui(
 
                             spawn_section(right, "HP", spawn_hp_content);
                             spawn_section(right, "ALERTS", spawn_alerts_content);
+
+                            // Upgrade section (only if building has an upgrade available)
+                            if let Some(upgrade_kind) =
+                                reg.get(kind).and_then(|d| d.upgrades_to.as_ref())
+                            {
+                                if let Some(upgrade_def) = reg.get(upgrade_kind) {
+                                    spawn_upgrade_section(right, upgrade_kind, upgrade_def);
+                                }
+                            }
                         });
                 });
-        })
+        },
+    )
 }
 
 // ── Extracted section helpers ──
@@ -250,10 +278,7 @@ fn spawn_flow_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     ));
 }
 
-fn spawn_inventory_content(
-    sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
-    entity: Entity,
-) {
+fn spawn_inventory_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands, entity: Entity) {
     // Capacity bar
     sec.spawn((
         Node {
@@ -289,7 +314,11 @@ fn spawn_inventory_content(
     const S2: f32 = 40.0;
     const G2: f32 = 3.0;
     sec.spawn((
-        crate::economy::components::InventoryGrid { cols: 3, rows: 2, owner: entity },
+        crate::economy::components::InventoryGrid {
+            cols: 3,
+            rows: 2,
+            owner: entity,
+        },
         Node {
             width: Val::Px(3.0 * (S2 + G2) + G2 * 2.0),
             padding: bevy::ui::UiRect::all(Val::Px(G2)),
@@ -430,15 +459,13 @@ fn spawn_farm_content(
             },
             BackgroundColor(Color::srgb(0.18, 0.35, 0.18)),
         ))
-        .with_children(
-            |btn| {
-                btn.spawn((
-                    Text::new(crop_type),
-                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                    TextColor(TEXT_SECONDARY),
-                ));
-            },
-        );
+        .with_children(|btn| {
+            btn.spawn((
+                Text::new(crop_type),
+                TextFont::from_font_size(super::SECTION_FONT_SIZE),
+                TextColor(TEXT_SECONDARY),
+            ));
+        });
     }
 
     sec.spawn((
@@ -506,9 +533,7 @@ fn spawn_sorter_content(
     for res in &resources {
         sec.spawn((
             SorterResourceButton {
-                resource: crate::economy::resource::ResourceId(
-                    res.clone(),
-                ),
+                resource: crate::economy::resource::ResourceId(res.clone()),
             },
             Button,
             Node {
@@ -521,15 +546,13 @@ fn spawn_sorter_content(
             },
             BackgroundColor(Color::srgb(0.15, 0.15, 0.22)),
         ))
-        .with_children(
-            |btn| {
-                btn.spawn((
-                    Text::new(res),
-                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
-                    TextColor(TEXT_SECONDARY),
-                ));
-            },
-        );
+        .with_children(|btn| {
+            btn.spawn((
+                Text::new(res),
+                TextFont::from_font_size(super::SECTION_FONT_SIZE),
+                TextColor(TEXT_SECONDARY),
+            ));
+        });
     }
 }
 
@@ -572,6 +595,88 @@ fn spawn_alerts_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
         TextFont::from_font_size(super::SECTION_FONT_SIZE),
         TextColor(TEXT_SECONDARY),
     ));
+}
+
+fn spawn_upgrade_section(
+    sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
+    target_kind: &str,
+    target_def: &crate::economy::building::BuildingDef,
+) {
+    let cost_str: String = target_def
+        .cost
+        .iter()
+        .map(|c| format!("{} x{}", c.resource.0, c.amount))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    sec.spawn((
+        UpgradeInfoText,
+        Text::new(format!("Upgrade to: {}", target_def.name)),
+        TextFont::from_font_size(12.0),
+        TextColor(TEXT_PRIMARY),
+        Node {
+            margin: UiRect::bottom(Val::Px(4.0)),
+            ..default()
+        },
+    ));
+    sec.spawn((
+        Text::new(format!("Cost: {}", cost_str)),
+        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        TextColor(TEXT_SECONDARY),
+        Node {
+            margin: UiRect::bottom(Val::Px(4.0)),
+            ..default()
+        },
+    ));
+    sec.spawn((
+        UpgradeButton {
+            target_kind: target_kind.to_string(),
+        },
+        Button,
+        Node {
+            width: Val::Px(160.0),
+            height: Val::Px(super::CLOSE_BUTTON_SIZE),
+            align_items: AlignItems::Center,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        BackgroundColor(Color::srgb(0.25, 0.45, 0.65)),
+    ))
+    .with_children(|btn| {
+        btn.spawn((
+            Text::new("[Upgrade]"),
+            TextFont::from_font_size(12.0),
+            TextColor(TEXT_PRIMARY),
+        ));
+    });
+}
+
+fn spawn_burner_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
+    sec.spawn((
+        Text::new("Combustion"),
+        TextFont::from_font_size(10.0),
+        TextColor(TEXT_SECONDARY),
+    ));
+    sec.spawn((
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Px(14.0),
+            ..default()
+        },
+        BackgroundColor(BAR_BG),
+        FuelBarBg,
+    ))
+    .with_children(|bg| {
+        bg.spawn((
+            Node {
+                width: Val::Percent(0.0),
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            BackgroundColor(ACCENT),
+            FuelBarFill,
+        ));
+    });
 }
 
 // ── Section wrapper ──

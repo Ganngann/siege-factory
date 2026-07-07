@@ -1,7 +1,8 @@
 use crate::economy::building::BuildingRegistry;
-use crate::load_toml;
+use crate::economy::discovery::GlobalArchive;
 use crate::economy::resource::Cost;
 use crate::economy::unit_config::UnitConfig;
+use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 
@@ -94,7 +95,9 @@ struct MenuSettings {
     page_size: usize,
 }
 
-fn default_page_size() -> usize { 9 }
+fn default_page_size() -> usize {
+    9
+}
 
 #[derive(Deserialize)]
 struct TomlMenuCategory {
@@ -246,46 +249,54 @@ pub fn flat_items_at(
     registry: &BuildingRegistry,
     unit_cfg: &UnitConfig,
     menu_def: &MenuDef,
+    global_archive: &GlobalArchive,
 ) -> MenuItems {
     let level = items_at(entries, stack);
 
     let mut items = Vec::new();
-    for entry in level.iter().skip(scroll).take(menu_def.page_size) {
+    for entry in level.iter().skip(scroll) {
         match entry {
-            MenuEntry::Action { label, action } => {
-                let (cost_str, color, texture_stem) = match action {
-                    MenuAction::Build(id) => {
-                        if let Some(def) = registry.get(id) {
-                            (
-                                format_cost(&def.cost),
-                                def.color,
-                                Some(def.texture_stem.clone()),
-                            )
-                        } else {
-                            (String::new(), Color::srgb(0.4, 0.4, 0.5), None)
+            MenuEntry::Action { label, action } => match action {
+                MenuAction::Build(id) => {
+                    if let Some(def) = registry.get(id) {
+                        if def.hidden {
+                            continue;
                         }
-                    }
-                    MenuAction::Spawn(id) => {
-                        if let Some(def) = unit_cfg.get(id) {
-                            (
-                                format_cost(&def.cost),
-                                def.color,
-                                Some(def.texture_stem.clone()),
-                            )
-                        } else {
-                            (String::new(), Color::srgb(0.3, 0.35, 0.4), None)
+                        if let Some(ref req) = def.requires_discovery {
+                            if !global_archive.is_unlocked(req) {
+                                continue;
+                            }
                         }
+                        items.push(FlatItem {
+                            label: label.clone(),
+                            kind: FlatItemKind::Action(action.clone()),
+                            cost_str: format_cost(&def.cost),
+                            color: def.color,
+                            texture_stem: Some(def.texture_stem.clone()),
+                        });
                     }
-                    MenuAction::Delete => (String::new(), Color::srgb(0.8, 0.2, 0.2), None),
-                };
-                items.push(FlatItem {
-                    label: label.clone(),
-                    kind: FlatItemKind::Action(action.clone()),
-                    cost_str,
-                    color,
-                    texture_stem,
-                });
-            }
+                }
+                MenuAction::Spawn(id) => {
+                    if let Some(def) = unit_cfg.get(id) {
+                        items.push(FlatItem {
+                            label: label.clone(),
+                            kind: FlatItemKind::Action(action.clone()),
+                            cost_str: format_cost(&def.cost),
+                            color: def.color,
+                            texture_stem: Some(def.texture_stem.clone()),
+                        });
+                    }
+                }
+                MenuAction::Delete => {
+                    items.push(FlatItem {
+                        label: label.clone(),
+                        kind: FlatItemKind::Action(action.clone()),
+                        cost_str: String::new(),
+                        color: Color::srgb(0.8, 0.2, 0.2),
+                        texture_stem: None,
+                    });
+                }
+            },
             MenuEntry::SubMenu { label, .. } => {
                 items.push(FlatItem {
                     label: label.clone(),
@@ -298,19 +309,25 @@ pub fn flat_items_at(
         }
     }
 
-    let total_items = level.len();
+    // Apply pagination after filtering
+    let total_before_scroll = items.len();
+    let page_items: Vec<FlatItem> = items
+        .into_iter()
+        .skip(scroll)
+        .take(menu_def.page_size)
+        .collect();
     let has_back = !stack.is_empty();
     let can_scroll_left = scroll > 0;
-    let can_scroll_right = (scroll + menu_def.page_size) < total_items;
+    let can_scroll_right = (scroll + menu_def.page_size) < total_before_scroll;
     let breadcrumb = breadcrumb_at(entries, stack);
 
     MenuItems {
-        items,
+        items: page_items,
         has_back,
         breadcrumb,
         can_scroll_left,
         can_scroll_right,
-        total_items,
+        total_items: total_before_scroll,
     }
 }
 

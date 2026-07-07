@@ -53,6 +53,9 @@ pub fn turret_shoot(
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     time: Res<Time>,
 ) {
+    let enemy_positions: Vec<(Entity, Vec3)> =
+        enemies.iter().map(|(e, t)| (e, t.translation)).collect();
+
     for (turret_pos, mut combat, power) in turrets.iter_mut() {
         if let Some(pc) = power {
             if !pc.satisfied {
@@ -63,9 +66,6 @@ pub fn turret_shoot(
         if combat.timer < combat.fire_interval {
             continue;
         }
-
-        let enemy_positions: Vec<(Entity, Vec3)> =
-            enemies.iter().map(|(e, t)| (e, t.translation)).collect();
 
         if let Some(entity) =
             find_closest_enemy(turret_pos.translation, &enemy_positions, combat.range_sq)

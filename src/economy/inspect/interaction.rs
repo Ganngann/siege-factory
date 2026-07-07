@@ -7,12 +7,15 @@ use crate::economy::components::{
     OccupiedTiles, PanelModal, Player, ResourceDeposit, Sorter, SorterInvertButton,
     SorterResourceButton, UiIsBlocking,
 };
+use crate::economy::game_components::Level;
 use crate::economy::player::PlayerWorldPos;
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::spatial::SpatialRegistry;
+use crate::economy::ui_components::UpgradeButton;
 use crate::economy::unit_config::UnitConfig;
-use crate::map::components::{cursor_to_tile, TilePosition};
+use crate::map::components::{TilePosition, cursor_to_tile};
 use crate::map::config::MapConfig;
+use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
 
 use super::{close_panel, open_panel, spawn_deposit_panel};
@@ -26,7 +29,7 @@ pub fn building_inspect_click(
     deconstruct: Res<DeconstructMode>,
     buttons: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
+    camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: Res<MapConfig>,
     player_pos: Res<PlayerWorldPos>,
     spatial: Res<SpatialRegistry>,
@@ -46,7 +49,11 @@ pub fn building_inspect_click(
         return;
     }
 
-    let Some(TilePosition { x: tile_x, y: tile_y }) = cursor_to_tile(&windows, &camera, &cfg) else {
+    let Some(TilePosition {
+        x: tile_x,
+        y: tile_y,
+    }) = cursor_to_tile(&windows, &camera, &cfg)
+    else {
         return;
     };
 
@@ -78,7 +85,10 @@ pub fn building_inspect_click(
             return;
         }
 
-        let farm_crop_types = reg.get(&building.kind).map(|d| d.crop_types.clone()).unwrap_or_default();
+        let farm_crop_types = reg
+            .get(&building.kind)
+            .map(|d| d.crop_types.clone())
+            .unwrap_or_default();
         open_panel(
             commands,
             panel,
@@ -309,7 +319,10 @@ pub fn farm_recruit_system(
             Ok(inv) => inv,
             Err(_) => continue,
         };
-        let can_afford = def.cost.iter().all(|c| player_inv.get(&c.resource) >= c.amount);
+        let can_afford = def
+            .cost
+            .iter()
+            .all(|c| player_inv.get(&c.resource) >= c.amount);
         if !can_afford {
             toast_queue.0.push("Not enough resources".to_string());
             continue;
@@ -361,7 +374,11 @@ pub fn resource_transfer(
     if keys.just_pressed(KeyCode::KeyT) {
         // Take 1 unit of first resource from building → player
         if let Ok(mut build_inv) = building_inv_query.get_mut(inspected) {
-            let resource = build_inv.resources.iter().find(|&(_, amt)| *amt > 0).map(|(r, _)| r.clone());
+            let resource = build_inv
+                .resources
+                .iter()
+                .find(|&(_, amt)| *amt > 0)
+                .map(|(r, _)| r.clone());
             if let Some(rid) = resource {
                 build_inv.remove(&rid, 1);
                 player_inv.add(&rid, 1);
@@ -375,7 +392,11 @@ pub fn resource_transfer(
     if keys.just_pressed(KeyCode::KeyP) {
         // Put 1 unit of first resource from player → building
         if let Ok(mut build_inv) = building_inv_query.get_mut(inspected) {
-            let resource = player_inv.resources.iter().find(|&(_, amt)| *amt > 0).map(|(r, _)| r.clone());
+            let resource = player_inv
+                .resources
+                .iter()
+                .find(|&(_, amt)| *amt > 0)
+                .map(|(r, _)| r.clone());
             if let Some(rid) = resource {
                 if build_inv.capacity > 0 && build_inv.is_full() {
                     toast_queue.0.push("Bâtiment plein".to_string());
@@ -383,10 +404,155 @@ pub fn resource_transfer(
                 }
                 player_inv.remove(&rid, 1);
                 build_inv.add(&rid, 1);
-                toast_queue.0.push(format!("Déposé 1 {}", rid.display_name()));
+                toast_queue
+                    .0
+                    .push(format!("Déposé 1 {}", rid.display_name()));
             } else {
                 toast_queue.0.push("Rien à déposer".to_string());
             }
         }
     }
+}
+
+// ── Upgrade button click ──
+
+#[allow(clippy::too_many_arguments)]
+pub fn upgrade_button_system(
+    mut commands: Commands,
+    mut panel: ResMut<BuildingPanel>,
+    query: Query<&Interaction, (Changed<Interaction>, With<UpgradeButton>)>,
+    upgrade_query: Query<&UpgradeButton>,
+    building_query: Query<(&Building, &TilePosition, &OccupiedTiles)>,
+    mut player_inv_query: Query<&mut Inventory, With<Player>>,
+    registry: Res<BuildingRegistry>,
+    cfg: Res<MapConfig>,
+    mut toast_queue: ResMut<ToastQueue>,
+) {
+    let Some(inspected) = panel.inspected else {
+        return;
+    };
+
+    // Check if upgrade button was pressed
+    let mut pressed = false;
+    for interaction in &query {
+        if *interaction == Interaction::Pressed {
+            if upgrade_query.get(inspected).is_ok() {
+                pressed = true;
+                break;
+            }
+        }
+    }
+    if !pressed {
+        return;
+    }
+
+    let Ok((building, tile_pos, occupied)) = building_query.get(inspected) else {
+        return;
+    };
+    let Ok(upgrade_btn) = upgrade_query.get(inspected) else {
+        return;
+    };
+
+    let target_kind = &upgrade_btn.target_kind;
+    let Some(target_def) = registry.get(target_kind) else {
+        toast_queue.0.push("Upgrade target not found".to_string());
+        return;
+    };
+
+    // Check cost
+    let mut player_inv = match player_inv_query.single_mut() {
+        Ok(inv) => inv,
+        Err(_) => return,
+    };
+    let can_afford = target_def
+        .cost
+        .iter()
+        .all(|c| player_inv.get(&c.resource) >= c.amount);
+    if !can_afford {
+        toast_queue
+            .0
+            .push("Not enough resources to upgrade".to_string());
+        return;
+    }
+
+    // Deduct cost
+    for c in &target_def.cost {
+        player_inv.remove(&c.resource, c.amount);
+    }
+
+    let old_name = building.name.clone();
+    let tx = tile_pos.x;
+    let ty = tile_pos.y;
+    let footprint = occupied.0.clone();
+    let tile_size = cfg.tile_size;
+    let (tw, th) = target_def.tile_size;
+    let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
+    let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
+
+    // Close panel
+    drop(player_inv);
+    // Inline panel close (can't call close_panel as it moves commands/panel)
+    if let Some(e) = panel.root.take() {
+        commands.entity(e).try_despawn();
+    }
+    if let Some(e) = panel.overlay.take() {
+        commands.entity(e).try_despawn();
+    }
+    if let Some(e) = panel.recipe_selector.take() {
+        commands.entity(e).try_despawn();
+    }
+    panel.inspected = None;
+    panel.dirty = false;
+
+    // Despawn old entity
+    commands.entity(inspected).try_despawn();
+
+    // Spawn upgraded building at the same position
+    let mut e = commands.spawn((
+        Building {
+            kind: target_kind.clone(),
+            name: target_def.name.clone(),
+        },
+        OccupiedTiles(footprint),
+        TilePosition { x: tx, y: ty },
+        Transform::from_xyz(cx, cy, 2.0),
+        Level(target_def.level),
+    ));
+
+    // Attach production if the target has a default recipe
+    if let Some(ref recipe) = target_def.default_recipe {
+        let interval = target_def.production_interval.unwrap_or(2.0);
+        e.insert(crate::economy::components::Assembler {
+            production_timer: 0.0,
+            interval,
+            recipe_id: recipe.clone(),
+        });
+        e.insert(crate::economy::components::ProductionCounter::default());
+        e.insert(crate::economy::components::DiscoveredRecipes::default());
+    }
+
+    // Attach combat if target has combat stats
+    if let Some(ref stats) = target_def.combat {
+        e.insert(crate::economy::components::TurretCombat {
+            damage: stats.damage,
+            range_sq: stats.range,
+            fire_interval: stats.fire_rate_sec,
+            timer: 0.0,
+            projectile_speed: stats.projectile_speed,
+        });
+    }
+
+    // Attach inventory
+    if target_def.inventory_capacity > 0 {
+        e.insert(Inventory::with_capacity(target_def.inventory_capacity));
+    } else {
+        e.insert(Inventory::new());
+    }
+
+    // Attach power components
+    crate::economy::building::attach_power_components(&mut e, &target_def);
+
+    toast_queue
+        .0
+        .push(format!("Upgraded {} to {}", old_name, target_def.name));
 }

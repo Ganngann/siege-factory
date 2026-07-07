@@ -70,7 +70,11 @@ impl UnitConfig {
                 spawn_offset_x: entry.spawn_offset_x.unwrap_or(0.0),
                 spawn_offset_y: entry.spawn_offset_y.unwrap_or(0.0),
                 spawn_offset_z: entry.spawn_offset_z.unwrap_or(2.5),
-                projectile_color: entry.projectile_color.as_deref().map(parse_hex_color).unwrap_or(Color::srgb(0.3, 1.0, 0.3)),
+                projectile_color: entry
+                    .projectile_color
+                    .as_deref()
+                    .map(parse_hex_color)
+                    .unwrap_or(Color::srgb(0.3, 1.0, 0.3)),
             };
             units.insert(id, def);
         }

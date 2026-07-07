@@ -4,14 +4,14 @@ use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::core::utils::silent_despawn;
 use crate::economy::belt::BeltSlots;
+use crate::economy::components::Unit;
 use crate::economy::components::{
-    Building, Ghost, HpBarChild, PanelModal, ResourceDeposit,
+    Builder, Building, Ghost, HpBarChild, PanelModal, Player, ResourceDeposit,
 };
 use crate::economy::ui::InventoryPanel;
 use crate::enemy::components::Enemy as EnemyComponent;
 use crate::map::components::ChunkMember;
 use crate::map::systems::ChunkMarker;
-use crate::economy::components::Unit;
 
 use super::{SaveManager, SaveRequested, ShowPauseMenu, save_path};
 
@@ -260,6 +260,7 @@ pub fn cleanup_world(
             With<Projectile>,
         )>,
     >,
+    player_builder: Query<Entity, Or<(With<Player>, With<Builder>)>>,
 ) {
     for bs in belt_slots.iter() {
         for sprite_entity in bs.slot_sprites.iter().flatten() {
@@ -267,6 +268,9 @@ pub fn cleanup_world(
         }
     }
     for e in &to_despawn {
+        silent_despawn(&mut commands, e);
+    }
+    for e in &player_builder {
         silent_despawn(&mut commands, e);
     }
 }

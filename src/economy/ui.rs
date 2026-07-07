@@ -2,7 +2,7 @@ use crate::economy::components::{
     DragState, DraggedItemVisual, InventoryGrid, InventorySlot, Player,
 };
 use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
-use crate::economy::window::{spawn_window, BG_SECTION};
+use crate::economy::window::{BG_SECTION, spawn_window};
 use bevy::prelude::*;
 use bevy::ui::widget::ImageNode;
 
@@ -37,47 +37,64 @@ pub fn toggle_inventory_panel(
     let w = 280.0;
     let h = rows as f32 * (SLOT_SIZE + SLOT_GAP) + SLOT_GAP + 50.0;
 
-    let panel_root = spawn_window(&mut commands, "Inventaire", w, h, 100.0, 80.0, None, |parent| {
-        parent.spawn((
-                InventoryGrid { cols, rows, owner: player_entity },
-                Node {
-                    width: Val::Px(cols as f32 * (SLOT_SIZE + SLOT_GAP) + SLOT_GAP * 2.0),
-                    padding: UiRect::all(Val::Px(SLOT_GAP)),
-                    display: Display::Flex,
-                    flex_wrap: FlexWrap::Wrap,
-                    align_content: AlignContent::FlexStart,
-                    margin: UiRect::all(Val::Px(8.0)),
-                    ..default()
-                },
-                BackgroundColor(BG_SECTION),
-            ))
-            .with_children(|grid| {
-                for i in 0..rows * cols {
-                    grid.spawn((
-                        InventorySlot { index: i },
-                        Button,
-                        Node {
-                            width: Val::Px(SLOT_SIZE),
-                            height: Val::Px(SLOT_SIZE),
-                            flex_shrink: 0.0,
-                            margin: UiRect::axes(Val::Px(SLOT_GAP / 2.0), Val::Px(SLOT_GAP / 2.0)),
-                            border: UiRect::all(Val::Px(1.0)),
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Column,
-                            align_items: AlignItems::Center,
-                            justify_content: JustifyContent::Center,
-                            ..default()
-                        },
-                        BorderColor::all(Color::srgba(0.3, 0.3, 0.4, 1.0)),
-                        BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
-                        ImageNode::default(),
-                        Text::new(String::new()),
-                        TextFont::from_font_size(11.0),
-                        TextColor(Color::WHITE),
-                    ));
-                }
-            });
-    });
+    let panel_root = spawn_window(
+        &mut commands,
+        "Inventaire",
+        w,
+        h,
+        100.0,
+        80.0,
+        None,
+        |parent| {
+            parent
+                .spawn((
+                    InventoryGrid {
+                        cols,
+                        rows,
+                        owner: player_entity,
+                    },
+                    Node {
+                        width: Val::Px(cols as f32 * (SLOT_SIZE + SLOT_GAP) + SLOT_GAP * 2.0),
+                        padding: UiRect::all(Val::Px(SLOT_GAP)),
+                        display: Display::Flex,
+                        flex_wrap: FlexWrap::Wrap,
+                        align_content: AlignContent::FlexStart,
+                        margin: UiRect::all(Val::Px(8.0)),
+                        ..default()
+                    },
+                    BackgroundColor(BG_SECTION),
+                ))
+                .with_children(|grid| {
+                    for i in 0..rows * cols {
+                        grid.spawn((
+                            InventorySlot { index: i },
+                            Button,
+                            Node {
+                                width: Val::Px(SLOT_SIZE),
+                                height: Val::Px(SLOT_SIZE),
+                                flex_shrink: 0.0,
+                                margin: UiRect::axes(
+                                    Val::Px(SLOT_GAP / 2.0),
+                                    Val::Px(SLOT_GAP / 2.0),
+                                ),
+                                border: UiRect::all(Val::Px(1.0)),
+                                display: Display::Flex,
+                                flex_direction: FlexDirection::Column,
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::Center,
+                                ..default()
+                            },
+                            BorderColor::all(Color::srgba(0.3, 0.3, 0.4, 1.0)),
+                            BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
+                            ImageNode::default(),
+                            Text::new(String::new()),
+                            TextFont::from_font_size(11.0),
+                            TextColor(Color::WHITE),
+                        ));
+                    }
+                });
+        },
+    );
     commands.entity(panel_root).insert(InventoryPanel);
 }
 
@@ -150,7 +167,15 @@ pub fn cleanup_inventory_panel(
 pub fn drag_start(
     mut drag: ResMut<DragState>,
     windows: Query<&Window>,
-    slots: Query<(Entity, &InventorySlot, &GlobalTransform, Option<&Interaction>), With<InventorySlot>>,
+    slots: Query<
+        (
+            Entity,
+            &InventorySlot,
+            &GlobalTransform,
+            Option<&Interaction>,
+        ),
+        With<InventorySlot>,
+    >,
     grids: Query<(&InventoryGrid, &Children)>,
     inv_query: Query<&Inventory>,
     mut commands: Commands,
@@ -160,11 +185,15 @@ pub fn drag_start(
     }
 
     let Ok(window) = windows.single() else { return };
-    let Some(cursor) = window.cursor_position() else { return };
+    let Some(cursor) = window.cursor_position() else {
+        return;
+    };
 
     for (slot_entity, slot, tf, interaction) in slots.iter() {
         // Slot must be pressed (Interaction updated in PostUpdate)
-        let is_pressed = interaction.map(|i| *i == Interaction::Pressed).unwrap_or(false);
+        let is_pressed = interaction
+            .map(|i| *i == Interaction::Pressed)
+            .unwrap_or(false);
         if !is_pressed {
             continue;
         }
@@ -225,7 +254,9 @@ pub fn drag_update(
     }
     let Some(visual) = drag.visual else { return };
     let Ok(window) = windows.single() else { return };
-    let Some(cursor) = window.cursor_position() else { return };
+    let Some(cursor) = window.cursor_position() else {
+        return;
+    };
     if let Ok(mut node) = visual_query.get_mut(visual) {
         node.left = Val::Px(cursor.x - 20.0);
         node.top = Val::Px(cursor.y - 10.0);
@@ -253,8 +284,14 @@ pub fn drag_end(
         commands.entity(visual).despawn();
     }
 
-    let Ok(window) = windows.single() else { drag.reset(); return };
-    let Some(cursor) = window.cursor_position() else { drag.reset(); return };
+    let Ok(window) = windows.single() else {
+        drag.reset();
+        return;
+    };
+    let Some(cursor) = window.cursor_position() else {
+        drag.reset();
+        return;
+    };
 
     let src_owner = drag.source_owner;
     let resource = drag.resource.clone();
@@ -281,7 +318,9 @@ pub fn drag_end(
     }
 
     let Some(dst_owner) = dst_owner else { return };
-    if dst_owner == src_owner { return; }
+    if dst_owner == src_owner {
+        return;
+    }
 
     let removed = {
         if let Ok(mut inv) = inv_query.get_mut(src_owner) {
@@ -303,7 +342,9 @@ pub fn drag_end(
     if let Ok(mut inv) = inv_query.get_mut(dst_owner) {
         if inv.capacity == 0 || !inv.is_full() {
             inv.add(resource, amount);
-            toast_queue.0.push(format!("Transféré 1 {}", resource.display_name()));
+            toast_queue
+                .0
+                .push(format!("Transféré 1 {}", resource.display_name()));
         } else {
             if let Ok(mut src_inv) = inv_query.get_mut(src_owner) {
                 src_inv.add(resource, amount);

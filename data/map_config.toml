@@ -15,6 +15,10 @@ infinite = true
 iron_ore = 50
 copper_ore = 35
 coal = 15
+[deposits.resource_discovery_map]
+iron_ore = "mine_iron_ore"
+copper_ore = "mine_copper_ore"
+coal = "mine_coal"
 
 [player]
 hp = 100
@@ -26,6 +30,7 @@ inspect_range_tiles = 3.0
 builder_range_tiles = 5.0
 builder_idle_offset_x = -24.0
 builder_idle_offset_y = -24.0
+mining_interval = 1.0
 
 [chunk]
 initial_margin = 10

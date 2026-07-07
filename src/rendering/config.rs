@@ -227,30 +227,91 @@ struct VisualsToml {
 }
 
 #[derive(Deserialize)]
-struct HpBarEntry { width: f32, height: f32, y_offset: f32, z: f32, color_high: String, color_mid: String, color_low: String }
+struct HpBarEntry {
+    width: f32,
+    height: f32,
+    y_offset: f32,
+    z: f32,
+    color_high: String,
+    color_mid: String,
+    color_low: String,
+}
 #[derive(Deserialize)]
-struct BeltItemEntry { width: f32, height: f32, z: f32 }
+struct BeltItemEntry {
+    width: f32,
+    height: f32,
+    z: f32,
+}
 #[derive(Deserialize)]
-struct UnitEntry { width: f32, height: f32, z: f32, owner_color: String }
+struct UnitEntry {
+    width: f32,
+    height: f32,
+    z: f32,
+    owner_color: String,
+}
 #[derive(Deserialize)]
-struct PlayerEntry { width: f32, height: f32, z: f32 }
+struct PlayerEntry {
+    width: f32,
+    height: f32,
+    z: f32,
+}
 #[derive(Deserialize)]
-struct BuilderEntry { width: f32, height: f32, z: f32 }
+struct BuilderEntry {
+    width: f32,
+    height: f32,
+    z: f32,
+}
 #[derive(Deserialize)]
-struct EnemyEntry { boss_size: f32, tank_size: f32, default_size: f32, spawn_z: f32 }
+struct EnemyEntry {
+    boss_size: f32,
+    tank_size: f32,
+    default_size: f32,
+    spawn_z: f32,
+}
 #[derive(Deserialize)]
-struct ProjectileEntry { scale: f32 }
+struct ProjectileEntry {
+    scale: f32,
+}
 #[derive(Deserialize)]
-struct ToastEntry { lifetime: f32, font_size: f32, color: String, bottom_px: f32 }
+struct ToastEntry {
+    lifetime: f32,
+    font_size: f32,
+    color: String,
+    bottom_px: f32,
+}
 #[derive(Deserialize)]
-struct TileHighlightEntry { color: String, alpha: f32, z: f32 }
+struct TileHighlightEntry {
+    color: String,
+    alpha: f32,
+    z: f32,
+}
 #[derive(Deserialize)]
-struct DepositSpriteEntry { scale_ratio: f32, z: f32, fallback_color: String }
+struct DepositSpriteEntry {
+    scale_ratio: f32,
+    z: f32,
+    fallback_color: String,
+}
 #[derive(Deserialize)]
-struct DecorationEntry { tree_z: f32, rock_z: f32, tree_color: String, rock_color: String }
+struct DecorationEntry {
+    tree_z: f32,
+    rock_z: f32,
+    tree_color: String,
+    rock_color: String,
+}
 #[derive(Deserialize)]
-struct ChunkColorsEntry { even: String, odd: String }
+struct ChunkColorsEntry {
+    even: String,
+    odd: String,
+}
 #[derive(Deserialize)]
-struct GhostEntry { tint_r: f32, tint_g: f32, tint_b: f32, tint_a: f32 }
+struct GhostEntry {
+    tint_r: f32,
+    tint_g: f32,
+    tint_b: f32,
+    tint_a: f32,
+}
 #[derive(Deserialize)]
-struct BuildingEntry { owner_color: String, level_color: String }
+struct BuildingEntry {
+    owner_color: String,
+    level_color: String,
+}

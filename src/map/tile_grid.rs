@@ -1,7 +1,7 @@
 use crate::map::components::TileType;
 use bevy::prelude::Resource;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub const CHUNK_SIZE: u32 = 32;
 
@@ -17,6 +17,7 @@ pub struct Deposit {
 pub struct Chunk {
     pub tiles: [[TileType; CHUNK_SIZE as usize]; CHUNK_SIZE as usize],
     pub deposits: Vec<Deposit>,
+    pub visited: HashSet<(u32, u32)>,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -136,6 +137,19 @@ impl ChunkGrid {
         self.chunks.get(&(cx, cy))
     }
 
+    pub fn reveal_tile(&mut self, cx: i32, cy: i32, tx: u32, ty: u32) {
+        if let Some(chunk) = self.chunks.get_mut(&(cx, cy)) {
+            chunk.visited.insert((tx, ty));
+        }
+    }
+
+    pub fn is_tile_visited(&self, cx: i32, cy: i32, tx: u32, ty: u32) -> bool {
+        self.chunks
+            .get(&(cx, cy))
+            .map(|chunk| chunk.visited.contains(&(tx, ty)))
+            .unwrap_or(false)
+    }
+
     pub fn generated_chunks_with_data(&self) -> impl Iterator<Item = (&(i32, i32), &Chunk)> {
         self.chunks.iter()
     }
@@ -202,8 +216,8 @@ fn generate_chunk(
         for _ in 0..count {
             let dx = rng.next() % CHUNK_SIZE;
             let dy = rng.next() % CHUNK_SIZE;
-            let amount = deposit_min_amount
-                + (rng.next() % (deposit_max_amount - deposit_min_amount + 1));
+            let amount =
+                deposit_min_amount + (rng.next() % (deposit_max_amount - deposit_min_amount + 1));
             let pick = rng.next() % total_weight;
             let mut cumulative = 0u32;
             let resource = deposit_distribution
@@ -215,11 +229,20 @@ fn generate_chunk(
                 .map(|(r, _)| r.clone())
                 .unwrap_or_else(|| "iron_ore".to_string());
             tiles[dy as usize][dx as usize] = TileType::Resource;
-            deposits.push(Deposit { x: dx, y: dy, amount, resource });
+            deposits.push(Deposit {
+                x: dx,
+                y: dy,
+                amount,
+                resource,
+            });
         }
     }
 
-    Chunk { tiles, deposits }
+    Chunk {
+        tiles,
+        deposits,
+        visited: HashSet::new(),
+    }
 }
 
 #[cfg(test)]

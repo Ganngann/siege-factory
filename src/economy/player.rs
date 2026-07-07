@@ -1,13 +1,16 @@
 use bevy::prelude::*;
 
 use crate::core::utils::{move_toward, tile_to_world, world_to_tile};
+use crate::economy::belt::BeltSlots;
 use crate::economy::building::BuildingRegistry;
-use crate::economy::resource::Cost;
+use crate::rendering::minimap::MinimapCamera;
 use crate::economy::components::{
     Active, Builder, BuilderState, Building, OccupiedTiles, Player, ResourceDeposit,
     UnbuiltBuilding,
 };
+use crate::economy::resource::Cost;
 use crate::economy::resource::{Inventory, ResourceId};
+use crate::economy::spatial::SpatialRegistry;
 use crate::enemy::components::Health;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
@@ -31,6 +34,16 @@ pub fn setup_player(
 
     commands.spawn((
         Player,
+        Building {
+            kind: "hq".into(),
+            name: "hq".into(),
+        },
+        OccupiedTiles(vec![
+            (bx, by),
+            (bx + 1, by),
+            (bx, by + 1),
+            (bx + 1, by + 1),
+        ]),
         inv,
         Health {
             current: cfg.player_hp,
@@ -109,7 +122,13 @@ pub fn builder_work(
     mut builder_query: Query<(&mut Builder, &mut Transform)>,
     mut player_query: Query<(&Transform, &mut Inventory), (With<Player>, Without<Builder>)>,
     mut building_query: Query<
-        (Entity, &Transform, &Building, &OccupiedTiles, &mut Inventory),
+        (
+            Entity,
+            &Transform,
+            &Building,
+            &OccupiedTiles,
+            &mut Inventory,
+        ),
         (With<UnbuiltBuilding>, Without<Player>, Without<Builder>),
     >,
 ) {
@@ -132,7 +151,12 @@ pub fn builder_work(
             let d = target - builder_tf.translation;
             let dist = d.length();
             if dist > 4.0 {
-                move_toward(&mut builder_tf.translation, target, speed, time.delta_secs());
+                move_toward(
+                    &mut builder_tf.translation,
+                    target,
+                    speed,
+                    time.delta_secs(),
+                );
             }
 
             // Find closest unbuilt within range
@@ -231,9 +255,7 @@ pub fn builder_work(
                     });
                 // Deposit 1 unit (mutable)
                 if let Some(resource) = cost {
-                    if let Ok((_, _, _, _, mut build_inv)) =
-                        building_query.get_mut(target)
-                    {
+                    if let Ok((_, _, _, _, mut build_inv)) = building_query.get_mut(target) {
                         build_inv.add(&resource, 1);
                     }
                 }
@@ -252,7 +274,12 @@ pub fn builder_work(
             if dist <= reach_dist {
                 builder.state = BuilderState::Idle;
             } else {
-                move_toward(&mut builder_tf.translation, target, speed, time.delta_secs());
+                move_toward(
+                    &mut builder_tf.translation,
+                    target,
+                    speed,
+                    time.delta_secs(),
+                );
             }
         }
     }
@@ -263,12 +290,14 @@ fn total_delivered_for(
     entity: Entity,
     cost: &Cost,
     query: &Query<
-        (Entity, &Transform, &Building, &OccupiedTiles, &mut Inventory),
         (
-            With<UnbuiltBuilding>,
-            Without<Player>,
-            Without<Builder>,
+            Entity,
+            &Transform,
+            &Building,
+            &OccupiedTiles,
+            &mut Inventory,
         ),
+        (With<UnbuiltBuilding>, Without<Player>, Without<Builder>),
     >,
 ) -> u32 {
     if let Ok((_, _, _, _, inv)) = query.get(entity) {
@@ -310,71 +339,157 @@ pub struct PlayerWorldPos(pub Vec3);
 
 // ── Inventory panel (replaced by UI version in economy/ui.rs) ──
 
+// ── Mining timer (resource) ──
+
+#[derive(Resource, Default)]
+pub struct MiningTimer(pub f32);
+
 // ── Player mining ──
 
 pub fn player_mine(
     keys: Res<ButtonInput<KeyCode>>,
+    time: Res<Time>,
+    mut mining_timer: ResMut<MiningTimer>,
     mut player_query: Query<(&TilePosition, &mut Inventory), With<Player>>,
     deposits: Query<(Entity, &ResourceDeposit, &TilePosition)>,
     cfg: Res<MapConfig>,
     mut chunk_grid: ResMut<crate::map::tile_grid::ChunkGrid>,
     mut commands: Commands,
 ) {
-    if !keys.just_pressed(KeyCode::KeyE) {
-        return;
-    }
+    if keys.pressed(KeyCode::KeyE) {
+        mining_timer.0 += time.delta_secs();
+        let interval = cfg.player_mining_interval;
+        if mining_timer.0 >= interval {
+            let Ok((player_tile, mut inv)) = player_query.single_mut() else {
+                return;
+            };
 
-    let Ok((player_tile, mut inv)) = player_query.single_mut() else {
-        return;
-    };
+            let check_tiles = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)];
 
-    let check_tiles = [
-        (0, 0),
-        (1, 0),
-        (-1, 0),
-        (0, 1),
-        (0, -1),
-    ];
+            for (dep_entity, deposit, dep_tile) in deposits.iter() {
+                if deposit.amount == 0 {
+                    continue;
+                }
+                let adjacent = check_tiles.iter().any(|&(dx, dy)| {
+                    dep_tile.x == player_tile.x + dx && dep_tile.y == player_tile.y + dy
+                });
+                if !adjacent {
+                    continue;
+                }
 
-    for (dep_entity, deposit, dep_tile) in deposits.iter() {
-        if deposit.amount == 0 {
-            continue;
+                inv.add(&ResourceId(deposit.resource.clone()), 1);
+
+                if !cfg.infinite_deposits {
+                    use crate::map::tile_grid::CHUNK_SIZE;
+                    let cx = dep_tile.x.div_euclid(CHUNK_SIZE as i32);
+                    let cy = dep_tile.y.div_euclid(CHUNK_SIZE as i32);
+                    let dx = dep_tile.x.rem_euclid(CHUNK_SIZE as i32) as u32;
+                    let dy = dep_tile.y.rem_euclid(CHUNK_SIZE as i32) as u32;
+                    chunk_grid.set_deposit_amount(cx, cy, dx, dy, deposit.amount - 1);
+                    commands.entity(dep_entity).insert(ResourceDeposit {
+                        resource: deposit.resource.clone(),
+                        amount: deposit.amount - 1,
+                    });
+                }
+                mining_timer.0 -= interval;
+                return;
+            }
         }
-        let adjacent = check_tiles
-            .iter()
-            .any(|&(dx, dy)| dep_tile.x == player_tile.x + dx && dep_tile.y == player_tile.y + dy);
-        if !adjacent {
-            continue;
-        }
-
-        inv.add(&ResourceId(deposit.resource.clone()), 1);
-
-        if !cfg.infinite_deposits {
-            use crate::map::tile_grid::CHUNK_SIZE;
-            let cx = dep_tile.x.div_euclid(CHUNK_SIZE as i32);
-            let cy = dep_tile.y.div_euclid(CHUNK_SIZE as i32);
-            let dx = dep_tile.x.rem_euclid(CHUNK_SIZE as i32) as u32;
-            let dy = dep_tile.y.rem_euclid(CHUNK_SIZE as i32) as u32;
-            chunk_grid.set_deposit_amount(cx, cy, dx, dy, deposit.amount - 1);
-            commands.entity(dep_entity).insert(ResourceDeposit {
-                resource: deposit.resource.clone(),
-                amount: deposit.amount - 1,
-            });
-        }
-        return; // Mine one deposit per press
+    } else {
+        // E released — reset timer so next press starts fresh
+        mining_timer.0 = 0.0;
     }
 }
 
 pub fn camera_follow_player(
     player_query: Query<&Transform, (With<Player>, Without<Camera2d>)>,
-    mut camera: Query<&mut Transform, With<Camera2d>>,
+    mut camera: Query<(&Camera, &GlobalTransform, &mut Transform), (With<Camera2d>, Without<MinimapCamera>)>,
+    window: Query<&Window>,
+    cfg: Res<MapConfig>,
+    time: Res<Time>,
 ) {
     let Ok(player_tf) = player_query.single() else {
         return;
     };
-    let Ok(mut camera_tf) = camera.single_mut() else {
+    let Ok((cam, cam_gtf, mut camera_tf)) = camera.single_mut() else {
         return;
     };
-    camera_tf.translation.x = player_tf.translation.x;
-    camera_tf.translation.y = player_tf.translation.y;
+    let Ok(window) = window.single() else {
+        return;
+    };
+
+    let Ok(vp) = cam.world_to_viewport(cam_gtf, player_tf.translation) else {
+        return;
+    };
+
+    let w = window.width();
+    let h = window.height();
+    let mw = w / 3.0; // margin: 1/3 of viewport width
+    let mh = h / 3.0;
+
+    let mut dx = 0.0_f32;
+    let mut dy = 0.0_f32;
+
+    if vp.x < mw {
+        dx = (vp.x / mw) - 1.0; // -1 at screen edge, 0 at margin
+    } else if vp.x > w - mw {
+        dx = (vp.x - (w - mw)) / mw; // 0 at margin, 1 at screen edge
+    }
+
+    if vp.y < mh {
+        dy = 1.0 - (vp.y / mh); // 1 at screen top, 0 at margin → camera follows up
+    } else if vp.y > h - mh {
+        dy = -((vp.y - (h - mh)) / mh); // 0 at margin, -1 at screen bottom → camera follows down
+    }
+
+    if dx != 0.0 || dy != 0.0 {
+        let norm = (dx * dx + dy * dy).sqrt();
+        if norm > 0.0 {
+            dx /= norm;
+            dy /= norm;
+        }
+        camera_tf.translation.x += dx * cfg.player_speed * time.delta_secs();
+        camera_tf.translation.y += dy * cfg.player_speed * time.delta_secs();
+    }
+}
+
+pub fn player_pickup_belt(
+    keys: Res<ButtonInput<KeyCode>>,
+    player_query: Query<&TilePosition, With<Player>>,
+    mut player_inv: Query<&mut Inventory, With<Player>>,
+    spatial: Res<SpatialRegistry>,
+    mut belt_query: Query<&mut BeltSlots>,
+    mut commands: Commands,
+) {
+    if !keys.just_pressed(KeyCode::KeyF) {
+        return;
+    }
+
+    let Ok(player_tile) = player_query.single() else {
+        return;
+    };
+
+    let check_tiles = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)];
+
+    for &(dx, dy) in &check_tiles {
+        let tx = player_tile.x + dx;
+        let ty = player_tile.y + dy;
+        let Some(entity) = spatial.at(tx, ty) else {
+            continue;
+        };
+        let Ok(mut bs) = belt_query.get_mut(entity) else {
+            continue;
+        };
+        // Find the last non-None item (closest to output end)
+        if let Some(idx) = bs.items.iter().rposition(|item| item.is_some()) {
+            let item = bs.items[idx].take().unwrap();
+            // Despawn the sprite entity for this slot
+            if let Some(sprite_entity) = bs.slot_sprites.get_mut(idx).and_then(|s| s.take()) {
+                crate::core::utils::silent_despawn(&mut commands, sprite_entity);
+            }
+            let mut inv = player_inv.single_mut().unwrap();
+            inv.add(&item.resource_id, 1);
+            return;
+        }
+    }
 }

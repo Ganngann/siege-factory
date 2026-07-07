@@ -15,6 +15,7 @@ pub struct MapConfig {
     pub deposit_max_per_chunk: u32,
     pub deposit_distribution: Vec<(String, u32)>,
     pub infinite_deposits: bool,
+    pub resource_discovery_map: HashMap<String, String>,
     pub player_start_position: (i32, i32),
     pub player_hp: u32,
     pub player_speed: f32,
@@ -29,6 +30,7 @@ pub struct MapConfig {
     pub builder_idle_offset_y: f32,
     pub decoration_min_count: u32,
     pub decoration_count_variance: u32,
+    pub player_mining_interval: f32,
 }
 
 impl MapConfig {
@@ -48,6 +50,7 @@ impl MapConfig {
             deposit_max_per_chunk: parsed.deposits.max_per_chunk,
             deposit_distribution: distribution,
             infinite_deposits: parsed.deposits.infinite,
+            resource_discovery_map: parsed.deposits.resource_discovery_map.unwrap_or_default(),
             player_start_position: (parsed.player.position.x, parsed.player.position.y),
             player_hp: parsed.player.hp,
             player_speed: parsed.player.speed,
@@ -62,6 +65,7 @@ impl MapConfig {
             builder_idle_offset_y: parsed.player.builder_idle_offset_y,
             decoration_min_count: parsed.decoration.min_count,
             decoration_count_variance: parsed.decoration.count_variance,
+            player_mining_interval: parsed.player.mining_interval,
         }
     }
 }
@@ -86,7 +90,9 @@ struct MapEntry {
     pathfinding_max_nodes: u64,
 }
 
-fn default_pathfinding_nodes() -> u64 { 50000 }
+fn default_pathfinding_nodes() -> u64 {
+    50000
+}
 
 #[derive(Deserialize)]
 struct DepositsEntry {
@@ -97,6 +103,8 @@ struct DepositsEntry {
     max_per_chunk: u32,
     infinite: bool,
     distribution: HashMap<String, u32>,
+    #[serde(default)]
+    resource_discovery_map: Option<HashMap<String, String>>,
 }
 
 #[derive(Deserialize)]
@@ -117,15 +125,34 @@ struct PlayerEntry {
     builder_idle_offset_x: f32,
     #[serde(default = "default_builder_idle_offset_y")]
     builder_idle_offset_y: f32,
+    #[serde(default = "default_mining_interval")]
+    mining_interval: f32,
 }
 
-fn default_player_speed() -> f32 { 250.0 }
-fn default_builder_speed() -> f32 { 300.0 }
-fn default_builder_reach() -> f32 { 8.0 }
-fn default_inspect_range_tiles() -> f32 { 3.0 }
-fn default_builder_range_tiles() -> f32 { 5.0 }
-fn default_builder_idle_offset_x() -> f32 { -24.0 }
-fn default_builder_idle_offset_y() -> f32 { -24.0 }
+fn default_player_speed() -> f32 {
+    250.0
+}
+fn default_builder_speed() -> f32 {
+    300.0
+}
+fn default_builder_reach() -> f32 {
+    8.0
+}
+fn default_inspect_range_tiles() -> f32 {
+    3.0
+}
+fn default_builder_range_tiles() -> f32 {
+    5.0
+}
+fn default_builder_idle_offset_x() -> f32 {
+    -24.0
+}
+fn default_builder_idle_offset_y() -> f32 {
+    -24.0
+}
+fn default_mining_interval() -> f32 {
+    1.0
+}
 
 #[derive(Deserialize)]
 struct PosEntry {
@@ -149,7 +176,15 @@ struct DecorationEntry {
     count_variance: u32,
 }
 
-fn default_initial_margin() -> i32 { 10 }
-fn default_despawn_margin() -> i32 { 3 }
-fn default_decoration_min_count() -> u32 { 4 }
-fn default_decoration_count_variance() -> u32 { 5 }
+fn default_initial_margin() -> i32 {
+    10
+}
+fn default_despawn_margin() -> i32 {
+    3
+}
+fn default_decoration_min_count() -> u32 {
+    4
+}
+fn default_decoration_count_variance() -> u32 {
+    5
+}

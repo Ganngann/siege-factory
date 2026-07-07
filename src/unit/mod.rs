@@ -129,14 +129,14 @@ fn soldier_auto_attack(
     let damage = soldier_def.damage;
     let fire_rate = soldier_def.fire_rate_sec;
 
+    let enemy_positions: Vec<(Entity, Vec3)> =
+        enemies.iter().map(|(e, t)| (e, t.translation)).collect();
+
     for (soldier_pos, mut soldier) in soldiers.iter_mut() {
         soldier.attack_cooldown -= time.delta_secs();
         if soldier.attack_cooldown > 0.0 {
             continue;
         }
-
-        let enemy_positions: Vec<(Entity, Vec3)> =
-            enemies.iter().map(|(e, t)| (e, t.translation)).collect();
 
         let target = find_closest_enemy(soldier_pos.translation, &enemy_positions, range_sq);
 
@@ -208,7 +208,12 @@ fn worker_harvest(
                     if dist < tile_size * 0.5 {
                         worker.state = WorkerState::Mining(target_dep);
                     } else {
-                        move_toward(&mut transform.translation, target_pos, speed, time.delta_secs());
+                        move_toward(
+                            &mut transform.translation,
+                            target_pos,
+                            speed,
+                            time.delta_secs(),
+                        );
                     }
                 } else {
                     worker.state = WorkerState::Idle;

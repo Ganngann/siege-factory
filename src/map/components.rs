@@ -1,4 +1,5 @@
 use crate::map::config::MapConfig;
+use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -23,9 +24,17 @@ pub struct Decoration(pub String);
 #[derive(Resource, Default)]
 pub struct HoveredTile(pub Option<TilePosition>);
 
+#[derive(Component)]
+pub struct HiddenDeposit {
+    pub required_discovery: String,
+}
+
+#[derive(Component)]
+pub struct FogTile;
+
 pub fn cursor_to_tile(
     windows: &Query<&Window>,
-    camera: &Query<(&Camera, &GlobalTransform)>,
+    camera: &Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: &MapConfig,
 ) -> Option<TilePosition> {
     let window = windows.single().ok()?;

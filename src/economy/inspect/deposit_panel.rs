@@ -1,6 +1,6 @@
 use crate::economy::components::{BuildingPanel, PanelModal, PanelOverlay, ResourceDeposit};
 use crate::economy::resource::ResourceRegistry;
-use crate::economy::window::{spawn_window, TEXT_GREEN, TEXT_PRIMARY};
+use crate::economy::window::{TEXT_GREEN, TEXT_PRIMARY, spawn_window};
 use bevy::prelude::*;
 
 pub fn spawn_deposit_panel(

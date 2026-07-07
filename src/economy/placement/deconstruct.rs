@@ -9,6 +9,7 @@ use crate::economy::spatial::SpatialRegistry;
 use crate::events::DeconstructAreaEvent;
 use crate::map::components::{TilePosition, cursor_to_tile};
 use crate::map::config::MapConfig;
+use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
 
 pub fn handle_deconstruct_click_v2(
@@ -17,7 +18,7 @@ pub fn handle_deconstruct_click_v2(
     cfg: Res<MapConfig>,
     spatial: Res<SpatialRegistry>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
+    camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     building_query: Query<(&Building, &TilePosition)>,
     mut player_query: Query<&mut Inventory, With<Player>>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -62,7 +63,13 @@ pub fn handle_deconstruct_click_v2(
     }
 
     let refund_names = if let Ok(mut player_inv) = player_query.single_mut() {
-        deconstruct_entity(def, &mut player_inv, &mut commands, &belt_slots_query, entity)
+        deconstruct_entity(
+            def,
+            &mut player_inv,
+            &mut commands,
+            &belt_slots_query,
+            entity,
+        )
     } else {
         return;
     };

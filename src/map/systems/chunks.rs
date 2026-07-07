@@ -1,16 +1,18 @@
 use crate::core::utils::tile_to_world_corner;
-use crate::economy::components::{PeacefulMode, ResourceDeposit};
+use crate::economy::components::ResourceDeposit;
+use crate::economy::discovery::GlobalArchive;
 use crate::economy::resource::ResourceRegistry;
-use crate::map::components::{ChunkMember, Decoration, TilePosition};
+use crate::map::components::{ChunkMember, Decoration, FogTile, HiddenDeposit, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::rng::{SimpleRng, chunk_hash};
-use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
+use crate::map::tile_grid::{CHUNK_SIZE, Chunk};
+use crate::map::tile_grid::ChunkGrid;
 use crate::rendering::config::VisualsConfig;
 use crate::rendering::{ShapeCache, TextureCache};
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::{
-    Assets, Camera, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d,
-    MeshMaterial2d, Query, Res, ResMut, Sprite, Transform, Vec2, Window, default,
+    Assets, Camera, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d, MeshMaterial2d,
+    Query, Res, ResMut, Sprite, Transform, Vec2, Visibility, With, Window, default,
 };
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use std::collections::HashSet;
@@ -61,6 +63,40 @@ pub fn build_chunk_mesh(cx: i32, cy: i32, tile_size: f32) -> (Mesh, Mesh) {
     (mesh_a, mesh_b)
 }
 
+fn build_fog_mesh(cx: i32, cy: i32, chunk: &Chunk, tile_size: f32) -> Mesh {
+    let chunk_size = CHUNK_SIZE as i32;
+    let world_ox = cx * chunk_size;
+    let world_oy = cy * chunk_size;
+
+    let mut positions = Vec::new();
+    let mut indices = Vec::new();
+    let mut n = 0u32;
+
+    for ty in 0..CHUNK_SIZE as usize {
+        for tx in 0..CHUNK_SIZE as usize {
+            if chunk.visited.contains(&(tx as u32, ty as u32)) {
+                continue;
+            }
+            let wx = world_ox + tx as i32;
+            let wy = world_oy + ty as i32;
+            let pos = tile_to_world_corner(wx, wy, tile_size);
+            let (x, y) = (pos.x, pos.y);
+            let s = tile_size;
+
+            positions.extend_from_slice(&[
+                [x, y, 0.0],
+                [x + s, y, 0.0],
+                [x + s, y + s, 0.0],
+                [x, y + s, 0.0],
+            ]);
+            indices.extend_from_slice(&[n, n + 1, n + 2, n, n + 2, n + 3]);
+            n += 4;
+        }
+    }
+
+    mesh_from_quads(positions, indices)
+}
+
 fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
     let normals = vec![[0.0, 0.0, 1.0]; positions.len()];
     let uvs = vec![[0.0, 0.0]; positions.len()];
@@ -81,11 +117,13 @@ pub fn spawn_single_chunk_visuals(
     chunk_grid: &mut ChunkGrid,
     cfg: &MapConfig,
     res_registry: &ResourceRegistry,
+    global_archive: &GlobalArchive,
     shapes: &ShapeCache,
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
     textures: &TextureCache,
     visuals: &VisualsConfig,
+    preview: &crate::rendering::cache::PreviewMaterials,
     cx: i32,
     cy: i32,
 ) {
@@ -126,8 +164,15 @@ pub fn spawn_single_chunk_visuals(
         let wx = world_ox + d.x as i32;
         let wy = world_oy + d.y as i32;
 
+        // Check if this resource requires discovery
+        let is_hidden = cfg
+            .resource_discovery_map
+            .get(&d.resource)
+            .map(|req| !global_archive.is_unlocked(req))
+            .unwrap_or(false);
+
         if let Some(handle) = textures.base.get(&d.resource) {
-            commands.spawn((
+            let mut entity_cmd = commands.spawn((
                 ChunkMember(cx, cy),
                 ResourceDeposit {
                     resource: d.resource.clone(),
@@ -135,19 +180,32 @@ pub fn spawn_single_chunk_visuals(
                 },
                 Sprite {
                     image: handle.clone(),
-                    custom_size: Some(Vec2::new(tile_size * visuals.deposit_sprite.scale_ratio, tile_size * visuals.deposit_sprite.scale_ratio)),
+                    custom_size: Some(Vec2::new(
+                        tile_size * visuals.deposit_sprite.scale_ratio,
+                        tile_size * visuals.deposit_sprite.scale_ratio,
+                    )),
                     ..default()
                 },
-                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, visuals.deposit_sprite.z),
+                Transform::from_xyz(
+                    wx as f32 * tile_size,
+                    wy as f32 * tile_size,
+                    visuals.deposit_sprite.z,
+                ),
                 TilePosition { x: wx, y: wy },
             ));
+            if is_hidden {
+                entity_cmd.insert(Visibility::Hidden);
+                entity_cmd.insert(HiddenDeposit {
+                    required_discovery: cfg.resource_discovery_map[&d.resource].clone(),
+                });
+            }
         } else {
             let color = res_registry
                 .get_opt(&d.resource)
                 .map(|d| d.color)
                 .unwrap_or(visuals.deposit_sprite.fallback_color);
             let dep_color = materials.add(color);
-            commands.spawn((
+            let mut entity_cmd = commands.spawn((
                 ChunkMember(cx, cy),
                 ResourceDeposit {
                     resource: d.resource.clone(),
@@ -155,14 +213,25 @@ pub fn spawn_single_chunk_visuals(
                 },
                 Mesh2d(shapes.circle.clone()),
                 MeshMaterial2d(dep_color),
-                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, visuals.deposit_sprite.z),
+                Transform::from_xyz(
+                    wx as f32 * tile_size,
+                    wy as f32 * tile_size,
+                    visuals.deposit_sprite.z,
+                ),
                 TilePosition { x: wx, y: wy },
             ));
+            if is_hidden {
+                entity_cmd.insert(Visibility::Hidden);
+                entity_cmd.insert(HiddenDeposit {
+                    required_discovery: cfg.resource_discovery_map[&d.resource].clone(),
+                });
+            }
         }
     }
 
     let mut rng = SimpleRng::new(chunk_hash);
-    let deco_count = cfg.decoration_min_count as usize + (rng.next() as usize % cfg.decoration_count_variance as usize);
+    let deco_count = cfg.decoration_min_count as usize
+        + (rng.next() as usize % cfg.decoration_count_variance as usize);
     let deco_kinds = [
         ("tree", visuals.decoration.tree_color),
         ("rock", visuals.decoration.rock_color),
@@ -183,7 +252,11 @@ pub fn spawn_single_chunk_visuals(
         } else {
             shapes.circle.clone()
         };
-        let z = if *kind_name == "tree" { visuals.decoration.tree_z } else { visuals.decoration.rock_z };
+        let z = if *kind_name == "tree" {
+            visuals.decoration.tree_z
+        } else {
+            visuals.decoration.rock_z
+        };
         let mat = materials.add(*color);
         commands.spawn((
             ChunkMember(cx, cy),
@@ -194,6 +267,17 @@ pub fn spawn_single_chunk_visuals(
             TilePosition { x: wx, y: wy },
         ));
     }
+
+    // Single fog mesh per chunk at z=2.0 (above deposits/decorations)
+    let fog_mesh = build_fog_mesh(cx, cy, chunk, cfg.tile_size);
+    commands.spawn((
+        FogTile,
+        Mesh2d(meshes.add(fog_mesh)),
+        MeshMaterial2d(preview.fog.clone()),
+        Transform::from_xyz(0.0, 0.0, 2.0),
+        Visibility::default(),
+        ChunkMember(cx, cy),
+    ));
 }
 
 pub fn spawn_chunks_in_range(
@@ -201,11 +285,13 @@ pub fn spawn_chunks_in_range(
     chunk_grid: &mut ChunkGrid,
     cfg: &MapConfig,
     res_registry: &ResourceRegistry,
+    global_archive: &GlobalArchive,
     shapes: &ShapeCache,
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
     textures: &TextureCache,
     visuals: &VisualsConfig,
+    preview: &crate::rendering::cache::PreviewMaterials,
     min_cx: i32,
     max_cx: i32,
     min_cy: i32,
@@ -222,11 +308,13 @@ pub fn spawn_chunks_in_range(
                 chunk_grid,
                 cfg,
                 res_registry,
+                global_archive,
                 shapes,
                 materials,
                 meshes,
                 textures,
                 visuals,
+                preview,
                 cx,
                 cy,
             );
@@ -241,6 +329,7 @@ pub fn update_visible_chunks(
     mut chunk_grid: ResMut<ChunkGrid>,
     cfg: Res<MapConfig>,
     res_registry: Res<ResourceRegistry>,
+    global_archive: Res<GlobalArchive>,
     existing_markers: Query<(Entity, &super::ChunkMarker)>,
     existing_members: Query<(Entity, &ChunkMember)>,
     existing_deposits: Query<(Entity, &ResourceDeposit, &TilePosition)>,
@@ -248,8 +337,8 @@ pub fn update_visible_chunks(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<TextureCache>,
-    _peaceful: Res<PeacefulMode>,
     visuals: Res<VisualsConfig>,
+    preview: Res<crate::rendering::cache::PreviewMaterials>,
 ) {
     let Ok((cam, cam_transform)) = camera.single() else {
         return;
@@ -349,15 +438,116 @@ pub fn update_visible_chunks(
         &mut chunk_grid,
         &cfg,
         &res_registry,
+        &global_archive,
         &shapes,
         &mut materials,
         &mut meshes,
         &textures,
         &visuals,
+        &preview,
         min_cx,
         max_cx,
         min_cy,
         max_cy,
         &spawned,
     );
+}
+
+pub fn reveal_hidden_deposits(
+    archive: Res<GlobalArchive>,
+    mut hidden_deposits: Query<(&HiddenDeposit, &mut Visibility)>,
+) {
+    for (deposit, mut visibility) in hidden_deposits.iter_mut() {
+        if archive.is_unlocked(&deposit.required_discovery) {
+            *visibility = Visibility::Visible;
+        }
+    }
+}
+
+pub fn update_fog_of_war(
+    player: Query<&TilePosition, With<crate::economy::game_components::Player>>,
+    mut chunk_grid: ResMut<ChunkGrid>,
+    mut commands: Commands,
+    fog_tiles: Query<(Entity, &ChunkMember), With<FogTile>>,
+    preview: Res<crate::rendering::cache::PreviewMaterials>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    cfg: Res<MapConfig>,
+) {
+    let Ok(player_tile) = player.single() else {
+        return;
+    };
+
+    let reveal_radius = 6i32;
+    let (min_x, max_x) = (player_tile.x - reveal_radius, player_tile.x + reveal_radius);
+    let (min_y, max_y) = (player_tile.y - reveal_radius, player_tile.y + reveal_radius);
+
+    let mut affected_chunks: HashSet<(i32, i32)> = HashSet::new();
+
+    for wx in min_x..=max_x {
+        for wy in min_y..=max_y {
+            let cx = wx.div_euclid(CHUNK_SIZE as i32);
+            let cy = wy.div_euclid(CHUNK_SIZE as i32);
+            let tx = wx.rem_euclid(CHUNK_SIZE as i32) as u32;
+            let ty = wy.rem_euclid(CHUNK_SIZE as i32) as u32;
+
+            if !chunk_grid.is_tile_visited(cx, cy, tx, ty) {
+                affected_chunks.insert((cx, cy));
+            }
+        }
+    }
+
+    if affected_chunks.is_empty() {
+        return;
+    }
+
+    for wx in min_x..=max_x {
+        for wy in min_y..=max_y {
+            let cx = wx.div_euclid(CHUNK_SIZE as i32);
+            let cy = wy.div_euclid(CHUNK_SIZE as i32);
+            let tx = wx.rem_euclid(CHUNK_SIZE as i32) as u32;
+            let ty = wy.rem_euclid(CHUNK_SIZE as i32) as u32;
+            chunk_grid.reveal_tile(cx, cy, tx, ty);
+        }
+    }
+
+    // Build lookup of fog entity per chunk
+    let fog_map: std::collections::HashMap<(i32, i32), Entity> =
+        fog_tiles
+            .iter()
+            .filter(|(_, cm)| affected_chunks.contains(&(cm.0, cm.1)))
+            .map(|(e, cm)| ((cm.0, cm.1), e))
+            .collect();
+
+    for &(cx, cy) in &affected_chunks {
+        let total_tiles = (CHUNK_SIZE * CHUNK_SIZE) as usize;
+        let visited_count = chunk_grid
+            .get_chunk(cx, cy)
+            .map(|c| c.visited.len())
+            .unwrap_or(0);
+        let all_visited = visited_count >= total_tiles;
+
+        if all_visited {
+            if let Some(&entity) = fog_map.get(&(cx, cy)) {
+                commands.entity(entity).despawn();
+            }
+            continue;
+        }
+
+        if let Some(chunk) = chunk_grid.get_chunk(cx, cy) {
+            let new_mesh = build_fog_mesh(cx, cy, chunk, cfg.tile_size);
+            let handle = meshes.add(new_mesh);
+            if let Some(&entity) = fog_map.get(&(cx, cy)) {
+                commands.entity(entity).insert(Mesh2d(handle));
+            } else {
+                commands.spawn((
+                    FogTile,
+                    Mesh2d(handle),
+                    MeshMaterial2d(preview.fog.clone()),
+                    Transform::from_xyz(0.0, 0.0, 2.0),
+                    Visibility::default(),
+                    ChunkMember(cx, cy),
+                ));
+            }
+        }
+    }
 }

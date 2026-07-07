@@ -1,6 +1,8 @@
 pub mod cache;
 pub mod config;
 pub mod hud;
+pub mod minimap;
+pub mod power_lines;
 pub mod visuals;
 
 pub use cache::*;
@@ -11,6 +13,15 @@ pub use visuals::*;
 use crate::core::game_state::GameState;
 use bevy::prelude::*;
 
+fn cleanup_tile_highlight(
+    mut commands: Commands,
+    mut highlight: ResMut<TileHighlightEntity>,
+) {
+    if let Some(entity) = highlight.0.take() {
+        commands.entity(entity).despawn();
+    }
+}
+
 pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {
@@ -18,8 +29,13 @@ impl Plugin for RenderPlugin {
         app.insert_resource(VisualsConfig::load());
         app.init_resource::<ShapeCache>();
         app.init_resource::<PreviewMaterials>();
+        app.init_resource::<TileHighlightEntity>();
         app.add_systems(Startup, setup_texture_cache);
-        app.add_systems(Update, (tile_highlight, ensure_hp_bars, update_hp_bars));
+        app.add_systems(
+            Update,
+            (tile_highlight, ensure_hp_bars, update_hp_bars)
+                .run_if(in_state(GameState::Playing)),
+        );
         app.add_observer(spawn_projectile_visual);
         app.add_systems(
             Update,
@@ -30,10 +46,18 @@ impl Plugin for RenderPlugin {
                 attach_unit_visuals,
                 animate_belt_positions,
                 wave_counter_ui,
-                fps_overlay,
-            ),
+                power_lines::render_power_lines,
+            )
+                .run_if(in_state(GameState::Playing)),
         );
+        app.add_systems(Update, fps_overlay);
         app.add_systems(OnEnter(GameState::GameOver), spawn_game_over_ui);
         app.add_systems(OnExit(GameState::GameOver), despawn_game_over_ui);
+        app.add_systems(OnEnter(GameState::Playing), minimap::setup_minimap);
+        app.add_systems(
+            Update,
+            minimap::update_minimap.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(OnExit(GameState::Playing), cleanup_tile_highlight);
     }
 }

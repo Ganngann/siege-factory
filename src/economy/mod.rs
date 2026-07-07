@@ -30,7 +30,7 @@ use bevy::ecs::hierarchy::ChildOf;
 use bevy::picking::hover::HoverMap;
 use bevy::prelude::*;
 use building::DefaultSettings;
-use components::{Building, PeacefulMode, UiIsBlocking};
+use components::{Building, BuildingPanel, PeacefulMode, UiIsBlocking};
 use menu::{MenuItems, MenuState};
 use resource::ResourceRegistry;
 use spatial::SpatialRegistry;
@@ -38,6 +38,10 @@ use ui::InventoryPanel;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 struct PlayingSystems;
+
+fn panel_is_open(panel: Res<BuildingPanel>) -> bool {
+    panel.inspected.is_some()
+}
 
 pub fn update_ui_blocking(
     mut blocking: ResMut<UiIsBlocking>,
@@ -71,7 +75,9 @@ impl Plugin for EconomyPlugin {
         app.insert_resource(DefaultSettings::load());
         app.insert_resource(recipe::RecipeRegistry::load());
         let discovery_registry = discovery::DiscoveryRegistry::load();
-        app.insert_resource(discovery::GlobalArchive::new(&discovery_registry.starter_recipes));
+        app.insert_resource(discovery::GlobalArchive::new(
+            &discovery_registry.starter_recipes,
+        ));
         app.insert_resource(discovery_registry);
 
         // Load registries + derive MenuDef in dependency order (avoids double-load)
@@ -99,12 +105,10 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<TooltipText>();
         app.init_resource::<UiIsBlocking>();
         app.init_resource::<player::PlayerWorldPos>();
+        app.init_resource::<player::MiningTimer>();
         app.init_resource::<components::DragState>();
         app.insert_resource(Time::<Fixed>::from_hz(20.0));
-        app.configure_sets(
-            Update,
-            PlayingSystems.run_if(in_state(GameState::Playing)),
-        );
+        app.configure_sets(Update, PlayingSystems.run_if(in_state(GameState::Playing)));
         app.add_observer(placement::on_belt_drag_completed);
         app.add_observer(placement::on_deconstruct_area);
         app.add_systems(
@@ -141,18 +145,9 @@ impl Plugin for EconomyPlugin {
             PreUpdate,
             power::rebuild_power_grid.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(
-            Update,
-            placement::build_mode_input.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            placement::track_belt_drag.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            placement::handle_build_click.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, placement::build_mode_input.in_set(PlayingSystems));
+        app.add_systems(Update, placement::track_belt_drag.in_set(PlayingSystems));
+        app.add_systems(Update, placement::handle_build_click.in_set(PlayingSystems));
         app.add_systems(
             Update,
             placement::handle_deconstruct_click_v2.in_set(PlayingSystems),
@@ -169,38 +164,25 @@ impl Plugin for EconomyPlugin {
             Update,
             placement::deconstruct_drag_preview.in_set(PlayingSystems),
         );
-        app.add_systems(
-            Update,
-            player::player_movement.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            player::camera_follow_player.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            player::builder_work.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            player::finish_construction.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            player::player_mine.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, player::player_movement.in_set(PlayingSystems));
+        app.add_systems(Update, player::camera_follow_player.in_set(PlayingSystems));
+        app.add_systems(Update, player::builder_work.in_set(PlayingSystems));
+        app.add_systems(Update, player::finish_construction.in_set(PlayingSystems));
+        app.add_systems(Update, player::player_mine.in_set(PlayingSystems));
+        app.add_systems(Update, player::player_pickup_belt.in_set(PlayingSystems));
         app.add_systems(
             FixedUpdate,
             belt::advance_belt_slots.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(
-            Update,
-            production::assembler_tick.in_set(PlayingSystems),
+            FixedUpdate,
+            production::assembler_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(
-            Update,
-            discovery::check_discoveries.in_set(PlayingSystems),
+            FixedUpdate,
+            power::burner_generator_tick.run_if(in_state(GameState::Playing)),
         );
+        app.add_systems(Update, discovery::check_discoveries.in_set(PlayingSystems));
         app.add_systems(
             Update,
             archive::archive_delivery_check.in_set(PlayingSystems),
@@ -210,78 +192,36 @@ impl Plugin for EconomyPlugin {
             FixedUpdate,
             belt::building_output_tick.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(
-            Update,
-            ui::toggle_inventory_panel.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            ui::update_inventory_grids.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            ui::drag_start.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            ui::drag_update.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            ui::drag_end.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            window::close_window_system.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            build_bar::menu_navigation.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, ui::toggle_inventory_panel.in_set(PlayingSystems));
+        app.add_systems(Update, ui::update_inventory_grids.in_set(PlayingSystems));
+        app.add_systems(Update, ui::drag_start.in_set(PlayingSystems));
+        app.add_systems(Update, ui::drag_update.in_set(PlayingSystems));
+        app.add_systems(Update, ui::drag_end.in_set(PlayingSystems));
+        app.add_systems(Update, window::close_window_system.in_set(PlayingSystems));
+        app.add_systems(Update, build_bar::menu_navigation.in_set(PlayingSystems));
         app.add_systems(
             Update,
             build_bar::menu_bar_interaction.in_set(PlayingSystems),
         );
-        app.add_systems(
-            Update,
-            build_bar::refresh_menu_bar.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            build_bar::update_menu_bar.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, build_bar::refresh_menu_bar.in_set(PlayingSystems));
+        app.add_systems(Update, build_bar::update_menu_bar.in_set(PlayingSystems));
         app.add_systems(
             Update,
             inspect::building_inspect_click.in_set(PlayingSystems),
         );
-        app.add_systems(
-            Update,
-            inspect::overlay_click_system.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            inspect::close_button_system.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, inspect::overlay_click_system.in_set(PlayingSystems));
+        app.add_systems(Update, inspect::close_button_system.in_set(PlayingSystems));
         app.add_systems(
             Update,
             inspect::close_popup_on_escape.in_set(PlayingSystems),
         );
-        app.add_systems(
-            Update,
-            inspect::active_toggle_system.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            inspect::recipe_change_system.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, inspect::active_toggle_system.in_set(PlayingSystems));
+        app.add_systems(Update, inspect::recipe_change_system.in_set(PlayingSystems));
         app.add_systems(
             Update,
             inspect::recipe_selector_click.in_set(PlayingSystems),
         );
-        app.add_systems(
-            Update,
-            inspect::farm_recruit_system.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, inspect::farm_recruit_system.in_set(PlayingSystems));
         app.add_systems(
             Update,
             inspect::farm_crop_select_system.in_set(PlayingSystems),
@@ -296,12 +236,10 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
-            inspect::resource_transfer.in_set(PlayingSystems),
+            inspect::upgrade_button_system.in_set(PlayingSystems),
         );
-        app.add_systems(
-            Update,
-            window::drag_window_system.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, inspect::resource_transfer.in_set(PlayingSystems));
+        app.add_systems(Update, window::drag_window_system.in_set(PlayingSystems));
         app.add_systems(
             Update,
             (
@@ -313,9 +251,11 @@ impl Plugin for EconomyPlugin {
                 inspect::update_panel_hp,
                 inspect::update_panel_alerts,
                 inspect::update_panel_power,
+                inspect::update_panel_burner,
                 inspect::update_farm_crop_text,
                 inspect::update_farm_cultivator_count,
             )
+                .run_if(panel_is_open)
                 .in_set(PlayingSystems),
         );
         app.add_systems(Update, toast_system.in_set(PlayingSystems));

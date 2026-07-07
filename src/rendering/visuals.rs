@@ -4,18 +4,22 @@ use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     BuildMode, Building, Direction, HasHpBar, HpBarChild, UnbuiltBuilding, Unit,
 };
+use crate::economy::game_components::BeltVariant;
 use crate::economy::unit_config::UnitConfig;
 use crate::enemy::components::{Enemy, Health};
 use crate::events::SpawnProjectileEvent;
 use crate::map::components::HoveredTile;
 use crate::map::config::MapConfig;
-use crate::unit::{Soldier, Worker};
 use crate::rendering::config::VisualsConfig;
 use crate::rendering::{ShapeCache, TextureCache};
+use crate::unit::{Soldier, Worker};
 use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct TileHighlight;
+
+#[derive(Resource, Default)]
+pub struct TileHighlightEntity(pub Option<Entity>);
 
 pub fn tile_highlight(
     mut commands: Commands,
@@ -23,35 +27,46 @@ pub fn tile_highlight(
     hovered: Res<HoveredTile>,
     cfg: Res<MapConfig>,
     config: Res<VisualsConfig>,
-    existing: Query<Entity, With<TileHighlight>>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut highlight: ResMut<TileHighlightEntity>,
 ) {
-    for entity in existing.iter() {
-        commands.entity(entity).despawn();
-    }
-
     if build_mode.0.is_some() {
+        if let Some(entity) = highlight.0.take() {
+            commands.entity(entity).despawn();
+        }
         return;
     }
 
-    let Some(pos) = hovered.0 else { return };
+    let Some(pos) = hovered.0 else {
+        if let Some(entity) = highlight.0.take() {
+            commands.entity(entity).despawn();
+        }
+        return;
+    };
 
-    commands.spawn((
-        TileHighlight,
-        Mesh2d(shapes.square.clone()),
-        MeshMaterial2d(materials.add(Color::srgba(
-            config.tile_highlight.color.to_srgba().red,
-            config.tile_highlight.color.to_srgba().green,
-            config.tile_highlight.color.to_srgba().blue,
-            config.tile_highlight.alpha,
-        ))),
-        Transform::from_xyz(
-            pos.x as f32 * cfg.tile_size,
-            pos.y as f32 * cfg.tile_size,
-            config.tile_highlight.z,
-        ),
-    ));
+    let world_x = pos.x as f32 * cfg.tile_size;
+    let world_y = pos.y as f32 * cfg.tile_size;
+    let z = config.tile_highlight.z;
+
+    if let Some(entity) = highlight.0 {
+        commands.entity(entity).insert(Transform::from_xyz(world_x, world_y, z));
+    } else {
+        let entity = commands
+            .spawn((
+                TileHighlight,
+                Mesh2d(shapes.square.clone()),
+                MeshMaterial2d(materials.add(Color::srgba(
+                    config.tile_highlight.color.to_srgba().red,
+                    config.tile_highlight.color.to_srgba().green,
+                    config.tile_highlight.color.to_srgba().blue,
+                    config.tile_highlight.alpha,
+                ))),
+                Transform::from_xyz(world_x, world_y, z),
+            ))
+            .id();
+        highlight.0 = Some(entity);
+    }
 }
 
 pub fn ensure_hp_bars(
@@ -66,7 +81,10 @@ pub fn ensure_hp_bars(
             .with_children(|parent| {
                 parent.spawn((
                     HpBarChild,
-                    Sprite::from_color(config.hp_bar.color_high, Vec2::new(config.hp_bar.width, config.hp_bar.height)),
+                    Sprite::from_color(
+                        config.hp_bar.color_high,
+                        Vec2::new(config.hp_bar.width, config.hp_bar.height),
+                    ),
                     Transform::from_xyz(0.0, config.hp_bar.y_offset, config.hp_bar.z),
                 ));
             });
@@ -90,7 +108,8 @@ pub fn update_hp_bars(
                     config.hp_bar.color_low
                 };
                 sprite.color = color;
-                sprite.custom_size = Some(Vec2::new(config.hp_bar.width * ratio, config.hp_bar.height));
+                sprite.custom_size =
+                    Some(Vec2::new(config.hp_bar.width * ratio, config.hp_bar.height));
             }
         }
     }
@@ -132,7 +151,10 @@ pub fn sync_belt_slot_sprites(
                 .spawn((
                     Sprite {
                         image: tex,
-                        custom_size: Some(Vec2::new(config.belt_item.width, config.belt_item.height)),
+                        custom_size: Some(Vec2::new(
+                            config.belt_item.width,
+                            config.belt_item.height,
+                        )),
                         ..default()
                     },
                     Transform::from_translation(Vec3::new(entry.x, entry.y, config.belt_item.z)),
@@ -225,13 +247,17 @@ pub fn attach_building_visuals(
     mut commands: Commands,
     buildings: Query<
         (Entity, &Building),
-        (Without<Sprite>, Without<BeltSlots>, Without<UnbuiltBuilding>),
+        (
+            Without<Sprite>,
+            Without<BeltSlots>,
+            Without<UnbuiltBuilding>,
+        ),
     >,
     unbuilt: Query<
         (Entity, &Building),
         (With<UnbuiltBuilding>, Without<Sprite>, Without<BeltSlots>),
     >,
-    belts: Query<(Entity, &Building, &BeltSlots), Without<Sprite>>,
+    belts: Query<(Entity, &Building, &BeltSlots, Option<&BeltVariant>), Without<Sprite>>,
     cfg: Res<MapConfig>,
     textures: Res<TextureCache>,
     registry: Res<BuildingRegistry>,
@@ -287,12 +313,17 @@ pub fn attach_building_visuals(
         commands.entity(entity).insert((Sprite {
             image: textures.base(stem),
             custom_size: Some(size),
-            color: Color::srgba(config.ghost.tint_r, config.ghost.tint_g, config.ghost.tint_b, config.ghost.tint_a),
+            color: Color::srgba(
+                config.ghost.tint_r,
+                config.ghost.tint_g,
+                config.ghost.tint_b,
+                config.ghost.tint_a,
+            ),
             ..default()
         },));
     }
 
-    for (entity, building, _slots) in belts.iter() {
+    for (entity, building, _slots, belt_variant) in belts.iter() {
         let Some(def) = registry.get(&building.kind) else {
             continue;
         };
@@ -300,9 +331,16 @@ pub fn attach_building_visuals(
         let th = def.tile_size.1 as f32;
         let size = Vec2::new(tw * cfg.tile_size, th * cfg.tile_size);
         let stem = &def.texture_stem;
+        let tint = match belt_variant.unwrap_or(&BeltVariant::Normal) {
+            BeltVariant::Normal => Color::WHITE,
+            BeltVariant::Underground => Color::srgb(0.6, 0.6, 0.8),
+            BeltVariant::Aerial => Color::srgb(0.8, 0.9, 1.0),
+            BeltVariant::Curved => Color::srgb(0.9, 0.75, 0.6),
+        };
         commands.entity(entity).insert((Sprite {
             image: textures.base(stem),
             custom_size: Some(size),
+            color: tint,
             ..default()
         },));
     }
@@ -324,13 +362,11 @@ pub fn attach_enemy_visuals(
         } else {
             config.enemy.default_size
         };
-        commands.entity(entity).insert((
-            Sprite {
-                image: tex,
-                custom_size: Some(Vec2::new(size, size)),
-                ..default()
-            },
-        ));
+        commands.entity(entity).insert((Sprite {
+            image: tex,
+            custom_size: Some(Vec2::new(size, size)),
+            ..default()
+        },));
     }
 }
 

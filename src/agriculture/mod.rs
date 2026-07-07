@@ -72,5 +72,9 @@ fn process_deliveries(
 
 fn dim_color(c: Color, factor: f32) -> Color {
     let srgba = c.to_srgba();
-    Color::srgb(srgba.red * factor, srgba.green * factor, srgba.blue * factor)
+    Color::srgb(
+        srgba.red * factor,
+        srgba.green * factor,
+        srgba.blue * factor,
+    )
 }

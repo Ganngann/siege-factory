@@ -3,8 +3,8 @@ use crate::economy::components::Player;
 use crate::economy::spatial::SpatialRegistry;
 use crate::enemy::components::Enemy;
 use crate::enemy::registry::EnemyRegistry;
-use crate::map::components::TilePosition;
 use crate::enemy::wave_config::WaveConfig;
+use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -105,7 +105,12 @@ pub fn move_enemies(
             transform.translation.y = target_wy;
         } else {
             let z = transform.translation.z;
-            move_toward(&mut transform.translation, Vec3::new(target_wx, target_wy, z), enemy_speed, time.delta_secs());
+            move_toward(
+                &mut transform.translation,
+                Vec3::new(target_wx, target_wy, z),
+                enemy_speed,
+                time.delta_secs(),
+            );
         }
     }
 }

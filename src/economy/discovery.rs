@@ -3,9 +3,9 @@ use serde::Deserialize;
 use std::collections::HashSet;
 
 use crate::core::toast::ToastQueue;
-use crate::load_toml;
 use crate::economy::components::{Building, DiscoveredRecipes, ProductionCounter};
 use crate::economy::resource::ResourceRegistry;
+use crate::load_toml;
 
 #[derive(Debug, Clone)]
 pub struct DiscoveryDef {
@@ -58,7 +58,9 @@ struct StarterRecipes {
 
 impl Default for StarterRecipes {
     fn default() -> Self {
-        Self { recipes: Vec::new() }
+        Self {
+            recipes: Vec::new(),
+        }
     }
 }
 

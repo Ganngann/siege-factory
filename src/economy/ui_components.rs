@@ -126,6 +126,10 @@ pub struct ProgressBarBg;
 #[derive(Component)]
 pub struct ProgressBarFill;
 #[derive(Component)]
+pub struct FuelBarBg;
+#[derive(Component)]
+pub struct FuelBarFill;
+#[derive(Component)]
 pub struct StatusText;
 #[derive(Component)]
 pub struct FlowInputText;
@@ -184,3 +188,12 @@ pub struct FarmRecruitButton;
 pub struct FarmCropSelectButton {
     pub crop_type: String,
 }
+
+// ── Upgrade panel ──
+
+#[derive(Component)]
+pub struct UpgradeButton {
+    pub target_kind: String,
+}
+#[derive(Component)]
+pub struct UpgradeInfoText;

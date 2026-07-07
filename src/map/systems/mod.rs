@@ -1,7 +1,8 @@
 pub mod chunks;
 
 pub use chunks::{
-    build_chunk_mesh, spawn_chunks_in_range, spawn_single_chunk_visuals, update_visible_chunks,
+    build_chunk_mesh, reveal_hidden_deposits, spawn_chunks_in_range, spawn_single_chunk_visuals,
+    update_fog_of_war, update_visible_chunks,
 };
 
 use crate::core::game_state::GameState;
@@ -10,10 +11,11 @@ use crate::economy::components::UiIsBlocking;
 use crate::map::components::{ChunkMember, HoveredTile, cursor_to_tile};
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
+use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::{
     App, Assets, ButtonInput, Camera, Camera2d, ColorMaterial, Commands, Component, Entity,
     GlobalTransform, IntoScheduleConfigs, KeyCode, Mesh, OnEnter, OnExit, Plugin, Query, Res,
-    ResMut, Transform, Update, Window, With, in_state,
+    ResMut, Transform, Update, Window, With, Without, in_state,
 };
 
 #[derive(Component)]
@@ -57,6 +59,14 @@ impl Plugin for MapPlugin {
         );
         app.add_systems(
             Update,
+            reveal_hidden_deposits.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            update_fog_of_war.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
             recenter_on_player.run_if(in_state(GameState::Playing)),
         );
     }
@@ -67,11 +77,13 @@ fn setup_map(
     cfg: Res<MapConfig>,
     mut chunk_grid: ResMut<ChunkGrid>,
     res_registry: Res<crate::economy::resource::ResourceRegistry>,
+    global_archive: Res<crate::economy::discovery::GlobalArchive>,
     shapes: Res<crate::rendering::ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<crate::rendering::TextureCache>,
     visuals: Res<crate::rendering::config::VisualsConfig>,
+    preview: Res<crate::rendering::cache::PreviewMaterials>,
 ) {
     let (px, py) = cfg.player_start_position;
     let chunk_size = CHUNK_SIZE as i32;
@@ -84,11 +96,13 @@ fn setup_map(
         &mut chunk_grid,
         &cfg,
         &res_registry,
+        &global_archive,
         &shapes,
         &mut materials,
         &mut meshes,
         &textures,
         &visuals,
+        &preview,
         player_cx - margin_chunks,
         player_cx + margin_chunks,
         player_cy - margin_chunks,
@@ -99,7 +113,7 @@ fn setup_map(
 
 fn recenter_on_player(
     keys: Res<ButtonInput<KeyCode>>,
-    mut camera: Query<&mut Transform, With<Camera2d>>,
+    mut camera: Query<&mut Transform, (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: Res<MapConfig>,
 ) {
     if !keys.just_pressed(KeyCode::KeyH) {
@@ -116,7 +130,7 @@ fn recenter_on_player(
 fn update_hovered_tile(
     mut hovered: ResMut<HoveredTile>,
     windows: Query<&Window>,
-    camera: Query<(&Camera, &GlobalTransform)>,
+    camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: Res<MapConfig>,
     ui_blocking: Res<UiIsBlocking>,
 ) {

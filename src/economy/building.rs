@@ -1,5 +1,6 @@
 use crate::core::utils::parse_hex_color;
-use crate::economy::components::{PowerConsumer, PowerPole, PowerProducer};
+use crate::economy::components::{BurnerGenerator, PowerConsumer, PowerPole, PowerProducer};
+use crate::economy::game_components::BeltVariant;
 use crate::economy::resource::{Cost, ResourceId};
 use crate::load_toml;
 use bevy::prelude::*;
@@ -54,6 +55,12 @@ pub struct BuildingDef {
     pub power_consumption: f32,
     pub power_generation: f32,
     pub power_pole_range: f32,
+    pub fuel_burn_interval: f32,
+    pub requires_discovery: Option<String>,
+    pub level: u32,
+    pub upgrades_from: Option<String>,
+    pub upgrades_to: Option<String>,
+    pub belt_variant: BeltVariant,
 }
 
 /// Common power component attachment logic.
@@ -67,6 +74,13 @@ pub fn attach_power_components(entity: &mut EntityCommands, def: &BuildingDef) {
     if def.power_generation > 0.0 {
         entity.insert(PowerProducer {
             output: def.power_generation,
+        });
+    }
+    if def.fuel_burn_interval > 0.0 {
+        entity.insert(BurnerGenerator {
+            fuel_burn_timer: 0.0,
+            fuel_burn_interval: def.fuel_burn_interval,
+            base_output: def.power_generation,
         });
     }
     if def.power_pole_range > 0.0 {
@@ -150,6 +164,12 @@ impl BuildingRegistry {
                 }
             };
 
+            let belt_variant = entry
+                .belt_variant
+                .as_deref()
+                .map(parse_belt_variant)
+                .unwrap_or_default();
+
             buildings.push(BuildingDef {
                 id: id.clone(),
                 name: entry.name,
@@ -181,8 +201,26 @@ impl BuildingRegistry {
                 power_consumption: entry.power_consumption,
                 power_generation: entry.power_generation,
                 power_pole_range: entry.power_pole_range,
+                fuel_burn_interval: entry.fuel_burn_interval,
+                requires_discovery: entry.requires_discovery.clone(),
+                level: entry.level,
+                upgrades_from: entry.upgrades_from.clone(),
+                upgrades_to: None,
+                belt_variant,
             });
         }
+
+        // Compute upgrades_to: for each building, check if any other building upgrades from it
+        let mut upgrades_map: HashMap<String, String> = HashMap::new();
+        for b in &buildings {
+            if let Some(ref from) = b.upgrades_from {
+                upgrades_map.insert(from.clone(), b.id.clone());
+            }
+        }
+        for b in &mut buildings {
+            b.upgrades_to = upgrades_map.get(b.id.as_str()).cloned();
+        }
+
         Self { buildings }
     }
 
@@ -260,6 +298,16 @@ struct BuildingEntry {
     power_generation: f32,
     #[serde(default)]
     power_pole_range: f32,
+    #[serde(default)]
+    fuel_burn_interval: f32,
+    #[serde(default)]
+    requires_discovery: Option<String>,
+    #[serde(default = "default_level")]
+    level: u32,
+    #[serde(default)]
+    upgrades_from: Option<String>,
+    #[serde(default)]
+    belt_variant: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -279,6 +327,19 @@ struct CombatEntry {
 
 fn default_projectile_speed() -> f32 {
     300.0
+}
+
+fn default_level() -> u32 {
+    1
+}
+
+fn parse_belt_variant(s: &str) -> BeltVariant {
+    match s.to_lowercase().as_str() {
+        "underground" => BeltVariant::Underground,
+        "aerial" => BeltVariant::Aerial,
+        "curved" => BeltVariant::Curved,
+        _ => BeltVariant::Normal,
+    }
 }
 
 #[derive(Deserialize)]

@@ -2,9 +2,9 @@ use crate::agriculture::components::{CropRegistry, Cultivator, Farm};
 use crate::economy::belt::BeltSlots;
 use crate::economy::components::{
     Active, ActiveToggleButton, AlertText, Assembler, Building, BuildingPanel, BuildingTitleText,
-    CapacityBarFill, CapacityBarText, ConnectionRowText, FarmCropText, FarmCultivatorCountText,
-    FlowInputText, FlowOutputText, HpBarFill, HpText, PowerConsumer, PowerStatusText,
-    ProgressBarFill, RecipeNameText, StatRowText, StatusText,
+    BurnerGenerator, CapacityBarFill, CapacityBarText, ConnectionRowText, FarmCropText,
+    FarmCultivatorCountText, FlowInputText, FlowOutputText, FuelBarFill, HpBarFill, HpText,
+    PowerConsumer, PowerStatusText, ProgressBarFill, RecipeNameText, StatRowText, StatusText,
 };
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::{Inventory, ResourceRegistry};
@@ -361,6 +361,24 @@ pub fn update_panel_power(
         None => "Power: --".to_string(),
     };
     pt.0 = msg;
+}
+
+pub fn update_panel_burner(
+    panel: Res<BuildingPanel>,
+    burner_query: Query<&BurnerGenerator>,
+    mut fill_q: Query<&mut Node, With<FuelBarFill>>,
+) {
+    let Some(inspected) = panel.inspected else {
+        return;
+    };
+    let Ok(burner) = burner_query.get(inspected) else {
+        return;
+    };
+    let Ok(mut node) = fill_q.single_mut() else {
+        return;
+    };
+    let pct = (burner.fuel_burn_timer / burner.fuel_burn_interval).clamp(0.0, 1.0) * 100.0;
+    node.width = Val::Percent(pct);
 }
 
 pub fn update_farm_crop_text(

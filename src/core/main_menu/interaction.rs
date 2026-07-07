@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
-use super::types::*;
 use super::spawn::{build_rebind_items, spawn_current_screen};
+use super::types::*;
 use crate::core::game_state::GameState;
 use crate::core::input::{InputBinding, KeyBindings};
 use crate::core::settings::Settings;
