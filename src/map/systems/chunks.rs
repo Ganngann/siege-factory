@@ -14,6 +14,7 @@ use bevy::prelude::{
     Assets, Camera, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d, MeshMaterial2d,
     Query, Res, ResMut, Sprite, Transform, Vec2, Visibility, With, Window, default,
 };
+use bevy::prelude::Changed;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use std::collections::HashSet;
 
@@ -324,7 +325,7 @@ pub fn spawn_chunks_in_range(
 
 pub fn update_visible_chunks(
     mut commands: Commands,
-    camera: Query<(&Camera, &Transform)>,
+    camera: Query<(&Camera, &Transform), Changed<Transform>>,
     window: Query<&Window>,
     mut chunk_grid: ResMut<ChunkGrid>,
     cfg: Res<MapConfig>,
@@ -465,7 +466,7 @@ pub fn reveal_hidden_deposits(
 }
 
 pub fn update_fog_of_war(
-    player: Query<&TilePosition, With<crate::economy::game_components::Player>>,
+    player: Query<&TilePosition, (With<crate::economy::game_components::Player>, Changed<TilePosition>)>,
     mut chunk_grid: ResMut<ChunkGrid>,
     mut commands: Commands,
     fog_tiles: Query<(Entity, &ChunkMember), With<FogTile>>,

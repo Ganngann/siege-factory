@@ -11,6 +11,7 @@ pub mod unit;
 
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use bevy::prelude::*;
+use bevy::winit::WinitSettings;
 use bevy_pancam::PanCamPlugin;
 use combat::CombatPlugin;
 use core::schedule::CorePlugin;
@@ -35,5 +36,6 @@ pub fn run() {
         .add_plugins(RenderPlugin)
         .add_plugins(CleanupPlugin)
         .add_plugins(SaveLoadPlugin)
+        .insert_resource(WinitSettings::desktop_app())
         .run();
 }

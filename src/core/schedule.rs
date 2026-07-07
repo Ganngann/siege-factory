@@ -4,6 +4,7 @@ use crate::core::main_menu::{self, MainMenuDef, MenuNav, RebindState};
 use crate::core::settings::Settings;
 use crate::economy::components::BuildMode;
 use bevy::prelude::*;
+use bevy::winit::{UpdateMode, WinitSettings};
 
 pub struct CorePlugin;
 
@@ -30,6 +31,8 @@ impl Plugin for CorePlugin {
             )
                 .run_if(in_state(GameState::Menu)),
         );
+        app.add_systems(OnEnter(GameState::Playing), set_continuous_winit);
+        app.add_systems(OnExit(GameState::Playing), set_reactive_winit);
     }
 }
 
@@ -69,6 +72,14 @@ fn game_state_transition(
             }
         }
     }
+}
+
+fn set_continuous_winit(mut settings: ResMut<WinitSettings>) {
+    settings.focused_mode = UpdateMode::Continuous;
+}
+
+fn set_reactive_winit(mut settings: ResMut<WinitSettings>) {
+    *settings = WinitSettings::desktop_app();
 }
 
 #[cfg(test)]
