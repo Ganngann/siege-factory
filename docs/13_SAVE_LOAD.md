@@ -1,27 +1,25 @@
 # Save & Load — Siege Factory
 
-## Statut
+## Architecture
 
-Pas encore implémenté. Le save/load est prévu après la stabilisation du socle solo.
+Le save/load sérialise l'état persistant du monde ECS au format sérialisé (actuellement RON).
 
-## Format (planifié)
+### Principe
 
-Sérialisation binaire via `bincode` ou `postcard`. L'état complet du monde ECS est sérialisé :
+- **Ce qui persiste** : entités durables (bâtiments, unités, ennemis, inventaires, état du monde)
+- **Ce qui ne persiste pas** : entités éphémères (projectiles, particules, effets visuels)
 
-- Resources : `GameState`, `GameSeed`
-- Ressources économiques : `Inventory` de chaque entité
-- Buildings : position, type, HP, inventaire interne
-- Ennemis : type, position, HP, path actuel
-- Vagues : état actuel, timer
+### Flux
 
-Pas de sérialisation des entités éphémères (projectiles, particules).
+1. Déclencheur (menu, touche) → événement de sauvegarde
+2. Itération des queries ECS → structure de données sérialisable
+3. Sérialisation → écriture sur disque
+4. Au load : lecture → désérialisation → spawn des entités par type
 
-## Emplacement (planifié)
+### Emplacement
 
-- Windows : `%APPDATA%/siege-factory/saves/`
-- Portable via `dirs::data_dir()`
+`%APPDATA%/siege-factory/saves/`
 
-## Évolution
+## Bug connu
 
-- **Phase 1** (scaffold TD) : pas de save/load nécessaire (replay rapide)
-- **Phase 2** (Factorio) : save incrémental par chunk pour carte infinie
+- Building 2×2 décalé d'1/2 case au load
