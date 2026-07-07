@@ -174,5 +174,8 @@ pub struct HasMiningProgress;
 #[derive(Component)]
 pub struct Active(pub bool);
 
+#[derive(Component, Clone, Copy)]
+pub struct CurrentTier(pub usize);
+
 #[derive(Resource, Default)]
 pub struct PeacefulMode(pub bool);

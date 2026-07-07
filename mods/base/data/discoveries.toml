@@ -1,0 +1,250 @@
+# NOTE: building field uses lowercase TOML key (matching building.kind)
+# Casing bug was: used "Furnace" but code expects "furnace"
+
+[starter_recipes]
+recipes = [
+    "mine_iron_ore",
+    "mine_copper_ore",
+    "mine_coal",
+    "mine_stone",
+    "mine_sand",
+    "mine_sulfur",
+    "pump_crude_oil",
+    "iron_plate",
+    "copper_plate",
+    "gear",
+    "circuit",
+    "copper_wire",
+    "ammo_craft",
+]
+
+[[discovery]]
+building = "furnace"
+threshold = 1
+type = "recipe"
+id = "steel"
+message = "The intense heat has fused iron with coal into steel."
+
+[[discovery]]
+building = "furnace"
+threshold = 5
+type = "recipe"
+id = "brick"
+message = "Stone can be baked into sturdy bricks."
+
+[[discovery]]
+building = "furnace"
+threshold = 15
+type = "recipe"
+id = "glass"
+message = "Sand melts into clear, useful glass."
+
+[[discovery]]
+building = "furnace"
+threshold = 30
+type = "recipe"
+id = "concrete"
+message = "Stone and iron bind into reinforced concrete."
+
+[[discovery]]
+building = "furnace"
+threshold = 10
+type = "recipe"
+id = "sulfur_powder"
+message = "Sulfur can be processed into a fine powder."
+
+[[discovery]]
+building = "assembler"
+threshold = 10
+type = "recipe"
+id = "motor"
+message = "Gears and steel combine into a compact motor."
+
+[[discovery]]
+building = "assembler"
+threshold = 25
+type = "recipe"
+id = "electronic_module"
+message = "Circuits fused with steel form a sophisticated electronic module."
+
+[[discovery]]
+building = "assembler"
+threshold = 50
+type = "recipe"
+id = "drivetrain"
+message = "Multiple motors coupled into a heavy-duty drivetrain."
+
+[[discovery]]
+building = "assembler"
+threshold = 75
+type = "recipe"
+id = "machine_frame"
+message = "A load-bearing frame for heavy machinery."
+
+[[discovery]]
+building = "assembler"
+threshold = 100
+type = "recipe"
+id = "targeting_computer"
+message = "A precise guidance computer for automated systems."
+
+[[discovery]]
+building = "assembler"
+threshold = 5
+type = "recipe"
+id = "screw"
+message = "Small threaded fasteners improve mechanical efficiency."
+
+[[discovery]]
+building = "assembler"
+threshold = 10
+type = "recipe"
+id = "pipe"
+message = "Rolled iron plates form durable pipes."
+
+[[discovery]]
+building = "assembler"
+threshold = 15
+type = "recipe"
+id = "battery"
+message = "Copper and sulfur create an electrochemical cell."
+
+[[discovery]]
+building = "assembler"
+threshold = 20
+type = "recipe"
+id = "radar_array"
+message = "Steel dishes and circuits can detect faraway objects."
+
+[[discovery]]
+building = "alchemy_lab"
+threshold = 5
+type = "recipe"
+id = "plastic"
+message = "Petroleum gas can be polymerized into versatile plastic."
+
+[[discovery]]
+building = "alchemy_lab"
+threshold = 1
+type = "recipe"
+id = "petroleum_gas"
+message = "Crude oil cracked into useful petroleum gas."
+
+[[discovery]]
+building = "alchemy_lab"
+threshold = 15
+type = "recipe"
+id = "lubricant"
+message = "Processed petroleum creates a slick lubricant."
+
+[[discovery]]
+building = "alchemy_lab"
+threshold = 30
+type = "recipe"
+id = "rocket_fuel"
+message = "A volatile mix of gas and sulfur for extreme thrust."
+
+[[discovery]]
+building = "alchemy_lab"
+threshold = 50
+type = "recipe"
+id = "explosive"
+message = "Sulfur and coal combine into a potent explosive."
+
+[[discovery]]
+building = "alchemy_lab"
+threshold = 75
+type = "recipe"
+id = "composite"
+message = "Plastic reinforced with iron beams forms a strong composite."
+
+[[discovery]]
+building = "electronics_lab"
+threshold = 10
+type = "recipe"
+id = "advanced_circuit"
+message = "Plastic substrates enable densely packed circuits."
+
+[[discovery]]
+building = "electronics_lab"
+threshold = 25
+type = "recipe"
+id = "processing_unit"
+message = "Multiple advanced circuits create a computing unit."
+
+[[discovery]]
+building = "electronics_lab"
+threshold = 50
+type = "recipe"
+id = "laser_crystal"
+message = "Glass and precision electronics form a focusing crystal."
+
+[[discovery]]
+building = "electronics_lab"
+threshold = 75
+type = "recipe"
+id = "scanner_module"
+message = "A radar array married to a targeting computer."
+
+[[discovery]]
+building = "electronics_lab"
+threshold = 100
+type = "recipe"
+id = "fusion_core"
+message = "A stable energy core harnessing laser and electric power."
+
+[[discovery]]
+building = "electronics_lab"
+threshold = 25
+type = "recipe"
+id = "telemetry_unit"
+message = "Radar data processed into actionable telemetry."
+
+[[discovery]]
+building = "electronics_lab"
+threshold = 50
+type = "recipe"
+id = "nano_pack"
+message = "Micro-repair bots suspended in a polymer matrix."
+
+[[discovery]]
+building = "foundry"
+threshold = 10
+type = "recipe"
+id = "iron_beam"
+message = "Heavy iron plates forged into load-bearing beams."
+
+[[discovery]]
+building = "foundry"
+threshold = 25
+type = "recipe"
+id = "electric_engine"
+message = "A motor wound with copper wire becomes an electric engine."
+
+[[discovery]]
+building = "enchanting_array"
+threshold = 1
+type = "recipe"
+id = "scroll_of_haste"
+message = "Arcane sigils of speed inscribed onto a scroll."
+
+[[discovery]]
+building = "enchanting_array"
+threshold = 10
+type = "recipe"
+id = "scroll_of_conservation"
+message = "Sigils of efficiency etched with rubber-based ink."
+
+[[discovery]]
+building = "enchanting_array"
+threshold = 25
+type = "recipe"
+id = "scroll_of_plenty"
+message = "A laser-etched scroll of abundance."
+
+[[discovery]]
+building = "guild_hall"
+threshold = 1
+type = "recipe"
+id = "bread"
+message = "Flour and heat yield nourishing bread."

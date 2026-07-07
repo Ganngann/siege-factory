@@ -24,7 +24,10 @@ pub fn render_power_lines(
             continue;
         }
         let pos = tf.translation;
-        if let Some(&(pp, _)) = pole_data.iter().find(|(pp, range)| pp.distance(pos) <= *range) {
+        if let Some(&(pp, _)) = pole_data
+            .iter()
+            .find(|(pp, range)| pp.distance(pos) <= *range)
+        {
             gizmos.line(pp, pos, Color::srgba(0.3, 0.6, 1.0, 0.6));
         }
     }

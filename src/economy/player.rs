@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use crate::core::utils::{move_toward, tile_to_world, world_to_tile};
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::BuildingRegistry;
-use crate::rendering::minimap::MinimapCamera;
 use crate::economy::components::{
     Active, Builder, BuilderState, Building, OccupiedTiles, Player, ResourceDeposit,
     UnbuiltBuilding,
@@ -15,6 +14,7 @@ use crate::enemy::components::Health;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::rendering::TextureCache;
+use crate::rendering::minimap::MinimapCamera;
 
 pub fn setup_player(
     mut commands: Commands,
@@ -38,12 +38,7 @@ pub fn setup_player(
             kind: "hq".into(),
             name: "hq".into(),
         },
-        OccupiedTiles(vec![
-            (bx, by),
-            (bx + 1, by),
-            (bx, by + 1),
-            (bx + 1, by + 1),
-        ]),
+        OccupiedTiles(vec![(bx, by), (bx + 1, by), (bx, by + 1), (bx + 1, by + 1)]),
         inv,
         Health {
             current: cfg.player_hp,
@@ -403,7 +398,10 @@ pub fn player_mine(
 
 pub fn camera_follow_player(
     player_query: Query<&Transform, (With<Player>, Without<Camera2d>)>,
-    mut camera: Query<(&Camera, &GlobalTransform, &mut Transform), (With<Camera2d>, Without<MinimapCamera>)>,
+    mut camera: Query<
+        (&Camera, &GlobalTransform, &mut Transform),
+        (With<Camera2d>, Without<MinimapCamera>),
+    >,
     window: Query<&Window>,
     cfg: Res<MapConfig>,
     time: Res<Time>,

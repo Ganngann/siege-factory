@@ -27,6 +27,7 @@ pub fn enemies_damage_player(
     mut player_query: Query<(&mut Health, &TilePosition), With<Player>>,
     enemies_registry: Res<EnemyRegistry>,
     mut commands: Commands,
+    mut next_state: ResMut<NextState<crate::core::game_state::GameState>>,
 ) {
     let Ok((mut player_health, player_pos)) = player_query.single_mut() else {
         return;
@@ -40,6 +41,10 @@ pub fn enemies_damage_player(
                 .unwrap_or(10);
             commands.trigger(DespawnEnemy(entity));
             player_health.current = player_health.current.saturating_sub(damage);
+            if player_health.current == 0 {
+                next_state.set(crate::core::game_state::GameState::GameOver);
+                return;
+            }
         }
     }
 }

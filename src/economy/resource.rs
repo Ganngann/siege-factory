@@ -82,6 +82,31 @@ impl ResourceRegistry {
             None => &id.0,
         }
     }
+
+    pub fn apply_mod_overrides(&mut self, mods: &crate::core::modding::ModRegistry) {
+        let Some(content) = mods.load_data("resources.toml") else {
+            return;
+        };
+        let Ok(parsed) = toml::from_str::<ResourcesToml>(&content) else {
+            bevy::prelude::error!("Failed to parse resources.toml from mod");
+            return;
+        };
+        for (id, entry) in parsed.resources {
+            self.resources.insert(
+                id.clone(),
+                ResourceDef {
+                    id,
+                    name: entry.name,
+                    max_stack: entry.max_stack,
+                    color: entry
+                        .color
+                        .as_deref()
+                        .map(parse_hex_color)
+                        .unwrap_or(Color::srgb(0.5, 0.5, 0.5)),
+                },
+            );
+        }
+    }
 }
 
 #[derive(Deserialize)]

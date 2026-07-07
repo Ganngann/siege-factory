@@ -1,0 +1,81 @@
+[defaults]
+can_deconstruct = true
+refund_ratio = 0.5
+repair_cost_ratio = 0.5
+inventory_capacity = 0
+default_projectile_speed = 300.0
+
+[buildings.workbench]
+name = "Workbench"
+cost = { wood = 4, stone = 2 }
+hp = 20
+tile_size = { w = 1, h = 1 }
+color = "#8B5E3C"
+visual = "square"
+texture_stem = "workbench"
+powered = false
+station = true
+
+[buildings.furnace]
+name = "Furnace"
+cost = { brick = 4 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#664433"
+visual = "square"
+texture_stem = "furnace"
+powered = false
+
+[buildings.genesis_ark]
+name = "Central Structure"
+hp = 9999
+tile_size = { w = 2, h = 2 }
+color = "#88CCFF"
+visual = "square"
+texture_stem = "genesis_ark"
+hidden = true
+can_deconstruct = false
+powered = false
+station = false
+
+[[buildings.genesis_ark.tiers]]
+required_items = { power_relay = 1 }
+unlock_recipes = ["basic_extraction"]
+log_id = "progression_01"
+texture = "genesis_ark_t1"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { coolant_pipe = 2 }
+unlock_recipes = ["smelt_copper"]
+log_id = "progression_02"
+texture = "genesis_ark_t2"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { organic_vial = 1 }
+unlock_recipes = ["bio_brick"]
+log_id = "progression_03"
+texture = "genesis_ark_t3"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { protein_sample = 1 }
+unlock_recipes = ["reinforced_plate"]
+log_id = "progression_04"
+texture = "genesis_ark_t4"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { nanite_canister = 1 }
+unlock_recipes = ["advanced_alloy"]
+log_id = "progression_05"
+texture = "genesis_ark_t5"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { bio_ink = 3 }
+unlock_recipes = ["precision_tools"]
+log_id = "progression_06"
+texture = "genesis_ark_t6"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { pure_essence = 1 }
+unlock_recipes = []
+log_id = "progression_07"
+texture = "genesis_ark_t7"

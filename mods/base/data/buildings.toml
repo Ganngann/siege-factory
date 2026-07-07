@@ -1,0 +1,550 @@
+[defaults]
+can_deconstruct = true
+refund_ratio = 0.5
+repair_cost_ratio = 0.5
+inventory_capacity = 0
+default_projectile_speed = 300.0
+
+[buildings.hq]
+name = "HQ"
+hp = 100
+tile_size = { w = 2, h = 2 }
+color = "#3366CC"
+can_deconstruct = false
+hidden = true
+texture_stem = "hq_east"
+
+[buildings.miner]
+name = "Miner"
+cost = { iron_ore = 10 }
+hp = 100
+tile_size = { w = 1, h = 1 }
+color = "#993300"
+visual = "square"
+requires_deposit = true
+production = { resource = "ore", interval_sec = 2.0 }
+power_consumption = 10.0
+texture_stem = "miner_east"
+level = 1
+
+[buildings.furnace]
+name = "Furnace"
+cost = { iron_ore = 12 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#884422"
+visual = "diamond"
+recipe_categories = ["smelting"]
+production_interval = 3.0
+default_recipe = "iron_plate"
+power_consumption = 8.0
+level = 1
+
+[buildings.assembler]
+name = "Assembler"
+cost = { iron_ore = 15 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#4D99CC"
+visual = "diamond"
+recipe_categories = ["crafting"]
+texture_stem = "assembler_east"
+production_interval = 2.0
+default_recipe = "ammo_craft"
+power_consumption = 12.0
+level = 1
+
+[buildings.belt]
+name = "Belt"
+cost = { iron_ore = 3 }
+hp = 20
+tile_size = { w = 1, h = 1 }
+color = "#808080"
+visual = "rectangle"
+slots = 4
+speed = 2.0
+power_consumption = 2.0
+texture_stem = "belt_east"
+level = 1
+
+[buildings.underground_belt]
+name = "Underground Belt"
+cost = { iron_ore = 6, iron_plate = 2 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#666688"
+visual = "rectangle"
+slots = 4
+speed = 2.0
+power_consumption = 3.0
+texture_stem = "belt_east"
+belt_variant = "underground"
+level = 1
+
+[buildings.aerial_belt]
+name = "Aerial Belt"
+cost = { iron_ore = 4, gear = 1 }
+hp = 15
+tile_size = { w = 1, h = 1 }
+color = "#88AACC"
+visual = "rectangle"
+slots = 3
+speed = 3.0
+power_consumption = 4.0
+texture_stem = "belt_east"
+belt_variant = "aerial"
+level = 1
+
+[buildings.curved_belt]
+name = "Curved Belt"
+cost = { iron_ore = 4 }
+hp = 20
+tile_size = { w = 1, h = 1 }
+color = "#AA8866"
+visual = "rectangle"
+slots = 2
+speed = 2.5
+power_consumption = 2.0
+texture_stem = "belt_east"
+belt_variant = "curved"
+level = 1
+
+[buildings.wall]
+name = "Wall"
+cost = { iron_ore = 5 }
+hp = 300
+tile_size = { w = 1, h = 1 }
+color = "#4D4D4D"
+visual = "rectangle"
+drag_placement = true
+texture_stem = "wall_h"
+level = 1
+
+[buildings.turret]
+name = "Turret"
+cost = { iron_ore = 20, ammo = 5 }
+hp = 120
+tile_size = { w = 1, h = 1 }
+color = "#E63333"
+visual = "triangle"
+combat = { damage = 5, range = 4.0, fire_rate_sec = 1.0, projectile_speed = 300.0 }
+power_consumption = 15.0
+texture_stem = "turret_east"
+level = 1
+
+[buildings.storage]
+name = "Storage"
+cost = { iron_ore = 25 }
+hp = 150
+tile_size = { w = 1, h = 1 }
+color = "#CC9900"
+visual = "pentagon"
+inventory_capacity = 64
+
+[buildings.splitter]
+name = "Splitter"
+cost = { iron_ore = 8 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#AAAA00"
+visual = "diamond"
+slots = 2
+speed = 2.0
+power_consumption = 3.0
+texture_stem = "splitter_east"
+
+[buildings.sorter]
+name = "Sorter"
+cost = { iron_ore = 10 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#66AA66"
+visual = "diamond"
+slots = 2
+speed = 2.0
+default_filter = "iron_ore"
+power_consumption = 4.0
+texture_stem = "sorter_east"
+
+[buildings.burner_generator]
+name = "Burner Generator"
+cost = { iron_ore = 20 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#DD6622"
+visual = "square"
+inventory_capacity = 16
+power_generation = 50.0
+fuel_burn_interval = 2.0
+
+[buildings.power_pole]
+name = "Power Pole"
+cost = { iron_ore = 5 }
+hp = 10
+tile_size = { w = 1, h = 1 }
+color = "#888888"
+visual = "circle"
+power_pole_range = 5.0
+
+[buildings.farm]
+name = "Farm"
+cost = { iron_ore = 15 }
+hp = 100
+tile_size = { w = 1, h = 1 }
+color = "#5A8C2A"
+visual = "square"
+inventory_capacity = 64
+crop_types = ["wheat", "wood", "rubber"]
+
+[buildings.archive]
+name = "Archive"
+cost = { iron_plate = 10, gear = 5 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#CCAA44"
+visual = "diamond"
+inventory_capacity = 1
+hidden = false
+
+# === NEW BUILDINGS (recipe-based) ===
+
+[buildings.pumpjack]
+name = "Pumpjack"
+cost = { iron_plate = 8, gear = 2 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#444455"
+visual = "square"
+recipe_categories = ["pumping"]
+production_interval = 3.0
+default_recipe = "pump_crude_oil"
+power_consumption = 15.0
+
+[buildings.blast_furnace]
+name = "Blast Furnace"
+cost = { brick = 6, steel = 2 }
+hp = 120
+tile_size = { w = 1, h = 1 }
+color = "#AA4422"
+visual = "diamond"
+recipe_categories = ["smelting"]
+production_interval = 1.5
+default_recipe = "iron_plate"
+power_consumption = 20.0
+requires_discovery = "steel"
+
+[buildings.assembly_crane]
+name = "Assembly Crane"
+cost = { steel = 3, gear = 4 }
+hp = 100
+tile_size = { w = 2, h = 1 }
+color = "#3377AA"
+visual = "rectangle"
+recipe_categories = ["crafting"]
+production_interval = 1.0
+default_recipe = "gear"
+power_consumption = 25.0
+requires_discovery = "motor"
+
+[buildings.alchemy_lab]
+name = "Alchemy Lab"
+cost = { pipe = 4, circuit = 2 }
+hp = 90
+tile_size = { w = 2, h = 2 }
+color = "#664488"
+visual = "diamond"
+recipe_categories = ["refining"]
+production_interval = 3.0
+default_recipe = "petroleum_gas"
+power_consumption = 20.0
+requires_discovery = "petroleum_gas"
+
+[buildings.electronics_lab]
+name = "Electronics Lab"
+cost = { plastic = 3, circuit = 4 }
+hp = 80
+tile_size = { w = 2, h = 2 }
+color = "#33AA88"
+visual = "diamond"
+recipe_categories = ["electronics"]
+production_interval = 3.0
+default_recipe = "advanced_circuit"
+power_consumption = 30.0
+requires_discovery = "plastic"
+
+[buildings.foundry]
+name = "Foundry"
+cost = { iron_beam = 3, brick = 6 }
+hp = 150
+tile_size = { w = 2, h = 2 }
+color = "#888855"
+visual = "square"
+recipe_categories = ["forging"]
+production_interval = 3.0
+default_recipe = "iron_beam"
+power_consumption = 25.0
+requires_discovery = "iron_beam"
+
+[buildings.guild_hall]
+name = "Guild Hall"
+cost = { brick = 4, wood = 6 }
+hp = 100
+tile_size = { w = 2, h = 2 }
+color = "#CC8844"
+visual = "square"
+recipe_categories = ["cooking"]
+production_interval = 3.0
+default_recipe = "bread"
+power_consumption = 5.0
+requires_discovery = "bread"
+
+[buildings.enchanting_array]
+name = "Enchanting Array"
+cost = { advanced_circuit = 1, glass = 3 }
+hp = 70
+tile_size = { w = 2, h = 2 }
+color = "#DD66CC"
+visual = "diamond"
+recipe_categories = ["enchanting"]
+production_interval = 4.0
+default_recipe = "scroll_of_haste"
+power_consumption = 30.0
+requires_discovery = "scroll_of_haste"
+
+# === NEW BUILDINGS (belt-based) ===
+
+[buildings.high_speed_track]
+name = "High-Speed Track"
+cost = { lubricant = 1, steel = 1 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#CC8844"
+visual = "rectangle"
+slots = 4
+speed = 4.0
+power_consumption = 8.0
+requires_discovery = "lubricant"
+
+# === NEW BUILDINGS (generic / placeholder) ===
+
+[buildings.arboretum]
+name = "Arboretum"
+cost = { glass = 3, brick = 4 }
+hp = 80
+tile_size = { w = 2, h = 2 }
+color = "#336633"
+visual = "square"
+power_consumption = 2.0
+requires_discovery = "glass"
+
+[buildings.scribing_desk]
+name = "Scribing Desk"
+cost = { iron_beam = 1, glass = 2 }
+hp = 50
+tile_size = { w = 1, h = 1 }
+color = "#AA9966"
+visual = "square"
+power_consumption = 5.0
+requires_discovery = "iron_beam"
+
+[buildings.excavation_rig]
+name = "Excavation Rig"
+cost = { explosive = 2, steel = 3 }
+hp = 120
+tile_size = { w = 2, h = 2 }
+color = "#775533"
+visual = "square"
+power_consumption = 15.0
+requires_discovery = "explosive"
+
+[buildings.grand_counterweight]
+name = "Grand Counterweight"
+cost = { battery = 4, steel = 4 }
+hp = 150
+tile_size = { w = 2, h = 2 }
+color = "#557799"
+visual = "pentagon"
+power_consumption = 5.0
+power_generation = 50.0
+requires_discovery = "battery"
+
+[buildings.deep_core_drill]
+name = "Deep Core Drill"
+cost = { composite = 3, electric_engine = 1 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#664433"
+visual = "square"
+power_consumption = 40.0
+requires_discovery = "composite"
+
+[buildings.compactor]
+name = "Compactor"
+cost = { plastic = 3, steel = 2 }
+hp = 60
+tile_size = { w = 1, h = 1 }
+color = "#AAAA77"
+visual = "square"
+power_consumption = 10.0
+requires_discovery = "plastic"
+
+[buildings.watchtower]
+name = "Watchtower"
+cost = { radar_array = 1, steel = 5 }
+hp = 100
+tile_size = { w = 1, h = 1 }
+color = "#5577AA"
+visual = "pentagon"
+power_consumption = 10.0
+requires_discovery = "radar_array"
+
+[buildings.assembly_matrix]
+name = "Assembly Matrix"
+cost = { processing_unit = 1, steel = 4 }
+hp = 80
+tile_size = { w = 2, h = 2 }
+color = "#44AACC"
+visual = "diamond"
+power_consumption = 30.0
+requires_discovery = "processing_unit"
+
+[buildings.thermal_bore]
+name = "Thermal Bore"
+cost = { fusion_core = 1, composite = 4 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#FF6622"
+visual = "square"
+power_generation = 200.0
+requires_discovery = "fusion_core"
+
+[buildings.cobblestone_path]
+name = "Cobblestone Path"
+cost = { concrete = 2 }
+hp = 50
+tile_size = { w = 1, h = 1 }
+color = "#AAAAAA"
+visual = "rectangle"
+drag_placement = true
+requires_discovery = "concrete"
+
+# === UPGRADED BUILDINGS ===
+
+[buildings.miner_ii]
+name = "Miner II"
+cost = { iron_plate = 8, gear = 4 }
+hp = 150
+tile_size = { w = 1, h = 1 }
+color = "#CC5500"
+visual = "square"
+requires_deposit = true
+production = { resource = "ore", interval_sec = 1.0 }
+power_consumption = 15.0
+texture_stem = "miner_east"
+level = 2
+upgrades_from = "miner"
+hidden = true
+
+[buildings.miner_iii]
+name = "Miner III"
+cost = { steel = 4, motor = 2 }
+hp = 200
+tile_size = { w = 1, h = 1 }
+color = "#FF7700"
+visual = "square"
+requires_deposit = true
+production = { resource = "ore", interval_sec = 0.5 }
+power_consumption = 25.0
+texture_stem = "miner_east"
+level = 3
+upgrades_from = "miner_ii"
+hidden = true
+
+[buildings.assembler_ii]
+name = "Assembler II"
+cost = { steel = 3, motor = 2 }
+hp = 120
+tile_size = { w = 1, h = 1 }
+color = "#66BBDD"
+visual = "diamond"
+recipe_categories = ["crafting"]
+texture_stem = "assembler_east"
+production_interval = 1.5
+default_recipe = "ammo_craft"
+power_consumption = 18.0
+level = 2
+upgrades_from = "assembler"
+hidden = true
+
+[buildings.assembler_iii]
+name = "Assembler III"
+cost = { advanced_circuit = 2, electric_engine = 1 }
+hp = 160
+tile_size = { w = 1, h = 1 }
+color = "#88DDEE"
+visual = "diamond"
+recipe_categories = ["crafting"]
+texture_stem = "assembler_east"
+production_interval = 1.0
+default_recipe = "ammo_craft"
+power_consumption = 25.0
+level = 3
+upgrades_from = "assembler_ii"
+hidden = true
+
+[buildings.furnace_ii]
+name = "Furnace II"
+cost = { brick = 4, steel = 2 }
+hp = 120
+tile_size = { w = 1, h = 1 }
+color = "#AA6633"
+visual = "diamond"
+recipe_categories = ["smelting"]
+production_interval = 2.0
+default_recipe = "iron_plate"
+power_consumption = 12.0
+level = 2
+upgrades_from = "furnace"
+hidden = true
+
+[buildings.belt_ii]
+name = "Fast Belt"
+cost = { iron_ore = 5, gear = 1 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#999999"
+visual = "rectangle"
+slots = 4
+speed = 4.0
+power_consumption = 4.0
+texture_stem = "belt_east"
+level = 2
+upgrades_from = "belt"
+hidden = true
+
+[buildings.wall_ii]
+name = "Reinforced Wall"
+cost = { iron_plate = 4, steel = 2 }
+hp = 600
+tile_size = { w = 1, h = 1 }
+color = "#666666"
+visual = "rectangle"
+drag_placement = true
+texture_stem = "wall_h"
+level = 2
+upgrades_from = "wall"
+hidden = true
+
+[buildings.turret_ii]
+name = "Turret II"
+cost = { steel = 3, targeting_computer = 1 }
+hp = 180
+tile_size = { w = 1, h = 1 }
+color = "#FF4444"
+visual = "triangle"
+combat = { damage = 10, range = 5.0, fire_rate_sec = 0.8, projectile_speed = 300.0 }
+power_consumption = 20.0
+texture_stem = "turret_east"
+level = 2
+upgrades_from = "turret"
+hidden = true

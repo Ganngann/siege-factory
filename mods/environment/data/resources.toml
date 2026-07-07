@@ -1,0 +1,44 @@
+[resources.clay]
+name = "Clay"
+max_stack = 50
+color = "#C4A882"
+
+[resources.stone_pickaxe]
+name = "Stone Pickaxe"
+max_stack = 1
+color = "#8B7355"
+
+[resources.power_relay]
+name = "Power Relay"
+max_stack = 10
+color = "#FFD700"
+
+[resources.coolant_pipe]
+name = "Coolant Pipe"
+max_stack = 10
+color = "#4FC3F7"
+
+[resources.organic_vial]
+name = "Organic Vial"
+max_stack = 10
+color = "#66BB6A"
+
+[resources.protein_sample]
+name = "Protein Sample"
+max_stack = 10
+color = "#AB47BC"
+
+[resources.nanite_canister]
+name = "Nanite Canister"
+max_stack = 10
+color = "#26C6DA"
+
+[resources.bio_ink]
+name = "Bio Ink"
+max_stack = 10
+color = "#EF5350"
+
+[resources.pure_essence]
+name = "Pure Essence"
+max_stack = 1
+color = "#FFD54F"

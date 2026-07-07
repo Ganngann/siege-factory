@@ -133,7 +133,12 @@ pub fn on_belt_drag_completed(
                     Level(def.level),
                 ));
             } else {
-                commands.spawn((belt_components, def.belt_variant, Active(true), Level(def.level)));
+                commands.spawn((
+                    belt_components,
+                    def.belt_variant,
+                    Active(true),
+                    Level(def.level),
+                ));
             }
         }
     } else if def.drag_placement {

@@ -17,19 +17,21 @@ pub mod recipe;
 pub mod resource;
 pub mod setup;
 pub mod spatial;
+pub mod tiered_structure;
 pub mod ui;
 pub mod ui_components;
 pub mod unit_config;
 pub mod window;
 
 use crate::core::game_state::GameState;
+use crate::core::schedule::GameplayStep;
 use crate::core::toast::{ToastQueue, toast_system};
 use crate::core::tooltip::{TooltipText, tooltip_ui};
 use crate::core::utils::silent_despawn;
 use bevy::ecs::hierarchy::ChildOf;
 use bevy::picking::hover::HoverMap;
 use bevy::prelude::*;
-use building::DefaultSettings;
+use building::{BuildingRegistry, DefaultSettings};
 use components::{Building, BuildingPanel, PeacefulMode, UiIsBlocking};
 use menu::{MenuItems, MenuState};
 use resource::ResourceRegistry;
@@ -106,7 +108,12 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<UiIsBlocking>();
         app.init_resource::<player::PlayerWorldPos>();
         app.init_resource::<player::MiningTimer>();
+        app.init_resource::<crate::player::crafting::CraftingProgress>();
+        app.init_resource::<crate::player::crafting::CraftingOpen>();
         app.init_resource::<components::DragState>();
+        app.init_resource::<crate::core::tutorial::TutorialState>();
+        app.init_resource::<crate::core::tutorial::TutorialConditions>();
+        app.insert_resource(tiered_structure::ProgressionLogRegistry::default());
         app.insert_resource(Time::<Fixed>::from_hz(20.0));
         app.configure_sets(Update, PlayingSystems.run_if(in_state(GameState::Playing)));
         app.add_observer(placement::on_belt_drag_completed);
@@ -131,6 +138,7 @@ impl Plugin for EconomyPlugin {
                 build_bar::cleanup_menu_bar,
                 inspect::cleanup_popup,
                 ui::cleanup_inventory_panel,
+                crate::player::crafting::cleanup_crafting_panel,
             ),
         );
         app.add_systems(
@@ -164,12 +172,40 @@ impl Plugin for EconomyPlugin {
             Update,
             placement::deconstruct_drag_preview.in_set(PlayingSystems),
         );
-        app.add_systems(Update, player::player_movement.in_set(PlayingSystems));
-        app.add_systems(Update, player::camera_follow_player.in_set(PlayingSystems));
+        app.add_systems(Update, player::player_movement
+            .in_set(PlayingSystems)
+            .in_set(GameplayStep::PlayerInput));
+        app.add_systems(Update, player::camera_follow_player
+            .in_set(PlayingSystems)
+            .in_set(GameplayStep::CameraFollow));
         app.add_systems(Update, player::builder_work.in_set(PlayingSystems));
         app.add_systems(Update, player::finish_construction.in_set(PlayingSystems));
         app.add_systems(Update, player::player_mine.in_set(PlayingSystems));
         app.add_systems(Update, player::player_pickup_belt.in_set(PlayingSystems));
+        app.add_systems(
+            Update,
+            tiered_structure::structure_interact.in_set(PlayingSystems),
+        );
+        app.add_systems(
+            Update,
+            crate::player::crafting::crafting_input.in_set(PlayingSystems),
+        );
+        app.add_systems(
+            Update,
+            crate::player::crafting::spawn_crafting_panel.in_set(PlayingSystems),
+        );
+        app.add_systems(
+            Update,
+            crate::player::crafting::craft_button_system.in_set(PlayingSystems),
+        );
+        app.add_systems(
+            Update,
+            crate::player::crafting::crafting_tick.in_set(PlayingSystems),
+        );
+        app.add_systems(
+            Update,
+            crate::player::crafting::update_crafting_progress_text.in_set(PlayingSystems),
+        );
         app.add_systems(
             FixedUpdate,
             belt::advance_belt_slots.run_if(in_state(GameState::Playing)),
@@ -260,6 +296,47 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(Update, toast_system.in_set(PlayingSystems));
         app.add_systems(Update, tooltip_ui.in_set(PlayingSystems));
+        app.add_systems(
+            Update,
+            (
+                crate::core::tutorial::track_player_movement,
+                crate::core::tutorial::track_item_collected,
+                crate::core::tutorial::track_item_crafted,
+                crate::core::tutorial::track_building_placed,
+                crate::core::tutorial::tutorial_tick,
+            )
+                .run_if(in_state(GameState::Playing))
+                .in_set(PlayingSystems),
+        );
+
+        app.add_systems(
+            Startup,
+            (|registry: Res<crate::core::modding::ModRegistry>,
+              mut buildings: ResMut<BuildingRegistry>,
+              mut resources: ResMut<ResourceRegistry>,
+              mut recipes: ResMut<recipe::RecipeRegistry>,
+              mut discoveries: ResMut<discovery::DiscoveryRegistry>,
+              mut units: ResMut<unit_config::UnitConfig>| {
+                let has_non_base_mods = registry.mods.iter().any(|m| m.manifest.id != "base");
+                if !has_non_base_mods {
+                    return;
+                }
+                buildings.apply_mod_overrides(&registry);
+                resources.apply_mod_overrides(&registry);
+                recipes.apply_mod_overrides(&registry);
+                discoveries.apply_mod_overrides(&registry);
+                units.apply_mod_overrides(&registry);
+            })
+            .run_if(resource_exists::<crate::core::modding::ModRegistry>),
+        );
+
+        app.add_systems(
+            Startup,
+            |registry: Res<crate::core::modding::ModRegistry>,
+             mut tutorial: ResMut<crate::core::tutorial::TutorialState>| {
+                *tutorial = crate::core::tutorial::TutorialState::load(&registry);
+            },
+        );
     }
 }
 

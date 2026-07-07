@@ -1,0 +1,47 @@
+[[steps]]
+id = "move"
+toast = "Use WASD or arrow keys to move."
+condition = "player_moved_distance"
+params = { distance = "5" }
+
+[[steps]]
+id = "mine_ore"
+toast = "Walk to a deposit and hold E to mine ore."
+condition = "items_collected"
+params = { count = "3" }
+
+[[steps]]
+id = "craft_pickaxe"
+toast = "Open the crafting menu (C) and craft a stone pickaxe."
+condition = "item_crafted"
+params = { recipe_id = "stone_pickaxe" }
+
+[[steps]]
+id = "place_workbench"
+toast = "Open the build menu (B) and place a Workbench."
+condition = "building_placed"
+params = { building_id = "workbench" }
+
+[[steps]]
+id = "craft_bricks"
+toast = "Use the Workbench to craft bricks from clay."
+condition = "item_crafted"
+params = { recipe_id = "brick" }
+
+[[steps]]
+id = "place_furnace"
+toast = "Place a Furnace next to your Workbench."
+condition = "building_placed"
+params = { building_id = "furnace" }
+
+[[steps]]
+id = "approach_central"
+toast = "Walk up to the large structure nearby. It's the key to everything."
+condition = "player_near_structure"
+params = { structure_id = "genesis_ark", distance = "3" }
+
+[[steps]]
+id = "deliver_parts"
+toast = "Press E near the structure with the required parts to begin the progression."
+condition = "structure_interacted"
+params = { structure_id = "genesis_ark" }

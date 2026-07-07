@@ -4,8 +4,10 @@ use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     BuildMode, Building, Direction, HasHpBar, HpBarChild, Player, UnbuiltBuilding, Unit,
 };
+use crate::economy::game_components::{
+    BeltVariant, CurrentTier, HasMiningProgress, MiningProgressChild,
+};
 use crate::economy::player::MiningTimer;
-use crate::economy::game_components::{BeltVariant, HasMiningProgress, MiningProgressChild};
 use crate::economy::unit_config::UnitConfig;
 use crate::enemy::components::{Enemy, Health};
 use crate::events::SpawnProjectileEvent;
@@ -51,7 +53,9 @@ pub fn tile_highlight(
     let z = config.tile_highlight.z;
 
     if let Some(entity) = highlight.0 {
-        commands.entity(entity).insert(Transform::from_xyz(world_x, world_y, z));
+        commands
+            .entity(entity)
+            .insert(Transform::from_xyz(world_x, world_y, z));
     } else {
         let entity = commands
             .spawn((
@@ -136,8 +140,10 @@ pub fn update_mining_progress_bars(
         };
         for child in children.iter() {
             if let Ok(mut sprite) = sprite_q.get_mut(child) {
-                sprite.custom_size =
-                    Some(Vec2::new(config.mining_bar.width * ratio, config.mining_bar.height));
+                sprite.custom_size = Some(Vec2::new(
+                    config.mining_bar.width * ratio,
+                    config.mining_bar.height,
+                ));
             }
         }
     }
@@ -146,8 +152,10 @@ pub fn update_mining_progress_bars(
     for children in players.iter() {
         for child in children.iter() {
             if let Ok(mut sprite) = sprite_q.get_mut(child) {
-                sprite.custom_size =
-                    Some(Vec2::new(config.mining_bar.width * player_ratio, config.mining_bar.height));
+                sprite.custom_size = Some(Vec2::new(
+                    config.mining_bar.width * player_ratio,
+                    config.mining_bar.height,
+                ));
             }
         }
     }
@@ -458,5 +466,34 @@ pub fn direction_arrow(dir: Direction) -> &'static str {
         Direction::North => "^",
         Direction::West => "<",
         Direction::South => "v",
+    }
+}
+
+pub fn update_tier_visuals(
+    tier_q: Query<(Entity, &Building, &CurrentTier), Changed<CurrentTier>>,
+    textures: Res<TextureCache>,
+    registry: Res<BuildingRegistry>,
+    cfg: Res<MapConfig>,
+    mut commands: Commands,
+) {
+    for (entity, building, tier) in &tier_q {
+        let Some(def) = registry.get(&building.kind) else {
+            continue;
+        };
+        if tier.0 == 0 || tier.0 > def.tiers.len() {
+            continue;
+        }
+        let tier_def = &def.tiers[tier.0 - 1];
+        if tier_def.texture.is_empty() {
+            continue;
+        }
+        let tw = def.tile_size.0 as f32;
+        let th = def.tile_size.1 as f32;
+        let size = Vec2::new(tw * cfg.tile_size, th * cfg.tile_size);
+        commands.entity(entity).insert(Sprite {
+            image: textures.base(&tier_def.texture),
+            custom_size: Some(size),
+            ..default()
+        });
     }
 }

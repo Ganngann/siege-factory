@@ -18,6 +18,7 @@ pub struct VisualsConfig {
     pub tile_highlight: TileHighlightConfig,
     pub deposit_sprite: DepositSpriteConfig,
     pub decoration: DecorationConfig,
+    pub decorations: Vec<DecorationTypeConfig>,
     pub chunk_colors: ChunkColorsConfig,
     pub ghost: GhostConfig,
     pub building: BuildingVisualConfig,
@@ -105,6 +106,18 @@ pub struct DepositSpriteConfig {
     pub scale_ratio: f32,
     pub z: f32,
     pub fallback_color: Color,
+}
+
+#[derive(Debug, Clone)]
+pub struct DecorationTypeConfig {
+    pub kind: String,
+    pub min_size: f32,
+    pub max_size: f32,
+    pub scatter: f32,
+    pub density: f32,
+    pub z: f32,
+    pub color: Color,
+    pub shape: String,
 }
 
 #[derive(Debug, Clone)]
@@ -207,6 +220,20 @@ impl VisualsConfig {
                 tree_color: parse_hex_color(&parsed.decoration.tree_color),
                 rock_color: parse_hex_color(&parsed.decoration.rock_color),
             },
+            decorations: parsed
+                .decorations
+                .into_iter()
+                .map(|d| DecorationTypeConfig {
+                    kind: d.kind,
+                    min_size: d.min_size,
+                    max_size: d.max_size,
+                    scatter: d.scatter,
+                    density: d.density,
+                    z: d.z,
+                    color: parse_hex_color(&d.color),
+                    shape: d.shape,
+                })
+                .collect(),
             chunk_colors: ChunkColorsConfig {
                 even: parse_hex_color(&parsed.chunk_colors.even),
                 odd: parse_hex_color(&parsed.chunk_colors.odd),
@@ -239,9 +266,23 @@ struct VisualsToml {
     tile_highlight: TileHighlightEntry,
     deposit_sprite: DepositSpriteEntry,
     decoration: DecorationEntry,
+    #[serde(default)]
+    decorations: Vec<DecorationTypeEntry>,
     chunk_colors: ChunkColorsEntry,
     ghost: GhostEntry,
     building: BuildingEntry,
+}
+
+#[derive(Deserialize)]
+struct DecorationTypeEntry {
+    kind: String,
+    min_size: f32,
+    max_size: f32,
+    scatter: f32,
+    density: f32,
+    z: f32,
+    color: String,
+    shape: String,
 }
 
 #[derive(Deserialize)]

@@ -1,0 +1,5 @@
+id = "base"
+name = "Siege Factory"
+version = "0.1.0"
+description = "Core game content"
+author = "opencode"

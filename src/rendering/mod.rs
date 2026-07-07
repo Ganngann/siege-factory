@@ -13,10 +13,7 @@ pub use visuals::*;
 use crate::core::game_state::GameState;
 use bevy::prelude::*;
 
-fn cleanup_tile_highlight(
-    mut commands: Commands,
-    mut highlight: ResMut<TileHighlightEntity>,
-) {
+fn cleanup_tile_highlight(mut commands: Commands, mut highlight: ResMut<TileHighlightEntity>) {
     if let Some(entity) = highlight.0.take() {
         commands.entity(entity).despawn();
     }
@@ -52,6 +49,7 @@ impl Plugin for RenderPlugin {
                 attach_building_visuals,
                 attach_unit_visuals,
                 animate_belt_positions,
+                update_tier_visuals,
                 wave_counter_ui,
                 power_lines::render_power_lines,
             )

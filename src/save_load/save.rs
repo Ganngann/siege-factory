@@ -109,10 +109,8 @@ pub fn save_game(
                 .insert((*cx, *cy), chunk.deposits.clone());
         }
         if !chunk.visited.is_empty() {
-            data.visited.insert(
-                (*cx, *cy),
-                chunk.visited.iter().copied().collect(),
-            );
+            data.visited
+                .insert((*cx, *cy), chunk.visited.iter().copied().collect());
         }
     }
 

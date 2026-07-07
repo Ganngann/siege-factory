@@ -58,9 +58,7 @@ impl ChunkGrid {
         }
     }
 
-    // TODO: consolidate ensure_chunk and ensure_chunk_mut into a single helper
-    // returning (&Chunk, &mut Chunk) or using a shared inner fn.
-    pub fn ensure_chunk(&mut self, cx: i32, cy: i32) -> &Chunk {
+    pub fn ensure_chunk_mut(&mut self, cx: i32, cy: i32) -> &mut Chunk {
         let seed = self.seed;
         let min_amt = self.deposit_min_amount;
         let max_amt = self.deposit_max_amount;
@@ -83,27 +81,8 @@ impl ChunkGrid {
         })
     }
 
-    pub fn ensure_chunk_mut(&mut self, cx: i32, cy: i32) -> &mut Chunk {
-        let seed = self.seed;
-        let min_amt = self.deposit_min_amount;
-        let max_amt = self.deposit_max_amount;
-        let spawn_chance = self.deposit_spawn_chance_pct;
-        let min_per = self.deposit_min_per_chunk;
-        let max_per = self.deposit_max_per_chunk;
-        let dist = self.deposit_distribution.clone();
-        self.chunks.entry((cx, cy)).or_insert_with(|| {
-            generate_chunk(
-                seed,
-                cx,
-                cy,
-                min_amt,
-                max_amt,
-                spawn_chance,
-                min_per,
-                max_per,
-                dist,
-            )
-        })
+    pub fn ensure_chunk(&mut self, cx: i32, cy: i32) -> &Chunk {
+        self.ensure_chunk_mut(cx, cy)
     }
 
     pub fn tile_type_at(&mut self, x: i32, y: i32) -> TileType {
@@ -142,9 +121,8 @@ impl ChunkGrid {
     }
 
     pub fn reveal_tile(&mut self, cx: i32, cy: i32, tx: u32, ty: u32) {
-        if let Some(chunk) = self.chunks.get_mut(&(cx, cy)) {
-            chunk.visited.insert((tx, ty));
-        }
+        let chunk = self.ensure_chunk_mut(cx, cy);
+        chunk.visited.insert((tx, ty));
     }
 
     pub fn is_tile_visited(&self, cx: i32, cy: i32, tx: u32, ty: u32) -> bool {

@@ -1,13 +1,12 @@
-use bevy::prelude::*;
 use crate::economy::components::Player;
+use bevy::prelude::*;
 
 #[derive(Component)]
 pub struct MinimapCamera;
 
-pub fn setup_minimap(
-    mut commands: Commands,
-) {
-    commands.spawn((Camera2d, MinimapCamera))
+pub fn setup_minimap(mut commands: Commands) {
+    commands
+        .spawn((Camera2d, MinimapCamera))
         .insert(Camera {
             order: 1,
             viewport: Some(bevy::camera::Viewport {
@@ -28,14 +27,24 @@ pub fn update_minimap(
     player: Query<&Transform, (With<Player>, Without<MinimapCamera>)>,
     mut minimap: Query<(&mut Transform, &mut Camera), With<MinimapCamera>>,
 ) {
-    let Ok(window) = window.single() else { return; };
-    let Ok((mut tf, mut camera)) = minimap.single_mut() else { return; };
+    let Ok(window) = window.single() else {
+        return;
+    };
+    let Ok((mut tf, mut camera)) = minimap.single_mut() else {
+        return;
+    };
 
     let margin = 10u32;
     let size = UVec2::new(200, 200);
     let pos = UVec2::new(
-        window.resolution.physical_width().saturating_sub(size.x + margin),
-        window.resolution.physical_height().saturating_sub(size.y + margin),
+        window
+            .resolution
+            .physical_width()
+            .saturating_sub(size.x + margin),
+        window
+            .resolution
+            .physical_height()
+            .saturating_sub(size.y + margin),
     );
 
     camera.viewport = Some(bevy::camera::Viewport {

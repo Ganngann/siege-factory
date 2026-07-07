@@ -1,21 +1,22 @@
 pub mod chunks;
 
 pub use chunks::{
-    build_chunk_mesh, reveal_hidden_deposits, spawn_chunks_in_range, spawn_single_chunk_visuals,
-    update_fog_of_war, update_visible_chunks,
+    apply_starting_area, build_chunk_mesh, reveal_hidden_deposits, spawn_chunks_in_range,
+    spawn_single_chunk_visuals, update_fog_of_war, update_visible_chunks,
 };
 
 use crate::core::game_state::GameState;
-use crate::core::utils::tile_to_world;
+use crate::core::schedule::GameplayStep;
+use crate::core::utils::{silent_despawn, tile_to_world};
 use crate::economy::components::UiIsBlocking;
 use crate::map::components::{ChunkMember, HoveredTile, cursor_to_tile};
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::{
-    App, Assets, ButtonInput, Camera, Camera2d, ColorMaterial, Commands, Component, Entity,
-    GlobalTransform, IntoScheduleConfigs, KeyCode, Mesh, OnEnter, OnExit, Plugin, Query, Res,
-    ResMut, Transform, Update, Window, With, Without, in_state,
+    App, ButtonInput, Camera, Camera2d, Commands, Component, Entity, GlobalTransform,
+    IntoScheduleConfigs, KeyCode, OnEnter, OnExit, Plugin, Query, Res, ResMut, Transform, Update,
+    Window, With, Without, in_state,
 };
 
 #[derive(Component)]
@@ -46,7 +47,9 @@ impl Plugin for MapPlugin {
         app.insert_resource(HoveredTile::default());
         app.add_systems(
             OnEnter(GameState::Playing),
-            setup_map.run_if(crate::save_load::is_fresh_game),
+            (setup_map, apply_starting_area)
+                .chain()
+                .run_if(crate::save_load::is_fresh_game),
         );
         app.add_systems(OnExit(GameState::Playing), cleanup_map);
         app.add_systems(
@@ -55,7 +58,9 @@ impl Plugin for MapPlugin {
         );
         app.add_systems(
             Update,
-            update_visible_chunks.run_if(in_state(GameState::Playing)),
+            update_visible_chunks
+                .run_if(in_state(GameState::Playing))
+                .in_set(GameplayStep::ChunkManagement),
         );
         app.add_systems(
             Update,
@@ -63,7 +68,9 @@ impl Plugin for MapPlugin {
         );
         app.add_systems(
             Update,
-            update_fog_of_war.run_if(in_state(GameState::Playing)),
+            update_fog_of_war
+                .run_if(in_state(GameState::Playing))
+                .in_set(GameplayStep::FogOfWar),
         );
         app.add_systems(
             Update,
@@ -73,42 +80,19 @@ impl Plugin for MapPlugin {
 }
 
 fn setup_map(
-    mut commands: Commands,
-    cfg: Res<MapConfig>,
     mut chunk_grid: ResMut<ChunkGrid>,
-    res_registry: Res<crate::economy::resource::ResourceRegistry>,
-    global_archive: Res<crate::economy::discovery::GlobalArchive>,
-    shapes: Res<crate::rendering::ShapeCache>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    textures: Res<crate::rendering::TextureCache>,
-    visuals: Res<crate::rendering::config::VisualsConfig>,
-    preview: Res<crate::rendering::cache::PreviewMaterials>,
+    cfg: Res<MapConfig>,
 ) {
-    let (px, py) = cfg.player_start_position;
     let chunk_size = CHUNK_SIZE as i32;
-    let margin_chunks = cfg.initial_margin;
+    let (px, py) = cfg.player_start_position;
     let player_cx = px.div_euclid(chunk_size);
     let player_cy = py.div_euclid(chunk_size);
-    let existing = std::collections::HashSet::new();
-    spawn_chunks_in_range(
-        &mut commands,
-        &mut chunk_grid,
-        &cfg,
-        &res_registry,
-        &global_archive,
-        &shapes,
-        &mut materials,
-        &mut meshes,
-        &textures,
-        &visuals,
-        &preview,
-        player_cx - margin_chunks,
-        player_cx + margin_chunks,
-        player_cy - margin_chunks,
-        player_cy + margin_chunks,
-        &existing,
-    );
+    let margin = cfg.initial_margin;
+    for cx in player_cx - margin..=player_cx + margin {
+        for cy in player_cy - margin..=player_cy + margin {
+            chunk_grid.pending_spawns.push((cx, cy));
+        }
+    }
 }
 
 fn recenter_on_player(
@@ -149,13 +133,13 @@ fn cleanup_map(
     mut chunk_grid: ResMut<ChunkGrid>,
 ) {
     for entity in markers.iter() {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
     for entity in members.iter() {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
     for entity in cameras.iter() {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
     chunk_grid.clear();
 }

@@ -1,0 +1,69 @@
+[recipes.stone_pickaxe]
+category = "crafting"
+craftable_in = ["hand"]
+input = { stone = 2, wood = 1 }
+output = { stone_pickaxe = 1 }
+time_sec = 5.0
+
+[recipes.brick]
+category = "smelting"
+craftable_in = ["workbench"]
+input = { clay = 3 }
+output = { brick = 2 }
+time_sec = 6.0
+
+[recipes.basic_extraction]
+category = "smelting"
+craftable_in = ["furnace"]
+input = { iron_ore = 2 }
+output = { iron_plate = 1 }
+time_sec = 5.0
+
+[recipes.power_relay]
+category = "crafting"
+craftable_in = ["workbench"]
+input = { copper_plate = 2, iron_plate = 1 }
+output = { power_relay = 1 }
+time_sec = 8.0
+
+[recipes.coolant_pipe]
+category = "crafting"
+craftable_in = ["workbench"]
+input = { copper_plate = 3 }
+output = { coolant_pipe = 1 }
+time_sec = 8.0
+
+[recipes.organic_vial]
+category = "refining"
+craftable_in = ["furnace"]
+input = { clay = 5, water = 2 }
+output = { organic_vial = 1 }
+time_sec = 12.0
+
+[recipes.protein_sample]
+category = "refining"
+craftable_in = ["furnace"]
+input = { organic_vial = 2, iron_ore = 1 }
+output = { protein_sample = 1 }
+time_sec = 15.0
+
+[recipes.nanite_canister]
+category = "crafting"
+craftable_in = ["workbench"]
+input = { iron_plate = 5, copper_plate = 5 }
+output = { nanite_canister = 1 }
+time_sec = 20.0
+
+[recipes.bio_ink]
+category = "refining"
+craftable_in = ["furnace"]
+input = { protein_sample = 2, clay = 3 }
+output = { bio_ink = 1 }
+time_sec = 18.0
+
+[recipes.pure_essence]
+category = "crafting"
+craftable_in = ["workbench"]
+input = { nanite_canister = 2, organic_vial = 3, power_relay = 1 }
+output = { pure_essence = 1 }
+time_sec = 30.0

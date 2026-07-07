@@ -1,3 +1,4 @@
+use crate::core::modding::ModRegistry;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::resource::ResourceRegistry;
 use crate::enemy::registry::EnemyRegistry;
@@ -102,6 +103,7 @@ pub fn setup_texture_cache(
     building_registry: Res<BuildingRegistry>,
     resource_registry: Res<ResourceRegistry>,
     enemy_registry: Res<EnemyRegistry>,
+    mods: Res<ModRegistry>,
 ) {
     let building_stems = collect_building_stems(&building_registry);
     let item_stems = collect_item_stems(&resource_registry);
@@ -115,17 +117,17 @@ pub fn setup_texture_cache(
         let s = stem.as_str();
         base.insert(
             stem.clone(),
-            load_png(&mut images, s, "base").unwrap_or_default(),
+            load_png(&mut images, &mods, s, "base").unwrap_or_default(),
         );
-        owner.insert(stem.clone(), load_png(&mut images, s, "owner"));
-        level.insert(stem.clone(), load_png(&mut images, s, "level"));
+        owner.insert(stem.clone(), load_png(&mut images, &mods, s, "owner"));
+        level.insert(stem.clone(), load_png(&mut images, &mods, s, "level"));
     }
 
     for stem in &item_stems {
         let s = stem.as_str();
         base.insert(
             stem.clone(),
-            load_png(&mut images, s, "base").unwrap_or_default(),
+            load_png(&mut images, &mods, s, "base").unwrap_or_default(),
         );
     }
 
@@ -133,16 +135,25 @@ pub fn setup_texture_cache(
         let s = stem.as_str();
         base.insert(
             stem.clone(),
-            load_png(&mut images, s, "base").unwrap_or_default(),
+            load_png(&mut images, &mods, s, "base").unwrap_or_default(),
         );
     }
 
     commands.insert_resource(TextureCache { base, owner, level });
 }
 
-fn load_png(images: &mut Assets<Image>, stem: &str, layer: &str) -> Option<Handle<Image>> {
-    let path = format!("assets/textures/{}_{}.png", stem, layer);
-    let data = std::fs::read(&path).ok()?;
+fn load_png(
+    images: &mut Assets<Image>,
+    mods: &ModRegistry,
+    stem: &str,
+    layer: &str,
+) -> Option<Handle<Image>> {
+    let data = if let Some(mod_data) = mods.load_texture(stem, layer) {
+        mod_data
+    } else {
+        let path = format!("assets/textures/{}_{}.png", stem, layer);
+        std::fs::read(&path).ok()?
+    };
     match Image::from_buffer(
         &data,
         bevy::image::ImageType::Format(bevy::image::ImageFormat::Png),
@@ -153,7 +164,7 @@ fn load_png(images: &mut Assets<Image>, stem: &str, layer: &str) -> Option<Handl
     ) {
         Ok(img) => Some(images.add(img)),
         Err(e) => {
-            bevy::log::error!("Failed to decode {}: {}", path, e);
+            bevy::log::error!("Failed to decode texture {} {}: {}", stem, layer, e);
             None
         }
     }

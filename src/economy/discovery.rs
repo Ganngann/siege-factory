@@ -40,6 +40,25 @@ impl DiscoveryRegistry {
             starter_recipes: parsed.starter_recipes.recipes,
         }
     }
+
+    pub fn apply_mod_overrides(&mut self, mods: &crate::core::modding::ModRegistry) {
+        let Some(content) = mods.load_data("discoveries.toml") else {
+            return;
+        };
+        let Ok(parsed) = toml::from_str::<DiscoveriesToml>(&content) else {
+            bevy::prelude::error!("Failed to parse discoveries.toml from mod");
+            return;
+        };
+        for entry in parsed.discovery {
+            self.discoveries.push(DiscoveryDef {
+                building: entry.building,
+                threshold: entry.threshold,
+                reward_type: entry.reward_type,
+                reward_id: entry.id,
+                message: entry.message,
+            });
+        }
+    }
 }
 
 #[derive(Deserialize)]

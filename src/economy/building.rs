@@ -61,6 +61,17 @@ pub struct BuildingDef {
     pub upgrades_from: Option<String>,
     pub upgrades_to: Option<String>,
     pub belt_variant: BeltVariant,
+    pub powered: bool,
+    pub station: bool,
+    pub tiers: Vec<TierDef>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TierDef {
+    pub required_items: Vec<(ResourceId, u32)>,
+    pub unlock_recipes: Vec<String>,
+    pub log_id: Option<String>,
+    pub texture: String,
 }
 
 /// Common power component attachment logic.
@@ -170,6 +181,21 @@ impl BuildingRegistry {
                 .map(parse_belt_variant)
                 .unwrap_or_default();
 
+            let tiers = entry
+                .tiers
+                .iter()
+                .map(|t| TierDef {
+                    required_items: t
+                        .required_items
+                        .iter()
+                        .map(|(k, v)| (ResourceId::new(k), *v))
+                        .collect(),
+                    unlock_recipes: t.unlock_recipes.clone(),
+                    log_id: t.log_id.clone(),
+                    texture: t.texture.clone(),
+                })
+                .collect();
+
             buildings.push(BuildingDef {
                 id: id.clone(),
                 name: entry.name,
@@ -207,6 +233,9 @@ impl BuildingRegistry {
                 upgrades_from: entry.upgrades_from.clone(),
                 upgrades_to: None,
                 belt_variant,
+                powered: entry.powered,
+                station: entry.station,
+                tiers,
             });
         }
 
@@ -224,8 +253,134 @@ impl BuildingRegistry {
         Self { buildings }
     }
 
+    fn register(&mut self, id: String, entry: BuildingEntry) {
+        let defaults = &DefaultSettings::load();
+        let mut cost = Vec::new();
+        for (res_key, amount) in entry.cost {
+            cost.push(Cost {
+                resource: ResourceId::new(res_key),
+                amount,
+            });
+        }
+        let color = entry
+            .color
+            .as_deref()
+            .map(parse_hex_color)
+            .unwrap_or(Color::srgb(0.5, 0.5, 0.5));
+        let visual = entry.visual.unwrap_or_else(|| "square".to_string());
+        let texture_stem = entry.texture_stem.unwrap_or_else(|| id.clone());
+        let requires_deposit = entry.requires_deposit;
+        let combat = entry.combat.map(|c| CombatStats {
+            damage: c.damage,
+            range: c.range * c.range,
+            fire_rate_sec: c.fire_rate_sec,
+            projectile_speed: c.projectile_speed,
+        });
+        let production = entry.production.map(|p| ProductionDef {
+            resource: ResourceId::new(&p.resource),
+            interval_sec: p.interval_sec,
+        });
+
+        let recipe_categories = entry.recipe_categories.clone();
+
+        let belt = match entry.belt {
+            Some(b) => Some(BeltProperties {
+                slots: b.slots,
+                speed: b.speed,
+            }),
+            None => {
+                let slots = entry.slots.unwrap_or(2);
+                let speed = entry.speed.unwrap_or(2.0);
+                (entry.slots.is_some() || entry.speed.is_some())
+                    .then_some(BeltProperties { slots, speed })
+            }
+        };
+
+        let belt_variant = entry
+            .belt_variant
+            .as_deref()
+            .map(parse_belt_variant)
+            .unwrap_or_default();
+
+        let tiers = entry
+            .tiers
+            .iter()
+            .map(|t| TierDef {
+                required_items: t
+                    .required_items
+                    .iter()
+                    .map(|(k, v)| (ResourceId::new(k), *v))
+                    .collect(),
+                unlock_recipes: t.unlock_recipes.clone(),
+                log_id: t.log_id.clone(),
+                texture: t.texture.clone(),
+            })
+            .collect();
+
+        let def = BuildingDef {
+            id: id.clone(),
+            name: entry.name,
+            cost,
+            hp: entry.hp,
+            tile_size: (entry.tile_size.w, entry.tile_size.h),
+            color,
+            visual,
+            texture_stem,
+            requires_deposit,
+            combat,
+            belt,
+            production,
+            production_interval: entry.production_interval,
+            can_deconstruct: entry.can_deconstruct.unwrap_or(defaults.can_deconstruct),
+            refund_ratio: entry.refund_ratio.unwrap_or(defaults.refund_ratio),
+            repair_cost_ratio: entry
+                .repair_cost_ratio
+                .unwrap_or(defaults.repair_cost_ratio),
+            inventory_capacity: entry
+                .inventory_capacity
+                .unwrap_or(defaults.inventory_capacity),
+            hidden: entry.hidden,
+            drag_placement: entry.drag_placement,
+            default_recipe: entry.default_recipe.clone(),
+            default_filter: entry.default_filter.clone(),
+            crop_types: entry.crop_types.clone(),
+            recipe_categories,
+            power_consumption: entry.power_consumption,
+            power_generation: entry.power_generation,
+            power_pole_range: entry.power_pole_range,
+            fuel_burn_interval: entry.fuel_burn_interval,
+            requires_discovery: entry.requires_discovery.clone(),
+            level: entry.level,
+            upgrades_from: entry.upgrades_from.clone(),
+            upgrades_to: None,
+            belt_variant,
+            powered: entry.powered,
+            station: entry.station,
+            tiers,
+        };
+
+        if let Some(existing) = self.buildings.iter_mut().find(|b| b.id == id) {
+            *existing = def;
+        } else {
+            self.buildings.push(def);
+        }
+    }
+
     pub fn get(&self, id: &str) -> Option<&BuildingDef> {
         self.buildings.iter().find(|b| b.id == id)
+    }
+
+    pub fn apply_mod_overrides(&mut self, mods: &crate::core::modding::ModRegistry) {
+        let Some(content) = mods.load_data("buildings.toml") else {
+            return;
+        };
+        let Ok(parsed) = toml::from_str::<BuildingsToml>(&content) else {
+            bevy::prelude::error!("Failed to parse buildings.toml from mod");
+            return;
+        };
+        for (id, entry) in parsed.buildings {
+            self.register(id, entry);
+        }
     }
 }
 
@@ -308,6 +463,28 @@ struct BuildingEntry {
     upgrades_from: Option<String>,
     #[serde(default)]
     belt_variant: Option<String>,
+    #[serde(default = "default_true")]
+    powered: bool,
+    #[serde(default)]
+    station: bool,
+    #[serde(default)]
+    tiers: Vec<TierEntry>,
+}
+
+#[derive(Deserialize)]
+struct TierEntry {
+    #[serde(default)]
+    required_items: HashMap<String, u32>,
+    #[serde(default)]
+    unlock_recipes: Vec<String>,
+    #[serde(default)]
+    log_id: Option<String>,
+    #[serde(default)]
+    texture: String,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Deserialize)]

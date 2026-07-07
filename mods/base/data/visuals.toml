@@ -1,0 +1,81 @@
+[hp_bar]
+width = 24.0
+height = 3.0
+y_offset = 20.0
+z = 10.0
+color_high = "#4CFF4C"
+color_mid = "#FFCC33"
+color_low = "#FF3333"
+
+[belt_item]
+width = 20.0
+height = 20.0
+z = 2.5
+
+[unit]
+width = 48.0
+height = 48.0
+z = 2.5
+owner_color = "#3366CC"
+
+[player]
+width = 28.0
+height = 28.0
+z = 5.0
+
+[builder]
+width = 20.0
+height = 20.0
+z = 4.0
+
+[enemy]
+boss_size = 48.0
+tank_size = 36.0
+default_size = 28.0
+spawn_z = 3.0
+
+[projectile]
+scale = 0.3
+
+[mining_bar]
+width = 24.0
+height = 3.0
+y_offset = 16.0
+z = 10.0
+color = "#FFAA33"
+
+[toast]
+lifetime = 3.0
+font_size = 16.0
+color = "#FFD94C"
+bottom_px = 90.0
+
+[tile_highlight]
+color = "#FFFFFF"
+alpha = 0.15
+z = 0.5
+
+[deposit_sprite]
+scale_ratio = 0.8
+z = 0.5
+fallback_color = "#808080"
+
+[decoration]
+tree_z = 0.3
+rock_z = 0.2
+tree_color = "#267326"
+rock_color = "#666666"
+
+[chunk_colors]
+even = "#405940"
+odd = "#2E472E"
+
+[ghost]
+tint_r = 1.0
+tint_g = 0.3
+tint_b = 0.3
+tint_a = 0.5
+
+[building]
+owner_color = "#3366CC"
+level_color = "#33CC33"

@@ -1,0 +1,17 @@
+[crops.wheat]
+name = "Wheat"
+growth_time = 15.0
+yield_amount = 2
+color = "#E8C84A"
+
+[crops.wood]
+name = "Wood"
+growth_time = 20.0
+yield_amount = 1
+color = "#8B5E3C"
+
+[crops.rubber]
+name = "Rubber"
+growth_time = 25.0
+yield_amount = 1
+color = "#335533"

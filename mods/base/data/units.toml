@@ -1,0 +1,37 @@
+[soldier]
+name = "Soldier"
+cost = { iron_ore = 10 }
+hp = 30
+damage = 8
+range_tiles = 3.0
+fire_rate_sec = 1.0
+projectile_speed = 300.0
+color = "#33CC4D"
+visual = "pentagon"
+spawn_offset_x = 40.0
+spawn_offset_y = 0.0
+spawn_offset_z = 2.5
+projectile_color = "#4CFF4C"
+
+[worker]
+name = "Worker"
+kind = "harvester"
+cost = { iron_ore = 5 }
+hp = 15
+speed = 80.0
+mine_interval_sec = 3.0
+color = "#E6CC33"
+visual = "circle"
+spawn_offset_x = -40.0
+spawn_offset_y = 0.0
+spawn_offset_z = 2.5
+
+[cultivator]
+name = "Cultivator"
+kind = "cultivator"
+cost = { iron_ore = 8 }
+hp = 10
+speed = 60.0
+carry_capacity = 5
+color = "#5A8C2A"
+visual = "circle"

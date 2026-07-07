@@ -1,0 +1,20 @@
+[enemies.runner]
+name = "Runner"
+hp = 20
+speed = 60.0
+damage = 10
+color = "#E63333"
+
+[enemies.tank]
+name = "Tank"
+hp = 80
+speed = 30.0
+damage = 15
+color = "#CC6600"
+
+[enemies.boss]
+name = "Boss"
+hp = 500
+speed = 20.0
+damage = 50
+color = "#9900CC"

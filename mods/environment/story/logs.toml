@@ -1,0 +1,47 @@
+[[logs]]
+id = "progression_00"
+tier = 0
+title = "Dormant"
+text = "The structure is dormant. It needs a power relay to begin."
+
+[[logs]]
+id = "progression_01"
+tier = 1
+title = "Power Active"
+text = "Power is flowing. Coolant pipes are needed to regulate temperature."
+
+[[logs]]
+id = "progression_02"
+tier = 2
+title = "Temperature Stable"
+text = "Coolant systems online. The chamber can now accept organic material."
+
+[[logs]]
+id = "progression_03"
+tier = 3
+title = "Organic Base"
+text = "Organic scaffold formed. Protein samples will construct the cellular framework."
+
+[[logs]]
+id = "progression_04"
+tier = 4
+title = "Protein Matrix"
+text = "Cellular framework complete. Nanites required for atomic-scale construction."
+
+[[logs]]
+id = "progression_05"
+tier = 5
+title = "Nanite Assembly"
+text = "Nanite assembly stable. Bio-ink will print the final structures."
+
+[[logs]]
+id = "progression_06"
+tier = 6
+title = "Bio-Printing"
+text = "Bio-printer calibrated. A pure essence catalyst is needed to initiate the final sequence."
+
+[[logs]]
+id = "progression_07"
+tier = 7
+title = "Final Charge"
+text = "All systems ready. The structure awaits its purpose."

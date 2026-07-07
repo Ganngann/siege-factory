@@ -1,0 +1,306 @@
+[recipes.mine_iron_ore]
+category = "mining"
+input = {}
+output = { iron_ore = 1 }
+time_sec = 2.0
+
+[recipes.mine_copper_ore]
+category = "mining"
+input = {}
+output = { copper_ore = 1 }
+time_sec = 2.0
+
+[recipes.mine_coal]
+category = "mining"
+input = {}
+output = { coal = 1 }
+time_sec = 2.0
+
+[recipes.iron_plate]
+category = "smelting"
+input = { iron_ore = 2 }
+output = { iron_plate = 1 }
+time_sec = 3.0
+
+[recipes.copper_plate]
+category = "smelting"
+input = { copper_ore = 2 }
+output = { copper_plate = 1 }
+time_sec = 3.0
+
+[recipes.steel]
+category = "smelting"
+input = { iron_plate = 3, coal = 1 }
+output = { steel = 1 }
+time_sec = 5.0
+
+[recipes.gear]
+category = "crafting"
+input = { iron_plate = 2 }
+output = { gear = 1 }
+time_sec = 2.0
+
+[recipes.circuit]
+category = "crafting"
+input = { iron_plate = 2, copper_plate = 3 }
+output = { circuit = 1 }
+time_sec = 5.0
+
+[recipes.ammo_craft]
+category = "crafting"
+input = { iron_plate = 1 }
+output = { ammo = 1 }
+time_sec = 2.0
+
+[recipes.motor]
+category = "crafting"
+input = { gear = 1, steel = 2 }
+output = { motor = 1 }
+time_sec = 4.0
+
+[recipes.electronic_module]
+category = "crafting"
+input = { circuit = 1, steel = 1 }
+output = { electronic_module = 1 }
+time_sec = 3.0
+
+[recipes.drivetrain]
+category = "crafting"
+input = { gear = 2, motor = 1 }
+output = { drivetrain = 1 }
+time_sec = 5.0
+
+[recipes.targeting_computer]
+category = "crafting"
+input = { circuit = 2, electronic_module = 1 }
+output = { targeting_computer = 1 }
+time_sec = 6.0
+
+# === NEW MINING ===
+
+[recipes.mine_stone]
+category = "mining"
+input = {}
+output = { stone = 1 }
+time_sec = 2.0
+
+[recipes.mine_sand]
+category = "mining"
+input = {}
+output = { sand = 1 }
+time_sec = 2.0
+
+[recipes.mine_sulfur]
+category = "mining"
+input = {}
+output = { sulfur = 1 }
+time_sec = 3.0
+
+# === PUMPING ===
+
+[recipes.pump_crude_oil]
+category = "pumping"
+input = {}
+output = { crude_oil = 1 }
+time_sec = 3.0
+
+# === NEW SMELTING ===
+
+[recipes.brick]
+category = "smelting"
+input = { stone = 2 }
+output = { brick = 1 }
+time_sec = 4.0
+
+[recipes.glass]
+category = "smelting"
+input = { sand = 2 }
+output = { glass = 1 }
+time_sec = 4.0
+
+[recipes.concrete]
+category = "smelting"
+input = { stone = 2, iron_plate = 1 }
+output = { concrete = 1 }
+time_sec = 6.0
+
+[recipes.sulfur_powder]
+category = "smelting"
+input = { sulfur = 1 }
+output = { sulfur_powder = 2 }
+time_sec = 3.0
+
+# === NEW CRAFTING ===
+
+[recipes.copper_wire]
+category = "crafting"
+input = { copper_plate = 1 }
+output = { copper_wire = 4 }
+time_sec = 2.0
+
+[recipes.screw]
+category = "crafting"
+input = { iron_plate = 1 }
+output = { screw = 2 }
+time_sec = 1.5
+
+[recipes.pipe]
+category = "crafting"
+input = { iron_plate = 2 }
+output = { pipe = 1 }
+time_sec = 3.0
+
+[recipes.battery]
+category = "crafting"
+input = { copper_plate = 1, sulfur_powder = 1 }
+output = { battery = 1 }
+time_sec = 5.0
+
+[recipes.radar_array]
+category = "crafting"
+input = { circuit = 2, steel = 2 }
+output = { radar_array = 1 }
+time_sec = 6.0
+
+# === REFINING (Alchemy Lab) ===
+
+[recipes.petroleum_gas]
+category = "refining"
+input = { crude_oil = 2 }
+output = { petroleum_gas = 3 }
+time_sec = 5.0
+
+[recipes.plastic]
+category = "refining"
+input = { petroleum_gas = 2 }
+output = { plastic = 1 }
+time_sec = 4.0
+
+[recipes.lubricant]
+category = "refining"
+input = { petroleum_gas = 1 }
+output = { lubricant = 1 }
+time_sec = 3.0
+
+[recipes.rocket_fuel]
+category = "refining"
+input = { petroleum_gas = 2, sulfur_powder = 1 }
+output = { rocket_fuel = 1 }
+time_sec = 6.0
+
+[recipes.explosive]
+category = "refining"
+input = { sulfur_powder = 2, coal = 1 }
+output = { explosive = 1 }
+time_sec = 5.0
+
+[recipes.fertilizer]
+category = "refining"
+input = { sulfur = 1, coal = 1 }
+output = { fertilizer = 2 }
+time_sec = 4.0
+
+[recipes.composite]
+category = "refining"
+input = { plastic = 1, iron_beam = 1 }
+output = { composite = 1 }
+time_sec = 5.0
+
+# === FORGING (Foundry) ===
+
+[recipes.iron_beam]
+category = "forging"
+input = { iron_plate = 2 }
+output = { iron_beam = 1 }
+time_sec = 4.0
+
+[recipes.electric_engine]
+category = "forging"
+input = { motor = 1, copper_wire = 4 }
+output = { electric_engine = 1 }
+time_sec = 6.0
+
+# machine_frame moved from crafting to forging
+[recipes.machine_frame]
+category = "forging"
+input = { steel = 2, motor = 1 }
+output = { machine_frame = 1 }
+time_sec = 6.0
+
+# === ELECTRONICS (Electronics Lab) ===
+
+[recipes.advanced_circuit]
+category = "electronics"
+input = { circuit = 2, plastic = 1, copper_wire = 4 }
+output = { advanced_circuit = 1 }
+time_sec = 6.0
+
+[recipes.processing_unit]
+category = "electronics"
+input = { advanced_circuit = 2, copper_wire = 4 }
+output = { processing_unit = 1 }
+time_sec = 8.0
+
+[recipes.laser_crystal]
+category = "electronics"
+input = { glass = 1, processing_unit = 1 }
+output = { laser_crystal = 1 }
+time_sec = 8.0
+
+[recipes.scanner_module]
+category = "electronics"
+input = { targeting_computer = 1, radar_array = 1 }
+output = { scanner_module = 1 }
+time_sec = 8.0
+
+[recipes.telemetry_unit]
+category = "electronics"
+input = { radar_array = 1, processing_unit = 1 }
+output = { telemetry_unit = 1 }
+time_sec = 8.0
+
+[recipes.fusion_core]
+category = "electronics"
+input = { laser_crystal = 1, electric_engine = 1, processing_unit = 1 }
+output = { fusion_core = 1 }
+time_sec = 12.0
+
+[recipes.nano_pack]
+category = "electronics"
+input = { processing_unit = 1, plastic = 1, rubber = 1 }
+output = { nano_pack = 1 }
+time_sec = 8.0
+
+# === COOKING (Guild Hall) ===
+
+[recipes.flour]
+category = "cooking"
+input = { wheat = 2 }
+output = { flour = 1 }
+time_sec = 3.0
+
+[recipes.bread]
+category = "cooking"
+input = { flour = 2 }
+output = { bread = 1 }
+time_sec = 4.0
+
+# === ENCHANTING (Enchanting Array) ===
+
+[recipes.scroll_of_haste]
+category = "enchanting"
+input = { advanced_circuit = 1, lubricant = 1 }
+output = { scroll_of_haste = 1 }
+time_sec = 6.0
+
+[recipes.scroll_of_plenty]
+category = "enchanting"
+input = { advanced_circuit = 1, laser_crystal = 1 }
+output = { scroll_of_plenty = 1 }
+time_sec = 8.0
+
+[recipes.scroll_of_conservation]
+category = "enchanting"
+input = { advanced_circuit = 1, rubber = 1 }
+output = { scroll_of_conservation = 1 }
+time_sec = 6.0

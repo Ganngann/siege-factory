@@ -5,16 +5,16 @@ use crate::economy::resource::ResourceRegistry;
 use crate::map::components::{ChunkMember, Decoration, FogTile, HiddenDeposit, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::rng::{SimpleRng, chunk_hash};
-use crate::map::tile_grid::{CHUNK_SIZE, Chunk};
 use crate::map::tile_grid::ChunkGrid;
+use crate::map::tile_grid::{CHUNK_SIZE, Chunk};
 use crate::rendering::config::VisualsConfig;
+use crate::rendering::minimap::MinimapCamera;
 use crate::rendering::{ShapeCache, TextureCache};
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::{
     Assets, Camera, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d, MeshMaterial2d,
-    Query, Res, ResMut, Sprite, Transform, Vec2, Visibility, With, Window, default,
+    Query, Res, ResMut, Sprite, Transform, Vec2, Visibility, Window, With, Without, default,
 };
-use bevy::prelude::Changed;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use std::collections::HashSet;
 
@@ -133,16 +133,18 @@ pub fn spawn_single_chunk_visuals(
 
     let chunk_hash = chunk_hash(cfg.seed, cx, cy);
 
-    let (handle_even, handle_odd) =
-        if let Some(cached) = chunk_grid.chunk_mesh_cache.get(&(cx, cy)) {
-            (cached.0.clone(), cached.1.clone())
-        } else {
-            let (mesh_even, mesh_odd) = build_chunk_mesh(cx, cy, tile_size);
-            let he = meshes.add(mesh_even);
-            let ho = meshes.add(mesh_odd);
-            chunk_grid.chunk_mesh_cache.insert((cx, cy), (he.clone(), ho.clone()));
-            (he, ho)
-        };
+    let (handle_even, handle_odd) = if let Some(cached) = chunk_grid.chunk_mesh_cache.get(&(cx, cy))
+    {
+        (cached.0.clone(), cached.1.clone())
+    } else {
+        let (mesh_even, mesh_odd) = build_chunk_mesh(cx, cy, tile_size);
+        let he = meshes.add(mesh_even);
+        let ho = meshes.add(mesh_odd);
+        chunk_grid
+            .chunk_mesh_cache
+            .insert((cx, cy), (he.clone(), ho.clone()));
+        (he, ho)
+    };
 
     let chunk = chunk_grid.ensure_chunk(cx, cy);
 
@@ -242,51 +244,39 @@ pub fn spawn_single_chunk_visuals(
     }
 
     let mut rng = SimpleRng::new(chunk_hash);
-    let deco_count = cfg.decoration_min_count as usize
-        + (rng.next() as usize % cfg.decoration_count_variance as usize);
-    let deco_kinds = [
-        ("tree", visuals.decoration.tree_color),
-        ("rock", visuals.decoration.rock_color),
-    ];
-    for _ in 0..deco_count {
-        let dx = rng.next() % CHUNK_SIZE;
-        let dy = rng.next() % CHUNK_SIZE;
-        if occupied.contains(&(dx, dy)) {
-            continue;
+    for deco in &visuals.decorations {
+        let count = (deco.density * (CHUNK_SIZE * CHUNK_SIZE) as f32) as u32;
+        let base = cfg.decoration_min_count + (rng.next() % (cfg.decoration_count_variance + 1));
+        let total = count.max(base);
+        for _ in 0..total {
+            let dx = rng.next() % CHUNK_SIZE;
+            let dy = rng.next() % CHUNK_SIZE;
+            if occupied.contains(&(dx, dy)) {
+                continue;
+            }
+            occupied.insert((dx, dy));
+            let wx = world_ox + dx as i32;
+            let wy = world_oy + dy as i32;
+            let mesh = shapes.get_visual(&deco.shape);
+            let mat = materials.add(deco.color);
+            commands.spawn((
+                ChunkMember(cx, cy),
+                Decoration(deco.kind.clone()),
+                Mesh2d(mesh),
+                MeshMaterial2d(mat),
+                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, deco.z),
+                TilePosition { x: wx, y: wy },
+            ));
         }
-        occupied.insert((dx, dy));
-        let wx = world_ox + dx as i32;
-        let wy = world_oy + dy as i32;
-        let kind_idx = rng.next() as usize % deco_kinds.len();
-        let (kind_name, color) = &deco_kinds[kind_idx];
-        let mesh = if *kind_name == "tree" {
-            shapes.triangle.clone()
-        } else {
-            shapes.circle.clone()
-        };
-        let z = if *kind_name == "tree" {
-            visuals.decoration.tree_z
-        } else {
-            visuals.decoration.rock_z
-        };
-        let mat = materials.add(*color);
-        commands.spawn((
-            ChunkMember(cx, cy),
-            Decoration(kind_name.to_string()),
-            Mesh2d(mesh),
-            MeshMaterial2d(mat),
-            Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, z),
-            TilePosition { x: wx, y: wy },
-        ));
     }
 
-    // Single fog mesh per chunk at z=2.0 (above deposits/decorations)
+    // Single fog mesh per chunk at z=1.0 (above deposits/decorations)
     let fog_mesh = build_fog_mesh(cx, cy, chunk, cfg.tile_size);
     commands.spawn((
         FogTile,
         Mesh2d(meshes.add(fog_mesh)),
         MeshMaterial2d(preview.fog.clone()),
-        Transform::from_xyz(0.0, 0.0, 2.0),
+        Transform::from_xyz(0.0, 0.0, 1.0),
         Visibility::default(),
         ChunkMember(cx, cy),
     ));
@@ -336,7 +326,7 @@ pub fn spawn_chunks_in_range(
 
 pub fn update_visible_chunks(
     mut commands: Commands,
-    camera: Query<(&Camera, &Transform), Changed<Transform>>,
+    camera: Query<(&Camera, &Transform), Without<MinimapCamera>>,
     window: Query<&Window>,
     mut chunk_grid: ResMut<ChunkGrid>,
     cfg: Res<MapConfig>,
@@ -455,9 +445,7 @@ pub fn update_visible_chunks(
 
     for cx in min_cx..=max_cx {
         for cy in min_cy..=max_cy {
-            if !spawned.contains(&(cx, cy))
-                && !chunk_grid.pending_spawns.contains(&(cx, cy))
-            {
+            if !spawned.contains(&(cx, cy)) && !chunk_grid.pending_spawns.contains(&(cx, cy)) {
                 chunk_grid.pending_spawns.push((cx, cy));
             }
         }
@@ -495,11 +483,10 @@ pub fn reveal_hidden_deposits(
 }
 
 pub fn update_fog_of_war(
-    player: Query<&TilePosition, (With<crate::economy::game_components::Player>, Changed<TilePosition>)>,
+    player: Query<&TilePosition, With<crate::economy::game_components::Player>>,
     mut chunk_grid: ResMut<ChunkGrid>,
     mut commands: Commands,
     fog_tiles: Query<(Entity, &ChunkMember), With<FogTile>>,
-    preview: Res<crate::rendering::cache::PreviewMaterials>,
     mut meshes: ResMut<Assets<Mesh>>,
     cfg: Res<MapConfig>,
 ) {
@@ -523,6 +510,7 @@ pub fn update_fog_of_war(
             if !chunk_grid.is_tile_visited(cx, cy, tx, ty) {
                 affected_chunks.insert((cx, cy));
             }
+            chunk_grid.reveal_tile(cx, cy, tx, ty);
         }
     }
 
@@ -530,23 +518,12 @@ pub fn update_fog_of_war(
         return;
     }
 
-    for wx in min_x..=max_x {
-        for wy in min_y..=max_y {
-            let cx = wx.div_euclid(CHUNK_SIZE as i32);
-            let cy = wy.div_euclid(CHUNK_SIZE as i32);
-            let tx = wx.rem_euclid(CHUNK_SIZE as i32) as u32;
-            let ty = wy.rem_euclid(CHUNK_SIZE as i32) as u32;
-            chunk_grid.reveal_tile(cx, cy, tx, ty);
-        }
-    }
-
     // Build lookup of fog entity per chunk
-    let fog_map: std::collections::HashMap<(i32, i32), Entity> =
-        fog_tiles
-            .iter()
-            .filter(|(_, cm)| affected_chunks.contains(&(cm.0, cm.1)))
-            .map(|(e, cm)| ((cm.0, cm.1), e))
-            .collect();
+    let fog_map: std::collections::HashMap<(i32, i32), Entity> = fog_tiles
+        .iter()
+        .filter(|(_, cm)| affected_chunks.contains(&(cm.0, cm.1)))
+        .map(|(e, cm)| ((cm.0, cm.1), e))
+        .collect();
 
     for &(cx, cy) in &affected_chunks {
         let total_tiles = (CHUNK_SIZE * CHUNK_SIZE) as usize;
@@ -568,16 +545,96 @@ pub fn update_fog_of_war(
             let handle = meshes.add(new_mesh);
             if let Some(&entity) = fog_map.get(&(cx, cy)) {
                 commands.entity(entity).insert(Mesh2d(handle));
-            } else {
-                commands.spawn((
-                    FogTile,
-                    Mesh2d(handle),
-                    MeshMaterial2d(preview.fog.clone()),
-                    Transform::from_xyz(0.0, 0.0, 2.0),
-                    Visibility::default(),
-                    ChunkMember(cx, cy),
-                ));
             }
+        }
+    }
+}
+
+pub fn apply_starting_area(
+    mut commands: Commands,
+    cfg: Res<MapConfig>,
+    mut chunk_grid: ResMut<ChunkGrid>,
+    visuals: Res<VisualsConfig>,
+    shapes: Res<ShapeCache>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let sa = &cfg.starting_area;
+    if !sa.enable {
+        return;
+    }
+    let radius = sa.radius as i32;
+    let (px, py) = cfg.player_start_position;
+    let tile_size = cfg.tile_size;
+    let chunk_size = CHUNK_SIZE as i32;
+
+    for dx in -radius..=radius {
+        for dy in -radius..=radius {
+            if dx * dx + dy * dy > radius * radius {
+                continue;
+            }
+            let wx = px + dx;
+            let wy = py + dy;
+            let cx = wx.div_euclid(chunk_size);
+            let cy = wy.div_euclid(chunk_size);
+            let local_x = wx.rem_euclid(chunk_size) as u32;
+            let local_y = wy.rem_euclid(chunk_size) as u32;
+            let chunk = chunk_grid.ensure_chunk_mut(cx, cy);
+
+            if sa.clear_trees {
+                chunk
+                    .deposits
+                    .retain(|d| !(d.x == local_x && d.y == local_y));
+            }
+        }
+    }
+
+    for structure in &sa.structures {
+        let wx = structure.tile_x;
+        let wy = structure.tile_y;
+        let cx = wx.div_euclid(chunk_size);
+        let cy = wy.div_euclid(chunk_size);
+        let local_x = wx.rem_euclid(chunk_size) as u32;
+        let local_y = wy.rem_euclid(chunk_size) as u32;
+
+        match structure.kind.as_str() {
+            "deposit" => {
+                if let (Some(resource), Some(amount)) =
+                    (&structure.props.resource, structure.props.amount)
+                {
+                    let chunk = chunk_grid.ensure_chunk_mut(cx, cy);
+                    chunk.tiles[local_y as usize][local_x as usize] =
+                        crate::map::components::TileType::Resource;
+                    chunk.deposits.push(crate::map::tile_grid::Deposit {
+                        x: local_x,
+                        y: local_y,
+                        amount,
+                        resource: resource.clone(),
+                    });
+                }
+            }
+            "decoration" => {
+                if let Some(deco_kind) = &structure.props.decoration_kind {
+                    if let Some(deco_cfg) =
+                        visuals.decorations.iter().find(|d| d.kind == *deco_kind)
+                    {
+                        let mesh = shapes.get_visual(&deco_cfg.shape);
+                        let mat = materials.add(deco_cfg.color);
+                        commands.spawn((
+                            ChunkMember(cx, cy),
+                            Decoration(deco_kind.clone()),
+                            Mesh2d(mesh),
+                            MeshMaterial2d(mat),
+                            Transform::from_xyz(
+                                wx as f32 * tile_size,
+                                wy as f32 * tile_size,
+                                deco_cfg.z,
+                            ),
+                            TilePosition { x: wx, y: wy },
+                        ));
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }

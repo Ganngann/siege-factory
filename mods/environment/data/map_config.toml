@@ -1,0 +1,31 @@
+[player]
+position = { x = 5, y = 5 }
+
+[starting_area]
+enable = true
+radius = 8
+clear_trees = true
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 6
+tile_y = 5
+props = { resource = "clay", amount = 50 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 4
+tile_y = 4
+props = { resource = "stone", amount = 30 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 7
+tile_y = 6
+props = { resource = "iron_ore", amount = 20 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 3
+tile_y = 7
+props = { resource = "wood", amount = 40 }

@@ -1,10 +1,18 @@
-use crate::core::game_state::GameState;
+use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::input::KeyBindings;
 use crate::core::main_menu::{self, MainMenuDef, MenuNav, RebindState};
 use crate::core::settings::Settings;
 use crate::economy::components::BuildMode;
 use bevy::prelude::*;
 use bevy::winit::{UpdateMode, WinitSettings};
+
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum GameplayStep {
+    PlayerInput,
+    CameraFollow,
+    ChunkManagement,
+    FogOfWar,
+}
 
 pub struct CorePlugin;
 
@@ -24,8 +32,11 @@ impl Plugin for CorePlugin {
         app.add_systems(OnExit(GameState::Menu), main_menu::despawn_menu_ui);
         app.add_systems(
             Update,
+            game_state_transition.run_if(not(in_state(GameState::Loading))),
+        );
+        app.add_systems(
+            Update,
             (
-                game_state_transition,
                 main_menu::menu_navigation,
                 main_menu::menu_rebind_handler,
             )
@@ -43,34 +54,29 @@ fn game_state_transition(
     mouse: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
     mut build_mode: Option<ResMut<BuildMode>>,
+    mut fresh_game: Option<ResMut<IsFreshGame>>,
 ) {
     let mode_active = build_mode.as_ref().map(|m| m.0.is_some()).unwrap_or(false);
 
     match state.get() {
-        GameState::Menu => {
-            // Menu → Playing is handled by menu_navigation via StartGame action
-        }
         GameState::Playing => {
-            if bindings.just_pressed("cancel", &keys, &mouse) {
-                if mode_active {
-                    if let Some(ref mut bm) = build_mode {
-                        bm.0 = None;
-                    }
-                } else {
-                    next_state.set(GameState::GameOver);
+            if mode_active && bindings.just_pressed("cancel", &keys, &mouse) {
+                if let Some(ref mut bm) = build_mode {
+                    bm.0 = None;
                 }
             }
         }
-        GameState::Loading => {
-            // Transitional state — no key handling needed
-        }
         GameState::GameOver => {
             if bindings.just_pressed("restart", &keys, &mouse) {
+                if let Some(ref mut fg) = fresh_game {
+                    fg.0 = true;
+                }
                 next_state.set(GameState::Playing);
             } else if bindings.just_pressed("cancel", &keys, &mouse) {
                 next_state.set(GameState::Menu);
             }
         }
+        _ => {}
     }
 }
 

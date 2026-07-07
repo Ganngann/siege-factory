@@ -1,8 +1,10 @@
 pub mod game_state;
 pub mod input;
 pub mod main_menu;
+pub mod modding;
 pub mod schedule;
 pub mod settings;
 pub mod toast;
 pub mod tooltip;
+pub mod tutorial;
 pub mod utils;

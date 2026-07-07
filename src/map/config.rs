@@ -31,6 +31,30 @@ pub struct MapConfig {
     pub decoration_min_count: u32,
     pub decoration_count_variance: u32,
     pub player_mining_interval: f32,
+    pub starting_area: StartingAreaConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct StartingAreaConfig {
+    pub enable: bool,
+    pub radius: u32,
+    pub clear_trees: bool,
+    pub structures: Vec<PlacedStructure>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PlacedStructure {
+    pub kind: String,
+    pub tile_x: i32,
+    pub tile_y: i32,
+    pub props: PlacedStructureProps,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct PlacedStructureProps {
+    pub resource: Option<String>,
+    pub amount: Option<u32>,
+    pub decoration_kind: Option<String>,
 }
 
 impl MapConfig {
@@ -66,6 +90,29 @@ impl MapConfig {
             decoration_min_count: parsed.decoration.min_count,
             decoration_count_variance: parsed.decoration.count_variance,
             player_mining_interval: parsed.player.mining_interval,
+            starting_area: {
+                let sa = parsed.starting_area.unwrap_or_default();
+                StartingAreaConfig {
+                    enable: sa.enable,
+                    radius: sa.radius,
+                    clear_trees: sa.clear_trees,
+                    structures: sa
+                        .structures
+                        .unwrap_or_default()
+                        .into_iter()
+                        .map(|s| PlacedStructure {
+                            kind: s.kind,
+                            tile_x: s.tile_x,
+                            tile_y: s.tile_y,
+                            props: PlacedStructureProps {
+                                resource: s.props.resource,
+                                amount: s.props.amount,
+                                decoration_kind: s.props.decoration_kind,
+                            },
+                        })
+                        .collect(),
+                }
+            },
         }
     }
 }
@@ -79,6 +126,43 @@ struct MapToml {
     chunk: ChunkEntry,
     #[serde(default)]
     decoration: DecorationEntry,
+    #[serde(default)]
+    starting_area: Option<StartingAreaEntry>,
+}
+
+#[derive(Default, Deserialize)]
+struct StartingAreaEntry {
+    #[serde(default)]
+    enable: bool,
+    #[serde(default = "default_starting_radius")]
+    radius: u32,
+    #[serde(default)]
+    clear_trees: bool,
+    #[serde(default)]
+    structures: Option<Vec<PlacedStructureEntry>>,
+}
+
+fn default_starting_radius() -> u32 {
+    8
+}
+
+#[derive(Deserialize)]
+struct PlacedStructureEntry {
+    kind: String,
+    tile_x: i32,
+    tile_y: i32,
+    #[serde(default)]
+    props: PlacedStructurePropsEntry,
+}
+
+#[derive(Default, Deserialize)]
+struct PlacedStructurePropsEntry {
+    #[serde(default)]
+    resource: Option<String>,
+    #[serde(default)]
+    amount: Option<u32>,
+    #[serde(default)]
+    decoration_kind: Option<String>,
 }
 
 #[derive(Deserialize)]
