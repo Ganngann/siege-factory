@@ -5,7 +5,7 @@ use crate::agriculture::components::Farm;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
 use crate::core::tutorial::TutorialState;
-use crate::core::utils::tile_to_world;
+use crate::core::utils::{tile_to_world, world_to_tile};
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::building::{BuildingRegistry, attach_power_components};
 use crate::economy::components::{
@@ -380,8 +380,9 @@ pub fn load_buildings(
 
     // Spawn Builder near the HQ
     if let Some(hq) = data.buildings.iter().find(|b| b.kind == "hq") {
-        let bx = (hq.tile_x as f32 + 0.5) * tile_size;
-        let by = (hq.tile_y as f32 + 0.5) * tile_size;
+        let hq_pos = tile_to_world(hq.tile_x, hq.tile_y, tile_size);
+        let bx = hq_pos.x;
+        let by = hq_pos.y;
         commands.spawn((
             Builder {
                 state: BuilderState::Idle,
@@ -400,6 +401,7 @@ pub fn load_buildings(
 pub fn load_enemies(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>) {
     let data = load_data!(buf);
     for es in &data.enemies {
+        let enemy_tile = world_to_tile(Vec2::new(es.x, es.y), cfg.tile_size);
         let entity = commands
             .spawn((
                 EnemyComponent {
@@ -411,8 +413,8 @@ pub fn load_enemies(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapCo
                 },
                 Transform::from_xyz(es.x, es.y, 3.0),
                 TilePosition {
-                    x: (es.x / cfg.tile_size) as i32,
-                    y: (es.y / cfg.tile_size) as i32,
+                    x: enemy_tile.0,
+                    y: enemy_tile.1,
                 },
             ))
             .id();
@@ -433,6 +435,7 @@ pub fn load_enemies(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapCo
 pub fn load_units(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConfig>) {
     let data = load_data!(buf);
     for us in &data.units {
+        let unit_tile = world_to_tile(Vec2::new(us.x, us.y), cfg.tile_size);
         if us.kind == "worker" {
             commands.spawn((
                 Worker {
@@ -446,8 +449,8 @@ pub fn load_units(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
                 },
                 Transform::from_xyz(us.x, us.y, 2.5),
                 TilePosition {
-                    x: (us.x / cfg.tile_size) as i32,
-                    y: (us.y / cfg.tile_size) as i32,
+                    x: unit_tile.0,
+                    y: unit_tile.1,
                 },
             ));
         } else {
@@ -462,8 +465,8 @@ pub fn load_units(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
                 },
                 Transform::from_xyz(us.x, us.y, 2.5),
                 TilePosition {
-                    x: (us.x / cfg.tile_size) as i32,
-                    y: (us.y / cfg.tile_size) as i32,
+                    x: unit_tile.0,
+                    y: unit_tile.1,
                 },
             ));
         }

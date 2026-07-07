@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use crate::core::modding::ModRegistry;
 use crate::core::toast::ToastQueue;
+use crate::core::utils::{tile_to_world, world_to_tile};
 use crate::economy::components::{Building, Player};
 use crate::economy::player::PlayerWorldPos;
 use crate::economy::recipe::RecipeRegistry;
@@ -246,8 +247,7 @@ fn evaluate_condition(
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(3.0);
             let structure_id = params.get("structure_id").map(|s| s.as_str());
-            let player_tile_x = (player_pos.0.x / tile_size).floor() as i32;
-            let player_tile_y = (player_pos.0.y / tile_size).floor() as i32;
+            let (player_tile_x, player_tile_y) = world_to_tile(player_pos.0.truncate(), tile_size);
             for (building, tile_pos) in building_q.iter() {
                 if let Some(sid) = structure_id {
                     if building.kind != sid {
@@ -332,8 +332,9 @@ pub fn tutorial_highlight_system(
         return;
     };
 
-    let world_x = tile.x as f32 * cfg.tile_size;
-    let world_y = tile.y as f32 * cfg.tile_size;
+    let world_pos = tile_to_world(tile.x, tile.y, cfg.tile_size);
+    let world_x = world_pos.x;
+    let world_y = world_pos.y;
     let z = config.tile_highlight.z + 0.1;
 
     if let Some(entity) = highlight_entity.0 {

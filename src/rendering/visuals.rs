@@ -1,4 +1,5 @@
 use crate::combat::Projectile;
+use crate::core::utils::tile_to_world;
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
@@ -48,8 +49,9 @@ pub fn tile_highlight(
         return;
     };
 
-    let world_x = pos.x as f32 * cfg.tile_size;
-    let world_y = pos.y as f32 * cfg.tile_size;
+    let world_pos = tile_to_world(pos.x, pos.y, cfg.tile_size);
+    let world_x = world_pos.x;
+    let world_y = world_pos.y;
     let z = config.tile_highlight.z;
 
     if let Some(entity) = highlight.0 {

@@ -38,8 +38,8 @@ pub fn silent_despawn(commands: &mut Commands, entity: Entity) {
 /// Convert tile grid coordinates to world position (center of tile).
 pub fn tile_to_world(tx: i32, ty: i32, tile_size: f32) -> Vec2 {
     Vec2::new(
-        tx as f32 * tile_size + tile_size / 2.0,
-        ty as f32 * tile_size + tile_size / 2.0,
+        tx as f32 * tile_size,
+        ty as f32 * tile_size,
     )
 }
 

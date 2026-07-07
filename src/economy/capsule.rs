@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::IsFreshGame;
+use crate::core::utils::tile_to_world;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{Building, OccupiedTiles};
 use crate::economy::game_components::{Capsule, CurrentTier};
@@ -46,10 +47,9 @@ pub fn spawn_capsule(
         return;
     }
 
-    let (bx, by) = (capsule_cfg.spawn_tile_x, capsule_cfg.spawn_tile_y);
+    let (sx, sy) = (capsule_cfg.spawn_tile_x, capsule_cfg.spawn_tile_y);
     let tile_size = cfg.tile_size;
-    let cx = (bx as f32 + 0.5) * tile_size;
-    let cy = (by as f32 + 0.5) * tile_size;
+    let pos = tile_to_world(sx, sy, tile_size);
 
     let stem = &capsule_cfg.building_kind;
     let tex = textures.base(stem);
@@ -61,10 +61,10 @@ pub fn spawn_capsule(
             kind: capsule_cfg.building_kind.clone(),
             name: capsule_cfg.building_kind.clone(),
         },
-        OccupiedTiles(vec![(bx, by)]),
+        OccupiedTiles(vec![(sx, sy)]),
         Inventory::new(),
-        TilePosition { x: bx, y: by },
-        Transform::from_xyz(cx, cy, 5.0),
+        TilePosition { x: sx, y: sy },
+        Transform::from_xyz(pos.x, pos.y, 5.0),
         Visibility::default(),
         Sprite {
             image: tex,

@@ -11,6 +11,7 @@ use crate::economy::components::{
 use crate::economy::game_components::{Level, Storage};
 use crate::economy::resource::Inventory;
 use crate::economy::spatial::SpatialRegistry;
+use crate::core::utils::world_to_tile;
 use crate::events::DespawnDeposit;
 use crate::map::components::{HoveredTile, TilePosition, cursor_to_tile};
 use crate::map::config::MapConfig;
@@ -476,8 +477,7 @@ pub fn handle_build_click(
 
     // Despawn any crops on the building footprint
     for (crop_entity, _, crop_tf) in crops.iter() {
-        let ctx = (crop_tf.translation.x / tile_size).round() as i32;
-        let cty = (crop_tf.translation.y / tile_size).round() as i32;
+        let (ctx, cty) = world_to_tile(crop_tf.translation.truncate(), tile_size);
         if footprint.iter().any(|&(fx, fy)| fx == ctx && fy == cty) {
             commands.entity(crop_entity).try_despawn();
         }

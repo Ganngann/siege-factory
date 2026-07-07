@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::collections::HashSet;
 
-use crate::core::utils::{move_toward, parse_hex_color};
+use crate::core::utils::{move_toward, parse_hex_color, tile_to_world, world_to_tile};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::unit_config::UnitConfig;
 use crate::map::config::MapConfig;
@@ -158,8 +158,9 @@ pub fn cultivator_ai(
             }
 
             CultivatorState::MovingToPlant(tx, ty) => {
-                let target_x = tx as f32 * tile_size;
-                let target_y = ty as f32 * tile_size;
+                let target = tile_to_world(tx, ty, tile_size);
+                let target_x = target.x;
+                let target_y = target.y;
                 let dx = target_x - transform.translation.x;
                 let dy = target_y - transform.translation.y;
                 let dist = (dx * dx + dy * dy).sqrt();
@@ -292,9 +293,7 @@ fn find_plantable_tile_spiral(
     let occupied_crops: HashSet<(i32, i32)> = crops
         .iter()
         .map(|(_, _, tf)| {
-            let tx = (tf.translation.x / tile_size).round() as i32;
-            let ty = (tf.translation.y / tile_size).round() as i32;
-            (tx, ty)
+            world_to_tile(tf.translation.truncate(), tile_size)
         })
         .collect();
 
@@ -341,17 +340,13 @@ fn nearest_farm_tile(pos: Vec3, farms: &[(Entity, Vec3)], tile_size: f32) -> (i3
     let mut best: Option<(f32, i32, i32)> = None;
     for (_, fp) in farms {
         let dist = pos.distance(*fp);
-        let tx = (fp.x / tile_size).round() as i32;
-        let ty = (fp.y / tile_size).round() as i32;
+        let (tx, ty) = world_to_tile(fp.truncate(), tile_size);
         if best.map_or(true, |(d, _, _)| dist < d) {
             best = Some((dist, tx, ty));
         }
     }
     best.map(|(_, tx, ty)| (tx, ty)).unwrap_or_else(|| {
-        (
-            (pos.x / tile_size).round() as i32,
-            (pos.y / tile_size).round() as i32,
-        )
+        world_to_tile(pos.truncate(), tile_size)
     })
 }
 

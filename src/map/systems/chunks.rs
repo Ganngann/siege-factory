@@ -1,4 +1,4 @@
-use crate::core::utils::tile_to_world_corner;
+use crate::core::utils::{tile_to_world, tile_to_world_corner};
 use crate::economy::components::ResourceDeposit;
 use crate::economy::discovery::GlobalArchive;
 use crate::economy::resource::ResourceRegistry;
@@ -186,6 +186,7 @@ pub fn spawn_single_chunk_visuals(
             .unwrap_or(false);
 
         if let Some(handle) = textures.base.get(&d.resource) {
+            let dep_pos = tile_to_world(wx, wy, tile_size);
             let mut entity_cmd = commands.spawn((
                 ChunkMember(cx, cy),
                 ResourceDeposit {
@@ -201,8 +202,8 @@ pub fn spawn_single_chunk_visuals(
                     ..default()
                 },
                 Transform::from_xyz(
-                    wx as f32 * tile_size,
-                    wy as f32 * tile_size,
+                    dep_pos.x,
+                    dep_pos.y,
                     visuals.deposit_sprite.z,
                 ),
                 TilePosition { x: wx, y: wy },
@@ -219,6 +220,7 @@ pub fn spawn_single_chunk_visuals(
                 .map(|d| d.color)
                 .unwrap_or(visuals.deposit_sprite.fallback_color);
             let dep_color = materials.add(color);
+            let dep_pos = tile_to_world(wx, wy, tile_size);
             let mut entity_cmd = commands.spawn((
                 ChunkMember(cx, cy),
                 ResourceDeposit {
@@ -228,8 +230,8 @@ pub fn spawn_single_chunk_visuals(
                 Mesh2d(shapes.circle.clone()),
                 MeshMaterial2d(dep_color),
                 Transform::from_xyz(
-                    wx as f32 * tile_size,
-                    wy as f32 * tile_size,
+                    dep_pos.x,
+                    dep_pos.y,
                     visuals.deposit_sprite.z,
                 ),
                 TilePosition { x: wx, y: wy },
@@ -259,12 +261,13 @@ pub fn spawn_single_chunk_visuals(
             let wy = world_oy + dy as i32;
             let mesh = shapes.get_visual(&deco.shape);
             let mat = materials.add(deco.color);
+            let deco_pos = tile_to_world(wx, wy, tile_size);
             commands.spawn((
                 ChunkMember(cx, cy),
                 Decoration(deco.kind.clone()),
                 Mesh2d(mesh),
                 MeshMaterial2d(mat),
-                Transform::from_xyz(wx as f32 * tile_size, wy as f32 * tile_size, deco.z),
+                Transform::from_xyz(deco_pos.x, deco_pos.y, deco.z),
                 TilePosition { x: wx, y: wy },
             ));
         }
@@ -619,16 +622,13 @@ pub fn apply_starting_area(
                     {
                         let mesh = shapes.get_visual(&deco_cfg.shape);
                         let mat = materials.add(deco_cfg.color);
+                        let deco_pos = tile_to_world(wx, wy, tile_size);
                         commands.spawn((
                             ChunkMember(cx, cy),
                             Decoration(deco_kind.clone()),
                             Mesh2d(mesh),
                             MeshMaterial2d(mat),
-                            Transform::from_xyz(
-                                wx as f32 * tile_size,
-                                wy as f32 * tile_size,
-                                deco_cfg.z,
-                            ),
+                            Transform::from_xyz(deco_pos.x, deco_pos.y, deco_cfg.z),
                             TilePosition { x: wx, y: wy },
                         ));
                     }

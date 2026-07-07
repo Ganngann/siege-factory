@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::core::utils::tile_to_world;
 use crate::economy::components::Player;
 use crate::economy::game_components::GroundItemStack;
 use crate::economy::resource::{Inventory, ResourceId};
@@ -16,8 +17,7 @@ pub fn spawn_ground_item_visual(
 ) {
     let ev = on.event();
     let tile_size = cfg.tile_size;
-    let wx = ev.position.x as f32 * tile_size;
-    let wy = ev.position.y as f32 * tile_size;
+    let pos = tile_to_world(ev.position.x, ev.position.y, tile_size);
     let tex = textures.base(&ev.resource_id);
 
     commands.spawn((
@@ -29,7 +29,7 @@ pub fn spawn_ground_item_visual(
             x: ev.position.x,
             y: ev.position.y,
         },
-        Transform::from_xyz(wx, wy, 2.0),
+        Transform::from_xyz(pos.x, pos.y, 2.0),
         Visibility::default(),
         Sprite {
             image: tex,

@@ -9,6 +9,7 @@ use crate::economy::components::{
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::spatial::SpatialRegistry;
+use crate::core::utils::tile_to_world;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 
@@ -34,7 +35,7 @@ pub fn compute_slot_positions(
     num_slots: u32,
     tile_size: f32,
 ) -> Vec<Vec2> {
-    let center = Vec2::new(tx as f32 * tile_size, ty as f32 * tile_size);
+    let center = tile_to_world(tx, ty, tile_size);
     let (dx, dy) = direction.offset();
     let dir_vec = Vec2::new(dx as f32, dy as f32);
     (0..num_slots)

@@ -1,3 +1,4 @@
+use crate::core::utils::world_to_tile;
 use crate::map::config::MapConfig;
 use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
@@ -41,11 +42,6 @@ pub fn cursor_to_tile(
     let cursor = window.cursor_position()?;
     let (cam, cam_tf) = camera.single().ok()?;
     let world_pos = cam.viewport_to_world_2d(cam_tf, cursor).ok()?;
-    let ts = cfg.tile_size;
-    let tile_x = ((world_pos.x + ts / 2.0) / ts).floor() as i32;
-    let tile_y = ((world_pos.y + ts / 2.0) / ts).floor() as i32;
-    Some(TilePosition {
-        x: tile_x,
-        y: tile_y,
-    })
+    let (tx, ty) = world_to_tile(world_pos, cfg.tile_size);
+    Some(TilePosition { x: tx, y: ty })
 }
