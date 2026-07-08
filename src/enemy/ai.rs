@@ -9,7 +9,7 @@ use crate::map::config::MapConfig;
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-fn bfs(
+pub fn bfs(
     start: (i32, i32),
     goal: (i32, i32),
     blocked: &HashSet<(i32, i32)>,
@@ -114,3 +114,5 @@ pub fn move_enemies(
         }
     }
 }
+
+

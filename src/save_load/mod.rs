@@ -191,7 +191,7 @@ pub struct SaveRequested(pub bool);
 
 #[derive(Resource)]
 pub struct LoadBuffer {
-    pub(crate) data: Option<SaveData>,
+    pub data: Option<SaveData>,
 }
 
 impl Default for LoadBuffer {

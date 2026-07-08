@@ -4,18 +4,6 @@
 
 Bevy 0.19, Rust 1.96, ECS (Entity Component System)
 
-## Commands
-
-### Auto-autorisés (lecture seule / safe)
-- `ls`, `cd`, `cat`, `rg`, `fd`, `Test-Path`, `Select-String`
-- `git status`, `git diff`, `git log`
-- `cargo check`, `cargo run`, `cargo test`, `cargo fmt`, `cargo doc`
-
-### Sur demande explicite
-- `cargo clippy`
-- `cargo build --target wasm32-unknown-unknown`
-- `.\build_wasm.ps1` — WASM build + wasm-bindgen + copy index.html to web/
-
 ## Vision (destination)
 
 Factorio-like: infinite map, multiplayer, deep tech tree, branching recipes, N resources.

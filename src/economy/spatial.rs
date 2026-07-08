@@ -73,3 +73,9 @@ pub fn sync_spatial_registry(
         }
     }
 }
+
+impl SpatialRegistry {
+    pub fn insert_for_test(&mut self, x: i32, y: i32, entity: Entity) {
+        self.map.insert((x, y), entity);
+    }
+}

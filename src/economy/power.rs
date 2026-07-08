@@ -33,13 +33,13 @@ pub fn detect_power_changes(
     }
 }
 
-fn is_in_range(pos: Vec3, poles: &[(Entity, Vec3, f32)]) -> bool {
+pub fn is_in_range(pos: Vec3, poles: &[(Entity, Vec3, f32)]) -> bool {
     poles
         .iter()
         .any(|(_, pp, range)| pp.distance(pos) <= *range)
 }
 
-fn consumer_can_produce(
+pub fn consumer_can_produce(
     entity: Entity,
     spatial_map: &HashSet<Entity>,
     active: Option<&Active>,
@@ -212,3 +212,5 @@ pub fn burner_generator_tick(
         }
     }
 }
+
+

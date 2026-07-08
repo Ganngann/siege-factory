@@ -1,47 +1,21 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "permission": {
-    "bash": {
-      "*": "ask",
-      "ls *": "allow",
-      "Get-ChildItem *": "allow",
-      "dir *": "allow",
-      "cd *": "allow",
-      "Set-Location *": "allow",
-      "cat *": "allow",
-      "Get-Content *": "allow",
-      "rg *": "allow",
-      "fd *": "allow",
-      "Select-String *": "allow",
-      "Test-Path *": "allow",
-      "git status*": "allow",
-      "git diff*": "allow",
-      "git log*": "allow",
-      "cargo check*": "allow",
-      "cargo run*": "allow",
-      "cargo test*": "allow",
-      "cargo fmt*": "allow",
-      "cargo doc*": "allow",
-      "cargo metadata*": "allow",
-      "find *": "allow"
-    },
-    "edit": "allow"
-  },
+    "permission": "allow",
   "agent": {
     "build": {
-      "model": "opencode-go/qwen3.7-max",
+      "model": "deepseek/deepseek-v4-flash",
       "mode": "primary"
     },
     "plan": {
-      "model": "opencode-go/kimi-k2.6",
+      "model": "deepseek/deepseek-v4-flash",
       "mode": "primary"
     },
     "explore": {
-      "model": "opencode-go/mimo-v2.5",
+      "model": "deepseek/deepseek-v4-flash",
       "mode": "subagent"
     },
     "general": {
-      "model": "opencode-go/mimo-v2.5",
+      "model": "deepseek/deepseek-v4-flash",
       "mode": "subagent"
     }
   }

@@ -331,9 +331,11 @@ pub fn flat_items_at(
     }
 }
 
-fn format_cost(cost: &[Cost]) -> String {
+pub fn format_cost(cost: &[Cost]) -> String {
     cost.iter()
         .map(|c| format!("{} {:?}", c.amount, c.resource))
         .collect::<Vec<_>>()
         .join(" + ")
 }
+
+

@@ -95,7 +95,7 @@ fn setup_map(
     }
 }
 
-fn recenter_on_player(
+pub fn recenter_on_player(
     keys: Res<ButtonInput<KeyCode>>,
     mut camera: Query<&mut Transform, (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: Res<MapConfig>,
@@ -111,7 +111,7 @@ fn recenter_on_player(
     }
 }
 
-fn update_hovered_tile(
+pub fn update_hovered_tile(
     mut hovered: ResMut<HoveredTile>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,

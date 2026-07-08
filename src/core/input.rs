@@ -176,7 +176,7 @@ struct BindingsToml {
     bindings: HashMap<String, String>,
 }
 
-fn parse_input_binding(name: &str) -> Option<InputBinding> {
+pub fn parse_input_binding(name: &str) -> Option<InputBinding> {
     if let Some(key) = parse_key_code(name) {
         return Some(InputBinding::Key(key));
     }
@@ -186,7 +186,7 @@ fn parse_input_binding(name: &str) -> Option<InputBinding> {
     None
 }
 
-fn parse_mouse_button(name: &str) -> Option<MouseButton> {
+pub fn parse_mouse_button(name: &str) -> Option<MouseButton> {
     Some(match name {
         "MouseLeft" => MouseButton::Left,
         "MouseRight" => MouseButton::Right,
@@ -195,7 +195,7 @@ fn parse_mouse_button(name: &str) -> Option<MouseButton> {
     })
 }
 
-fn parse_key_code(name: &str) -> Option<KeyCode> {
+pub fn parse_key_code(name: &str) -> Option<KeyCode> {
     Some(match name {
         "Space" => KeyCode::Space,
         "Escape" => KeyCode::Escape,
@@ -288,3 +288,5 @@ fn parse_key_code(name: &str) -> Option<KeyCode> {
         _ => return None,
     })
 }
+
+

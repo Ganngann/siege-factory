@@ -382,3 +382,5 @@ struct BuildingEntry {
     owner_color: String,
     level_color: String,
 }
+
+
