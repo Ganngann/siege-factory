@@ -5,10 +5,10 @@ use crate::economy::belt::BeltSlots;
 use crate::economy::building::{BuildingRegistry, attach_power_components};
 use crate::economy::components::{
     Archive, Assembler, BeltDirection, BuildMode, BuildPreview, Building, Direction,
-    DiscoveredRecipes, Ghost, Miner, OccupiedTiles, ProductionCounter, ResourceDeposit,
-    TurretCombat, UiIsBlocking, UnbuiltBuilding,
+    DiscoveredRecipes, Ghost, Miner, OccupiedTiles, PowerConsumer, PowerProducer, ProductionCounter,
+    RecipeGenerator, ResourceDeposit, TurretCombat, UiIsBlocking, UnbuiltBuilding,
 };
-use crate::economy::game_components::{Level, Storage};
+use crate::economy::game_components::{Compactor, Level, Storage};
 use crate::economy::resource::Inventory;
 use crate::economy::spatial::SpatialRegistry;
 use crate::core::utils::world_to_tile;
@@ -24,6 +24,7 @@ const BUILDING_TURRET: &str = "turret";
 const BUILDING_STORAGE: &str = "storage";
 const BUILDING_FARM: &str = "farm";
 const BUILDING_ARCHIVE: &str = "archive";
+const BUILDING_COMPACTOR: &str = "compactor";
 
 // ── Auto-direction ──
 
@@ -225,8 +226,8 @@ pub fn update_build_preview(
     };
 
     // ── Drag line preview ──
-    if def.belt.is_some() || def.drag_placement {
-        if let Some((sx, sy)) = drag.start_coord {
+    if (def.belt.is_some() || def.drag_placement)
+        && let Some((sx, sy)) = drag.start_coord {
             let line = compute_line((sx, sy), (tx, ty));
             for &(lx, ly, dir) in &line {
                 let has_belt = belts_query.iter().any(|(p, _)| p.x == lx && p.y == ly);
@@ -271,7 +272,6 @@ pub fn update_build_preview(
             }
             return;
         }
-    }
 
     // ── Multi-tile preview ──
     let (tw, th) = def.tile_size;
@@ -428,7 +428,7 @@ pub fn handle_build_click(
             return;
         }
 
-        if !cfg.infinite_deposits {
+        if !cfg.infinite_deposits && !def.infinite_extraction {
             let cx = tx.div_euclid(CHUNK_SIZE as i32);
             let cy = ty.div_euclid(CHUNK_SIZE as i32);
             let dx = tx.rem_euclid(CHUNK_SIZE as i32) as u32;
@@ -466,7 +466,7 @@ pub fn handle_build_click(
             DiscoveredRecipes::default(),
             Level(def.level),
         ));
-        attach_power_components(&mut e, &def);
+        attach_power_components(&mut e, def);
         return;
     }
 
@@ -505,19 +505,53 @@ pub fn handle_build_click(
 
     if let Some(default_recipe) = &def.default_recipe {
         let interval = def.production_interval.unwrap_or(2.0);
-        let mut e = commands.spawn((
-            base,
-            Assembler {
-                production_timer: 0.0,
-                interval,
-                recipe_id: default_recipe.clone(),
-            },
-            inv,
-            ProductionCounter::default(),
-            DiscoveredRecipes::default(),
-            Level(def.level),
-        ));
-        attach_power_components(&mut e, &def);
+
+        // RecipeGenerator: hybrid building that produces both items AND grid power
+        if def.fuel_burn_interval > 0.0 && def.power_generation > 0.0 {
+            let mut e = commands.spawn((
+                base,
+                RecipeGenerator {
+                    recipe_id: default_recipe.clone(),
+                    production_timer: 0.0,
+                    interval,
+                    base_output: def.power_generation,
+                },
+                inv,
+                ProductionCounter::default(),
+                DiscoveredRecipes::default(),
+                Level(def.level),
+            ));
+            if def.power_consumption > 0.0 {
+                e.insert(PowerConsumer {
+                    draw: def.power_consumption,
+                    satisfied: false,
+                });
+            }
+            if def.power_generation > 0.0 {
+                e.insert(PowerProducer {
+                    output: def.power_generation,
+                });
+            }
+            if def.power_pole_range > 0.0 {
+                e.insert(crate::economy::components::PowerPole {
+                    range: def.power_pole_range,
+                });
+            }
+        } else {
+            let mut e = commands.spawn((
+                base,
+                Assembler {
+                    production_timer: 0.0,
+                    interval,
+                    recipe_id: default_recipe.clone(),
+                },
+                inv,
+                ProductionCounter::default(),
+                DiscoveredRecipes::default(),
+                Level(def.level),
+            ));
+            attach_power_components(&mut e, def);
+        }
     } else if def.id == BUILDING_TURRET || def.id == "turret_ii" {
         let stats = def.combat.as_ref();
         let mut e = commands.spawn((
@@ -532,10 +566,10 @@ pub fn handle_build_click(
             },
             Level(def.level),
         ));
-        attach_power_components(&mut e, &def);
+        attach_power_components(&mut e, def);
     } else if def.id == BUILDING_STORAGE {
         let mut e = commands.spawn((base, inv, Storage, Level(def.level)));
-        attach_power_components(&mut e, &def);
+        attach_power_components(&mut e, def);
     } else if def.id == BUILDING_FARM {
         let crop_types = def.crop_types.clone();
         let mut e = commands.spawn((
@@ -549,12 +583,24 @@ pub fn handle_build_click(
             DiscoveredRecipes::default(),
             Level(def.level),
         ));
-        attach_power_components(&mut e, &def);
+        attach_power_components(&mut e, def);
     } else if def.id == BUILDING_ARCHIVE {
         let mut e = commands.spawn((base, inv, Archive, Level(def.level)));
-        attach_power_components(&mut e, &def);
+        attach_power_components(&mut e, def);
+    } else if def.id == BUILDING_COMPACTOR {
+        let mut e = commands.spawn((
+            base,
+            inv,
+            Compactor {
+                ratio: def.compactor_ratio,
+                timer: 0.0,
+                interval: def.compactor_interval,
+            },
+            Level(def.level),
+        ));
+        attach_power_components(&mut e, def);
     } else {
         let mut e = commands.spawn((base, inv, Level(def.level)));
-        attach_power_components(&mut e, &def);
+        attach_power_components(&mut e, def);
     }
 }

@@ -10,6 +10,7 @@ use crate::economy::components::{
 use crate::economy::resource::Cost;
 use crate::economy::resource::{Inventory, ResourceId};
 use crate::economy::spatial::SpatialRegistry;
+use crate::economy::tool::ToolRegistry;
 use crate::enemy::components::Health;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
@@ -249,11 +250,10 @@ pub fn builder_work(
                         None
                     });
                 // Deposit 1 unit (mutable)
-                if let Some(resource) = cost {
-                    if let Ok((_, _, _, _, mut build_inv)) = building_query.get_mut(target) {
+                if let Some(resource) = cost
+                    && let Ok((_, _, _, _, mut build_inv)) = building_query.get_mut(target) {
                         build_inv.add(&resource, 1);
                     }
-                }
                 builder.state = BuilderState::ReturningToPlayer;
             } else {
                 let step = (speed * time.delta_secs()).min(dist);
@@ -350,45 +350,54 @@ pub fn player_mine(
     cfg: Res<MapConfig>,
     mut chunk_grid: ResMut<crate::map::tile_grid::ChunkGrid>,
     mut commands: Commands,
+    tool_registry: Res<ToolRegistry>,
 ) {
     if keys.pressed(KeyCode::KeyE) {
         mining_timer.0 += time.delta_secs();
-        let interval = cfg.player_mining_interval;
-        if mining_timer.0 >= interval {
-            let Ok((player_tile, mut inv)) = player_query.single_mut() else {
-                return;
-            };
+        let Ok((player_tile, mut inv)) = player_query.single_mut() else {
+            return;
+        };
 
-            let check_tiles = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)];
+        let check_tiles = [(0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)];
 
-            for (dep_entity, deposit, dep_tile) in deposits.iter() {
-                if deposit.amount == 0 {
-                    continue;
-                }
-                let adjacent = check_tiles.iter().any(|&(dx, dy)| {
-                    dep_tile.x == player_tile.x + dx && dep_tile.y == player_tile.y + dy
-                });
-                if !adjacent {
-                    continue;
-                }
-
-                inv.add(&ResourceId(deposit.resource.clone()), 1);
-
-                if !cfg.infinite_deposits {
-                    use crate::map::tile_grid::CHUNK_SIZE;
-                    let cx = dep_tile.x.div_euclid(CHUNK_SIZE as i32);
-                    let cy = dep_tile.y.div_euclid(CHUNK_SIZE as i32);
-                    let dx = dep_tile.x.rem_euclid(CHUNK_SIZE as i32) as u32;
-                    let dy = dep_tile.y.rem_euclid(CHUNK_SIZE as i32) as u32;
-                    chunk_grid.set_deposit_amount(cx, cy, dx, dy, deposit.amount - 1);
-                    commands.entity(dep_entity).insert(ResourceDeposit {
-                        resource: deposit.resource.clone(),
-                        amount: deposit.amount - 1,
-                    });
-                }
-                mining_timer.0 -= interval;
-                return;
+        for (dep_entity, deposit, dep_tile) in deposits.iter() {
+            if deposit.amount == 0 {
+                continue;
             }
+            let adjacent = check_tiles.iter().any(|&(dx, dy)| {
+                dep_tile.x == player_tile.x + dx && dep_tile.y == player_tile.y + dy
+            });
+            if !adjacent {
+                continue;
+            }
+
+            // Check if player has a tool that covers this resource
+            let mult = tool_registry
+                .best_tool_for(&deposit.resource, &inv)
+                .map(|(_, m)| m)
+                .unwrap_or(1.0);
+            let interval = cfg.player_mining_interval * mult;
+
+            if mining_timer.0 < interval {
+                continue;
+            }
+
+            inv.add(&ResourceId(deposit.resource.clone()), 1);
+
+            if !cfg.infinite_deposits {
+                use crate::map::tile_grid::CHUNK_SIZE;
+                let cx = dep_tile.x.div_euclid(CHUNK_SIZE as i32);
+                let cy = dep_tile.y.div_euclid(CHUNK_SIZE as i32);
+                let dx = dep_tile.x.rem_euclid(CHUNK_SIZE as i32) as u32;
+                let dy = dep_tile.y.rem_euclid(CHUNK_SIZE as i32) as u32;
+                chunk_grid.set_deposit_amount(cx, cy, dx, dy, deposit.amount - 1);
+                commands.entity(dep_entity).insert(ResourceDeposit {
+                    resource: deposit.resource.clone(),
+                    amount: deposit.amount - 1,
+                });
+            }
+            mining_timer.0 -= interval;
+            return;
         }
     } else {
         // E released — reset timer so next press starts fresh
@@ -480,12 +489,16 @@ pub fn player_pickup_belt(
         };
         // Find the last non-None item (closest to output end)
         if let Some(idx) = bs.items.iter().rposition(|item| item.is_some()) {
-            let item = bs.items[idx].take().unwrap();
+            let Some(item) = bs.items[idx].take() else {
+                continue;
+            };
             // Despawn the sprite entity for this slot
             if let Some(sprite_entity) = bs.slot_sprites.get_mut(idx).and_then(|s| s.take()) {
                 crate::core::utils::silent_despawn(&mut commands, sprite_entity);
             }
-            let mut inv = player_inv.single_mut().unwrap();
+            let Ok(mut inv) = player_inv.single_mut() else {
+                continue;
+            };
             inv.add(&item.resource_id, 1);
             return;
         }

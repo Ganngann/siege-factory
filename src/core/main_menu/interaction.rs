@@ -112,11 +112,10 @@ pub fn menu_navigation(
         } else {
             Color::srgb(0.6, 0.6, 0.7)
         };
-        if let Some(child) = children.first() {
-            if let Ok(mut tc) = text_colors.get_mut(*child) {
+        if let Some(child) = children.first()
+            && let Ok(mut tc) = text_colors.get_mut(*child) {
                 tc.0 = target;
             }
-        }
     }
 
     // ── Keyboard navigation ──

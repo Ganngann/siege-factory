@@ -82,3 +82,9 @@ kind = "deposit"
 tile_x = 2
 tile_y = 2
 props = { resource = "coal", amount = 10 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 9
+tile_y = 9
+props = { resource = "crude_oil", amount = 30 }

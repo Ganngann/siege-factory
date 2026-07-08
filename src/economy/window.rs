@@ -178,12 +178,11 @@ pub fn drag_window_system(
         if buttons.just_released(MouseButton::Left) {
             drag.dragging = false;
             drag.window_entity = None;
-        } else if let Some(entity) = drag.window_entity {
-            if let Ok((_, mut node)) = window_query.get_mut(entity) {
+        } else if let Some(entity) = drag.window_entity
+            && let Ok((_, mut node)) = window_query.get_mut(entity) {
                 node.left = Val::Px(drag.window_start_left + cursor.x - drag.cursor_start.x);
                 node.top = Val::Px(drag.window_start_top + cursor.y - drag.cursor_start.y);
             }
-        }
         return;
     }
 

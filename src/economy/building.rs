@@ -37,6 +37,7 @@ pub struct BuildingDef {
     pub visual: String,
     pub texture_stem: String,
     pub requires_deposit: bool,
+    pub infinite_extraction: bool,
     pub combat: Option<CombatStats>,
     pub belt: Option<BeltProperties>,
     pub production: Option<ProductionDef>,
@@ -45,6 +46,8 @@ pub struct BuildingDef {
     pub refund_ratio: f32,
     pub repair_cost_ratio: f32,
     pub inventory_capacity: u32,
+    pub compactor_ratio: u32,
+    pub compactor_interval: f32,
     pub hidden: bool,
     pub drag_placement: bool,
     pub default_recipe: Option<String>,
@@ -86,7 +89,9 @@ pub fn attach_power_components(entity: &mut EntityCommands, def: &BuildingDef) {
             output: def.power_generation,
         });
     }
-    if def.fuel_burn_interval > 0.0 {
+    // BurnerGenerator is only for simple fuel-burning generators.
+    // Recipe-based generators (which have a default_recipe) use RecipeGenerator instead.
+    if def.fuel_burn_interval > 0.0 && def.default_recipe.is_none() {
         entity.insert(BurnerGenerator {
             fuel_burn_timer: 0.0,
             fuel_burn_interval: def.fuel_burn_interval,
@@ -155,6 +160,7 @@ impl BuildingRegistry {
                 let visual = entry.visual.unwrap_or_else(|| "square".to_string());
                 let texture_stem = entry.texture_stem.unwrap_or_else(|| id.clone());
                 let requires_deposit = entry.requires_deposit;
+                let infinite_extraction = entry.infinite_extraction;
                 let combat = entry.combat.map(|c| CombatStats {
                     damage: c.damage,
                     range: c.range * c.range,
@@ -212,6 +218,7 @@ impl BuildingRegistry {
                     visual,
                     texture_stem,
                     requires_deposit,
+                    infinite_extraction,
                     combat,
                     belt,
                     production,
@@ -224,6 +231,8 @@ impl BuildingRegistry {
                     inventory_capacity: entry
                         .inventory_capacity
                         .unwrap_or(defaults.inventory_capacity),
+                    compactor_ratio: entry.compactor_ratio,
+                    compactor_interval: entry.compactor_interval,
                     hidden: entry.hidden,
                     drag_placement: entry.drag_placement,
                     default_recipe: entry.default_recipe.clone(),
@@ -297,6 +306,8 @@ struct BuildingEntry {
     #[serde(default)]
     requires_deposit: bool,
     #[serde(default)]
+    infinite_extraction: bool,
+    #[serde(default)]
     production: Option<ProductionEntry>,
     #[serde(default)]
     production_interval: Option<f32>,
@@ -316,6 +327,10 @@ struct BuildingEntry {
     repair_cost_ratio: Option<f32>,
     #[serde(default)]
     inventory_capacity: Option<u32>,
+    #[serde(default = "default_compactor_ratio")]
+    compactor_ratio: u32,
+    #[serde(default = "default_compactor_interval")]
+    compactor_interval: f32,
     #[serde(default)]
     hidden: bool,
     #[serde(default)]
@@ -389,6 +404,14 @@ fn default_projectile_speed() -> f32 {
 
 fn default_level() -> u32 {
     1
+}
+
+fn default_compactor_ratio() -> u32 {
+    4
+}
+
+fn default_compactor_interval() -> f32 {
+    2.0
 }
 
 fn parse_belt_variant(s: &str) -> BeltVariant {

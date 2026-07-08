@@ -90,7 +90,7 @@ pub fn open_panel(
         kind,
         show_recipes,
         is_farm,
-        &resource_registry,
+        resource_registry,
         reg,
         farm_crop_types,
     );
@@ -198,11 +198,9 @@ fn spawn_panel_ui(
                             // Upgrade section (only if building has an upgrade available)
                             if let Some(upgrade_kind) =
                                 reg.get(kind).and_then(|d| d.upgrades_to.as_ref())
-                            {
-                                if let Some(upgrade_def) = reg.get(upgrade_kind) {
+                                && let Some(upgrade_def) = reg.get(upgrade_kind) {
                                     spawn_upgrade_section(right, upgrade_kind, upgrade_def);
                                 }
-                            }
                         });
                 });
         },
@@ -526,8 +524,7 @@ fn spawn_sorter_content(
 
     let mut resources: Vec<String> = resource_registry
         .resources
-        .keys()
-        .map(|k| k.clone())
+        .keys().cloned()
         .collect();
     resources.sort();
     for res in &resources {

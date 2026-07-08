@@ -61,11 +61,10 @@ fn game_state_transition(
 
     match state.get() {
         GameState::Playing => {
-            if mode_active && bindings.just_pressed("cancel", &keys, &mouse) {
-                if let Some(ref mut bm) = build_mode {
+            if mode_active && bindings.just_pressed("cancel", &keys, &mouse)
+                && let Some(ref mut bm) = build_mode {
                     bm.0 = None;
                 }
-            }
         }
         GameState::GameOver => {
             if bindings.just_pressed("restart", &keys, &mouse) {

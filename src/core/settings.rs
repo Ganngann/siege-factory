@@ -33,11 +33,10 @@ impl Settings {
 
     pub fn save(&self) {
         let path = Self::path();
-        if let Some(parent) = path.parent() {
-            if !parent.exists() {
+        if let Some(parent) = path.parent()
+            && !parent.exists() {
                 let _ = std::fs::create_dir_all(parent);
             }
-        }
         match toml::to_string_pretty(self) {
             Ok(content) => {
                 if let Err(e) = std::fs::write(&path, content) {

@@ -70,12 +70,10 @@ pub fn on_belt_drag_completed(
             if let Some((_, mut bs)) = belt_write
                 .iter_mut()
                 .find(|(pos, _)| pos.x == bx && pos.y == by)
-            {
-                if bs.direction != dir {
+                && bs.direction != dir {
                     bs.direction = dir;
                     bs.slot_positions = compute_slot_positions(bx, by, dir, num_slots, tile_size);
                 }
-            }
         }
 
         for &(bx, by, dir) in &ev.new_tiles {

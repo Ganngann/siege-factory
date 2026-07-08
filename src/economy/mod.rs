@@ -3,6 +3,7 @@ pub mod belt;
 pub mod build_bar;
 pub mod building;
 pub mod capsule;
+pub mod compactor;
 pub mod components;
 pub mod data_pad;
 pub mod discovery;
@@ -21,6 +22,7 @@ pub mod resource;
 pub mod setup;
 pub mod spatial;
 pub mod tiered_structure;
+pub mod tool;
 pub mod ui;
 pub mod ui_components;
 pub mod unit_config;
@@ -58,11 +60,10 @@ pub fn update_ui_blocking(
         list.iter().any(|entry| {
             let mut entity = *entry.0;
             loop {
-                if let Ok(p) = pickable_q.get(entity) {
-                    if p.should_block_lower {
+                if let Ok(p) = pickable_q.get(entity)
+                    && p.should_block_lower {
                         return true;
                     }
-                }
                 match parent_q.get(entity) {
                     Ok(child_of) => entity = child_of.0,
                     Err(_) => return false,
@@ -86,6 +87,8 @@ impl Plugin for EconomyPlugin {
             &discovery_registry.starter_recipes,
         ));
         app.insert_resource(discovery_registry);
+
+        app.insert_resource(tool::ToolRegistry::load(&mods));
 
         // Load registries + derive MenuDef in dependency order (avoids double-load)
         let building_registry = building::BuildingRegistry::load(&mods);
@@ -121,6 +124,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<crate::core::tutorial::TutorialHighlightEntity>();
         app.init_resource::<capsule::CapsuleConfig>();
         app.insert_resource(tiered_structure::ProgressionLogRegistry::default());
+        app.init_resource::<tiered_structure::FinalCountdown>();
         app.insert_resource(Time::<Fixed>::from_hz(20.0));
         app.configure_sets(Update, PlayingSystems.run_if(in_state(GameState::Playing)));
         app.add_observer(placement::on_belt_drag_completed);
@@ -200,6 +204,10 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
+            tiered_structure::final_countdown_tick.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
             crate::player::crafting::crafting_input.in_set(PlayingSystems),
         );
         app.add_systems(
@@ -229,6 +237,14 @@ impl Plugin for EconomyPlugin {
         app.add_systems(
             FixedUpdate,
             power::burner_generator_tick.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            FixedUpdate,
+            power::recipe_generator_tick.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            FixedUpdate,
+            compactor::compactor_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update, discovery::check_discoveries.in_set(PlayingSystems));
         app.add_systems(

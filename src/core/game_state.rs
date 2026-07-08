@@ -7,6 +7,7 @@ pub enum GameState {
     Loading,
     Playing,
     GameOver,
+    Win,
 }
 
 /// True when entering Playing from a fresh game (not from load).

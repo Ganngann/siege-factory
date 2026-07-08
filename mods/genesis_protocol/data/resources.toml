@@ -276,6 +276,26 @@ name = "Séquence Génome"
 max_stack = 99
 color = "#66BB6A"
 
+[resources.stone_pickaxe]
+name = "Pioche en Pierre"
+max_stack = 1
+color = "#8B7355"
+
+[resources.stone_axe]
+name = "Hache en Pierre"
+max_stack = 1
+color = "#8B5E3C"
+
+[resources.stone_blade]
+name = "Lame en Pierre"
+max_stack = 1
+color = "#887766"
+
+[resources.hammer]
+name = "Marteau"
+max_stack = 1
+color = "#AA7733"
+
 [resources.fusion_core]
 name = "Cœur à Fusion"
 max_stack = 99

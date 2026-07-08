@@ -25,7 +25,7 @@ use save_load::SaveLoadPlugin;
 pub fn run() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugins(PanCamPlugin::default())
+        .add_plugins(PanCamPlugin)
         .add_plugins(core::modding::ModPlugin)
         .add_plugins(CorePlugin)
         .add_plugins(MapPlugin)

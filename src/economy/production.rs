@@ -19,11 +19,10 @@ pub fn assembler_tick(
         if !active.0 {
             continue;
         }
-        if let Some(pc) = power {
-            if !pc.satisfied {
+        if let Some(pc) = power
+            && !pc.satisfied {
                 continue;
             }
-        }
         let recipe = match recipes.get(&assembler.recipe_id) {
             Some(r) => r,
             None => continue,

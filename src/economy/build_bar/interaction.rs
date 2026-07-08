@@ -55,8 +55,8 @@ pub fn menu_navigation(
         KeyCode::Digit0,
     ];
     for (slot, key) in digit_keys.iter().enumerate() {
-        if keys.just_pressed(*key) {
-            if let Some(item) = menu_items.items.get(slot) {
+        if keys.just_pressed(*key)
+            && let Some(item) = menu_items.items.get(slot) {
                 activate_item(
                     item,
                     &mut menu_state,
@@ -66,7 +66,6 @@ pub fn menu_navigation(
                     &mut commands,
                 );
             }
-        }
     }
 
     if bindings.just_pressed("build_deconstruct", &keys, &mouse) {
@@ -92,8 +91,8 @@ pub fn menu_bar_interaction(
     mut tooltip: ResMut<TooltipText>,
 ) {
     for (interaction, button) in &query {
-        if *interaction == Interaction::Pressed {
-            if let Some(item) = menu_items.items.get(button.index) {
+        if *interaction == Interaction::Pressed
+            && let Some(item) = menu_items.items.get(button.index) {
                 activate_item(
                     item,
                     &mut menu_state,
@@ -103,9 +102,8 @@ pub fn menu_bar_interaction(
                     &mut commands,
                 );
             }
-        }
-        if *interaction == Interaction::Hovered {
-            if let Some(item) = menu_items.items.get(button.index) {
+        if *interaction == Interaction::Hovered
+            && let Some(item) = menu_items.items.get(button.index) {
                 tooltip.0 = Some(match &item.kind {
                     FlatItemKind::Action(action) => match action {
                         MenuAction::Build(id) => registry
@@ -167,26 +165,20 @@ pub fn menu_bar_interaction(
                     FlatItemKind::SubMenu => format!("{} › (click to enter)", item.label),
                 });
             }
-        }
         if *interaction == Interaction::None {
             tooltip.0 = None;
         }
     }
 
-    if let Ok(interaction) = back_query.single() {
-        if *interaction == Interaction::Pressed && !menu_state.stack.is_empty() {
+    if let Ok(interaction) = back_query.single()
+        && *interaction == Interaction::Pressed && !menu_state.stack.is_empty() {
             menu_state.stack.pop();
             menu_state.scroll = 0;
         }
-    }
 
     for (interaction, scroll) in &scroll_query {
         if *interaction == Interaction::Pressed {
-            let max = if menu_items.total_items > menu_def.page_size {
-                menu_items.total_items - menu_def.page_size
-            } else {
-                0
-            };
+            let max = menu_items.total_items.saturating_sub(menu_def.page_size);
             if scroll.0 < 0 {
                 menu_state.scroll = menu_state.scroll.saturating_sub(1);
             } else if menu_state.scroll < max {

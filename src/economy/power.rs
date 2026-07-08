@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use std::collections::HashSet;
 
 use crate::economy::components::{
-    Active, Assembler, BurnerGenerator, PowerConsumer, PowerPole, PowerProducer, UnbuiltBuilding,
+    Active, Assembler, BurnerGenerator, PowerConsumer, PowerPole, PowerProducer, ProductionCounter,
+    RecipeGenerator, UnbuiltBuilding,
 };
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::Inventory;
@@ -39,41 +40,55 @@ pub fn is_in_range(pos: Vec3, poles: &[(Entity, Vec3, f32)]) -> bool {
         .any(|(_, pp, range)| pp.distance(pos) <= *range)
 }
 
+fn has_recipe_resources(
+    recipe_id: &str,
+    inventory: Option<&Inventory>,
+    recipes: &RecipeRegistry,
+) -> bool {
+    let inv = match inventory {
+        Some(i) => i,
+        None => return false,
+    };
+    let Some(recipe) = recipes.get(recipe_id) else {
+        return false;
+    };
+    if !recipe
+        .input
+        .iter()
+        .all(|(req_resource, req_amount)| inv.get(req_resource) >= *req_amount)
+    {
+        return false;
+    }
+    if inv.capacity > 0 {
+        let total_output: u32 = recipe.output.iter().map(|(_, a)| a).sum();
+        if inv.total() + total_output > inv.capacity {
+            return false;
+        }
+    }
+    true
+}
+
 pub fn consumer_can_produce(
     entity: Entity,
     spatial_map: &HashSet<Entity>,
     active: Option<&Active>,
     assembler: Option<&Assembler>,
+    recipe_gen: Option<&RecipeGenerator>,
     inventory: Option<&Inventory>,
     recipes: &RecipeRegistry,
 ) -> bool {
     if !spatial_map.contains(&entity) {
         return false;
     }
-    if let Some(a) = active {
-        if !a.0 {
+    if let Some(a) = active
+        && !a.0 {
             return false;
         }
-    }
     if let Some(asm) = assembler {
-        if let Some(inv) = inventory {
-            let Some(recipe) = recipes.get(&asm.recipe_id) else {
-                return false;
-            };
-            if !recipe
-                .input
-                .iter()
-                .all(|(req_resource, req_amount)| inv.get(req_resource) >= *req_amount)
-            {
-                return false;
-            }
-            if inv.capacity > 0 {
-                let total_output: u32 = recipe.output.iter().map(|(_, a)| a).sum();
-                if inv.total() + total_output > inv.capacity {
-                    return false;
-                }
-            }
-        }
+        return has_recipe_resources(&asm.recipe_id, inventory, recipes);
+    }
+    if let Some(rg) = recipe_gen {
+        return has_recipe_resources(&rg.recipe_id, inventory, recipes);
     }
     true
 }
@@ -102,6 +117,7 @@ pub fn rebuild_power_grid(
             &mut PowerConsumer,
             Option<&Active>,
             Option<&Assembler>,
+            Option<&RecipeGenerator>,
             Option<&Inventory>,
         ),
         Without<UnbuiltBuilding>,
@@ -117,7 +133,7 @@ pub fn rebuild_power_grid(
 
     let mut connected_consumers: HashSet<Entity> = HashSet::new();
 
-    for (entity, tf, _, _, _, _) in consumers.iter() {
+    for (entity, tf, _, _, _, _, _) in consumers.iter() {
         if !has_poles || is_in_range(tf.translation, &pole_data) {
             connected_consumers.insert(entity);
         }
@@ -136,17 +152,18 @@ pub fn rebuild_power_grid(
 
     let total_actual: f32 = consumers
         .iter()
-        .filter(|(entity, _, _, active, assembler, inventory)| {
+        .filter(|(entity, _, _, active, assembler, recipe_gen, inventory)| {
             consumer_can_produce(
                 *entity,
                 &connected_consumers,
                 *active,
                 *assembler,
+                *recipe_gen,
                 *inventory,
                 &recipes,
             )
         })
-        .map(|(_, _, consumer, _, _, _)| consumer.draw)
+        .map(|(_, _, consumer, _, _, _, _)| consumer.draw)
         .sum();
 
     let ratio = if total_available > 0.0 {
@@ -158,16 +175,91 @@ pub fn rebuild_power_grid(
 
     let power_ok = total_available > 0.0 && total_actual <= total_available;
 
-    for (entity, _, mut consumer, active, assembler, inventory) in consumers.iter_mut() {
+    for (entity, _, mut consumer, active, assembler, recipe_gen, inventory) in consumers.iter_mut() {
         let producing = consumer_can_produce(
             entity,
             &connected_consumers,
             active,
             assembler,
+            recipe_gen,
             inventory,
             &recipes,
         );
         consumer.satisfied = producing && power_ok;
+    }
+}
+
+/// RecipeGenerator: consumes recipe inputs, produces recipe outputs, and
+/// sets PowerProducer.output to base_output whenever the recipe is running.
+pub fn recipe_generator_tick(
+    time: Res<Time<Fixed>>,
+    recipes: Res<RecipeRegistry>,
+    mut rg_query: Query<
+        (
+            &mut RecipeGenerator,
+            &mut Inventory,
+            &mut PowerProducer,
+            &Active,
+            Option<&PowerConsumer>,
+            Option<&mut ProductionCounter>,
+        ),
+        Without<UnbuiltBuilding>,
+    >,
+) {
+    for (mut rg, mut inventory, mut producer, active, power, mut counter) in rg_query.iter_mut() {
+        if !active.0 {
+            producer.output = 0.0;
+            continue;
+        }
+        if let Some(pc) = power
+            && !pc.satisfied {
+                producer.output = 0.0;
+                continue;
+            }
+
+        let recipe = match recipes.get(&rg.recipe_id) {
+            Some(r) => r,
+            None => {
+                producer.output = 0.0;
+                continue;
+            }
+        };
+
+        let can_produce = recipe
+            .input
+            .iter()
+            .all(|(req_resource, req_amount)| inventory.get(req_resource) >= *req_amount);
+        if !can_produce {
+            producer.output = 0.0;
+            continue;
+        }
+
+        if inventory.capacity > 0 {
+            let total_output: u32 = recipe.output.iter().map(|(_, a)| a).sum();
+            if inventory.total() + total_output > inventory.capacity {
+                producer.output = 0.0;
+                continue;
+            }
+        }
+
+        rg.production_timer += time.delta_secs();
+        if rg.production_timer >= recipe.time_sec {
+            for (req_resource, req_amount) in &recipe.input {
+                inventory.remove(req_resource, *req_amount);
+            }
+            for (out_resource, out_amount) in &recipe.output {
+                inventory.add(out_resource, *out_amount);
+            }
+            if let Some(ref mut ctr) = counter {
+                for (_, amount) in &recipe.output {
+                    ctr.0 += amount;
+                }
+            }
+            rg.production_timer -= recipe.time_sec;
+        }
+
+        // Output power whenever the recipe is running
+        producer.output = rg.base_output;
     }
 }
 

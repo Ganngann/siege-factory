@@ -149,7 +149,7 @@ pub fn on_discovery(
         .push(format!("{}: {} discovered!", building_name, item_name));
     toast_queue
         .0
-        .push(format!("Craft it and bring it to the Archive!"));
+        .push("Craft it and bring it to the Archive!".to_string());
 }
 
 

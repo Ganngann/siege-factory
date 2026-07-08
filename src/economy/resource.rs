@@ -146,12 +146,11 @@ impl Inventory {
     pub fn add(&mut self, resource: &ResourceId, amount: u32) {
         // 1. Matching slot
         for slot in self.slots.iter_mut() {
-            if let Some((r, a)) = slot {
-                if *r == *resource {
+            if let Some((r, a)) = slot
+                && *r == *resource {
                     *a = a.saturating_add(amount);
                     return;
                 }
-            }
         }
         // 2. Empty slot
         for slot in self.slots.iter_mut() {
@@ -179,15 +178,14 @@ impl Inventory {
     /// insufficient.
     pub fn remove(&mut self, resource: &ResourceId, amount: u32) -> bool {
         for slot in self.slots.iter_mut() {
-            if let Some((r, a)) = slot {
-                if *r == *resource && *a >= amount {
+            if let Some((r, a)) = slot
+                && *r == *resource && *a >= amount {
                     *a -= amount;
                     if *a == 0 {
                         *slot = None;
                     }
                     return true;
                 }
-            }
         }
         false
     }
@@ -218,7 +216,7 @@ impl Inventory {
 
     /// Whether the slot at `index` exists and is non‑empty.
     pub fn is_empty_slot(&self, index: usize) -> bool {
-        self.slots.get(index).map_or(true, |s| s.is_none())
+        self.slots.get(index).is_none_or(|s| s.is_none())
     }
 
     /// Content of the slot at `index`.

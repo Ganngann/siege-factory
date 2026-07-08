@@ -255,11 +255,10 @@ fn has_visible_children(
                 if def.hidden {
                     return false;
                 }
-                if let Some(ref req) = def.requires_discovery {
-                    if !global_archive.is_unlocked(req) {
+                if let Some(ref req) = def.requires_discovery
+                    && !global_archive.is_unlocked(req) {
                         return false;
                     }
-                }
                 true
             }),
             MenuAction::Spawn(id) => unit_cfg.get(id).is_some(),
@@ -293,11 +292,10 @@ pub fn flat_items_at(
                         if def.hidden {
                             continue;
                         }
-                        if let Some(ref req) = def.requires_discovery {
-                            if !global_archive.is_unlocked(req) {
+                        if let Some(ref req) = def.requires_discovery
+                            && !global_archive.is_unlocked(req) {
                                 continue;
                             }
-                        }
                         items.push(FlatItem {
                             label: label.clone(),
                             kind: FlatItemKind::Action(action.clone()),

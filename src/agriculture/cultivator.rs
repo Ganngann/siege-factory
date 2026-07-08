@@ -74,7 +74,7 @@ pub fn cultivator_ai(
                 for (crop_entity, crop, crop_transform) in crops.iter() {
                     if crop.timer >= crop.duration && !taken_crops.contains(&crop_entity) {
                         let dist = transform.translation.distance(crop_transform.translation);
-                        if nearest_crop.map_or(true, |(_, d)| dist < d) {
+                        if nearest_crop.is_none_or(|(_, d)| dist < d) {
                             nearest_crop = Some((crop_entity, dist));
                         }
                     }
@@ -341,7 +341,7 @@ fn nearest_farm_tile(pos: Vec3, farms: &[(Entity, Vec3)], tile_size: f32) -> (i3
     for (_, fp) in farms {
         let dist = pos.distance(*fp);
         let (tx, ty) = world_to_tile(fp.truncate(), tile_size);
-        if best.map_or(true, |(d, _, _)| dist < d) {
+        if best.is_none_or(|(d, _, _)| dist < d) {
             best = Some((dist, tx, ty));
         }
     }
@@ -354,7 +354,7 @@ fn find_nearest_farm_pos(pos: Vec3, farms: &[(Entity, Vec3)]) -> Option<Entity> 
     let mut nearest: Option<(Entity, f32)> = None;
     for (entity, farm_pos) in farms {
         let dist = pos.distance(*farm_pos);
-        if nearest.map_or(true, |(_, d)| dist < d) {
+        if nearest.is_none_or(|(_, d)| dist < d) {
             nearest = Some((*entity, dist));
         }
     }

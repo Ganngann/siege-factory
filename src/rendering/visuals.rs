@@ -197,11 +197,10 @@ pub fn sync_belt_slot_sprites(
     for mut bs in belt_query.iter_mut() {
         let mut to_create: Vec<(usize, crate::economy::resource::ResourceId)> = Vec::new();
         for (slot_idx, item) in bs.items.iter().enumerate() {
-            if let Some(item) = item {
-                if bs.slot_sprites[slot_idx].is_none() {
+            if let Some(item) = item
+                && bs.slot_sprites[slot_idx].is_none() {
                     to_create.push((slot_idx, item.resource_id.clone()));
                 }
-            }
         }
         let mut to_destroy: Vec<usize> = Vec::new();
         for (slot_idx, sprite) in bs.slot_sprites.iter().enumerate() {
@@ -254,8 +253,8 @@ pub fn animate_belt_positions(
 
     for bs in belt_query.iter() {
         for (slot_idx, sprite_entity) in bs.slot_sprites.iter().enumerate() {
-            if let Some(entity) = sprite_entity {
-                if let Ok(mut transform) = sprite_query.get_mut(*entity) {
+            if let Some(entity) = sprite_entity
+                && let Ok(mut transform) = sprite_query.get_mut(*entity) {
                     let target = bs.slot_positions[slot_idx];
                     let current = Vec2::new(transform.translation.x, transform.translation.y);
                     let diff = target - current;
@@ -267,7 +266,6 @@ pub fn animate_belt_positions(
                         transform.translation = Vec3::new(new_pos.x, new_pos.y, config.belt_item.z);
                     }
                 }
-            }
         }
     }
 }

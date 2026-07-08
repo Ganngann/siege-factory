@@ -1,0 +1,15 @@
+[tools.stone_pickaxe]
+allowed_resources = ["stone", "clay", "coal", "iron_ore", "copper_ore"]
+mine_interval_mult = 0.5
+
+[tools.stone_axe]
+allowed_resources = ["wood", "scrap_metal"]
+mine_interval_mult = 0.5
+
+[tools.stone_blade]
+allowed_resources = ["plant_fiber"]
+mine_interval_mult = 0.5
+
+[tools.hammer]
+allowed_resources = []
+mine_interval_mult = 1.0

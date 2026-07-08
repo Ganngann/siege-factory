@@ -83,9 +83,9 @@ impl MapConfig {
                 merged.starting_area = overlay.starting_area.clone();
             }
         }
-        let map = merged.map.unwrap();
-        let deposits = merged.deposits.unwrap();
-        let player = merged.player.unwrap();
+        let map = merged.map.expect("MapConfig: missing required 'map' section");
+        let deposits = merged.deposits.expect("MapConfig: missing required 'deposits' section");
+        let player = merged.player.expect("MapConfig: missing required 'player' section");
         let chunk = merged.chunk.unwrap_or_default();
         let decoration = merged.decoration.unwrap_or_default();
         let mut distribution: Vec<(String, u32)> =

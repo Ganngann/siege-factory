@@ -204,7 +204,7 @@ pub fn drag_start(
             if let Some((rid, slot_amount)) = inv.slot_content(slot.index) {
                 let slot_amount = *slot_amount;
                 let amount = if keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight) {
-                    (slot_amount + 1) / 2
+                    slot_amount.div_ceil(2)
                 } else if keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight) {
                     1
                 } else {

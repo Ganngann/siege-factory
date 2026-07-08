@@ -249,11 +249,10 @@ fn evaluate_condition(
             let structure_id = params.get("structure_id").map(|s| s.as_str());
             let (player_tile_x, player_tile_y) = world_to_tile(player_pos.0.truncate(), tile_size);
             for (building, tile_pos) in building_q.iter() {
-                if let Some(sid) = structure_id {
-                    if building.kind != sid {
+                if let Some(sid) = structure_id
+                    && building.kind != sid {
                         continue;
                     }
-                }
                 let dx = (tile_pos.x - player_tile_x) as f32;
                 let dy = (tile_pos.y - player_tile_y) as f32;
                 if (dx * dx + dy * dy).sqrt() <= required_distance {

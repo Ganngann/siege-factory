@@ -166,6 +166,13 @@ pub struct Sorter {
 }
 
 #[derive(Component)]
+pub struct Compactor {
+    pub ratio: u32,
+    pub timer: f32,
+    pub interval: f32,
+}
+
+#[derive(Component)]
 pub struct MiningProgressChild;
 
 #[derive(Component)]

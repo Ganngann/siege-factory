@@ -31,38 +31,67 @@ input = {}
 output = { clay = 1 }
 time_sec = 2.0
 
+# --- Outils (hand_crafting, workbench) ---
+[recipes.craft_stone_pickaxe]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { stone = 2, wood = 1 }
+output = { stone_pickaxe = 1 }
+time_sec = 5.0
+
+[recipes.craft_stone_axe]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { stone = 1, wood = 2 }
+output = { stone_axe = 1 }
+time_sec = 5.0
+
+[recipes.craft_stone_blade]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { stone = 1, plant_fiber = 2 }
+output = { stone_blade = 1 }
+time_sec = 4.0
+
+[recipes.craft_hammer]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { stone = 3, wood = 1, rope = 1 }
+output = { hammer = 1 }
+time_sec = 6.0
+
 # --- Workbench (hand_crafting) ---
 [recipes.iron_parts_from_scrap]
 category = "hand_crafting"
-craftable_in = ["workbench"]
+craftable_in = ["workbench", "assembler"]
 input = { scrap_metal = 2 }
 output = { iron_parts = 1 }
 time_sec = 3.0
 
 [recipes.planks_from_wood]
 category = "hand_crafting"
-craftable_in = ["workbench"]
+craftable_in = ["workbench", "assembler"]
 input = { wood = 2 }
 output = { planks = 1 }
 time_sec = 2.0
 
 [recipes.stone_brick_cut]
 category = "hand_crafting"
-craftable_in = ["workbench"]
+craftable_in = ["workbench", "assembler"]
 input = { stone = 1 }
 output = { stone_brick = 1 }
 time_sec = 2.0
 
 [recipes.ceramic_form]
 category = "hand_crafting"
-craftable_in = ["workbench"]
+craftable_in = ["workbench", "assembler"]
 input = { clay = 2 }
 output = { ceramic = 1 }
 time_sec = 3.0
 
 [recipes.rope_twist]
 category = "hand_crafting"
-craftable_in = ["workbench"]
+craftable_in = ["workbench", "assembler"]
 input = { plant_fiber = 3 }
 output = { rope = 1 }
 time_sec = 2.0

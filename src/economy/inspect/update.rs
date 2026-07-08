@@ -30,7 +30,7 @@ pub fn update_panel_header(
     let Ok((building, active)) = building_query.get(inspected) else {
         return;
     };
-    let is_active = active.and_then(|a| Some(a.0)).unwrap_or(true);
+    let is_active = active.map(|a| a.0).unwrap_or(true);
 
     if let Ok(mut t) = title_text.single_mut() {
         t.0 = format!("{}  #{}", building.name, inspected.to_bits() % 1000);
@@ -83,7 +83,7 @@ pub fn update_panel_production(
     let Ok((_building, assembler, active)) = building_query.get(inspected) else {
         return;
     };
-    let is_active = active.and_then(|a| Some(a.0)).unwrap_or(true);
+    let is_active = active.map(|a| a.0).unwrap_or(true);
 
     let progress_pct: f32;
     let status_str: String;
@@ -264,17 +264,17 @@ pub fn update_panel_stats(
             break;
         }
         let stats = [
-            format!("Produced/min:  --"),
-            format!("Consumed/min:  --"),
-            format!("Uptime:        --"),
-            format!("Efficiency:    --"),
-            format!("Total output:  0"),
+            "Produced/min:  --".to_string(),
+            "Consumed/min:  --".to_string(),
+            "Uptime:        --".to_string(),
+            "Efficiency:    --".to_string(),
+            "Total output:  0".to_string(),
         ];
         text.0 = stats[i].clone();
     }
 
-    if let Some(asm) = assembler {
-        if let Ok(mut rn) = recipe_name.single_mut() {
+    if let Some(asm) = assembler
+        && let Ok(mut rn) = recipe_name.single_mut() {
             let display = if asm.recipe_id.starts_with("mine_") {
                 let resource = &asm.recipe_id[5..];
                 format!("Mining: {}", resource)
@@ -283,7 +283,6 @@ pub fn update_panel_stats(
             };
             rn.0 = display;
         }
-    }
 }
 
 pub fn update_panel_hp(
@@ -326,7 +325,7 @@ pub fn update_panel_alerts(
         return;
     };
 
-    let is_active = active.and_then(|a| Some(a.0)).unwrap_or(true);
+    let is_active = active.map(|a| a.0).unwrap_or(true);
     let mut alerts: Vec<String> = Vec::new();
     if !is_active {
         alerts.push("[!] Building paused".to_string());
@@ -390,8 +389,8 @@ pub fn update_farm_crop_text(
     let Some(inspected) = panel.inspected else {
         return;
     };
-    if let Ok(farm) = farm_query.get(inspected) {
-        if let Ok(mut ct) = crop_text.single_mut() {
+    if let Ok(farm) = farm_query.get(inspected)
+        && let Ok(mut ct) = crop_text.single_mut() {
             let names: Vec<&str> = farm
                 .crop_types
                 .iter()
@@ -399,7 +398,6 @@ pub fn update_farm_crop_text(
                 .collect();
             ct.0 = format!("Crops:  {}", names.join(", "));
         }
-    }
 }
 
 pub fn update_farm_cultivator_count(

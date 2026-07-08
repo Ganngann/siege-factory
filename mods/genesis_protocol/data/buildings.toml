@@ -92,7 +92,7 @@ requires_discovery = "proto_iron"
 
 [buildings.manual_miner]
 name = "Mineur Manuel"
-cost = { iron_parts = 3 }
+cost = { iron_parts = 3, gear = 1 }
 hp = 60
 tile_size = { w = 1, h = 1 }
 color = "#AA7733"
@@ -242,7 +242,7 @@ requires_discovery = "proto_circuit"
 
 [buildings.assembler]
 name = "Assembleur"
-cost = { iron_parts = 4, circuit = 1 }
+cost = { iron_parts = 4, circuit = 1, motor = 1 }
 hp = 80
 tile_size = { w = 1, h = 1 }
 color = "#4D99CC"
@@ -274,7 +274,7 @@ requires_discovery = "proto_circuit"
 
 [buildings.oil_pump]
 name = "Pompe à Pétrole"
-cost = { steel = 4, gear = 2 }
+cost = { steel = 4, gear = 2, motor = 1 }
 hp = 80
 tile_size = { w = 1, h = 1 }
 color = "#444455"
@@ -406,7 +406,7 @@ requires_discovery = "proto_motor"
 
 [buildings.nanite_assembler]
 name = "Assembleur Nanite"
-cost = { steel = 8, processor = 2, electronic_module = 2 }
+cost = { steel = 8, processor = 2, electronic_module = 2, laser_crystal = 2 }
 hp = 200
 tile_size = { w = 2, h = 2 }
 color = "#44DDBB"
@@ -431,6 +431,7 @@ texture_stem = "deep_core_drill"
 powered = true
 hidden = false
 requires_deposit = true
+infinite_extraction = true
 production = { resource = "ore", interval_sec = 1.0 }
 power_consumption = 50.0
 requires_discovery = "proto_processor"
@@ -446,6 +447,8 @@ texture_stem = "compactor"
 powered = true
 hidden = false
 inventory_capacity = 32
+compactor_ratio = 4
+compactor_interval = 2.0
 power_consumption = 10.0
 requires_discovery = "proto_processor"
 

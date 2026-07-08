@@ -177,7 +177,7 @@ fn spawn_recipe_selector(
                     let can_craft = if recipe.input.is_empty() {
                         recipe.input.is_empty()
                     } else {
-                        building_inv.map_or(false, |inv| {
+                        building_inv.is_some_and(|inv| {
                             recipe.input.iter().all(|(rid, amt)| inv.get(rid) >= *amt)
                         })
                     };

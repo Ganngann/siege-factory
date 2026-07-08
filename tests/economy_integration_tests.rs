@@ -24,6 +24,7 @@ use siege_factory::economy::recipe::RecipeRegistry;
 use siege_factory::economy::resource::{Inventory, ResourceId, ResourceRegistry};
 use siege_factory::economy::spatial::SpatialRegistry;
 use siege_factory::economy::tiered_structure::{structure_interact, ProgressionLogRegistry};
+use siege_factory::economy::tool::ToolRegistry;
 use siege_factory::map::components::TilePosition;
 use siege_factory::map::config::MapConfig;
 use siege_factory::map::tile_grid::ChunkGrid;
@@ -54,6 +55,7 @@ fn economy_test_app() -> App {
     app.insert_resource(Time::<Fixed>::from_hz(20.0));
     app.insert_resource(ProgressionLogRegistry::default());
     app.insert_resource(ChunkGrid::new(42, 5, 20, 50, 1, 3, vec![]));
+    app.insert_resource(ToolRegistry::load(&test_mods()));
     app
 }
 

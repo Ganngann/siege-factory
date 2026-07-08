@@ -53,11 +53,10 @@ impl ModSettings {
 
     pub fn save(&self) {
         let path = Self::path();
-        if let Some(parent) = path.parent() {
-            if !parent.exists() {
+        if let Some(parent) = path.parent()
+            && !parent.exists() {
                 let _ = std::fs::create_dir_all(parent);
             }
-        }
         match toml::to_string_pretty(self) {
             Ok(content) => {
                 if let Err(e) = std::fs::write(&path, content) {
@@ -191,11 +190,10 @@ impl ModRegistry {
                 continue;
             }
             let path = am.path.join("data").join(filename);
-            if path.exists() {
-                if let Ok(content) = std::fs::read_to_string(&path) {
+            if path.exists()
+                && let Ok(content) = std::fs::read_to_string(&path) {
                     return Some(content);
                 }
-            }
         }
         None
     }
@@ -209,11 +207,10 @@ impl ModRegistry {
                 continue;
             }
             let path = am.path.join("data").join(filename);
-            if path.exists() {
-                if let Ok(content) = std::fs::read_to_string(&path) {
+            if path.exists()
+                && let Ok(content) = std::fs::read_to_string(&path) {
                     results.push((am.manifest.id.clone(), content));
                 }
-            }
         }
         results
     }
@@ -226,11 +223,10 @@ impl ModRegistry {
                 continue;
             }
             let path = am.path.join("textures").join(&filename);
-            if path.exists() {
-                if let Ok(data) = std::fs::read(&path) {
+            if path.exists()
+                && let Ok(data) = std::fs::read(&path) {
                     return Some(data);
                 }
-            }
         }
         None
     }
@@ -242,11 +238,10 @@ impl ModRegistry {
                 continue;
             }
             let path = am.path.join("story").join(filename);
-            if path.exists() {
-                if let Ok(content) = std::fs::read_to_string(&path) {
+            if path.exists()
+                && let Ok(content) = std::fs::read_to_string(&path) {
                     return Some(content);
                 }
-            }
         }
         None
     }

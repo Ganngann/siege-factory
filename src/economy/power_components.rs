@@ -22,3 +22,11 @@ pub struct BurnerGenerator {
     pub fuel_burn_interval: f32,
     pub base_output: f32,
 }
+
+#[derive(Component)]
+pub struct RecipeGenerator {
+    pub recipe_id: String,
+    pub production_timer: f32,
+    pub interval: f32,
+    pub base_output: f32,
+}

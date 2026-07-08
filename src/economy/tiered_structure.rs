@@ -1,15 +1,22 @@
+use crate::core::game_state::GameState;
 use crate::core::modding::ModRegistry;
 use crate::core::toast::ToastQueue;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{Building, Player};
 use crate::economy::discovery::GlobalArchive;
-use crate::economy::game_components::CurrentTier;
+use crate::economy::game_components::{Capsule, CurrentTier};
 use crate::economy::resource::Inventory;
 use crate::economy::spatial::SpatialRegistry;
 use crate::map::components::TilePosition;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashSet;
+
+#[derive(Resource, Default)]
+pub struct FinalCountdown {
+    pub remaining_secs: f32,
+    pub running: bool,
+}
 
 #[derive(Debug, Clone)]
 pub struct LogEntry {
@@ -28,8 +35,8 @@ pub struct ProgressionLogRegistry {
 impl ProgressionLogRegistry {
     pub fn load(mods: &ModRegistry) -> Self {
         let mut logs = Vec::new();
-        if let Some(content) = mods.load_story("logs.toml") {
-            if let Ok(parsed) = toml::from_str::<LogsToml>(&content) {
+        if let Some(content) = mods.load_story("logs.toml")
+            && let Ok(parsed) = toml::from_str::<LogsToml>(&content) {
                 for entry in parsed.logs {
                     logs.push(LogEntry {
                         id: entry.id,
@@ -39,7 +46,6 @@ impl ProgressionLogRegistry {
                     });
                 }
             }
-        }
         Self {
             logs,
             unlocked: HashSet::new(),
@@ -79,6 +85,8 @@ pub fn structure_interact(
     mut toasts: ResMut<ToastQueue>,
     spatial: Res<SpatialRegistry>,
     mut progression_logs: ResMut<ProgressionLogRegistry>,
+    capsule_q: Query<Entity, With<Capsule>>,
+    mut countdown: ResMut<FinalCountdown>,
 ) {
     if !keys.just_pressed(KeyCode::KeyE) {
         return;
@@ -153,20 +161,58 @@ pub fn structure_interact(
         }
 
         // Unlock progression log
-        if let Some(ref log_id) = tier_def.log_id {
-            if let Some(entry) = progression_logs.unlock(log_id) {
+        if let Some(ref log_id) = tier_def.log_id
+            && let Some(entry) = progression_logs.unlock(log_id) {
                 toasts
                     .0
                     .push(format!("Log: {} — {}", entry.title, entry.text));
             }
-        }
 
         let new_tier = current + 1;
-        toasts
-            .0
-            .push(format!("{}: upgraded to tier {}", def.name, new_tier));
+
+        // Check if this is the final tier on a Capsule → start countdown
+        if capsule_q.contains(entity) && new_tier == def.tiers.len() {
+            countdown.remaining_secs = 60.0;
+            countdown.running = true;
+            toasts
+                .0
+                .push(format!("{}: countdown final — 60s", def.name));
+        } else {
+            toasts
+                .0
+                .push(format!("{}: upgraded to tier {}", def.name, new_tier));
+        }
 
         return;
+    }
+}
+
+pub fn final_countdown_tick(
+    time: Res<Time>,
+    mut countdown: ResMut<FinalCountdown>,
+    mut next_state: ResMut<NextState<GameState>>,
+    mut toasts: ResMut<ToastQueue>,
+) {
+    if !countdown.running {
+        return;
+    }
+
+    countdown.remaining_secs -= time.delta_secs();
+
+    // Toast at key thresholds
+    let prev = (countdown.remaining_secs + time.delta_secs()) as u32;
+    let now = countdown.remaining_secs as u32;
+    if now < prev && (now == 30 || now == 10 || now == 5 || now == 3 || now == 2 || now == 1) {
+        toasts.0.push(format!("Capsule finalizing... {}s", now));
+    }
+
+    if countdown.remaining_secs <= 0.0 {
+        countdown.running = false;
+        countdown.remaining_secs = 0.0;
+        toasts
+            .0
+            .push("La capsule s'illumine. Un premier souffle.".to_string());
+        next_state.set(GameState::Win);
     }
 }
 

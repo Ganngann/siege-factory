@@ -103,10 +103,8 @@ pub fn advance_belt_slots(
     // Accumulate time on all items
     for (belt_entity, _, _, _, _, slot_duration) in &belt_data {
         if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
-            for item in &mut bs.items {
-                if let Some(item) = item {
-                    item.acc = (item.acc + dt).min(*slot_duration);
-                }
+            for item in bs.items.iter_mut().flatten() {
+                item.acc = (item.acc + dt).min(*slot_duration);
             }
         }
     }
@@ -115,15 +113,14 @@ pub fn advance_belt_slots(
     for (belt_entity, _, _, _, _, slot_duration) in &belt_data {
         if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
             for i in (0..bs.items.len() - 1).rev() {
-                if let Some(ref item) = bs.items[i] {
-                    if item.acc >= *slot_duration && bs.items[i + 1].is_none() {
+                if let Some(ref item) = bs.items[i]
+                    && item.acc >= *slot_duration && bs.items[i + 1].is_none() {
                         let (left, right) = bs.items.split_at_mut(i + 1);
                         if let Some(mut item) = left[i].take() {
                             item.acc -= *slot_duration;
                             right[0] = Some(item);
                         }
                     }
-                }
             }
         }
     }
@@ -153,24 +150,22 @@ pub fn advance_belt_slots(
         // Splitter output routing
         if splitter_map.contains_key(&(belt_pos.x, belt_pos.y)) {
             let mut input_dir: Option<Direction> = None;
-            if let Ok(s) = splitter_query.get(*belt_entity) {
-                if s.2.input_direction.is_some() {
+            if let Ok(s) = splitter_query.get(*belt_entity)
+                && s.2.input_direction.is_some() {
                     input_dir = s.2.input_direction;
                 }
-            }
             if input_dir.is_none() {
                 for (adj_dx, adj_dy) in [(1, 0), (-1, 0), (0, 1), (0, -1)] {
                     let ax = belt_pos.x + adj_dx;
                     let ay = belt_pos.y + adj_dy;
-                    if let Some(&adj_entity) = belt_map.get(&(ax, ay)) {
-                        if let Ok((_, _, adj_bs)) = belt_query.get(adj_entity) {
+                    if let Some(&adj_entity) = belt_map.get(&(ax, ay))
+                        && let Ok((_, _, adj_bs)) = belt_query.get(adj_entity) {
                             let (bd_x, bd_y) = adj_bs.direction.offset();
                             if bd_x == -adj_dx && bd_y == -adj_dy {
                                 input_dir = Some(Direction::from_offset(adj_dx, adj_dy));
                                 break;
                             }
                         }
-                    }
                 }
             }
 
@@ -211,8 +206,8 @@ pub fn advance_belt_slots(
                     else {
                         continue;
                     };
-                    if bs.items[last].is_some() {
-                        if target_bs.items[0].is_none() {
+                    if bs.items[last].is_some()
+                        && target_bs.items[0].is_none() {
                             transfer_item(
                                 &mut bs.items,
                                 &mut target_bs.items,
@@ -226,7 +221,6 @@ pub fn advance_belt_slots(
                             }
                             break;
                         }
-                    }
                 }
             }
             continue;
@@ -267,13 +261,12 @@ pub fn advance_belt_slots(
                     None
                 }
             };
-            if let Some((out_x, out_y)) = out_tile {
-                if let Some(&target) = belt_map.get(&(out_x, out_y)) {
-                    if let Ok([(_, _, mut bs), (_, _, mut target_bs)]) =
+            if let Some((out_x, out_y)) = out_tile
+                && let Some(&target) = belt_map.get(&(out_x, out_y))
+                    && let Ok([(_, _, mut bs), (_, _, mut target_bs)]) =
                         belt_query.get_many_mut([*belt_entity, target])
-                    {
-                        if target_bs.items[0].is_none() {
-                            if bs.items[last].is_some() {
+                        && target_bs.items[0].is_none()
+                            && bs.items[last].is_some() {
                                 transfer_item(
                                     &mut bs.items,
                                     &mut target_bs.items,
@@ -282,10 +275,6 @@ pub fn advance_belt_slots(
                                     *slot_duration,
                                 );
                             }
-                        }
-                    }
-                }
-            }
             continue;
         }
 
@@ -296,28 +285,22 @@ pub fn advance_belt_slots(
             }
             if let Ok([(_, _, mut bs), (_, _, mut next_bs)]) =
                 belt_query.get_many_mut([*belt_entity, next_belt])
-            {
-                if let Some(ref item) = bs.items[last] {
-                    if item.acc >= *slot_duration && next_bs.items[0].is_none() {
+                && let Some(ref item) = bs.items[last]
+                    && item.acc >= *slot_duration && next_bs.items[0].is_none() {
                         transfer_item(&mut bs.items, &mut next_bs.items, last, 0, *slot_duration);
                     }
-                }
-            }
         } else if let Some(inv_entity) = spatial.at(nx, ny) {
             // Building deposit (belt→building inventory)
-            if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity) {
-                if let Some(ref item) = bs.items[last] {
-                    if item.acc >= *slot_duration {
+            if let Ok((_, _, mut bs)) = belt_query.get_mut(*belt_entity)
+                && let Some(ref item) = bs.items[last]
+                    && item.acc >= *slot_duration {
                         let resource = item.resource_id.clone();
-                        if let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity) {
-                            if !inv.is_full() {
+                        if let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity)
+                            && !inv.is_full() {
                                 inv.add(&resource, 1);
                                 bs.items[last] = None;
                             }
-                        }
                     }
-                }
-            }
         }
     }
 }
@@ -340,36 +323,32 @@ pub fn building_output_tick(
         let (odx, ody) = bs.direction.offset();
         let src_x = belt_pos.x - odx;
         let src_y = belt_pos.y - ody;
-        if let Some(inv_entity) = spatial.at(src_x, src_y) {
-            if let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity) {
-                if let Ok(Some(asm)) = assembler_query.get(inv_entity) {
-                    if let Some(recipe) = recipes.get(&asm.recipe_id) {
+        if let Some(inv_entity) = spatial.at(src_x, src_y)
+            && let Ok((_, mut inv)) = inventory_query.get_mut(inv_entity) {
+                if let Ok(Some(asm)) = assembler_query.get(inv_entity)
+                    && let Some(recipe) = recipes.get(&asm.recipe_id) {
                         let output_res = recipe
                             .output
                             .iter()
                             .find(|(r, _)| inv.get(r) > 0)
                             .map(|(r, _)| r.clone());
-                        if let Some(res) = output_res {
-                            if inv.remove(&res, 1) {
+                        if let Some(res) = output_res
+                            && inv.remove(&res, 1) {
                                 bs.items[0] = Some(ItemOnBelt {
                                     resource_id: res,
                                     acc: 0.0,
                                 });
                             }
-                        }
                         continue;
                     }
-                }
                 let first_key = inv.first_resource();
-                if let Some(res) = first_key {
-                    if inv.remove(&res, 1) {
+                if let Some(res) = first_key
+                    && inv.remove(&res, 1) {
                         bs.items[0] = Some(ItemOnBelt {
                             resource_id: res,
                             acc: 0.0,
                         });
                     }
-                }
             }
-        }
     }
 }

@@ -81,6 +81,10 @@ const CAPSULE = [
 ];
 
 const RESOURCES = {
+  stone_pickaxe: "#8B7355",
+  stone_axe: "#8B5E3C",
+  stone_blade: "#887766",
+  hammer: "#AA7733",
   scrap_metal: "#887766",
   clay: "#C4A882",
   plant_fiber: "#5A8C3C",
@@ -454,6 +458,14 @@ function makeResourceSVG(stem, color) {
     inner = `<rect x="8" y="26" width="48" height="12" rx="6" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="14" y="29" width="36" height="6" rx="3" fill="${darken(color, 0.8)}"/>`;
   } else if (stem.includes("interface")) {
     inner = `<rect x="12" y="14" width="40" height="36" rx="3" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="32" rx="12" ry="10" fill="${lighten(color, 0.2)}" stroke="#333" stroke-width="0.3"/><circle cx="32" cy="32" r="3" fill="#FFF" opacity="0.6"/>`;
+  } else if (stem.includes("pickaxe")) {
+    inner = `<path d="M28 48 L28 28 L16 16 L20 12 L32 24 L36 20 L40 24 L36 28 L36 48Z" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="26" y="44" width="12" height="6" rx="2" fill="${darken(color, 0.7)}"/>`;
+  } else if (stem.includes("stone_axe")) {
+    inner = `<path d="M24 48 L24 28 L12 20 Q16 10 28 18 L32 20 L36 16 L40 20 L32 28 L32 48Z" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="22" y="44" width="12" height="6" rx="2" fill="${darken(color, 0.7)}"/>`;
+  } else if (stem.includes("blade")) {
+    inner = `<path d="M32 10 L40 24 L38 26 L34 22 L32 46 L30 22 L26 26 L24 24Z" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="29" y="42" width="6" height="8" rx="1" fill="${darken(color, 0.7)}"/>`;
+  } else if (stem.includes("hammer")) {
+    inner = `<rect x="26" y="24" width="24" height="18" rx="3" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="14" y="42" width="10" height="6" rx="2" fill="${darken(color, 0.7)}"/><rect x="18" y="24" width="10" height="24" rx="2" fill="${darken(color, 0.5)}"/>`;
   } else if (stem.includes("silicon")) {
     inner = `<rect x="16" y="16" width="32" height="32" rx="4" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="16" y1="16" x2="48" y2="48" stroke="${darken(color, 0.7)}" stroke-width="0.3"/><line x1="48" y1="16" x2="16" y2="48" stroke="${darken(color, 0.7)}" stroke-width="0.3"/>`;
   } else {

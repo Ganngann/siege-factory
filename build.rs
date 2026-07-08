@@ -24,7 +24,7 @@ fn process_dir(dir: &Path, out: &Path) {
     }
     for entry in fs::read_dir(dir).unwrap() {
         let entry = entry.unwrap();
-        if entry.path().extension().map_or(false, |e| e == "svg") {
+        if entry.path().extension().is_some_and(|e| e == "svg") {
             process_svg(&entry.path(), out);
         }
     }
@@ -41,18 +41,16 @@ fn process_svg(path: &Path, out: &Path) {
     }
 
     // Owner layer: keep only <g id="owner_color">
-    if content.contains(r#"id="owner_color""#) {
-        if let Some(svg) = keep_group(&content, "owner_color") {
+    if content.contains(r#"id="owner_color""#)
+        && let Some(svg) = keep_group(&content, "owner_color") {
             render_png(&svg, &out.join(format!("{}_owner.png", stem)), w, h);
         }
-    }
 
     // Level layer: keep only <g id="level_color">
-    if content.contains(r#"id="level_color""#) {
-        if let Some(svg) = keep_group(&content, "level_color") {
+    if content.contains(r#"id="level_color""#)
+        && let Some(svg) = keep_group(&content, "level_color") {
             render_png(&svg, &out.join(format!("{}_level.png", stem)), w, h);
         }
-    }
 }
 
 /// Keep only the <g id="..."> group (and <defs>), remove all other groups.
@@ -75,8 +73,8 @@ fn keep_group(svg: &str, id: &str) -> Option<String> {
         r#"<svg xmlns="http://www.w3.org/2000/svg" {} width="{}" height="{}">"#,
         vb.map(|s| format!(r#"viewBox="{}""#, s))
             .unwrap_or_default(),
-        extract_viewbox(&svg).0,
-        extract_viewbox(&svg).1,
+        extract_viewbox(svg).0,
+        extract_viewbox(svg).1,
     );
     if let Some(d) = defs {
         result.push_str(d);
@@ -142,7 +140,7 @@ fn generate_manifest(out: &Path) {
     let mut entries: Vec<String> = Vec::new();
     for entry in fs::read_dir(out).unwrap() {
         let entry = entry.unwrap();
-        if entry.path().extension().map_or(false, |e| e == "png") {
+        if entry.path().extension().is_some_and(|e| e == "png") {
             entries.push(
                 entry
                     .path()

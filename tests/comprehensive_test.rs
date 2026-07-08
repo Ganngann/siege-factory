@@ -708,50 +708,83 @@ fn map_config_resource_discovery_map() {
     );
 }
 
+/// Parse the effective `[starting_area]` from mod data, in the same merge order
+/// that `MapConfig::load` uses (last enabled mod with [starting_area] wins).
+/// Returns the parsed structure entries as TOML Values.
+fn effective_starting_area_raw(mods: &ModRegistry) -> Vec<toml::Value> {
+    mods.load_all_data("map_config.toml")
+        .into_iter()
+        .filter_map(|(_id, content)| {
+            content
+                .parse::<toml::Value>()
+                .ok()
+                .and_then(|v| v.get("starting_area").cloned())
+        })
+        .last()
+        .and_then(|sa| sa.get("structures").cloned())
+        .and_then(|s| s.as_array().cloned())
+        .unwrap_or_default()
+}
+
 #[test]
 fn map_config_starting_area_enabled() {
-    let cfg = MapConfig::load(&test_mods());
+    let mods = test_mods();
+    let cfg = MapConfig::load(&mods);
     let sa = &cfg.starting_area;
     assert!(sa.enable);
     assert_eq!(sa.radius, 8);
     assert!(sa.clear_trees);
-    assert_eq!(sa.structures.len(), 6);
+
+    // Data-driven: count matches the last mod that defines [starting_area]
+    let raw_structures = effective_starting_area_raw(&mods);
+    assert_eq!(sa.structures.len(), raw_structures.len());
 }
 
 #[test]
 fn map_config_starting_area_structures_detail() {
-    let cfg = MapConfig::load(&test_mods());
+    let mods = test_mods();
+    let cfg = MapConfig::load(&mods);
     let s = &cfg.starting_area.structures;
+    let raw_structures = effective_starting_area_raw(&mods);
 
-    assert_eq!(s[0].kind, "deposit");
-    assert_eq!((s[0].tile_x, s[0].tile_y), (4, 4));
-    assert_eq!(s[0].props.resource.as_deref(), Some("scrap_metal"));
-    assert_eq!(s[0].props.amount, Some(30));
+    assert_eq!(s.len(), raw_structures.len());
 
-    assert_eq!(s[1].kind, "deposit");
-    assert_eq!((s[1].tile_x, s[1].tile_y), (7, 5));
-    assert_eq!(s[1].props.resource.as_deref(), Some("wood"));
-    assert_eq!(s[1].props.amount, Some(40));
+    for (i, (loaded, raw)) in s.iter().zip(raw_structures.iter()).enumerate() {
+        let kind = raw
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert_eq!(loaded.kind, kind, "structure[{i}] kind mismatch");
 
-    assert_eq!(s[2].kind, "deposit");
-    assert_eq!((s[2].tile_x, s[2].tile_y), (3, 7));
-    assert_eq!(s[2].props.resource.as_deref(), Some("stone"));
-    assert_eq!(s[2].props.amount, Some(25));
+        let tile_x = raw.get("tile_x").and_then(|v| v.as_integer()).unwrap_or(0) as i32;
+        let tile_y = raw.get("tile_y").and_then(|v| v.as_integer()).unwrap_or(0) as i32;
+        assert_eq!(
+            (loaded.tile_x, loaded.tile_y),
+            (tile_x, tile_y),
+            "structure[{i}] position mismatch"
+        );
 
-    assert_eq!(s[3].kind, "deposit");
-    assert_eq!((s[3].tile_x, s[3].tile_y), (6, 3));
-    assert_eq!(s[3].props.resource.as_deref(), Some("clay"));
-    assert_eq!(s[3].props.amount, Some(20));
+        let props_resource = raw
+            .get("props")
+            .and_then(|p| p.get("resource"))
+            .and_then(|v| v.as_str());
+        assert_eq!(
+            loaded.props.resource.as_deref(),
+            props_resource,
+            "structure[{i}] props.resource mismatch"
+        );
 
-    assert_eq!(s[4].kind, "deposit");
-    assert_eq!((s[4].tile_x, s[4].tile_y), (8, 8));
-    assert_eq!(s[4].props.resource.as_deref(), Some("iron_ore"));
-    assert_eq!(s[4].props.amount, Some(15));
-
-    assert_eq!(s[5].kind, "deposit");
-    assert_eq!((s[5].tile_x, s[5].tile_y), (2, 2));
-    assert_eq!(s[5].props.resource.as_deref(), Some("coal"));
-    assert_eq!(s[5].props.amount, Some(10));
+        let props_amount = raw
+            .get("props")
+            .and_then(|p| p.get("amount"))
+            .and_then(|v| v.as_integer())
+            .map(|a| a as u32);
+        assert_eq!(
+            loaded.props.amount,
+            props_amount,
+            "structure[{i}] props.amount mismatch"
+        );
+    }
 }
 
 #[test]

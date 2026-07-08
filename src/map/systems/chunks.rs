@@ -616,8 +616,8 @@ pub fn apply_starting_area(
                 }
             }
             "decoration" => {
-                if let Some(deco_kind) = &structure.props.decoration_kind {
-                    if let Some(deco_cfg) =
+                if let Some(deco_kind) = &structure.props.decoration_kind
+                    && let Some(deco_cfg) =
                         visuals.decorations.iter().find(|d| d.kind == *deco_kind)
                     {
                         let mesh = shapes.get_visual(&deco_cfg.shape);
@@ -632,7 +632,6 @@ pub fn apply_starting_area(
                             TilePosition { x: wx, y: wy },
                         ));
                     }
-                }
             }
             _ => {}
         }

@@ -166,8 +166,8 @@ pub fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures:
                             BorderColor::all(Color::srgba(1.0, 1.0, 1.0, 0.2)),
                         ))
                         .with_children(|b| {
-                            if let Some(stem) = &item.texture_stem {
-                                if let Some(handle) = textures.base.get(stem) {
+                            if let Some(stem) = &item.texture_stem
+                                && let Some(handle) = textures.base.get(stem) {
                                     b.spawn((
                                         ImageNode::new(handle.clone()),
                                         Node {
@@ -177,7 +177,6 @@ pub fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures:
                                         },
                                     ));
                                 }
-                            }
                             b.spawn((
                                 Text::new(format!("{} {}", key, sub_prefix)),
                                 TextFont::from_font_size(9.0),

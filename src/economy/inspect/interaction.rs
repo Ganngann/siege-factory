@@ -123,7 +123,7 @@ pub fn building_inspect_click(
 
         spawn_deposit_panel(
             &mut commands,
-            &mut *panel,
+            &mut panel,
             deposit_entity,
             deposit,
             &resource_registry,
@@ -348,12 +348,11 @@ pub fn upgrade_button_system(
     // Check if upgrade button was pressed
     let mut pressed = false;
     for interaction in &query {
-        if *interaction == Interaction::Pressed {
-            if upgrade_query.get(inspected).is_ok() {
+        if *interaction == Interaction::Pressed
+            && upgrade_query.get(inspected).is_ok() {
                 pressed = true;
                 break;
             }
-        }
     }
     if !pressed {
         return;
@@ -463,7 +462,7 @@ pub fn upgrade_button_system(
     }
 
     // Attach power components
-    crate::economy::building::attach_power_components(&mut e, &target_def);
+    crate::economy::building::attach_power_components(&mut e, target_def);
 
     toast_queue
         .0

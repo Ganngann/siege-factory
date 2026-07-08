@@ -62,11 +62,10 @@ pub fn turret_shoot(
         enemies.iter().map(|(e, t)| (e, t.translation)).collect();
 
     for (turret_pos, mut combat, power) in turrets.iter_mut() {
-        if let Some(pc) = power {
-            if !pc.satisfied {
+        if let Some(pc) = power
+            && !pc.satisfied {
                 continue;
             }
-        }
         combat.timer += time.delta_secs();
         if combat.timer < combat.fire_interval {
             continue;
