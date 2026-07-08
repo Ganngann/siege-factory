@@ -5,7 +5,7 @@ Post-apocalyptic. Dernier survivant. Une capsule cryo brisée est visible dès l
 
 Le joueur ne sait pas ce qu'il faut faire au début. Il découvre en produisant (système de découverte). Chaque palier de la capsule est un mystère à débloquer.
 
-C'est un jeu d'automation, pas un tower defense. Les vagues sont un scaffold.
+C'est un jeu d'automation, pas un tower defense.
 
 ## Principes
 - Chaque bâtiment/mécanique apparaît seulement quand le joueur comprend son usage
@@ -17,14 +17,14 @@ C'est un jeu d'automation, pas un tower defense. Les vagues sont un scaffold.
 
 | Segment | Contenu | Durée |
 |---------|---------|-------|
-| **Phase 0** | Établi, four manuel, outils, premiers crafts | 2-5h |
-| **Phase 1** | Alimentation capsule → débloque énergie, extracteurs | 10-15h |
-| **Phase 2** | Purification eau → débloque chimie, fonderies | 15-20h |
-| **Phase 3** | Composés organiques → débloque bio-lab, belts, logistique | 20-30h |
-| **Phase 4** | Synthèse protéines → usine complexe, multi-bâtiments | 30-40h |
-| **Phase 5** | Nanites de reconstruction → automation lourde, upgrades | 40-50h |
-| **Phase 6** | Bio-impression 3D → bots logistiques, forage profond | 40-50h |
-| **Phase finale** | Activation capsule → premier humain | ~20h |
+| **Phase 0** | Outils pierre, Workbench, Campfire, crafts manuels | 2-5h |
+| **Phase 1** | Énergie charbon, extracteurs, fours, premiers lingots | 10-15h |
+| **Phase 2** | Fluides, vapeur, acier, belts, transport automatisé | 15-20h |
+| **Phase 3** | Électricité, circuits, chimie (pétrole, plastique) | 20-30h |
+| **Phase 4** | Moteurs, batteries, logistique avancée | 30-40h |
+| **Phase 5** | Nano-assemblage, forage profond, composites | 40-50h |
+| **Phase 6** | Bio-ingénierie, tissus, synthèse protéines | 40-50h |
+| **Phase finale** | Assemblage des 4 composants → premier humain | ~20h |
 
 La fin du jeu est la création du premier humain. Pas de colonie, pas d'après.
 
@@ -32,11 +32,11 @@ La fin du jeu est la création du premier humain. Pas de colonie, pas d'après.
 
 | Palier | État capsule | Déblocage |
 |--------|-------------|-----------|
-| 0 | Éteinte, vitre noire | — |
-| 1 | Voyants d'alimentation verts | Énergie, extracteurs |
-| 2 | Liquide visible, bulles | Chimie, fonderie |
-| 3 | Lueur interne faible | Bio-lab, belts |
-| 4 | Battement cardiaque (son + lumière) | Synthèse protéines |
-| 5 | Vitre partiellement transparente, silhouette | Nanites, upgrades |
-| 6 | Capteurs vitaux affichent des signes | Bio-impression, bots |
-| Final | Vitre claire, main contre la paroi → **naissance** | — |
+| 0 | Éteinte, vitre noire | Outils pierre, dégager les débris |
+| 1 | Voyants d'alimentation verts | Énergie charbon, extracteurs, fours |
+| 2 | Liquide visible, bulles | Fluides, vapeur, acier, belts |
+| 3 | Lueur interne faible | Électricité, circuits, chimie |
+| 4 | Battement cardiaque (son + lumière) | Moteurs, batteries, logistique |
+| 5 | Vitre partiellement transparente, silhouette | Nanites, forage profond |
+| 6 | Signes vitaux stables, main visible | Bio-ingénierie, tissus |
+| Final | Vitre claire, main contre la paroi → **naissance** | Assemblage 4 composants |
