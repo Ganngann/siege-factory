@@ -10,7 +10,7 @@ const path = require("path");
 
 const BASE_DIR = path.resolve(__dirname, "..");
 const SVG_DIR = path.join(BASE_DIR, "svg");
-const PNG_DIR = path.join(BASE_DIR, "png");
+const PNG_DIR = BASE_DIR;
 
 fs.mkdirSync(SVG_DIR, { recursive: true });
 fs.mkdirSync(PNG_DIR, { recursive: true });
@@ -69,6 +69,7 @@ const BUILDINGS = [
 ];
 
 const CAPSULE = [
+  ["genesis_capsule", "#334455"],
   ["genesis_capsule_t0", "#445566"],
   ["genesis_capsule_t1", "#5577AA"],
   ["genesis_capsule_t2", "#6699CC"],
@@ -339,26 +340,48 @@ function makeBuildingSVG(stem, color, w, h) {
 function makeCapsuleSVG(stem, color) {
   const cx = 32, cy = 32;
 
-  let wc = "#223344";
+  let wc = "#112233";
   if (stem.includes("t7")) wc = "#EEFFFF";
   else if (stem.includes("t6")) wc = "#CCEEFF";
   else if (stem.includes("t5")) wc = "#88AACC";
   else if (stem.includes("t4")) wc = "#88BBFF";
   else if (stem.includes("t3")) wc = "#5577AA";
+  else if (stem.includes("t2")) wc = "#446688";
+  else if (stem.includes("t1")) wc = "#334466";
+  else if (stem.includes("t0")) wc = "#223344";
 
-  let lights = "";
-  if (!stem.includes("t0") && !stem.includes("t1")) {
-    lights = `
+  let extra = "";
+  let shadow = `<ellipse cx="${cx}" cy="${cy + 4}" rx="22" ry="8" fill="rgba(0,0,0,0.15)"/>`;
+
+  if (stem === "genesis_capsule") {
+    // Dead / dormant state — cracked, debris, no lights
+    extra = `
+  <ellipse cx="${cx}" cy="${cy}" rx="20" ry="16" fill="${color}" stroke="#222" stroke-width="1.5"/>
+  <ellipse cx="${cx}" cy="${cy}" rx="16" ry="12" fill="none" stroke="${darken(color, 0.5)}" stroke-width="0.5"/>
+  <circle cx="${cx}" cy="${cy}" r="6" fill="#111" stroke="#222" stroke-width="1"/>
+  <path d="M18 28 L20 32 L16 34" fill="none" stroke="#222" stroke-width="1" opacity="0.6"/>
+  <path d="M46 26 L44 30 L48 29" fill="none" stroke="#222" stroke-width="0.8" opacity="0.5"/>
+  <path d="M14 38 L18 40 L15 42" fill="none" stroke="#222" stroke-width="0.8" opacity="0.4"/>
+  <circle cx="26" cy="22" r="1.5" fill="#222" opacity="0.3"/>
+  <circle cx="40" cy="42" r="1" fill="#222" opacity="0.3"/>
+  <rect x="10" y="44" width="6" height="3" rx="1" fill="#2A2A2A" opacity="0.4"/>
+  <rect x="44" y="40" width="5" height="2" rx="1" fill="#2A2A2A" opacity="0.3"/>`;
+  } else {
+    let lights = "";
+    if (!stem.includes("t0") && !stem.includes("t1")) {
+      lights = `
     <circle cx="${cx - 10}" cy="${cy - 2}" r="2" fill="#33FF33" opacity="0.9"/>
     <circle cx="${cx + 10}" cy="${cy - 2}" r="2" fill="#FF3333" opacity="0.9"/>`;
-  }
+    }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <ellipse cx="${cx}" cy="${cy + 4}" rx="22" ry="8" fill="rgba(0,0,0,0.15)"/>
+    extra = `
   <ellipse cx="${cx}" cy="${cy}" rx="20" ry="16" fill="${color}" stroke="#333" stroke-width="1.5"/>
   <ellipse cx="${cx}" cy="${cy}" rx="16" ry="12" fill="none" stroke="${darken(color, 0.7)}" stroke-width="0.5"/>
   <circle cx="${cx}" cy="${cy}" r="6" fill="${wc}" stroke="#333" stroke-width="1"/>
-  ${lights}
+  ${lights}`;
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">${shadow}${extra}
 </svg>`;
 }
 

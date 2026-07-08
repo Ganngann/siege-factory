@@ -101,7 +101,7 @@ time_sec = 8.0
 # ========================
 
 # --- Furnace (smelting) ---
-[recipes.iron_ingot_smelt]
+[recipes.proto_iron]
 category = "smelting"
 craftable_in = ["furnace"]
 input = { iron_ore = 2, coal = 1 }
@@ -188,7 +188,7 @@ output = { pipe = 1 }
 time_sec = 3.0
 
 # --- Blast Furnace (steelmaking) ---
-[recipes.steel_produce]
+[recipes.proto_steel]
 category = "steelmaking"
 craftable_in = ["blast_furnace"]
 input = { iron_ingot = 3, coal = 1, steam = 1 }
@@ -229,7 +229,7 @@ output = { glass = 1 }
 time_sec = 4.0
 
 # --- Assembler (crafting) ---
-[recipes.circuit_etch]
+[recipes.proto_circuit]
 category = "crafting"
 craftable_in = ["assembler"]
 input = { copper_wire = 3, iron_ingot = 1 }
@@ -255,7 +255,7 @@ time_sec = 3.0
 # ========================
 
 # --- Motor Foundry (motor_assembly) ---
-[recipes.motor_assemble]
+[recipes.proto_motor]
 category = "motor_assembly"
 craftable_in = ["motor_foundry"]
 input = { steel = 2, copper_wire = 4, copper_ingot = 1 }
@@ -298,7 +298,7 @@ time_sec = 8.0
 # ========================
 
 # --- Nanite Assembler (nano) ---
-[recipes.processor_make]
+[recipes.proto_processor]
 category = "nano"
 craftable_in = ["nanite_assembler"]
 input = { advanced_circuit = 2, silicon = 2 }
@@ -339,7 +339,7 @@ time_sec = 8.0
 # ========================
 
 # --- Bio-Lab (bio) ---
-[recipes.organic_compound_synth]
+[recipes.proto_organic]
 category = "bio"
 craftable_in = ["bio_lab"]
 input = { plant_fiber = 3, water = 2 }
@@ -396,7 +396,7 @@ time_sec = 12.0
 # PHASE FINALE — Premier Souffle
 # ========================
 
-[recipes.neural_interface_assemble]
+[recipes.proto_neural]
 category = "crafting"
 craftable_in = ["assembler"]
 input = { processor = 1, neural_map = 1 }

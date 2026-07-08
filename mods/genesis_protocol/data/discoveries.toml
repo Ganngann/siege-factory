@@ -24,7 +24,7 @@ recipes = [
 building = "campfire"
 threshold = 1
 type = "recipe"
-id = "iron_ingot"
+id = "proto_iron"
 message = "Le feu peut transformer le minerai en métal. Une nouvelle ère commence."
 
 # Phase 1 → Phase 2 : Fusion avancée
@@ -32,7 +32,7 @@ message = "Le feu peut transformer le minerai en métal. Une nouvelle ère comme
 building = "furnace"
 threshold = 3
 type = "recipe"
-id = "steel"
+id = "proto_steel"
 message = "La chaleur intense fusionne le fer et le charbon en acier."
 
 # Phase 2 → Phase 3 : Premiers circuits
@@ -40,7 +40,7 @@ message = "La chaleur intense fusionne le fer et le charbon en acier."
 building = "gear_press"
 threshold = 3
 type = "recipe"
-id = "circuit"
+id = "proto_circuit"
 message = "Des connexions de cuivre sur du fer créent un circuit primitif."
 
 # Phase 3 → Phase 4 : Mécanisation
@@ -48,7 +48,7 @@ message = "Des connexions de cuivre sur du fer créent un circuit primitif."
 building = "assembler"
 threshold = 5
 type = "recipe"
-id = "motor"
+id = "proto_motor"
 message = "La précision mécanique donne naissance au moteur."
 
 # Phase 4 → Phase 5 : Nano-technologie
@@ -56,7 +56,7 @@ message = "La précision mécanique donne naissance au moteur."
 building = "electronics_lab"
 threshold = 3
 type = "recipe"
-id = "processor"
+id = "proto_processor"
 message = "Des circuits superposés forment une unité de traitement."
 
 # Phase 5 → Phase 6 : Matière vivante
@@ -64,7 +64,7 @@ message = "Des circuits superposés forment une unité de traitement."
 building = "bio_lab"
 threshold = 1
 type = "recipe"
-id = "organic_compound"
+id = "proto_organic"
 message = "La vie jaillit du métal et de l'eau."
 
 # Phase 6 → Finale : Le dernier composant
@@ -72,5 +72,5 @@ message = "La vie jaillit du métal et de l'eau."
 building = "bio_lab"
 threshold = 5
 type = "recipe"
-id = "neural_interface"
+id = "proto_neural"
 message = "La carte neurale est prête. Le cerveau de la capsule peut être connecté."

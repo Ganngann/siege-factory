@@ -56,9 +56,9 @@ powered = true
 hidden = false
 recipe_categories = ["smelting"]
 production_interval = 3.0
-default_recipe = "iron_ingot_smelt"
+default_recipe = "proto_iron"
 power_consumption = 5.0
-requires_discovery = "iron_ingot"
+requires_discovery = "proto_iron"
 
 [buildings.anvil]
 name = "Enclume"
@@ -73,7 +73,7 @@ hidden = false
 recipe_categories = ["smithing"]
 production_interval = 2.0
 default_recipe = "copper_wire_draw"
-requires_discovery = "iron_ingot"
+requires_discovery = "proto_iron"
 
 [buildings.burner_generator]
 name = "Générateur Charbon"
@@ -88,7 +88,7 @@ hidden = false
 inventory_capacity = 16
 power_generation = 50.0
 fuel_burn_interval = 2.0
-requires_discovery = "iron_ingot"
+requires_discovery = "proto_iron"
 
 [buildings.manual_miner]
 name = "Mineur Manuel"
@@ -102,7 +102,7 @@ powered = false
 hidden = false
 requires_deposit = true
 production = { resource = "ore", interval_sec = 3.0 }
-requires_discovery = "iron_ingot"
+requires_discovery = "proto_iron"
 
 # ============================================================
 # PHASE 2 — Rouille et Vapeur
@@ -122,7 +122,7 @@ recipe_categories = ["pumping"]
 production_interval = 2.0
 default_recipe = "pump_water"
 power_consumption = 8.0
-requires_discovery = "steel"
+requires_discovery = "proto_steel"
 
 [buildings.steam_generator]
 name = "Générateur Vapeur"
@@ -140,7 +140,7 @@ default_recipe = "steam_produce"
 power_consumption = 5.0
 power_generation = 30.0
 fuel_burn_interval = 2.0
-requires_discovery = "steel"
+requires_discovery = "proto_steel"
 
 [buildings.blast_furnace]
 name = "Haut Fourneau"
@@ -154,9 +154,9 @@ powered = true
 hidden = false
 recipe_categories = ["steelmaking"]
 production_interval = 6.0
-default_recipe = "steel_produce"
+default_recipe = "proto_steel"
 power_consumption = 15.0
-requires_discovery = "steel"
+requires_discovery = "proto_steel"
 
 [buildings.gear_press]
 name = "Presse à Engrenages"
@@ -172,7 +172,7 @@ recipe_categories = ["pressing"]
 production_interval = 3.0
 default_recipe = "gear_cut"
 power_consumption = 10.0
-requires_discovery = "steel"
+requires_discovery = "proto_steel"
 
 [buildings.belt]
 name = "Convoyeur"
@@ -187,7 +187,7 @@ hidden = false
 slots = 4
 speed = 2.0
 power_consumption = 2.0
-requires_discovery = "steel"
+requires_discovery = "proto_steel"
 level = 1
 belt_variant = "normal"
 drag_placement = true
@@ -205,7 +205,7 @@ hidden = false
 slots = 2
 speed = 2.0
 power_consumption = 3.0
-requires_discovery = "steel"
+requires_discovery = "proto_steel"
 
 # ============================================================
 # PHASE 3 — Fil du Cuivre
@@ -225,7 +225,7 @@ inventory_capacity = 16
 power_generation = 80.0
 fuel_burn_interval = 3.0
 power_consumption = 5.0
-requires_discovery = "circuit"
+requires_discovery = "proto_circuit"
 
 [buildings.power_pole]
 name = "Pylône"
@@ -238,7 +238,7 @@ texture_stem = "power_pole"
 powered = false
 hidden = false
 power_pole_range = 5.0
-requires_discovery = "circuit"
+requires_discovery = "proto_circuit"
 
 [buildings.assembler]
 name = "Assembleur"
@@ -252,9 +252,9 @@ powered = true
 hidden = false
 recipe_categories = ["crafting"]
 production_interval = 2.0
-default_recipe = "circuit_etch"
+default_recipe = "proto_circuit"
 power_consumption = 12.0
-requires_discovery = "circuit"
+requires_discovery = "proto_circuit"
 
 [buildings.chemical_lab]
 name = "Laboratoire Chimique"
@@ -270,7 +270,7 @@ recipe_categories = ["refining"]
 production_interval = 4.0
 default_recipe = "petroleum_gas_crack"
 power_consumption = 20.0
-requires_discovery = "circuit"
+requires_discovery = "proto_circuit"
 
 [buildings.oil_pump]
 name = "Pompe à Pétrole"
@@ -285,7 +285,7 @@ hidden = false
 requires_deposit = true
 production = { resource = "crude_oil", interval_sec = 3.0 }
 power_consumption = 15.0
-requires_discovery = "circuit"
+requires_discovery = "proto_circuit"
 
 [buildings.storage_chest]
 name = "Coffre de Stockage"
@@ -298,7 +298,7 @@ texture_stem = "storage_chest"
 powered = false
 hidden = false
 inventory_capacity = 64
-requires_discovery = "circuit"
+requires_discovery = "proto_circuit"
 
 # ============================================================
 # PHASE 4 — Pouls
@@ -316,9 +316,9 @@ powered = true
 hidden = false
 recipe_categories = ["motor_assembly"]
 production_interval = 6.0
-default_recipe = "motor_assemble"
+default_recipe = "proto_motor"
 power_consumption = 25.0
-requires_discovery = "motor"
+requires_discovery = "proto_motor"
 
 [buildings.battery_station]
 name = "Station de Batteries"
@@ -334,7 +334,7 @@ recipe_categories = ["battery"]
 production_interval = 5.0
 default_recipe = "battery_make"
 power_consumption = 15.0
-requires_discovery = "motor"
+requires_discovery = "proto_motor"
 
 [buildings.electronics_lab]
 name = "Laboratoire d'Électronique"
@@ -350,7 +350,7 @@ recipe_categories = ["electronics"]
 production_interval = 5.0
 default_recipe = "advanced_circuit_build"
 power_consumption = 30.0
-requires_discovery = "motor"
+requires_discovery = "proto_motor"
 
 [buildings.assembly_crane]
 name = "Grue d'Assemblage"
@@ -366,7 +366,7 @@ recipe_categories = ["heavy_assembly"]
 production_interval = 8.0
 default_recipe = "machine_frame_build"
 power_consumption = 25.0
-requires_discovery = "motor"
+requires_discovery = "proto_motor"
 
 [buildings.aerial_belt]
 name = "Convoyeur Aérien"
@@ -381,7 +381,7 @@ hidden = false
 slots = 3
 speed = 3.0
 power_consumption = 4.0
-requires_discovery = "motor"
+requires_discovery = "proto_motor"
 belt_variant = "aerial"
 
 [buildings.sorter]
@@ -398,7 +398,7 @@ slots = 2
 speed = 2.0
 default_filter = "iron_ingot"
 power_consumption = 4.0
-requires_discovery = "motor"
+requires_discovery = "proto_motor"
 
 # ============================================================
 # PHASE 5 — Nanites
@@ -416,9 +416,9 @@ powered = true
 hidden = false
 recipe_categories = ["nano"]
 production_interval = 8.0
-default_recipe = "processor_make"
+default_recipe = "proto_processor"
 power_consumption = 40.0
-requires_discovery = "processor"
+requires_discovery = "proto_processor"
 
 [buildings.deep_core_drill]
 name = "Foreuse Profonde"
@@ -433,7 +433,7 @@ hidden = false
 requires_deposit = true
 production = { resource = "ore", interval_sec = 1.0 }
 power_consumption = 50.0
-requires_discovery = "processor"
+requires_discovery = "proto_processor"
 
 [buildings.compactor]
 name = "Compacteur"
@@ -447,7 +447,7 @@ powered = true
 hidden = false
 inventory_capacity = 32
 power_consumption = 10.0
-requires_discovery = "processor"
+requires_discovery = "proto_processor"
 
 [buildings.high_speed_belt]
 name = "Convoyeur Haute Vitesse"
@@ -462,7 +462,7 @@ hidden = false
 slots = 4
 speed = 5.0
 power_consumption = 8.0
-requires_discovery = "processor"
+requires_discovery = "proto_processor"
 belt_variant = "normal"
 drag_placement = true
 level = 2
@@ -478,7 +478,7 @@ texture_stem = "excavation_rig"
 powered = true
 hidden = false
 power_consumption = 20.0
-requires_discovery = "processor"
+requires_discovery = "proto_processor"
 
 # ============================================================
 # PHASE 6 — Genèse
@@ -496,9 +496,9 @@ powered = true
 hidden = false
 recipe_categories = ["bio"]
 production_interval = 6.0
-default_recipe = "organic_compound_synth"
+default_recipe = "proto_organic"
 power_consumption = 30.0
-requires_discovery = "organic_compound"
+requires_discovery = "proto_organic"
 
 [buildings.tissue_cultivator]
 name = "Cultivateur de Tissus"
@@ -514,7 +514,7 @@ recipe_categories = ["tissue"]
 production_interval = 10.0
 default_recipe = "stem_cells_grow"
 power_consumption = 35.0
-requires_discovery = "organic_compound"
+requires_discovery = "proto_organic"
 
 [buildings.synthesizer]
 name = "Synthétiseur"
@@ -530,7 +530,7 @@ recipe_categories = ["synthesis"]
 production_interval = 7.0
 default_recipe = "protein_synth"
 power_consumption = 20.0
-requires_discovery = "organic_compound"
+requires_discovery = "proto_organic"
 
 [buildings.scanner_array]
 name = "Réseau de Scanners"
@@ -546,7 +546,7 @@ recipe_categories = ["scanning"]
 production_interval = 12.0
 default_recipe = "neural_map_scan"
 power_consumption = 40.0
-requires_discovery = "organic_compound"
+requires_discovery = "proto_organic"
 
 [buildings.bio_printer]
 name = "Bio-Imprimante"
@@ -562,7 +562,7 @@ recipe_categories = ["bio_printing"]
 production_interval = 12.0
 default_recipe = "bio_mass_print"
 power_consumption = 45.0
-requires_discovery = "organic_compound"
+requires_discovery = "proto_organic"
 
 # ============================================================
 # CAPSULE GENESIS (progression visuelle)
@@ -582,43 +582,43 @@ station = false
 
 [[buildings.genesis_ark.tiers]]
 required_items = { rope = 3 }
-unlock_recipes = ["iron_ingot"]
+unlock_recipes = ["proto_iron"]
 log_id = "genesis_phase_0"
 texture = "genesis_capsule_t0"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { iron_parts = 5 }
-unlock_recipes = ["steel"]
+unlock_recipes = ["proto_steel"]
 log_id = "genesis_phase_1"
 texture = "genesis_capsule_t1"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { gear = 3, pipe = 2 }
-unlock_recipes = ["circuit"]
+unlock_recipes = ["proto_circuit"]
 log_id = "genesis_phase_2"
 texture = "genesis_capsule_t2"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { circuit = 3 }
-unlock_recipes = ["motor"]
+unlock_recipes = ["proto_motor"]
 log_id = "genesis_phase_3"
 texture = "genesis_capsule_t3"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { motor = 2, battery = 2 }
-unlock_recipes = ["processor"]
+unlock_recipes = ["proto_processor"]
 log_id = "genesis_phase_4"
 texture = "genesis_capsule_t4"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { nano_pack = 2 }
-unlock_recipes = ["organic_compound"]
+unlock_recipes = ["proto_organic"]
 log_id = "genesis_phase_5"
 texture = "genesis_capsule_t5"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { organic_compound = 3, protein = 1 }
-unlock_recipes = ["neural_interface"]
+unlock_recipes = ["proto_neural"]
 log_id = "genesis_phase_6"
 texture = "genesis_capsule_t6"
 
