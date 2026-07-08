@@ -1,9 +1,0 @@
-[settings]
-page_size = 9
-
-[[menu]]
-label = "Phase 0"
-items = [
-    "workbench",
-    "furnace",
-]

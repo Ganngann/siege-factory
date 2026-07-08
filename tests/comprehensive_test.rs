@@ -659,11 +659,11 @@ fn map_config_loads_correctly() {
 #[test]
 fn map_config_deposits() {
     let cfg = MapConfig::load(&test_mods());
-    assert_eq!(cfg.deposit_min_amount, 50);
-    assert_eq!(cfg.deposit_max_amount, 150);
-    assert_eq!(cfg.deposit_spawn_chance_pct, 35);
-    assert_eq!(cfg.deposit_min_per_chunk, 2);
-    assert_eq!(cfg.deposit_max_per_chunk, 5);
+    assert_eq!(cfg.deposit_min_amount, 30);
+    assert_eq!(cfg.deposit_max_amount, 80);
+    assert_eq!(cfg.deposit_spawn_chance_pct, 25);
+    assert_eq!(cfg.deposit_min_per_chunk, 3);
+    assert_eq!(cfg.deposit_max_per_chunk, 6);
     assert!(cfg.infinite_deposits);
 }
 
@@ -695,16 +695,16 @@ fn map_config_chunk_margins() {
 fn map_config_resource_discovery_map() {
     let cfg = MapConfig::load(&test_mods());
     assert_eq!(
-        cfg.resource_discovery_map.get("iron_ore").unwrap(),
-        "mine_iron_ore"
+        cfg.resource_discovery_map.get("scrap_metal").unwrap(),
+        "mine_scrap_metal"
     );
     assert_eq!(
-        cfg.resource_discovery_map.get("copper_ore").unwrap(),
-        "mine_copper_ore"
+        cfg.resource_discovery_map.get("wood").unwrap(),
+        "mine_wood"
     );
     assert_eq!(
-        cfg.resource_discovery_map.get("coal").unwrap(),
-        "mine_coal"
+        cfg.resource_discovery_map.get("stone").unwrap(),
+        "mine_stone"
     );
 }
 
@@ -715,7 +715,7 @@ fn map_config_starting_area_enabled() {
     assert!(sa.enable);
     assert_eq!(sa.radius, 8);
     assert!(sa.clear_trees);
-    assert_eq!(sa.structures.len(), 4);
+    assert_eq!(sa.structures.len(), 6);
 }
 
 #[test]
@@ -724,31 +724,34 @@ fn map_config_starting_area_structures_detail() {
     let s = &cfg.starting_area.structures;
 
     assert_eq!(s[0].kind, "deposit");
-    assert_eq!((s[0].tile_x, s[0].tile_y), (6, 5));
-    assert_eq!(s[0].props.resource.as_deref(), Some("clay"));
-    assert_eq!(s[0].props.amount, Some(50));
+    assert_eq!((s[0].tile_x, s[0].tile_y), (4, 4));
+    assert_eq!(s[0].props.resource.as_deref(), Some("scrap_metal"));
+    assert_eq!(s[0].props.amount, Some(30));
 
     assert_eq!(s[1].kind, "deposit");
-    assert_eq!((s[1].tile_x, s[1].tile_y), (4, 4));
-    assert_eq!(s[1].props.resource.as_deref(), Some("stone"));
-    assert_eq!(s[1].props.amount, Some(30));
+    assert_eq!((s[1].tile_x, s[1].tile_y), (7, 5));
+    assert_eq!(s[1].props.resource.as_deref(), Some("wood"));
+    assert_eq!(s[1].props.amount, Some(40));
 
     assert_eq!(s[2].kind, "deposit");
-    assert_eq!((s[2].tile_x, s[2].tile_y), (7, 6));
-    assert_eq!(s[2].props.resource.as_deref(), Some("iron_ore"));
-    assert_eq!(s[2].props.amount, Some(20));
+    assert_eq!((s[2].tile_x, s[2].tile_y), (3, 7));
+    assert_eq!(s[2].props.resource.as_deref(), Some("stone"));
+    assert_eq!(s[2].props.amount, Some(25));
 
     assert_eq!(s[3].kind, "deposit");
-    assert_eq!((s[3].tile_x, s[3].tile_y), (3, 7));
-    assert_eq!(s[3].props.resource.as_deref(), Some("wood"));
-    assert_eq!(s[3].props.amount, Some(40));
-    assert_eq!(s[1].props.resource.as_deref(), Some("stone"));
-    assert_eq!(s[1].props.amount, Some(30));
+    assert_eq!((s[3].tile_x, s[3].tile_y), (6, 3));
+    assert_eq!(s[3].props.resource.as_deref(), Some("clay"));
+    assert_eq!(s[3].props.amount, Some(20));
 
-    assert_eq!(s[2].kind, "deposit");
-    assert_eq!((s[2].tile_x, s[2].tile_y), (7, 6));
-    assert_eq!(s[2].props.resource.as_deref(), Some("iron_ore"));
-    assert_eq!(s[2].props.amount, Some(20));
+    assert_eq!(s[4].kind, "deposit");
+    assert_eq!((s[4].tile_x, s[4].tile_y), (8, 8));
+    assert_eq!(s[4].props.resource.as_deref(), Some("iron_ore"));
+    assert_eq!(s[4].props.amount, Some(15));
+
+    assert_eq!(s[5].kind, "deposit");
+    assert_eq!((s[5].tile_x, s[5].tile_y), (2, 2));
+    assert_eq!(s[5].props.resource.as_deref(), Some("coal"));
+    assert_eq!(s[5].props.amount, Some(10));
 }
 
 #[test]

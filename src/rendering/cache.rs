@@ -148,12 +148,7 @@ fn load_png(
     stem: &str,
     layer: &str,
 ) -> Option<Handle<Image>> {
-    let data = if let Some(mod_data) = mods.load_texture(stem, layer) {
-        mod_data
-    } else {
-        let path = format!("assets/textures/{}_{}.png", stem, layer);
-        std::fs::read(&path).ok()?
-    };
+    let data = mods.load_texture(stem, layer)?;
     match Image::from_buffer(
         &data,
         bevy::image::ImageType::Format(bevy::image::ImageFormat::Png),
