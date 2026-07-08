@@ -1,4 +1,3 @@
-use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -19,8 +18,8 @@ pub struct EnemyRegistry {
 }
 
 impl EnemyRegistry {
-    pub fn load() -> Self {
-        let parsed: EnemiesToml = load_toml!("../../data/enemies.toml", EnemiesToml);
+    pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
+        let parsed: EnemiesToml = mods.load_toml("enemies.toml");
         let mut enemies = HashMap::new();
         for (id, entry) in parsed.enemies {
             let color = entry
@@ -63,5 +62,6 @@ struct EnemyEntry {
     damage: u32,
     color: Option<String>,
 }
+
 
 

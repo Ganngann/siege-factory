@@ -5,12 +5,15 @@ use siege_factory::map::config::MapConfig;
 use siege_factory::rendering::cache::TextureCache;
 use siege_factory::rendering::config::VisualsConfig;
 use siege_factory::rendering::visuals::*;
+use siege_factory::core::modding::ModRegistry;
 
+
+fn test_mods() -> ModRegistry { ModRegistry::for_test() }
 fn rendering_test_app() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
-    app.insert_resource(MapConfig::load());
-    app.insert_resource(VisualsConfig::load());
+    app.insert_resource(MapConfig::load(&test_mods()));
+    app.insert_resource(VisualsConfig::load(&test_mods()));
     app
 }// ════════════════════════════════════════════════════════════════
 // ensure_hp_bars
@@ -462,32 +465,32 @@ fn tile_highlight_entity_default_is_none() {
 
 #[test]
 fn visuals_config_hp_bar_width_positive() {
-    let cfg = VisualsConfig::load();
+    let cfg = VisualsConfig::load(&test_mods());
     assert!(cfg.hp_bar.width > 0.0);
 }
 
 #[test]
 fn visuals_config_projectile_scale_positive() {
-    let cfg = VisualsConfig::load();
+    let cfg = VisualsConfig::load(&test_mods());
     assert!(cfg.projectile.scale > 0.0);
 }
 
 #[test]
 fn visuals_config_belt_item_z_positive() {
-    let cfg = VisualsConfig::load();
+    let cfg = VisualsConfig::load(&test_mods());
     assert!(cfg.belt_item.z > 0.0);
 }
 
 #[test]
 fn visuals_config_unit_dimensions_positive() {
-    let cfg = VisualsConfig::load();
+    let cfg = VisualsConfig::load(&test_mods());
     assert!(cfg.unit.width > 0.0);
     assert!(cfg.unit.height > 0.0);
 }
 
 #[test]
 fn visuals_config_enemy_sizes_are_distinct() {
-    let cfg = VisualsConfig::load();
+    let cfg = VisualsConfig::load(&test_mods());
     assert!(cfg.enemy.boss_size != cfg.enemy.tank_size);
     assert!(cfg.enemy.tank_size != cfg.enemy.default_size);
 }

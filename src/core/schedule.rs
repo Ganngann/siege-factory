@@ -19,13 +19,14 @@ pub struct CorePlugin;
 impl Plugin for CorePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Settings::load());
-        let mut bindings = KeyBindings::load();
+        let mods = app.world().resource::<crate::core::modding::ModRegistry>().clone();
+        let mut bindings = KeyBindings::load(&mods);
         {
             let settings = app.world().resource::<Settings>();
             bindings.apply_overrides(&settings.keybindings);
         }
         app.insert_resource(bindings);
-        app.insert_resource(MainMenuDef::load());
+        app.insert_resource(MainMenuDef::load(&mods));
         app.insert_resource(MenuNav::default());
         app.insert_resource(RebindState::default());
         app.init_state::<GameState>();

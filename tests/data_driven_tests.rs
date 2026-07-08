@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use siege_factory::core::modding::ModRegistry;
 use siege_factory::economy::belt::compute_slot_positions;
 use siege_factory::economy::building::BuildingRegistry;
 use siege_factory::economy::discovery::{DiscoveryRegistry, GlobalArchive};
@@ -17,13 +18,17 @@ use siege_factory::map::tile_grid::ChunkGrid;
 use siege_factory::rendering::config::VisualsConfig;
 use std::collections::HashSet;
 
+fn test_mods() -> ModRegistry {
+    ModRegistry::for_test()
+}
+
 // ════════════════════════════════════════════════════════════════
 // BuildingRegistry invariants
 // ════════════════════════════════════════════════════════════════
 
 #[test]
 fn all_buildings_have_positive_hp() {
-    let reg = BuildingRegistry::load();
+    let reg = BuildingRegistry::load(&test_mods());
     for b in &reg.buildings {
         assert!(b.hp > 0, "building {} has hp 0", b.id);
     }
@@ -31,7 +36,7 @@ fn all_buildings_have_positive_hp() {
 
 #[test]
 fn all_buildings_have_nonempty_name() {
-    let reg = BuildingRegistry::load();
+    let reg = BuildingRegistry::load(&test_mods());
     for b in &reg.buildings {
         assert!(!b.name.is_empty(), "building {} has empty name", b.id);
     }
@@ -39,7 +44,7 @@ fn all_buildings_have_nonempty_name() {
 
 #[test]
 fn all_buildings_have_valid_tile_size() {
-    let reg = BuildingRegistry::load();
+    let reg = BuildingRegistry::load(&test_mods());
     for b in &reg.buildings {
         assert!(b.tile_size.0 >= 1, "building {} has w=0", b.id);
         assert!(b.tile_size.1 >= 1, "building {} has h=0", b.id);
@@ -48,7 +53,7 @@ fn all_buildings_have_valid_tile_size() {
 
 #[test]
 fn building_ids_are_unique() {
-    let reg = BuildingRegistry::load();
+    let reg = BuildingRegistry::load(&test_mods());
     let mut ids = std::collections::HashSet::new();
     for b in &reg.buildings {
         assert!(ids.insert(&b.id), "Duplicate building id: {}", b.id);
@@ -57,19 +62,19 @@ fn building_ids_are_unique() {
 
 #[test]
 fn building_registry_loads_nonempty() {
-    let reg = BuildingRegistry::load();
+    let reg = BuildingRegistry::load(&test_mods());
     assert!(!reg.buildings.is_empty());
 }
 
 #[test]
 fn building_registry_get_returns_none_for_unknown() {
-    let reg = BuildingRegistry::load();
+    let reg = BuildingRegistry::load(&test_mods());
     assert!(reg.get("nonexistent_building_xyzzy").is_none());
 }
 
 #[test]
 fn settings_refund_ratio_in_valid_range() {
-    let settings = siege_factory::economy::building::DefaultSettings::load();
+    let settings = siege_factory::economy::building::DefaultSettings::load(&test_mods());
     assert!(settings.refund_ratio >= 0.0);
     assert!(settings.refund_ratio <= 1.0);
     assert!(settings.default_projectile_speed > 0.0);
@@ -81,19 +86,19 @@ fn settings_refund_ratio_in_valid_range() {
 
 #[test]
 fn recipe_registry_loads_nonempty() {
-    let reg = RecipeRegistry::load();
+    let reg = RecipeRegistry::load(&test_mods());
     assert!(!reg.recipes.is_empty());
 }
 
 #[test]
 fn recipe_registry_get_returns_none_for_unknown() {
-    let reg = RecipeRegistry::load();
+    let reg = RecipeRegistry::load(&test_mods());
     assert!(reg.get("nonexistent_recipe_xyzzy").is_none());
 }
 
 #[test]
 fn all_recipes_have_positive_time() {
-    let reg = RecipeRegistry::load();
+    let reg = RecipeRegistry::load(&test_mods());
     for recipe in reg.recipes.values() {
         assert!(recipe.time_sec > 0.0, "recipe {} has non-positive time", recipe.id);
     }
@@ -101,7 +106,7 @@ fn all_recipes_have_positive_time() {
 
 #[test]
 fn all_recipes_have_nonempty_category() {
-    let reg = RecipeRegistry::load();
+    let reg = RecipeRegistry::load(&test_mods());
     for recipe in reg.recipes.values() {
         assert!(!recipe.category.is_empty(), "recipe {} has empty category", recipe.id);
     }
@@ -109,7 +114,7 @@ fn all_recipes_have_nonempty_category() {
 
 #[test]
 fn all_recipes_have_positive_output_amounts() {
-    let reg = RecipeRegistry::load();
+    let reg = RecipeRegistry::load(&test_mods());
     for recipe in reg.recipes.values() {
         for (res, amt) in &recipe.output {
             assert!(*amt > 0, "recipe {} output {} has amount 0", recipe.id, res.0);
@@ -119,7 +124,7 @@ fn all_recipes_have_positive_output_amounts() {
 
 #[test]
 fn all_recipes_have_lowercase_output_ids() {
-    let reg = RecipeRegistry::load();
+    let reg = RecipeRegistry::load(&test_mods());
     for recipe in reg.recipes.values() {
         for (res, _) in &recipe.output {
             assert_eq!(res.0, res.0.to_lowercase(), "recipe {} output key not lowercase: {}", recipe.id, res.0);
@@ -129,7 +134,7 @@ fn all_recipes_have_lowercase_output_ids() {
 
 #[test]
 fn recipe_output_starts_with_nonzero() {
-    let reg = RecipeRegistry::load();
+    let reg = RecipeRegistry::load(&test_mods());
     for recipe in reg.recipes.values() {
         assert!(!recipe.output.is_empty(), "recipe {} has no output", recipe.id);
     }
@@ -141,13 +146,13 @@ fn recipe_output_starts_with_nonzero() {
 
 #[test]
 fn resource_registry_loads_nonempty() {
-    let reg = ResourceRegistry::load();
+    let reg = ResourceRegistry::load(&test_mods());
     assert!(!reg.resources.is_empty());
 }
 
 #[test]
 fn all_resources_have_positive_max_stack() {
-    let reg = ResourceRegistry::load();
+    let reg = ResourceRegistry::load(&test_mods());
     for def in reg.resources.values() {
         assert!(def.max_stack > 0, "{} has max_stack 0", def.id);
     }
@@ -155,7 +160,7 @@ fn all_resources_have_positive_max_stack() {
 
 #[test]
 fn all_resources_have_nonempty_id() {
-    let reg = ResourceRegistry::load();
+    let reg = ResourceRegistry::load(&test_mods());
     for (key, def) in &reg.resources {
         assert!(!key.is_empty());
         assert_eq!(key, &def.id);
@@ -164,13 +169,13 @@ fn all_resources_have_nonempty_id() {
 
 #[test]
 fn resource_registry_get_opt_returns_none_for_unknown() {
-    let reg = ResourceRegistry::load();
+    let reg = ResourceRegistry::load(&test_mods());
     assert!(reg.get_opt("unobtainium_xyzzy").is_none());
 }
 
 #[test]
 fn resource_registry_known_keys_roundtrip() {
-    let reg = ResourceRegistry::load();
+    let reg = ResourceRegistry::load(&test_mods());
     for (key, def) in &reg.resources {
         let retrieved = reg.get(key);
         assert_eq!(retrieved.id, def.id);
@@ -185,13 +190,13 @@ fn resource_registry_known_keys_roundtrip() {
 
 #[test]
 fn unit_config_loads_nonempty() {
-    let cfg = UnitConfig::load();
+    let cfg = UnitConfig::load(&test_mods());
     assert!(!cfg.units.is_empty());
 }
 
 #[test]
 fn all_units_have_positive_hp() {
-    let cfg = UnitConfig::load();
+    let cfg = UnitConfig::load(&test_mods());
     for (id, def) in &cfg.units {
         assert!(def.hp > 0, "unit {} has hp 0", id);
     }
@@ -199,7 +204,7 @@ fn all_units_have_positive_hp() {
 
 #[test]
 fn all_units_have_nonempty_name() {
-    let cfg = UnitConfig::load();
+    let cfg = UnitConfig::load(&test_mods());
     for (id, def) in &cfg.units {
         assert!(!def.name.is_empty(), "unit {} has empty name", id);
     }
@@ -207,7 +212,7 @@ fn all_units_have_nonempty_name() {
 
 #[test]
 fn unit_config_get_returns_none_for_unknown() {
-    let cfg = UnitConfig::load();
+    let cfg = UnitConfig::load(&test_mods());
     assert!(cfg.get("dragon_xyzzy").is_none());
 }
 
@@ -217,13 +222,13 @@ fn unit_config_get_returns_none_for_unknown() {
 
 #[test]
 fn enemy_registry_loads_nonempty() {
-    let reg = EnemyRegistry::load();
+    let reg = EnemyRegistry::load(&test_mods());
     assert!(!reg.enemies.is_empty());
 }
 
 #[test]
 fn enemy_ids_are_unique() {
-    let reg = EnemyRegistry::load();
+    let reg = EnemyRegistry::load(&test_mods());
     let mut ids = std::collections::HashSet::new();
     for id in reg.enemies.keys() {
         assert!(ids.insert(id.clone()), "duplicate enemy id: {}", id);
@@ -232,7 +237,7 @@ fn enemy_ids_are_unique() {
 
 #[test]
 fn all_enemies_have_positive_hp() {
-    let reg = EnemyRegistry::load();
+    let reg = EnemyRegistry::load(&test_mods());
     for def in reg.enemies.values() {
         assert!(def.hp > 0, "enemy {} has hp 0", def.id);
     }
@@ -240,7 +245,7 @@ fn all_enemies_have_positive_hp() {
 
 #[test]
 fn all_enemies_have_positive_speed() {
-    let reg = EnemyRegistry::load();
+    let reg = EnemyRegistry::load(&test_mods());
     for def in reg.enemies.values() {
         assert!(def.speed > 0.0, "enemy {} has speed 0", def.id);
     }
@@ -248,13 +253,13 @@ fn all_enemies_have_positive_speed() {
 
 #[test]
 fn enemy_registry_get_returns_none_for_unknown() {
-    let reg = EnemyRegistry::load();
+    let reg = EnemyRegistry::load(&test_mods());
     assert!(reg.get("nonexistent_enemy_xyzzy").is_none());
 }
 
 #[test]
 fn all_enemies_have_nonempty_name() {
-    let reg = EnemyRegistry::load();
+    let reg = EnemyRegistry::load(&test_mods());
     for def in reg.enemies.values() {
         assert!(!def.name.is_empty(), "enemy {} has empty name", def.id);
     }
@@ -266,7 +271,7 @@ fn all_enemies_have_nonempty_name() {
 
 #[test]
 fn all_waves_have_valid_entries() {
-    let cfg = WaveConfig::load();
+    let cfg = WaveConfig::load(&test_mods());
     assert!(!cfg.waves.is_empty());
     for (i, wave) in cfg.waves.iter().enumerate() {
         assert!(!wave.enemies.is_empty(), "wave {} has no enemies", i + 1);
@@ -279,7 +284,7 @@ fn all_waves_have_valid_entries() {
 
 #[test]
 fn wave_config_constants_positive() {
-    let cfg = WaveConfig::load();
+    let cfg = WaveConfig::load(&test_mods());
     assert!(cfg.win_waves > 0);
     assert!(cfg.first_wave_delay > 0.0);
     assert!(cfg.wave_interval_sec > 0.0);
@@ -298,19 +303,19 @@ fn wave_config_constants_positive() {
 
 #[test]
 fn discovery_registry_loads_nonempty() {
-    let reg = DiscoveryRegistry::load();
+    let reg = DiscoveryRegistry::load(&test_mods());
     assert!(!reg.discoveries.is_empty());
 }
 
 #[test]
 fn discovery_registry_has_starter_recipes() {
-    let reg = DiscoveryRegistry::load();
+    let reg = DiscoveryRegistry::load(&test_mods());
     assert!(!reg.starter_recipes.is_empty());
 }
 
 #[test]
 fn all_discoveries_have_building() {
-    let reg = DiscoveryRegistry::load();
+    let reg = DiscoveryRegistry::load(&test_mods());
     for d in &reg.discoveries {
         assert!(!d.building.is_empty(), "discovery {} has empty building", d.reward_id);
     }
@@ -318,7 +323,7 @@ fn all_discoveries_have_building() {
 
 #[test]
 fn all_discoveries_have_positive_threshold() {
-    let reg = DiscoveryRegistry::load();
+    let reg = DiscoveryRegistry::load(&test_mods());
     for d in &reg.discoveries {
         assert!(d.threshold > 0, "discovery {} has threshold 0", d.reward_id);
     }
@@ -330,7 +335,7 @@ fn all_discoveries_have_positive_threshold() {
 
 #[test]
 fn visuals_config_positive_dimensions() {
-    let cfg = VisualsConfig::load();
+    let cfg = VisualsConfig::load(&test_mods());
     assert!(cfg.hp_bar.width > 0.0);
     assert!(cfg.hp_bar.height > 0.0);
     assert!(cfg.belt_item.width > 0.0);
@@ -355,14 +360,14 @@ fn visuals_config_positive_dimensions() {
 
 #[test]
 fn visuals_config_enemy_sizes_ordered() {
-    let cfg = VisualsConfig::load();
+    let cfg = VisualsConfig::load(&test_mods());
     assert!(cfg.enemy.boss_size > cfg.enemy.tank_size);
     assert!(cfg.enemy.tank_size > cfg.enemy.default_size);
 }
 
 #[test]
 fn visuals_config_decoration_entries_valid() {
-    let cfg = VisualsConfig::load();
+    let cfg = VisualsConfig::load(&test_mods());
     for dec in &cfg.decorations {
         assert!(!dec.kind.is_empty());
         assert!(dec.min_size > 0.0);
@@ -983,7 +988,7 @@ fn global_archive_deduplicates() {
 
 #[test]
 fn global_archive_starter_recipes_from_toml() {
-    let disc_reg = DiscoveryRegistry::load();
+    let disc_reg = DiscoveryRegistry::load(&test_mods());
     let archive = GlobalArchive::new(&disc_reg.starter_recipes);
     for recipe in &disc_reg.starter_recipes {
         assert!(archive.is_unlocked(recipe), "starter recipe {} not unlocked", recipe);
@@ -1101,25 +1106,25 @@ fn menu_action_equality() {
 
 #[test]
 fn menu_def_root_not_empty() {
-    let reg = BuildingRegistry::load();
-    let unit_cfg = UnitConfig::load();
-    let menu = MenuDef::load(&reg, &unit_cfg);
+    let reg = BuildingRegistry::load(&test_mods());
+    let unit_cfg = UnitConfig::load(&test_mods());
+    let menu = MenuDef::load(&test_mods(), &reg, &unit_cfg);
     assert!(!menu.root.is_empty());
 }
 
 #[test]
 fn menu_def_page_size_positive() {
-    let reg = BuildingRegistry::load();
-    let unit_cfg = UnitConfig::load();
-    let menu = MenuDef::load(&reg, &unit_cfg);
+    let reg = BuildingRegistry::load(&test_mods());
+    let unit_cfg = UnitConfig::load(&test_mods());
+    let menu = MenuDef::load(&test_mods(), &reg, &unit_cfg);
     assert!(menu.page_size > 0);
 }
 
 #[test]
 fn menu_def_root_entries_are_submenus() {
-    let reg = BuildingRegistry::load();
-    let unit_cfg = UnitConfig::load();
-    let menu = MenuDef::load(&reg, &unit_cfg);
+    let reg = BuildingRegistry::load(&test_mods());
+    let unit_cfg = UnitConfig::load(&test_mods());
+    let menu = MenuDef::load(&test_mods(), &reg, &unit_cfg);
     for entry in &menu.root {
         match entry {
             MenuEntry::SubMenu { .. } => {}
@@ -1130,9 +1135,9 @@ fn menu_def_root_entries_are_submenus() {
 
 #[test]
 fn menu_def_first_category_has_items() {
-    let reg = BuildingRegistry::load();
-    let unit_cfg = UnitConfig::load();
-    let menu = MenuDef::load(&reg, &unit_cfg);
+    let reg = BuildingRegistry::load(&test_mods());
+    let unit_cfg = UnitConfig::load(&test_mods());
+    let menu = MenuDef::load(&test_mods(), &reg, &unit_cfg);
     if let Some(MenuEntry::SubMenu { items, .. }) = menu.root.first() {
         assert!(!items.is_empty());
     }
@@ -1140,9 +1145,9 @@ fn menu_def_first_category_has_items() {
 
 #[test]
 fn menu_def_navigation_roundtrip() {
-    let reg = BuildingRegistry::load();
-    let unit_cfg = UnitConfig::load();
-    let menu = MenuDef::load(&reg, &unit_cfg);
+    let reg = BuildingRegistry::load(&test_mods());
+    let unit_cfg = UnitConfig::load(&test_mods());
+    let menu = MenuDef::load(&test_mods(), &reg, &unit_cfg);
     let result = items_at(&menu.root, &[0, 0]);
     if let MenuEntry::SubMenu { items, .. } = &menu.root[0] {
         if let MenuEntry::SubMenu { items: inner_items, .. } = &items[0] {
@@ -1177,7 +1182,7 @@ fn production_timer_cycles_correctly() {
 
 #[test]
 fn keybindings_all_returns_sorted() {
-    let bindings = siege_factory::core::input::KeyBindings::load();
+    let bindings = siege_factory::core::input::KeyBindings::load(&test_mods());
     let all = bindings.all();
     for pair in all.windows(2) {
         assert!(pair[0].0 <= pair[1].0);
@@ -1186,7 +1191,7 @@ fn keybindings_all_returns_sorted() {
 
 #[test]
 fn keybindings_set_and_get() {
-    let mut bindings = siege_factory::core::input::KeyBindings::load();
+    let mut bindings = siege_factory::core::input::KeyBindings::load(&test_mods());
     bindings.set("test_action", siege_factory::core::input::InputBinding::Key(KeyCode::KeyX));
     let retrieved = bindings.get("test_action");
     assert!(matches!(retrieved, siege_factory::core::input::InputBinding::Key(KeyCode::KeyX)));
@@ -1194,7 +1199,7 @@ fn keybindings_set_and_get() {
 
 #[test]
 fn keybindings_apply_overrides() {
-    let mut bindings = siege_factory::core::input::KeyBindings::load();
+    let mut bindings = siege_factory::core::input::KeyBindings::load(&test_mods());
     let mut overrides = std::collections::HashMap::new();
     overrides.insert("cancel".to_string(), "KeyQ".to_string());
     bindings.apply_overrides(&overrides);
@@ -1204,7 +1209,7 @@ fn keybindings_apply_overrides() {
 
 #[test]
 fn keybindings_apply_overrides_ignores_invalid() {
-    let mut bindings = siege_factory::core::input::KeyBindings::load();
+    let mut bindings = siege_factory::core::input::KeyBindings::load(&test_mods());
     let original = format!("{}", bindings.get("cancel"));
     let mut overrides = std::collections::HashMap::new();
     overrides.insert("cancel".to_string(), "TotallyInvalid".to_string());
@@ -1214,14 +1219,14 @@ fn keybindings_apply_overrides_ignores_invalid() {
 
 #[test]
 fn keybindings_key_method() {
-    let bindings = siege_factory::core::input::KeyBindings::load();
+    let bindings = siege_factory::core::input::KeyBindings::load(&test_mods());
     let k = bindings.key("cancel");
     assert_eq!(k, KeyCode::Escape);
 }
 
 #[test]
 fn keybindings_mouse_method() {
-    let bindings = siege_factory::core::input::KeyBindings::load();
+    let bindings = siege_factory::core::input::KeyBindings::load(&test_mods());
     let m = bindings.mouse("place");
     assert_eq!(m, MouseButton::Left);
 }

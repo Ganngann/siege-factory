@@ -27,19 +27,22 @@ use siege_factory::economy::tiered_structure::{structure_interact, ProgressionLo
 use siege_factory::map::components::TilePosition;
 use siege_factory::map::config::MapConfig;
 use siege_factory::map::tile_grid::ChunkGrid;
+use siege_factory::core::modding::ModRegistry;
+
 
 // ════════════════════════════════════════════════════════════════
 // Helpers
 // ════════════════════════════════════════════════════════════════
 
+fn test_mods() -> ModRegistry { ModRegistry::for_test() }
 fn economy_test_app() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
-    app.insert_resource(MapConfig::load());
-    app.insert_resource(RecipeRegistry::load());
-    app.insert_resource(BuildingRegistry::load());
-    app.insert_resource(ResourceRegistry::load());
-    app.insert_resource(DiscoveryRegistry::load());
+    app.insert_resource(MapConfig::load(&test_mods()));
+    app.insert_resource(RecipeRegistry::load(&test_mods()));
+    app.insert_resource(BuildingRegistry::load(&test_mods()));
+    app.insert_resource(ResourceRegistry::load(&test_mods()));
+    app.insert_resource(DiscoveryRegistry::load(&test_mods()));
     app.insert_resource(GlobalArchive::new(&[]));
     app.init_resource::<SpatialRegistry>();
     app.init_resource::<PowerGrid>();

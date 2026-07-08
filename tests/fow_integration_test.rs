@@ -18,8 +18,11 @@ use siege_factory::rendering::config::VisualsConfig;
 use siege_factory::rendering::cache::{ShapeCache, PreviewMaterials, TextureCache};
 use siege_factory::economy::player::PlayerWorldPos;
 use bevy::ecs::system::RunSystemOnce;
+use siege_factory::core::modding::ModRegistry;
+
 
 /// Helper to create test resources
+fn test_mods() -> ModRegistry { ModRegistry::for_test() }
 fn test_dist() -> Vec<(String, u32)> {
     vec![
         ("iron_ore".to_string(), 50),
@@ -44,7 +47,7 @@ fn build_app() -> App {
     app.insert_resource(PeacefulMode(true));
 
     // Map resources
-    let mut map_cfg = MapConfig::load();
+    let mut map_cfg = MapConfig::load(&test_mods());
     map_cfg.player_start_position = (10, 10);
     map_cfg.initial_margin = 2;
     app.insert_resource(map_cfg);
@@ -59,15 +62,15 @@ fn build_app() -> App {
     ));
 
     // Load registries from TOML
-    let discovery_registry = DiscoveryRegistry::load();
+    let discovery_registry = DiscoveryRegistry::load(&test_mods());
     app.insert_resource(GlobalArchive::new(&discovery_registry.starter_recipes));
     app.insert_resource(discovery_registry);
-    app.insert_resource(ResourceRegistry::load());
+    app.insert_resource(ResourceRegistry::load(&test_mods()));
     app.init_resource::<PlayerWorldPos>();
 
-    let building_registry = BuildingRegistry::load();
-    let unit_cfg = UnitConfig::load();
-    let menu_def = MenuDef::load(&building_registry, &unit_cfg);
+    let building_registry = BuildingRegistry::load(&test_mods());
+    let unit_cfg = UnitConfig::load(&test_mods());
+    let menu_def = MenuDef::load(&test_mods(), &building_registry, &unit_cfg);
     app.insert_resource(building_registry);
     app.insert_resource(unit_cfg);
     app.insert_resource(menu_def);
@@ -75,7 +78,7 @@ fn build_app() -> App {
     app.init_resource::<MenuItems>();
 
     // Load visuals
-    app.insert_resource(VisualsConfig::load());
+    app.insert_resource(VisualsConfig::load(&test_mods()));
 
     // Initialize asset storage needed by rendering caches
     app.init_asset::<Mesh>();

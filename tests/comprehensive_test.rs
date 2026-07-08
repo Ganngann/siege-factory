@@ -6,7 +6,10 @@ use siege_factory::map::config::{
     MapConfig, PlacedStructure, PlacedStructureProps, StartingAreaConfig,
 };
 use siege_factory::map::rng::{chunk_hash, SimpleRng};
+use siege_factory::core::modding::ModRegistry;
 
+
+fn test_mods() -> ModRegistry { ModRegistry::for_test() }
 fn assert_color_eq(c: Color, r: f32, g: f32, b: f32) {
     let Color::Srgba(srgba) = c else { panic!("expected Color::Srgba, got {:?}", c); };
     assert!(
@@ -647,7 +650,7 @@ fn chunk_hash_negative_vs_positive_differ() {
 
 #[test]
 fn map_config_loads_correctly() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.tile_size, 32.0);
     assert_eq!(cfg.seed, 42);
     assert_eq!(cfg.chunk_size, 32);
@@ -655,7 +658,7 @@ fn map_config_loads_correctly() {
 
 #[test]
 fn map_config_deposits() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.deposit_min_amount, 50);
     assert_eq!(cfg.deposit_max_amount, 150);
     assert_eq!(cfg.deposit_spawn_chance_pct, 35);
@@ -666,7 +669,7 @@ fn map_config_deposits() {
 
 #[test]
 fn map_config_distribution_sorted_by_weight_desc() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert!(!cfg.deposit_distribution.is_empty());
     for w in cfg.deposit_distribution.windows(2) {
         assert!(w[0].1 >= w[1].1, "distribution not sorted descending");
@@ -675,22 +678,22 @@ fn map_config_distribution_sorted_by_weight_desc() {
 
 #[test]
 fn map_config_player() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.player_hp, 100);
     assert_eq!(cfg.player_speed, 250.0);
-    assert_eq!(cfg.player_start_position, (0, 0));
+    assert_eq!(cfg.player_start_position, (5, 5));
 }
 
 #[test]
 fn map_config_chunk_margins() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.initial_margin, 3);
     assert_eq!(cfg.despawn_margin, 3);
 }
 
 #[test]
 fn map_config_resource_discovery_map() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(
         cfg.resource_discovery_map.get("iron_ore").unwrap(),
         "mine_iron_ore"
@@ -707,17 +710,17 @@ fn map_config_resource_discovery_map() {
 
 #[test]
 fn map_config_starting_area_enabled() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     let sa = &cfg.starting_area;
     assert!(sa.enable);
     assert_eq!(sa.radius, 8);
     assert!(sa.clear_trees);
-    assert_eq!(sa.structures.len(), 3);
+    assert_eq!(sa.structures.len(), 4);
 }
 
 #[test]
 fn map_config_starting_area_structures_detail() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     let s = &cfg.starting_area.structures;
 
     assert_eq!(s[0].kind, "deposit");
@@ -734,44 +737,56 @@ fn map_config_starting_area_structures_detail() {
     assert_eq!((s[2].tile_x, s[2].tile_y), (7, 6));
     assert_eq!(s[2].props.resource.as_deref(), Some("iron_ore"));
     assert_eq!(s[2].props.amount, Some(20));
+
+    assert_eq!(s[3].kind, "deposit");
+    assert_eq!((s[3].tile_x, s[3].tile_y), (3, 7));
+    assert_eq!(s[3].props.resource.as_deref(), Some("wood"));
+    assert_eq!(s[3].props.amount, Some(40));
+    assert_eq!(s[1].props.resource.as_deref(), Some("stone"));
+    assert_eq!(s[1].props.amount, Some(30));
+
+    assert_eq!(s[2].kind, "deposit");
+    assert_eq!((s[2].tile_x, s[2].tile_y), (7, 6));
+    assert_eq!(s[2].props.resource.as_deref(), Some("iron_ore"));
+    assert_eq!(s[2].props.amount, Some(20));
 }
 
 #[test]
 fn map_config_pathfinding_max_nodes() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.pathfinding_max_nodes, 50_000);
 }
 
 #[test]
 fn map_config_builder_values() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.builder_speed, 300.0);
     assert_eq!(cfg.builder_reach, 8.0);
 }
 
 #[test]
 fn map_config_decoration() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.decoration_min_count, 4);
     assert_eq!(cfg.decoration_count_variance, 5);
 }
 
 #[test]
 fn map_config_inspect_range() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.inspect_range_tiles, 3.0);
     assert_eq!(cfg.builder_range_tiles, 5.0);
 }
 
 #[test]
 fn map_config_mining_interval() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.player_mining_interval, 1.0);
 }
 
 #[test]
 fn map_config_builder_idle_offsets() {
-    let cfg = MapConfig::load();
+    let cfg = MapConfig::load(&test_mods());
     assert_eq!(cfg.builder_idle_offset_x, -24.0);
     assert_eq!(cfg.builder_idle_offset_y, -24.0);
 }

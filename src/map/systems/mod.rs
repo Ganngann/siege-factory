@@ -26,7 +26,8 @@ pub struct MapPlugin;
 
 impl Plugin for MapPlugin {
     fn build(&self, app: &mut App) {
-        let cfg = MapConfig::load();
+        let mods = app.world().resource::<crate::core::modding::ModRegistry>().clone();
+        let cfg = MapConfig::load(&mods);
         let seed = cfg.seed;
         let dep_min = cfg.deposit_min_amount;
         let dep_max = cfg.deposit_max_amount;

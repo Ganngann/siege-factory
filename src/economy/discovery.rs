@@ -5,8 +5,6 @@ use std::collections::HashSet;
 use crate::core::toast::ToastQueue;
 use crate::economy::components::{Building, DiscoveredRecipes, ProductionCounter};
 use crate::economy::resource::ResourceRegistry;
-use crate::load_toml;
-
 #[derive(Debug, Clone)]
 pub struct DiscoveryDef {
     pub building: String,
@@ -23,40 +21,26 @@ pub struct DiscoveryRegistry {
 }
 
 impl DiscoveryRegistry {
-    pub fn load() -> Self {
-        let parsed: DiscoveriesToml = load_toml!("../../data/discoveries.toml", DiscoveriesToml);
-        Self {
-            discoveries: parsed
-                .discovery
-                .into_iter()
-                .map(|e| DiscoveryDef {
-                    building: e.building,
-                    threshold: e.threshold,
-                    reward_type: e.reward_type,
-                    reward_id: e.id,
-                    message: e.message,
-                })
-                .collect(),
-            starter_recipes: parsed.starter_recipes.recipes,
+    pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
+        let mut discoveries = Vec::new();
+        let mut starter_recipes = Vec::new();
+        for (_mod_id, parsed) in mods.load_all_toml::<DiscoveriesToml>("discoveries.toml") {
+            for entry in parsed.discovery {
+                discoveries.push(DiscoveryDef {
+                    building: entry.building,
+                    threshold: entry.threshold,
+                    reward_type: entry.reward_type,
+                    reward_id: entry.id,
+                    message: entry.message,
+                });
+            }
+            if starter_recipes.is_empty() {
+                starter_recipes = parsed.starter_recipes.recipes;
+            }
         }
-    }
-
-    pub fn apply_mod_overrides(&mut self, mods: &crate::core::modding::ModRegistry) {
-        let Some(content) = mods.load_data("discoveries.toml") else {
-            return;
-        };
-        let Ok(parsed) = toml::from_str::<DiscoveriesToml>(&content) else {
-            bevy::prelude::error!("Failed to parse discoveries.toml from mod");
-            return;
-        };
-        for entry in parsed.discovery {
-            self.discoveries.push(DiscoveryDef {
-                building: entry.building,
-                threshold: entry.threshold,
-                reward_type: entry.reward_type,
-                reward_id: entry.id,
-                message: entry.message,
-            });
+        Self {
+            discoveries,
+            starter_recipes,
         }
     }
 }
@@ -167,5 +151,6 @@ pub fn on_discovery(
         .0
         .push(format!("Craft it and bring it to the Archive!"));
 }
+
 
 

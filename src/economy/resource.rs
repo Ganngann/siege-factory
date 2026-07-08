@@ -1,5 +1,4 @@
 use crate::core::utils::parse_hex_color;
-use crate::load_toml;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -47,23 +46,24 @@ pub struct ResourceRegistry {
 }
 
 impl ResourceRegistry {
-    pub fn load() -> Self {
-        let parsed: ResourcesToml = load_toml!("../../data/resources.toml", ResourcesToml);
+    pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
         let mut resources = HashMap::new();
-        for (key, entry) in parsed.resources {
-            resources.insert(
-                key.clone(),
-                ResourceDef {
-                    id: key,
-                    name: entry.name,
-                    max_stack: entry.max_stack,
-                    color: entry
-                        .color
-                        .as_deref()
-                        .map(parse_hex_color)
-                        .unwrap_or(Color::srgb(0.5, 0.5, 0.5)),
-                },
-            );
+        for (_mod_id, parsed) in mods.load_all_toml::<ResourcesToml>("resources.toml") {
+            for (key, entry) in parsed.resources {
+                resources.insert(
+                    key.clone(),
+                    ResourceDef {
+                        id: key,
+                        name: entry.name,
+                        max_stack: entry.max_stack,
+                        color: entry
+                            .color
+                            .as_deref()
+                            .map(parse_hex_color)
+                            .unwrap_or(Color::srgb(0.5, 0.5, 0.5)),
+                    },
+                );
+            }
         }
         Self { resources }
     }
@@ -80,31 +80,6 @@ impl ResourceRegistry {
         match self.resources.get(&id.0) {
             Some(r) => &r.name,
             None => &id.0,
-        }
-    }
-
-    pub fn apply_mod_overrides(&mut self, mods: &crate::core::modding::ModRegistry) {
-        let Some(content) = mods.load_data("resources.toml") else {
-            return;
-        };
-        let Ok(parsed) = toml::from_str::<ResourcesToml>(&content) else {
-            bevy::prelude::error!("Failed to parse resources.toml from mod");
-            return;
-        };
-        for (id, entry) in parsed.resources {
-            self.resources.insert(
-                id.clone(),
-                ResourceDef {
-                    id,
-                    name: entry.name,
-                    max_stack: entry.max_stack,
-                    color: entry
-                        .color
-                        .as_deref()
-                        .map(parse_hex_color)
-                        .unwrap_or(Color::srgb(0.5, 0.5, 0.5)),
-                },
-            );
         }
     }
 }
@@ -309,5 +284,6 @@ impl Inventory {
         }
     }
 }
+
 
 

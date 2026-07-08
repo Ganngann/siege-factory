@@ -1,4 +1,3 @@
-use crate::load_toml;
 use bevy::prelude::*;
 use std::collections::HashMap;
 use std::fmt;
@@ -101,8 +100,8 @@ pub struct KeyBindings {
 }
 
 impl KeyBindings {
-    pub fn load() -> Self {
-        let raw: BindingsToml = load_toml!("../../data/keybindings.toml", BindingsToml);
+    pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
+        let raw: BindingsToml = mods.load_toml("keybindings.toml");
         let mut map = HashMap::new();
         for (action, name) in raw.bindings {
             let binding = parse_input_binding(&name)
@@ -288,5 +287,6 @@ pub fn parse_key_code(name: &str) -> Option<KeyCode> {
         _ => return None,
     })
 }
+
 
 

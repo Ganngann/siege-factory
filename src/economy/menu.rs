@@ -2,7 +2,6 @@ use crate::economy::building::BuildingRegistry;
 use crate::economy::discovery::GlobalArchive;
 use crate::economy::resource::Cost;
 use crate::economy::unit_config::UnitConfig;
-use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 
@@ -144,8 +143,12 @@ fn resolve_item_id(
 // ── Loading ──
 
 impl MenuDef {
-    pub fn load(registry: &BuildingRegistry, unit_cfg: &UnitConfig) -> Self {
-        let parsed: MenuToml = load_toml!("../../data/menu.toml", MenuToml);
+    pub fn load(
+        mods: &crate::core::modding::ModRegistry,
+        registry: &BuildingRegistry,
+        unit_cfg: &UnitConfig,
+    ) -> Self {
+        let parsed: MenuToml = mods.load_toml("menu.toml");
         let page_size = parsed.settings.page_size;
 
         let root = parsed
@@ -369,5 +372,6 @@ pub fn format_cost(cost: &[Cost]) -> String {
         .collect::<Vec<_>>()
         .join(" + ")
 }
+
 
 

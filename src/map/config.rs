@@ -1,4 +1,3 @@
-use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -58,40 +57,69 @@ pub struct PlacedStructureProps {
 }
 
 impl MapConfig {
-    pub fn load() -> Self {
-        let parsed: MapToml = load_toml!("../../data/map_config.toml", MapToml);
+    pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
+        let parsed: Vec<(String, MapToml)> = mods.load_all_toml("map_config.toml");
+        let mut merged = MapToml::default();
+        for (_mod_id, overlay) in parsed.iter() {
+            let b_map = merged.map.as_ref().cloned().unwrap_or_default();
+            let b_dep = merged.deposits.as_ref().cloned().unwrap_or_default();
+            let b_plr = merged.player.as_ref().cloned().unwrap_or_default();
+            if let Some(ref m) = overlay.map {
+                merged.map = Some(merge_map_entry(&b_map, m));
+            }
+            if let Some(ref d) = overlay.deposits {
+                merged.deposits = Some(merge_deposits(&b_dep, d));
+            }
+            if let Some(ref p) = overlay.player {
+                merged.player = Some(merge_player(&b_plr, p));
+            }
+            if overlay.chunk.is_some() {
+                merged.chunk = overlay.chunk.clone();
+            }
+            if overlay.decoration.is_some() {
+                merged.decoration = overlay.decoration.clone();
+            }
+            if overlay.starting_area.is_some() {
+                merged.starting_area = overlay.starting_area.clone();
+            }
+        }
+        let map = merged.map.unwrap();
+        let deposits = merged.deposits.unwrap();
+        let player = merged.player.unwrap();
+        let chunk = merged.chunk.unwrap_or_default();
+        let decoration = merged.decoration.unwrap_or_default();
         let mut distribution: Vec<(String, u32)> =
-            parsed.deposits.distribution.into_iter().collect();
+            deposits.distribution.into_iter().collect();
         distribution.sort_by(|a, b| b.1.cmp(&a.1));
         Self {
-            tile_size: parsed.map.tile_size,
-            seed: parsed.map.seed,
-            chunk_size: parsed.map.chunk_size,
-            deposit_min_amount: parsed.deposits.min_amount,
-            deposit_max_amount: parsed.deposits.max_amount,
-            deposit_spawn_chance_pct: parsed.deposits.spawn_chance_pct,
-            deposit_min_per_chunk: parsed.deposits.min_per_chunk,
-            deposit_max_per_chunk: parsed.deposits.max_per_chunk,
+            tile_size: map.tile_size,
+            seed: map.seed,
+            chunk_size: map.chunk_size,
+            deposit_min_amount: deposits.min_amount,
+            deposit_max_amount: deposits.max_amount,
+            deposit_spawn_chance_pct: deposits.spawn_chance_pct,
+            deposit_min_per_chunk: deposits.min_per_chunk,
+            deposit_max_per_chunk: deposits.max_per_chunk,
             deposit_distribution: distribution,
-            infinite_deposits: parsed.deposits.infinite,
-            resource_discovery_map: parsed.deposits.resource_discovery_map.unwrap_or_default(),
-            player_start_position: (parsed.player.position.x, parsed.player.position.y),
-            player_hp: parsed.player.hp,
-            player_speed: parsed.player.speed,
-            builder_speed: parsed.player.builder_speed,
-            builder_reach: parsed.player.builder_reach,
-            pathfinding_max_nodes: parsed.map.pathfinding_max_nodes as usize,
-            initial_margin: parsed.chunk.initial_margin,
-            despawn_margin: parsed.chunk.despawn_margin,
-            inspect_range_tiles: parsed.player.inspect_range_tiles,
-            builder_range_tiles: parsed.player.builder_range_tiles,
-            builder_idle_offset_x: parsed.player.builder_idle_offset_x,
-            builder_idle_offset_y: parsed.player.builder_idle_offset_y,
-            decoration_min_count: parsed.decoration.min_count,
-            decoration_count_variance: parsed.decoration.count_variance,
-            player_mining_interval: parsed.player.mining_interval,
+            infinite_deposits: deposits.infinite,
+            resource_discovery_map: deposits.resource_discovery_map.unwrap_or_default(),
+            player_start_position: (player.position.x, player.position.y),
+            player_hp: player.hp,
+            player_speed: player.speed,
+            builder_speed: player.builder_speed,
+            builder_reach: player.builder_reach,
+            pathfinding_max_nodes: map.pathfinding_max_nodes as usize,
+            initial_margin: chunk.initial_margin,
+            despawn_margin: chunk.despawn_margin,
+            inspect_range_tiles: player.inspect_range_tiles,
+            builder_range_tiles: player.builder_range_tiles,
+            builder_idle_offset_x: player.builder_idle_offset_x,
+            builder_idle_offset_y: player.builder_idle_offset_y,
+            decoration_min_count: decoration.min_count,
+            decoration_count_variance: decoration.count_variance,
+            player_mining_interval: player.mining_interval,
             starting_area: {
-                let sa = parsed.starting_area.unwrap_or_default();
+                let sa = merged.starting_area.unwrap_or_default();
                 StartingAreaConfig {
                     enable: sa.enable,
                     radius: sa.radius,
@@ -117,20 +145,63 @@ impl MapConfig {
     }
 }
 
-#[derive(Deserialize)]
+fn merge_map_entry(_base: &MapEntry, overlay: &MapEntry) -> MapEntry {
+    MapEntry {
+        tile_size: if overlay.tile_size != 0.0 { overlay.tile_size } else { _base.tile_size },
+        seed: if overlay.seed != 0 { overlay.seed } else { _base.seed },
+        chunk_size: if overlay.chunk_size != 0 { overlay.chunk_size } else { _base.chunk_size },
+        pathfinding_max_nodes: overlay.pathfinding_max_nodes,
+    }
+}
+
+fn merge_deposits(_base: &DepositsEntry, overlay: &DepositsEntry) -> DepositsEntry {
+    DepositsEntry {
+        min_amount: if overlay.min_amount != 0 { overlay.min_amount } else { _base.min_amount },
+        max_amount: if overlay.max_amount != 0 { overlay.max_amount } else { _base.max_amount },
+        spawn_chance_pct: if overlay.spawn_chance_pct != 0 { overlay.spawn_chance_pct } else { _base.spawn_chance_pct },
+        min_per_chunk: if overlay.min_per_chunk != 0 { overlay.min_per_chunk } else { _base.min_per_chunk },
+        max_per_chunk: if overlay.max_per_chunk != 0 { overlay.max_per_chunk } else { _base.max_per_chunk },
+        infinite: overlay.infinite,
+        distribution: if !overlay.distribution.is_empty() { overlay.distribution.clone() } else { _base.distribution.clone() },
+        resource_discovery_map: overlay.resource_discovery_map.clone().or_else(|| _base.resource_discovery_map.clone()),
+    }
+}
+
+fn merge_player(_base: &PlayerEntry, overlay: &PlayerEntry) -> PlayerEntry {
+    PlayerEntry {
+        hp: if overlay.hp != 0 { overlay.hp } else { _base.hp },
+        speed: if overlay.speed != 0.0 { overlay.speed } else { _base.speed },
+        builder_speed: if overlay.builder_speed != 0.0 { overlay.builder_speed } else { _base.builder_speed },
+        builder_reach: if overlay.builder_reach != 0.0 { overlay.builder_reach } else { _base.builder_reach },
+        position: PosEntry {
+            x: if overlay.position.x != 0 { overlay.position.x } else { _base.position.x },
+            y: if overlay.position.y != 0 { overlay.position.y } else { _base.position.y },
+        },
+        inspect_range_tiles: if overlay.inspect_range_tiles != 0.0 { overlay.inspect_range_tiles } else { _base.inspect_range_tiles },
+        builder_range_tiles: if overlay.builder_range_tiles != 0.0 { overlay.builder_range_tiles } else { _base.builder_range_tiles },
+        builder_idle_offset_x: if overlay.builder_idle_offset_x != 0.0 { overlay.builder_idle_offset_x } else { _base.builder_idle_offset_x },
+        builder_idle_offset_y: if overlay.builder_idle_offset_y != 0.0 { overlay.builder_idle_offset_y } else { _base.builder_idle_offset_y },
+        mining_interval: if overlay.mining_interval != 0.0 { overlay.mining_interval } else { _base.mining_interval },
+    }
+}
+
+#[derive(Default, Clone, Deserialize)]
 struct MapToml {
-    map: MapEntry,
-    deposits: DepositsEntry,
-    player: PlayerEntry,
     #[serde(default)]
-    chunk: ChunkEntry,
+    map: Option<MapEntry>,
     #[serde(default)]
-    decoration: DecorationEntry,
+    deposits: Option<DepositsEntry>,
+    #[serde(default)]
+    player: Option<PlayerEntry>,
+    #[serde(default)]
+    chunk: Option<ChunkEntry>,
+    #[serde(default)]
+    decoration: Option<DecorationEntry>,
     #[serde(default)]
     starting_area: Option<StartingAreaEntry>,
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 struct StartingAreaEntry {
     #[serde(default)]
     enable: bool,
@@ -146,7 +217,7 @@ fn default_starting_radius() -> u32 {
     8
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct PlacedStructureEntry {
     kind: String,
     tile_x: i32,
@@ -155,7 +226,7 @@ struct PlacedStructureEntry {
     props: PlacedStructurePropsEntry,
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 struct PlacedStructurePropsEntry {
     #[serde(default)]
     resource: Option<String>,
@@ -165,10 +236,13 @@ struct PlacedStructurePropsEntry {
     decoration_kind: Option<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 struct MapEntry {
+    #[serde(default)]
     tile_size: f32,
+    #[serde(default)]
     seed: u64,
+    #[serde(default)]
     chunk_size: u32,
     #[serde(default = "default_pathfinding_nodes")]
     pathfinding_max_nodes: u64,
@@ -178,21 +252,29 @@ fn default_pathfinding_nodes() -> u64 {
     50000
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 struct DepositsEntry {
+    #[serde(default)]
     min_amount: u32,
+    #[serde(default)]
     max_amount: u32,
+    #[serde(default)]
     spawn_chance_pct: u32,
+    #[serde(default)]
     min_per_chunk: u32,
+    #[serde(default)]
     max_per_chunk: u32,
+    #[serde(default)]
     infinite: bool,
+    #[serde(default)]
     distribution: HashMap<String, u32>,
     #[serde(default)]
     resource_discovery_map: Option<HashMap<String, String>>,
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 struct PlayerEntry {
+    #[serde(default)]
     hp: u32,
     #[serde(default = "default_player_speed")]
     speed: f32,
@@ -200,6 +282,7 @@ struct PlayerEntry {
     builder_speed: f32,
     #[serde(default = "default_builder_reach")]
     builder_reach: f32,
+    #[serde(default)]
     position: PosEntry,
     #[serde(default = "default_inspect_range_tiles")]
     inspect_range_tiles: f32,
@@ -238,13 +321,15 @@ fn default_mining_interval() -> f32 {
     1.0
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 struct PosEntry {
+    #[serde(default)]
     x: i32,
+    #[serde(default)]
     y: i32,
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 struct ChunkEntry {
     #[serde(default = "default_initial_margin")]
     initial_margin: i32,
@@ -252,7 +337,7 @@ struct ChunkEntry {
     despawn_margin: i32,
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Clone, Deserialize)]
 struct DecorationEntry {
     #[serde(default = "default_decoration_min_count")]
     min_count: u32,

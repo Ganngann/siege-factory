@@ -6,7 +6,10 @@ use siege_factory::core::tutorial::TutorialState;
 use siege_factory::enemy::components::{LastWave, WaveState};
 use siege_factory::map::tile_grid::ChunkGrid;
 use siege_factory::save_load::*;
+use siege_factory::core::modding::ModRegistry;
 
+
+fn test_mods() -> ModRegistry { ModRegistry::for_test() }
 fn test_dist() -> Vec<(String, u32)> {
     vec![("iron_ore".to_string(), 50)]
 }
@@ -38,7 +41,7 @@ fn save_load_test_app() -> App {
 #[test]
 fn toggle_pause_menu_esc_toggles_show() {
     let mut app = save_load_test_app();
-    app.insert_resource(KeyBindings::load());
+    app.insert_resource(KeyBindings::load(&test_mods()));
     app.add_systems(Update, toggle_pause_menu);
 
     assert!(!app.world().resource::<ShowPauseMenu>().0);
@@ -54,7 +57,7 @@ fn toggle_pause_menu_esc_toggles_show() {
 #[test]
 fn toggle_pause_menu_esc_toggles_back_off() {
     let mut app = save_load_test_app();
-    app.insert_resource(KeyBindings::load());
+    app.insert_resource(KeyBindings::load(&test_mods()));
     app.add_systems(Update, toggle_pause_menu);
 
     // Toggle on
@@ -75,7 +78,7 @@ fn toggle_pause_menu_esc_toggles_back_off() {
 #[test]
 fn toggle_pause_menu_other_key_no_toggle() {
     let mut app = save_load_test_app();
-    app.insert_resource(KeyBindings::load());
+    app.insert_resource(KeyBindings::load(&test_mods()));
     app.add_systems(Update, toggle_pause_menu);
 
     app.world_mut()
@@ -89,7 +92,7 @@ fn toggle_pause_menu_other_key_no_toggle() {
 #[test]
 fn toggle_pause_menu_mouse_right_no_toggle() {
     let mut app = save_load_test_app();
-    app.insert_resource(KeyBindings::load());
+    app.insert_resource(KeyBindings::load(&test_mods()));
     app.add_systems(Update, toggle_pause_menu);
 
     app.world_mut()

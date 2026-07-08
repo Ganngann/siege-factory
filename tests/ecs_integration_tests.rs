@@ -13,11 +13,14 @@ use siege_factory::economy::player::PlayerWorldPos;
 use siege_factory::map::components::TilePosition;
 use siege_factory::map::config::MapConfig;
 use siege_factory::rendering::config::VisualsConfig;
+use siege_factory::core::modding::ModRegistry;
+
 
 // ════════════════════════════════════════════════════════════════
 // Helpers
 // ════════════════════════════════════════════════════════════════
 
+fn test_mods() -> ModRegistry { ModRegistry::for_test() }
 fn tutorial_test_app() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
@@ -27,7 +30,7 @@ fn tutorial_test_app() -> App {
     app.init_resource::<ToastQueue>();
     app.init_resource::<PlayerWorldPos>();
     app.init_resource::<ButtonInput<KeyCode>>();
-    app.insert_resource(MapConfig::load());
+    app.insert_resource(MapConfig::load(&test_mods()));
     app.add_systems(Update, tutorial_tick);
     app
 }
@@ -123,7 +126,7 @@ fn settings_round_trip_preserves_all_entries() {
 
 #[test]
 fn keybindings_loads_expected_actions() {
-    let bindings = KeyBindings::load();
+    let bindings = KeyBindings::load(&test_mods());
     // Actions defined in data/keybindings.toml
     let _ = bindings.get("cancel");
     let _ = bindings.get("restart");
@@ -134,7 +137,7 @@ fn keybindings_loads_expected_actions() {
 
 #[test]
 fn keybindings_just_pressed_keyboard() {
-    let bindings = KeyBindings::load();
+    let bindings = KeyBindings::load(&test_mods());
     let mut keys = ButtonInput::<KeyCode>::default();
     let mouse = ButtonInput::<MouseButton>::default();
 
@@ -145,7 +148,7 @@ fn keybindings_just_pressed_keyboard() {
 
 #[test]
 fn keybindings_just_pressed_mouse() {
-    let bindings = KeyBindings::load();
+    let bindings = KeyBindings::load(&test_mods());
     let keys = ButtonInput::<KeyCode>::default();
     let mut mouse = ButtonInput::<MouseButton>::default();
 
@@ -156,7 +159,7 @@ fn keybindings_just_pressed_mouse() {
 
 #[test]
 fn keybindings_just_pressed_returns_false_for_unbound_key() {
-    let bindings = KeyBindings::load();
+    let bindings = KeyBindings::load(&test_mods());
     let mut keys = ButtonInput::<KeyCode>::default();
     let mouse = ButtonInput::<MouseButton>::default();
 
@@ -603,7 +606,7 @@ fn toast_system_drains_queue_into_entities() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.init_resource::<ToastQueue>();
-    app.insert_resource(VisualsConfig::load());
+    app.insert_resource(VisualsConfig::load(&test_mods()));
     app.add_systems(Update, toast_system);
 
     app.world_mut()
@@ -628,7 +631,7 @@ fn toast_system_empty_queue_no_entities() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.init_resource::<ToastQueue>();
-    app.insert_resource(VisualsConfig::load());
+    app.insert_resource(VisualsConfig::load(&test_mods()));
     app.add_systems(Update, toast_system);
 
     app.update();

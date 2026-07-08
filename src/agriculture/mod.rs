@@ -13,7 +13,8 @@ pub struct AgriculturePlugin;
 
 impl Plugin for AgriculturePlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(CropRegistry::load());
+        let mods = app.world().resource::<crate::core::modding::ModRegistry>().clone();
+        app.insert_resource(CropRegistry::load(&mods));
         app.insert_resource(PendingDeliveries::default());
         app.add_systems(
             Update,

@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::path::PathBuf;
@@ -253,6 +254,40 @@ impl ModRegistry {
     /// Get the base mod path
     pub fn base_path(&self) -> Option<PathBuf> {
         self.get("base").map(|m| m.path.clone())
+    }
+
+    /// Parse the first enabled mod's `data/{filename}` as TOML into `T`.
+    /// Panics with a clear message if the file is missing or invalid.
+    pub fn load_toml<T: DeserializeOwned>(&self, filename: &str) -> T {
+        let content = self
+            .load_data(filename)
+            .unwrap_or_else(|| panic!("No enabled mod provides data/{filename}"));
+        toml::from_str(&content)
+            .unwrap_or_else(|e| panic!("Failed to parse data/{filename}: {e}"))
+    }
+
+    /// Parse ALL enabled mods' `data/{filename}` as TOML into `Vec<T>`.
+    /// Returns entries in mod priority order (base first).
+    /// Skips mods whose file fails to parse (logs a warning).
+    pub fn load_all_toml<T: DeserializeOwned>(&self, filename: &str) -> Vec<(String, T)> {
+        self.load_all_data(filename)
+            .into_iter()
+            .filter_map(|(id, content)| {
+                match toml::from_str(&content) {
+                    Ok(parsed) => Some((id, parsed)),
+                    Err(e) => {
+                        bevy::prelude::error!("Failed to parse data/{filename} from mod {id}: {e}");
+                        None
+                    }
+                }
+            })
+            .collect()
+    }
+
+    /// Create a registry by scanning the filesystem — useful in tests.
+    /// Panics if `mods/` is not accessible (run from project root).
+    pub fn for_test() -> Self {
+        Self::discover()
     }
 }
 

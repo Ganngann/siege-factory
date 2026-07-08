@@ -15,11 +15,14 @@ use siege_factory::map::components::{TilePosition, HoveredTile};
 use siege_factory::map::config::MapConfig;
 use siege_factory::map::systems::chunks::{build_chunk_mesh, update_fog_of_war};
 use siege_factory::map::tile_grid::{ChunkGrid, CHUNK_SIZE};
+use siege_factory::core::modding::ModRegistry;
+
 
 // ════════════════════════════════════════════════════════════════
 // Helpers
 // ════════════════════════════════════════════════════════════════
 
+fn test_mods() -> ModRegistry { ModRegistry::for_test() }
 fn enemy_test_app() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
@@ -28,9 +31,9 @@ fn enemy_test_app() -> App {
     app.init_resource::<ButtonInput<KeyCode>>();
     app.init_resource::<ButtonInput<MouseButton>>();
 
-    let map_cfg = MapConfig::load();
-    let wave_cfg = WaveConfig::load();
-    let enemy_reg = EnemyRegistry::load();
+    let map_cfg = MapConfig::load(&test_mods());
+    let wave_cfg = WaveConfig::load(&test_mods());
+    let enemy_reg = EnemyRegistry::load(&test_mods());
 
     app.insert_resource(map_cfg);
     app.insert_resource(wave_cfg);
@@ -810,7 +813,7 @@ fn reset_wave_restores_player_health() {
 fn fog_test_app() -> App {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
-    let map_cfg = MapConfig::load();
+    let map_cfg = MapConfig::load(&test_mods());
     let seed = map_cfg.seed;
     let dep_min = map_cfg.deposit_min_amount;
     let dep_max = map_cfg.deposit_max_amount;
@@ -1175,7 +1178,7 @@ fn recenter_on_player_moves_camera_to_player_start() {
     app.add_plugins(MinimalPlugins);
     app.init_resource::<ButtonInput<KeyCode>>();
 
-    let map_cfg = MapConfig::load();
+    let map_cfg = MapConfig::load(&test_mods());
     let (px, py) = map_cfg.player_start_position;
     let tile_size = map_cfg.tile_size;
     app.insert_resource(map_cfg);
@@ -1218,7 +1221,7 @@ fn recenter_on_player_does_nothing_without_h_key() {
     app.add_plugins(MinimalPlugins);
     app.init_resource::<ButtonInput<KeyCode>>();
 
-    let map_cfg = MapConfig::load();
+    let map_cfg = MapConfig::load(&test_mods());
     app.insert_resource(map_cfg);
 
     app.world_mut().spawn((
@@ -1250,7 +1253,7 @@ fn update_hovered_tile_clears_when_ui_blocking() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.init_resource::<HoveredTile>();
-    app.insert_resource(MapConfig::load());
+    app.insert_resource(MapConfig::load(&test_mods()));
     app.insert_resource(UiIsBlocking(true));
 
     app.world_mut().spawn((

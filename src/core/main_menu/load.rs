@@ -1,9 +1,8 @@
 use super::types::*;
-use crate::load_toml;
 
 impl MainMenuDef {
-    pub fn load() -> Self {
-        let raw: MenuToml = load_toml!("../../../data/main_menu.toml", MenuToml);
+    pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
+        let raw: MenuToml = mods.load_toml("main_menu.toml");
 
         let screens = raw
             .screen

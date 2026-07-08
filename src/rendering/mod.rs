@@ -23,7 +23,8 @@ pub struct RenderPlugin;
 
 impl Plugin for RenderPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(VisualsConfig::load());
+        let mods = app.world().resource::<crate::core::modding::ModRegistry>().clone();
+        app.insert_resource(VisualsConfig::load(&mods));
         app.init_resource::<ShapeCache>();
         app.init_resource::<PreviewMaterials>();
         app.init_resource::<TileHighlightEntity>();

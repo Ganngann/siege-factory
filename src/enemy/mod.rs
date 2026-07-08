@@ -17,9 +17,10 @@ pub struct EnemyPlugin;
 
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        let wave_cfg = WaveConfig::load();
+        let mods = app.world().resource::<crate::core::modding::ModRegistry>().clone();
+        let wave_cfg = WaveConfig::load(&mods);
         app.insert_resource(WaveState::new(wave_cfg.first_wave_delay));
-        app.insert_resource(EnemyRegistry::load());
+        app.insert_resource(EnemyRegistry::load(&mods));
         app.insert_resource(wave_cfg);
         app.insert_resource(LastWave(1));
         app.add_systems(

@@ -1,4 +1,3 @@
-use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 
@@ -56,12 +55,12 @@ pub struct CropRegistry {
 }
 
 impl CropRegistry {
-    pub fn load() -> Self {
+    pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
         #[derive(Deserialize)]
         struct CropToml {
             crops: std::collections::HashMap<String, CropDef>,
         }
-        let parsed: CropToml = load_toml!("../../data/crops.toml", CropToml);
+        let parsed: CropToml = mods.load_toml("crops.toml");
         Self {
             crops: parsed.crops,
         }
@@ -71,3 +70,4 @@ impl CropRegistry {
         self.crops.get(id)
     }
 }
+

@@ -1,4 +1,3 @@
-use crate::load_toml;
 use bevy::prelude::*;
 use serde::Deserialize;
 
@@ -31,8 +30,8 @@ pub struct WaveConfig {
 }
 
 impl WaveConfig {
-    pub fn load() -> Self {
-        let parsed: WavesToml = load_toml!("../../data/waves.toml", WavesToml);
+    pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
+        let parsed: WavesToml = mods.load_toml("waves.toml");
         let waves = parsed
             .waves
             .iter()
@@ -114,5 +113,6 @@ fn default_enemy_arrival_threshold() -> f32 {
 fn default_enemy_spawn_z() -> f32 {
     3.0
 }
+
 
 

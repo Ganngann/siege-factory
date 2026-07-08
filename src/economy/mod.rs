@@ -34,7 +34,7 @@ use crate::core::utils::silent_despawn;
 use bevy::ecs::hierarchy::ChildOf;
 use bevy::picking::hover::HoverMap;
 use bevy::prelude::*;
-use building::{BuildingRegistry, DefaultSettings};
+use building::DefaultSettings;
 use components::{Building, BuildingPanel, PeacefulMode, UiIsBlocking};
 use menu::{MenuItems, MenuState};
 use resource::ResourceRegistry;
@@ -76,19 +76,21 @@ pub struct EconomyPlugin;
 
 impl Plugin for EconomyPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(ResourceRegistry::load());
-        app.insert_resource(DefaultSettings::load());
-        app.insert_resource(recipe::RecipeRegistry::load());
-        let discovery_registry = discovery::DiscoveryRegistry::load();
+        let mods = app.world().resource::<crate::core::modding::ModRegistry>().clone();
+
+        app.insert_resource(ResourceRegistry::load(&mods));
+        app.insert_resource(DefaultSettings::load(&mods));
+        app.insert_resource(recipe::RecipeRegistry::load(&mods));
+        let discovery_registry = discovery::DiscoveryRegistry::load(&mods);
         app.insert_resource(discovery::GlobalArchive::new(
             &discovery_registry.starter_recipes,
         ));
         app.insert_resource(discovery_registry);
 
         // Load registries + derive MenuDef in dependency order (avoids double-load)
-        let building_registry = building::BuildingRegistry::load();
-        let unit_cfg = unit_config::UnitConfig::load();
-        let menu_def = menu::MenuDef::load(&building_registry, &unit_cfg);
+        let building_registry = building::BuildingRegistry::load(&mods);
+        let unit_cfg = unit_config::UnitConfig::load(&mods);
+        let menu_def = menu::MenuDef::load(&mods, &building_registry, &unit_cfg);
         app.insert_resource(building_registry);
         app.insert_resource(unit_cfg);
         app.insert_resource(menu_def);
@@ -322,65 +324,10 @@ impl Plugin for EconomyPlugin {
 
         app.add_systems(
             Startup,
-            (|registry: Res<crate::core::modding::ModRegistry>,
-              mut buildings: ResMut<BuildingRegistry>,
-              mut resources: ResMut<ResourceRegistry>,
-              mut recipes: ResMut<recipe::RecipeRegistry>,
-              mut discoveries: ResMut<discovery::DiscoveryRegistry>,
-              mut units: ResMut<unit_config::UnitConfig>| {
-                let has_non_base_mods = registry.mods.iter().any(|m| m.manifest.id != "base");
-                if !has_non_base_mods {
-                    return;
-                }
-                buildings.apply_mod_overrides(&registry);
-                resources.apply_mod_overrides(&registry);
-                recipes.apply_mod_overrides(&registry);
-                discoveries.apply_mod_overrides(&registry);
-                units.apply_mod_overrides(&registry);
-            })
-            .run_if(resource_exists::<crate::core::modding::ModRegistry>),
-        );
-
-        app.add_systems(
-            Startup,
             |registry: Res<crate::core::modding::ModRegistry>,
              mut tutorial: ResMut<crate::core::tutorial::TutorialState>| {
                 *tutorial = crate::core::tutorial::TutorialState::load(&registry);
             },
-        );
-
-        // On each fresh game start, reload base data + re-apply mod overrides
-        // so that toggling mods from the main menu takes effect immediately.
-        app.add_systems(
-            OnEnter(GameState::Playing),
-            (
-                |mut resources: ResMut<ResourceRegistry>,
-                 mut buildings: ResMut<BuildingRegistry>,
-                 mut recipes: ResMut<recipe::RecipeRegistry>,
-                 mut discoveries: ResMut<discovery::DiscoveryRegistry>,
-                 mut units: ResMut<unit_config::UnitConfig>,
-                 mut archive: ResMut<discovery::GlobalArchive>,
-                 mut menu_def: ResMut<menu::MenuDef>,
-                 registry: Res<crate::core::modding::ModRegistry>| {
-                    // Reload base data from files
-                    *resources = resource::ResourceRegistry::load();
-                    *buildings = building::BuildingRegistry::load();
-                    *recipes = recipe::RecipeRegistry::load();
-                    *discoveries = discovery::DiscoveryRegistry::load();
-                    *units = unit_config::UnitConfig::load();
-                    archive.unlocked_recipes.clear();
-                    for recipe_id in &discoveries.starter_recipes {
-                        archive.unlocked_recipes.insert(recipe_id.clone());
-                    }
-                    // Apply enabled mod overrides (load_data skips disabled mods)
-                    resources.apply_mod_overrides(&registry);
-                    buildings.apply_mod_overrides(&registry);
-                    recipes.apply_mod_overrides(&registry);
-                    discoveries.apply_mod_overrides(&registry);
-                    units.apply_mod_overrides(&registry);
-                    *menu_def = menu::MenuDef::load(&buildings, &units);
-                },
-            ),
         );
     }
 }
