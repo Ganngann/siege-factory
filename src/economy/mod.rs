@@ -348,6 +348,40 @@ impl Plugin for EconomyPlugin {
                 *tutorial = crate::core::tutorial::TutorialState::load(&registry);
             },
         );
+
+        // On each fresh game start, reload base data + re-apply mod overrides
+        // so that toggling mods from the main menu takes effect immediately.
+        app.add_systems(
+            OnEnter(GameState::Playing),
+            (
+                |mut resources: ResMut<ResourceRegistry>,
+                 mut buildings: ResMut<BuildingRegistry>,
+                 mut recipes: ResMut<recipe::RecipeRegistry>,
+                 mut discoveries: ResMut<discovery::DiscoveryRegistry>,
+                 mut units: ResMut<unit_config::UnitConfig>,
+                 mut archive: ResMut<discovery::GlobalArchive>,
+                 mut menu_def: ResMut<menu::MenuDef>,
+                 registry: Res<crate::core::modding::ModRegistry>| {
+                    // Reload base data from files
+                    *resources = resource::ResourceRegistry::load();
+                    *buildings = building::BuildingRegistry::load();
+                    *recipes = recipe::RecipeRegistry::load();
+                    *discoveries = discovery::DiscoveryRegistry::load();
+                    *units = unit_config::UnitConfig::load();
+                    archive.unlocked_recipes.clear();
+                    for recipe_id in &discoveries.starter_recipes {
+                        archive.unlocked_recipes.insert(recipe_id.clone());
+                    }
+                    // Apply enabled mod overrides (load_data skips disabled mods)
+                    resources.apply_mod_overrides(&registry);
+                    buildings.apply_mod_overrides(&registry);
+                    recipes.apply_mod_overrides(&registry);
+                    discoveries.apply_mod_overrides(&registry);
+                    units.apply_mod_overrides(&registry);
+                    *menu_def = menu::MenuDef::load(&buildings, &units);
+                },
+            ),
+        );
     }
 }
 

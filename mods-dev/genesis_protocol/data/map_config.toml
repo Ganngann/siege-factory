@@ -1,0 +1,84 @@
+[map]
+tile_size = 32.0
+seed = 42
+chunk_size = 32
+pathfinding_max_nodes = 50000
+
+[deposits]
+min_amount = 30
+max_amount = 80
+spawn_chance_pct = 25
+min_per_chunk = 3
+max_per_chunk = 6
+infinite = true
+[deposits.distribution]
+scrap_metal = 40
+wood = 30
+stone = 20
+clay = 10
+[deposits.resource_discovery_map]
+scrap_metal = "mine_scrap_metal"
+wood = "mine_wood"
+stone = "mine_stone"
+clay = "mine_clay"
+
+[player]
+hp = 100
+speed = 250.0
+builder_speed = 300.0
+builder_reach = 8.0
+position = { x = 5, y = 5 }
+inspect_range_tiles = 3.0
+builder_range_tiles = 5.0
+builder_idle_offset_x = -24.0
+builder_idle_offset_y = -24.0
+mining_interval = 1.0
+
+[chunk]
+initial_margin = 3
+despawn_margin = 3
+
+[decoration]
+min_count = 4
+count_variance = 5
+
+[starting_area]
+enable = true
+radius = 8
+clear_trees = true
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 4
+tile_y = 4
+props = { resource = "scrap_metal", amount = 30 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 7
+tile_y = 5
+props = { resource = "wood", amount = 40 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 3
+tile_y = 7
+props = { resource = "stone", amount = 25 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 6
+tile_y = 3
+props = { resource = "clay", amount = 20 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 8
+tile_y = 8
+props = { resource = "iron_ore", amount = 15 }
+
+[[starting_area.structures]]
+kind = "deposit"
+tile_x = 2
+tile_y = 2
+props = { resource = "coal", amount = 10 }

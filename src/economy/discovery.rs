@@ -69,18 +69,10 @@ struct DiscoveriesToml {
     starter_recipes: StarterRecipes,
 }
 
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 struct StarterRecipes {
     #[serde(default)]
     recipes: Vec<String>,
-}
-
-impl Default for StarterRecipes {
-    fn default() -> Self {
-        Self {
-            recipes: Vec::new(),
-        }
-    }
 }
 
 #[derive(Deserialize)]

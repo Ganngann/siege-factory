@@ -167,12 +167,8 @@ pub fn load_buildings(
             .unwrap_or((1, 1));
         let cx = (bs.tile_x as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
         let cy = (bs.tile_y as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
-        let inv = if let Some(ref items) = bs.inventory {
-            let mut i = Inventory::with_capacity(bs.inventory_capacity);
-            for (res, amount) in items {
-                i.add(&ResourceId(res.clone()), *amount);
-            }
-            i
+        let inv = if let Some(ref slots) = bs.inventory {
+            Inventory::from_raw_slots(slots.clone(), bs.inventory_capacity)
         } else if bs.inventory_capacity > 0 {
             Inventory::with_capacity(bs.inventory_capacity)
         } else {

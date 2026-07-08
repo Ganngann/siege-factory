@@ -21,8 +21,8 @@ pub struct DraggedItemVisual;
 #[derive(Resource, Default)]
 pub struct DragState {
     pub active: bool,
-    pub source_slot: Option<Entity>,
     pub source_owner: Option<Entity>,
+    pub source_slot_index: usize,
     pub resource: Option<crate::economy::resource::ResourceId>,
     pub amount: u32,
     pub visual: Option<Entity>,
@@ -31,8 +31,8 @@ pub struct DragState {
 impl DragState {
     pub fn reset(&mut self) {
         self.active = false;
-        self.source_slot = None;
         self.source_owner = None;
+        self.source_slot_index = 0;
         self.resource = None;
         self.amount = 0;
         self.visual = None;
@@ -42,25 +42,13 @@ impl DragState {
 #[derive(Resource, Default)]
 pub struct UiIsBlocking(pub bool);
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct BuildingPanel {
     pub inspected: Option<Entity>,
     pub root: Option<Entity>,
     pub overlay: Option<Entity>,
     pub recipe_selector: Option<Entity>,
     pub dirty: bool,
-}
-
-impl Default for BuildingPanel {
-    fn default() -> Self {
-        Self {
-            inspected: None,
-            root: None,
-            overlay: None,
-            recipe_selector: None,
-            dirty: false,
-        }
-    }
 }
 
 // ── Build state resources ──

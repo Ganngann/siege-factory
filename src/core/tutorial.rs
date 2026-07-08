@@ -102,7 +102,7 @@ pub fn track_item_collected(
     let Ok(inv) = player_q.single() else {
         return;
     };
-    let total: u32 = inv.resources.values().sum();
+    let total: u32 = inv.total();
     if total > conditions.items_collected {
         conditions.items_collected = total;
     }

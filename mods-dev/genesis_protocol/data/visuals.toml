@@ -1,0 +1,131 @@
+[hp_bar]
+width = 24.0
+height = 3.0
+y_offset = 20.0
+z = 10.0
+color_high = "#4CFF4C"
+color_mid = "#FFCC33"
+color_low = "#FF3333"
+
+[belt_item]
+width = 20.0
+height = 20.0
+z = 2.5
+
+[unit]
+width = 48.0
+height = 48.0
+z = 2.5
+owner_color = "#3366CC"
+
+[player]
+width = 28.0
+height = 28.0
+z = 5.0
+
+[builder]
+width = 20.0
+height = 20.0
+z = 4.0
+
+[enemy]
+boss_size = 48.0
+tank_size = 36.0
+default_size = 28.0
+spawn_z = 3.0
+
+[projectile]
+scale = 0.3
+
+[mining_bar]
+width = 24.0
+height = 3.0
+y_offset = 16.0
+z = 10.0
+color = "#FFAA33"
+
+[toast]
+lifetime = 5.0
+font_size = 16.0
+color = "#FFD94C"
+bottom_px = 90.0
+
+[tile_highlight]
+color = "#FFFFFF"
+alpha = 0.15
+z = 0.5
+
+[deposit_sprite]
+scale_ratio = 0.8
+z = 0.5
+fallback_color = "#808080"
+
+[decoration]
+tree_z = 0.3
+rock_z = 0.2
+tree_color = "#267326"
+rock_color = "#666666"
+
+[chunk_colors]
+even = "#3D5C3D"
+odd = "#2E472E"
+
+[ghost]
+tint_r = 1.0
+tint_g = 0.3
+tint_b = 0.3
+tint_a = 0.5
+
+[building]
+owner_color = "#3366CC"
+level_color = "#33CC33"
+
+[[decorations]]
+kind = "tree"
+min_size = 12.0
+max_size = 20.0
+scatter = 6.0
+density = 0.008
+z = 0.3
+color = "#267326"
+shape = "triangle"
+
+[[decorations]]
+kind = "rock"
+min_size = 4.0
+max_size = 6.0
+scatter = 3.0
+density = 0.005
+z = 0.2
+color = "#666666"
+shape = "circle"
+
+[[decorations]]
+kind = "ruin"
+min_size = 20.0
+max_size = 32.0
+scatter = 8.0
+density = 0.003
+z = 0.25
+color = "#4A4A4A"
+shape = "square"
+
+[[decorations]]
+kind = "bush"
+min_size = 6.0
+max_size = 10.0
+scatter = 4.0
+density = 0.006
+z = 0.25
+color = "#2D5A2D"
+shape = "circle"
+
+[[decorations]]
+kind = "rusty_metal"
+min_size = 4.0
+max_size = 8.0
+scatter = 5.0
+density = 0.003
+z = 0.2
+color = "#773322"
+shape = "rectangle"

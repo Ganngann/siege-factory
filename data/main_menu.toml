@@ -18,6 +18,12 @@ label = "Load Game"
 action = "LoadGame"
 
 [[screen.main_menu.items]]
+id = "mods"
+label = "Mods"
+action = "OpenScreen"
+target = "mods"
+
+[[screen.main_menu.items]]
 id = "options"
 label = "Options"
 action = "OpenScreen"
@@ -42,3 +48,6 @@ action = "Back"
 # keybindings screen items are generated dynamically from KeyBindings resource
 [screen.keybindings]
 title = "Key Bindings"
+
+[screen.mods]
+title = "Mods"

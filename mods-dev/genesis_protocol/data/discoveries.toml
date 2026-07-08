@@ -1,0 +1,76 @@
+# ============================================================
+# Genesis Protocol — Découvertes (déblocage des phases)
+# ============================================================
+
+[starter_recipes]
+recipes = [
+    "mine_scrap_metal",
+    "mine_wood",
+    "mine_stone",
+    "mine_clay",
+    "iron_parts_from_scrap",
+    "planks_from_wood",
+    "stone_brick_cut",
+    "ceramic_form",
+    "rope_twist",
+    "ceramic_fire",
+    "stone_brick_fire",
+    "iron_ingot_primitive",
+    "copper_ingot_primitive",
+]
+
+# Phase 0 → Phase 1 : Premier usage du campfire
+[[discovery]]
+building = "campfire"
+threshold = 1
+type = "recipe"
+id = "iron_ingot"
+message = "Le feu peut transformer le minerai en métal. Une nouvelle ère commence."
+
+# Phase 1 → Phase 2 : Fusion avancée
+[[discovery]]
+building = "furnace"
+threshold = 3
+type = "recipe"
+id = "steel"
+message = "La chaleur intense fusionne le fer et le charbon en acier."
+
+# Phase 2 → Phase 3 : Premiers circuits
+[[discovery]]
+building = "gear_press"
+threshold = 3
+type = "recipe"
+id = "circuit"
+message = "Des connexions de cuivre sur du fer créent un circuit primitif."
+
+# Phase 3 → Phase 4 : Mécanisation
+[[discovery]]
+building = "assembler"
+threshold = 5
+type = "recipe"
+id = "motor"
+message = "La précision mécanique donne naissance au moteur."
+
+# Phase 4 → Phase 5 : Nano-technologie
+[[discovery]]
+building = "electronics_lab"
+threshold = 3
+type = "recipe"
+id = "processor"
+message = "Des circuits superposés forment une unité de traitement."
+
+# Phase 5 → Phase 6 : Matière vivante
+[[discovery]]
+building = "bio_lab"
+threshold = 1
+type = "recipe"
+id = "organic_compound"
+message = "La vie jaillit du métal et de l'eau."
+
+# Phase 6 → Finale : Le dernier composant
+[[discovery]]
+building = "bio_lab"
+threshold = 5
+type = "recipe"
+id = "neural_interface"
+message = "La carte neurale est prête. Le cerveau de la capsule peut être connecté."

@@ -90,7 +90,7 @@ pub struct BuildingSave {
     pub tile_y: i32,
     pub occupied: Vec<(i32, i32)>,
     pub hp: Option<(u32, u32)>,
-    pub inventory: Option<Vec<(String, u32)>>,
+    pub inventory: Option<Vec<Option<(String, u32)>>>,
     pub inventory_capacity: u32,
     pub assembler: Option<AssemblerSave>,
     pub turret: Option<TurretSave>,
@@ -189,15 +189,9 @@ pub struct ShowPauseMenu(pub bool);
 #[derive(Resource, Default)]
 pub struct SaveRequested(pub bool);
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct LoadBuffer {
     pub data: Option<SaveData>,
-}
-
-impl Default for LoadBuffer {
-    fn default() -> Self {
-        Self { data: None }
-    }
 }
 
 pub fn is_fresh_game(fresh: Res<IsFreshGame>) -> bool {

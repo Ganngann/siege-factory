@@ -1,0 +1,629 @@
+# ============================================================
+# Genesis Protocol — Bâtiments
+# ============================================================
+
+[defaults]
+can_deconstruct = true
+refund_ratio = 0.5
+repair_cost_ratio = 0.5
+inventory_capacity = 0
+default_projectile_speed = 300.0
+
+# ============================================================
+# PHASE 0 — Réveil
+# ============================================================
+
+[buildings.workbench]
+name = "Établi"
+cost = { wood = 4, stone = 2 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#8B5E3C"
+visual = "square"
+texture_stem = "workbench"
+powered = false
+station = true
+hidden = false
+recipe_categories = ["hand_crafting"]
+
+[buildings.campfire]
+name = "Feu de Camp"
+cost = { stone = 3, wood = 2 }
+hp = 20
+tile_size = { w = 1, h = 1 }
+color = "#FF6622"
+visual = "diamond"
+texture_stem = "campfire"
+powered = false
+hidden = false
+recipe_categories = ["primitive_smelting"]
+production_interval = 4.0
+default_recipe = "ceramic_fire"
+
+# ============================================================
+# PHASE 1 — Étincelle
+# ============================================================
+
+[buildings.furnace]
+name = "Four"
+cost = { stone_brick = 4, ceramic = 2, iron_parts = 2 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#884422"
+visual = "diamond"
+texture_stem = "furnace"
+powered = true
+hidden = false
+recipe_categories = ["smelting"]
+production_interval = 3.0
+default_recipe = "iron_ingot_smelt"
+power_consumption = 5.0
+requires_discovery = "iron_ingot"
+
+[buildings.anvil]
+name = "Enclume"
+cost = { iron_parts = 4, stone = 2 }
+hp = 50
+tile_size = { w = 1, h = 1 }
+color = "#666666"
+visual = "square"
+texture_stem = "anvil"
+powered = false
+hidden = false
+recipe_categories = ["smithing"]
+production_interval = 2.0
+default_recipe = "copper_wire_draw"
+requires_discovery = "iron_ingot"
+
+[buildings.burner_generator]
+name = "Générateur Charbon"
+cost = { iron_parts = 4, stone = 2 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#DD6622"
+visual = "square"
+texture_stem = "burner_generator"
+powered = false
+hidden = false
+inventory_capacity = 16
+power_generation = 50.0
+fuel_burn_interval = 2.0
+requires_discovery = "iron_ingot"
+
+[buildings.manual_miner]
+name = "Mineur Manuel"
+cost = { iron_parts = 3 }
+hp = 60
+tile_size = { w = 1, h = 1 }
+color = "#AA7733"
+visual = "square"
+texture_stem = "manual_miner"
+powered = false
+hidden = false
+requires_deposit = true
+production = { resource = "ore", interval_sec = 3.0 }
+requires_discovery = "iron_ingot"
+
+# ============================================================
+# PHASE 2 — Rouille et Vapeur
+# ============================================================
+
+[buildings.water_pump]
+name = "Pompe à Eau"
+cost = { iron_parts = 3, pipe = 1 }
+hp = 50
+tile_size = { w = 1, h = 1 }
+color = "#3399DD"
+visual = "square"
+texture_stem = "water_pump"
+powered = true
+hidden = false
+recipe_categories = ["pumping"]
+production_interval = 2.0
+default_recipe = "pump_water"
+power_consumption = 8.0
+requires_discovery = "steel"
+
+[buildings.steam_generator]
+name = "Générateur Vapeur"
+cost = { steel = 4, copper_ingot = 2, pipe = 2 }
+hp = 100
+tile_size = { w = 1, h = 1 }
+color = "#CCDDEE"
+visual = "diamond"
+texture_stem = "steam_generator"
+powered = true
+hidden = false
+recipe_categories = ["steam"]
+production_interval = 4.0
+default_recipe = "steam_produce"
+power_consumption = 5.0
+power_generation = 30.0
+fuel_burn_interval = 2.0
+requires_discovery = "steel"
+
+[buildings.blast_furnace]
+name = "Haut Fourneau"
+cost = { steel = 6, stone_brick = 4 }
+hp = 150
+tile_size = { w = 1, h = 1 }
+color = "#AA4422"
+visual = "diamond"
+texture_stem = "blast_furnace"
+powered = true
+hidden = false
+recipe_categories = ["steelmaking"]
+production_interval = 6.0
+default_recipe = "steel_produce"
+power_consumption = 15.0
+requires_discovery = "steel"
+
+[buildings.gear_press]
+name = "Presse à Engrenages"
+cost = { iron_parts = 3, rope = 2 }
+hp = 60
+tile_size = { w = 1, h = 1 }
+color = "#887766"
+visual = "rectangle"
+texture_stem = "gear_press"
+powered = true
+hidden = false
+recipe_categories = ["pressing"]
+production_interval = 3.0
+default_recipe = "gear_cut"
+power_consumption = 10.0
+requires_discovery = "steel"
+
+[buildings.belt]
+name = "Convoyeur"
+cost = { iron_parts = 2, gear = 1 }
+hp = 20
+tile_size = { w = 1, h = 1 }
+color = "#808080"
+visual = "rectangle"
+texture_stem = "belt"
+powered = true
+hidden = false
+slots = 4
+speed = 2.0
+power_consumption = 2.0
+requires_discovery = "steel"
+level = 1
+belt_variant = "normal"
+drag_placement = true
+
+[buildings.splitter]
+name = "Séparateur"
+cost = { iron_parts = 2, gear = 2 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#AAAA00"
+visual = "diamond"
+texture_stem = "splitter"
+powered = true
+hidden = false
+slots = 2
+speed = 2.0
+power_consumption = 3.0
+requires_discovery = "steel"
+
+# ============================================================
+# PHASE 3 — Fil du Cuivre
+# ============================================================
+
+[buildings.electric_generator]
+name = "Générateur Électrique"
+cost = { steel = 4, copper_wire = 2, screw = 4, gear = 2 }
+hp = 100
+tile_size = { w = 1, h = 1 }
+color = "#FFAA33"
+visual = "square"
+texture_stem = "electric_generator"
+powered = false
+hidden = false
+inventory_capacity = 16
+power_generation = 80.0
+fuel_burn_interval = 3.0
+power_consumption = 5.0
+requires_discovery = "circuit"
+
+[buildings.power_pole]
+name = "Pylône"
+cost = { iron_parts = 2, copper_wire = 1 }
+hp = 10
+tile_size = { w = 1, h = 1 }
+color = "#888888"
+visual = "circle"
+texture_stem = "power_pole"
+powered = false
+hidden = false
+power_pole_range = 5.0
+requires_discovery = "circuit"
+
+[buildings.assembler]
+name = "Assembleur"
+cost = { iron_parts = 4, circuit = 1 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#4D99CC"
+visual = "diamond"
+texture_stem = "assembler"
+powered = true
+hidden = false
+recipe_categories = ["crafting"]
+production_interval = 2.0
+default_recipe = "circuit_etch"
+power_consumption = 12.0
+requires_discovery = "circuit"
+
+[buildings.chemical_lab]
+name = "Laboratoire Chimique"
+cost = { steel = 4, glass = 2, pipe = 2 }
+hp = 90
+tile_size = { w = 2, h = 2 }
+color = "#664488"
+visual = "diamond"
+texture_stem = "chemical_lab"
+powered = true
+hidden = false
+recipe_categories = ["refining"]
+production_interval = 4.0
+default_recipe = "petroleum_gas_crack"
+power_consumption = 20.0
+requires_discovery = "circuit"
+
+[buildings.oil_pump]
+name = "Pompe à Pétrole"
+cost = { steel = 4, gear = 2 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#444455"
+visual = "square"
+texture_stem = "oil_pump"
+powered = true
+hidden = false
+requires_deposit = true
+production = { resource = "crude_oil", interval_sec = 3.0 }
+power_consumption = 15.0
+requires_discovery = "circuit"
+
+[buildings.storage_chest]
+name = "Coffre de Stockage"
+cost = { iron_parts = 4, planks = 2 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#CC9900"
+visual = "pentagon"
+texture_stem = "storage_chest"
+powered = false
+hidden = false
+inventory_capacity = 64
+requires_discovery = "circuit"
+
+# ============================================================
+# PHASE 4 — Pouls
+# ============================================================
+
+[buildings.motor_foundry]
+name = "Fonderie de Moteurs"
+cost = { steel = 6, circuit = 4, screw = 4, gear = 2 }
+hp = 120
+tile_size = { w = 2, h = 1 }
+color = "#AA8844"
+visual = "square"
+texture_stem = "motor_foundry"
+powered = true
+hidden = false
+recipe_categories = ["motor_assembly"]
+production_interval = 6.0
+default_recipe = "motor_assemble"
+power_consumption = 25.0
+requires_discovery = "motor"
+
+[buildings.battery_station]
+name = "Station de Batteries"
+cost = { steel = 4, plastic = 2, copper_ingot = 2 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#33AA33"
+visual = "square"
+texture_stem = "battery_station"
+powered = true
+hidden = false
+recipe_categories = ["battery"]
+production_interval = 5.0
+default_recipe = "battery_make"
+power_consumption = 15.0
+requires_discovery = "motor"
+
+[buildings.electronics_lab]
+name = "Laboratoire d'Électronique"
+cost = { steel = 6, circuit = 4, glass = 2 }
+hp = 80
+tile_size = { w = 2, h = 2 }
+color = "#33AA88"
+visual = "diamond"
+texture_stem = "electronics_lab"
+powered = true
+hidden = false
+recipe_categories = ["electronics"]
+production_interval = 5.0
+default_recipe = "advanced_circuit_build"
+power_consumption = 30.0
+requires_discovery = "motor"
+
+[buildings.assembly_crane]
+name = "Grue d'Assemblage"
+cost = { steel = 8, motor = 2, circuit = 2, screw = 4 }
+hp = 150
+tile_size = { w = 2, h = 1 }
+color = "#3377AA"
+visual = "rectangle"
+texture_stem = "assembly_crane"
+powered = true
+hidden = false
+recipe_categories = ["heavy_assembly"]
+production_interval = 8.0
+default_recipe = "machine_frame_build"
+power_consumption = 25.0
+requires_discovery = "motor"
+
+[buildings.aerial_belt]
+name = "Convoyeur Aérien"
+cost = { steel = 4, motor = 2, gear = 2 }
+hp = 15
+tile_size = { w = 1, h = 1 }
+color = "#88AACC"
+visual = "rectangle"
+texture_stem = "aerial_belt"
+powered = true
+hidden = false
+slots = 3
+speed = 3.0
+power_consumption = 4.0
+requires_discovery = "motor"
+belt_variant = "aerial"
+
+[buildings.sorter]
+name = "Trieur"
+cost = { iron_parts = 4, circuit = 1, motor = 1 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#66AA66"
+visual = "diamond"
+texture_stem = "sorter"
+powered = true
+hidden = false
+slots = 2
+speed = 2.0
+default_filter = "iron_ingot"
+power_consumption = 4.0
+requires_discovery = "motor"
+
+# ============================================================
+# PHASE 5 — Nanites
+# ============================================================
+
+[buildings.nanite_assembler]
+name = "Assembleur Nanite"
+cost = { steel = 8, processor = 2, electronic_module = 2 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#44DDBB"
+visual = "diamond"
+texture_stem = "nanite_assembler"
+powered = true
+hidden = false
+recipe_categories = ["nano"]
+production_interval = 8.0
+default_recipe = "processor_make"
+power_consumption = 40.0
+requires_discovery = "processor"
+
+[buildings.deep_core_drill]
+name = "Foreuse Profonde"
+cost = { steel = 10, motor = 4, machine_frame = 2, electronic_module = 2 }
+hp = 300
+tile_size = { w = 3, h = 2 }
+color = "#664433"
+visual = "square"
+texture_stem = "deep_core_drill"
+powered = true
+hidden = false
+requires_deposit = true
+production = { resource = "ore", interval_sec = 1.0 }
+power_consumption = 50.0
+requires_discovery = "processor"
+
+[buildings.compactor]
+name = "Compacteur"
+cost = { steel = 6, motor = 2, gear = 2, battery = 1 }
+hp = 80
+tile_size = { w = 1, h = 1 }
+color = "#AAAA77"
+visual = "square"
+texture_stem = "compactor"
+powered = true
+hidden = false
+inventory_capacity = 32
+power_consumption = 10.0
+requires_discovery = "processor"
+
+[buildings.high_speed_belt]
+name = "Convoyeur Haute Vitesse"
+cost = { steel = 6, motor = 2, circuit = 2 }
+hp = 30
+tile_size = { w = 1, h = 1 }
+color = "#CC8844"
+visual = "rectangle"
+texture_stem = "high_speed_belt"
+powered = true
+hidden = false
+slots = 4
+speed = 5.0
+power_consumption = 8.0
+requires_discovery = "processor"
+belt_variant = "normal"
+drag_placement = true
+level = 2
+
+[buildings.excavation_rig]
+name = "Engin d'Excavation"
+cost = { steel = 8, motor = 4, machine_frame = 2 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#775533"
+visual = "square"
+texture_stem = "excavation_rig"
+powered = true
+hidden = false
+power_consumption = 20.0
+requires_discovery = "processor"
+
+# ============================================================
+# PHASE 6 — Genèse
+# ============================================================
+
+[buildings.bio_lab]
+name = "Bio-Laboratoire"
+cost = { steel = 6, processor = 4, glass = 2 }
+hp = 150
+tile_size = { w = 2, h = 2 }
+color = "#66BB6A"
+visual = "diamond"
+texture_stem = "bio_lab"
+powered = true
+hidden = false
+recipe_categories = ["bio"]
+production_interval = 6.0
+default_recipe = "organic_compound_synth"
+power_consumption = 30.0
+requires_discovery = "organic_compound"
+
+[buildings.tissue_cultivator]
+name = "Cultivateur de Tissus"
+cost = { steel = 8, nano_pack = 4 }
+hp = 180
+tile_size = { w = 2, h = 2 }
+color = "#AB47BC"
+visual = "square"
+texture_stem = "tissue_cultivator"
+powered = true
+hidden = false
+recipe_categories = ["tissue"]
+production_interval = 10.0
+default_recipe = "stem_cells_grow"
+power_consumption = 35.0
+requires_discovery = "organic_compound"
+
+[buildings.synthesizer]
+name = "Synthétiseur"
+cost = { steel = 6, motor = 4, pipe = 2 }
+hp = 120
+tile_size = { w = 1, h = 1 }
+color = "#FF7043"
+visual = "diamond"
+texture_stem = "synthesizer"
+powered = true
+hidden = false
+recipe_categories = ["synthesis"]
+production_interval = 7.0
+default_recipe = "protein_synth"
+power_consumption = 20.0
+requires_discovery = "organic_compound"
+
+[buildings.scanner_array]
+name = "Réseau de Scanners"
+cost = { steel = 8, processor = 4, electronic_module = 4 }
+hp = 200
+tile_size = { w = 2, h = 2 }
+color = "#42A5F5"
+visual = "pentagon"
+texture_stem = "scanner_array"
+powered = true
+hidden = false
+recipe_categories = ["scanning"]
+production_interval = 12.0
+default_recipe = "neural_map_scan"
+power_consumption = 40.0
+requires_discovery = "organic_compound"
+
+[buildings.bio_printer]
+name = "Bio-Imprimante"
+cost = { steel = 10, nano_pack = 4, processor = 4, composite = 2 }
+hp = 250
+tile_size = { w = 2, h = 2 }
+color = "#4DB6AC"
+visual = "diamond"
+texture_stem = "bio_printer"
+powered = true
+hidden = false
+recipe_categories = ["bio_printing"]
+production_interval = 12.0
+default_recipe = "bio_mass_print"
+power_consumption = 45.0
+requires_discovery = "organic_compound"
+
+# ============================================================
+# CAPSULE GENESIS (progression visuelle)
+# ============================================================
+
+[buildings.genesis_ark]
+name = "Capsule Genesis"
+hp = 9999
+tile_size = { w = 2, h = 2 }
+color = "#88CCFF"
+visual = "square"
+texture_stem = "genesis_capsule"
+hidden = true
+can_deconstruct = false
+powered = false
+station = false
+
+[[buildings.genesis_ark.tiers]]
+required_items = { rope = 3 }
+unlock_recipes = ["iron_ingot"]
+log_id = "genesis_phase_0"
+texture = "genesis_capsule_t0"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { iron_parts = 5 }
+unlock_recipes = ["steel"]
+log_id = "genesis_phase_1"
+texture = "genesis_capsule_t1"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { gear = 3, pipe = 2 }
+unlock_recipes = ["circuit"]
+log_id = "genesis_phase_2"
+texture = "genesis_capsule_t2"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { circuit = 3 }
+unlock_recipes = ["motor"]
+log_id = "genesis_phase_3"
+texture = "genesis_capsule_t3"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { motor = 2, battery = 2 }
+unlock_recipes = ["processor"]
+log_id = "genesis_phase_4"
+texture = "genesis_capsule_t4"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { nano_pack = 2 }
+unlock_recipes = ["organic_compound"]
+log_id = "genesis_phase_5"
+texture = "genesis_capsule_t5"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { organic_compound = 3, protein = 1 }
+unlock_recipes = ["neural_interface"]
+log_id = "genesis_phase_6"
+texture = "genesis_capsule_t6"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { neural_interface = 1, synthetic_heart = 1, genome_sequence = 1, fusion_core = 1 }
+unlock_recipes = []
+log_id = "genesis_final"
+texture = "genesis_capsule_t7"

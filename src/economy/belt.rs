@@ -360,7 +360,7 @@ pub fn building_output_tick(
                         continue;
                     }
                 }
-                let first_key = inv.resources.keys().next().cloned();
+                let first_key = inv.first_resource();
                 if let Some(res) = first_key {
                     if inv.remove(&res, 1) {
                         bs.items[0] = Some(ItemOnBelt {

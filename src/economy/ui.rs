@@ -1,10 +1,11 @@
 use crate::economy::components::{
     DragState, DraggedItemVisual, InventoryGrid, InventorySlot, Player,
 };
-use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
+use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::window::{BG_SECTION, spawn_window};
 use bevy::prelude::*;
 use bevy::ui::widget::ImageNode;
+use bevy::ui::UiTransform;
 
 const SLOT_SIZE: f32 = 48.0;
 const SLOT_GAP: f32 = 4.0;
@@ -53,6 +54,8 @@ pub fn toggle_inventory_panel(
                         rows,
                         owner: player_entity,
                     },
+                    Transform::default(),
+                    UiTransform::default(),
                     Node {
                         width: Val::Px(cols as f32 * (SLOT_SIZE + SLOT_GAP) + SLOT_GAP * 2.0),
                         padding: UiRect::all(Val::Px(SLOT_GAP)),
@@ -69,6 +72,8 @@ pub fn toggle_inventory_panel(
                         grid.spawn((
                             InventorySlot { index: i },
                             Button,
+                            Transform::default(),
+                            UiTransform::default(),
                             Node {
                                 width: Val::Px(SLOT_SIZE),
                                 height: Val::Px(SLOT_SIZE),
@@ -117,14 +122,10 @@ pub fn update_inventory_grids(
         let Ok(inv) = inv_query.get(grid.owner) else {
             continue;
         };
-        let mut items: Vec<(&ResourceId, u32)> =
-            inv.resources.iter().map(|(r, a)| (r, *a)).collect();
-        items.sort_by(|(a, _), (b, _)| a.0.cmp(&b.0));
 
         for child in children.iter() {
             if let Ok((mut bg, mut border, slot, image, text)) = slot_query.get_mut(child) {
-                if slot.index < items.len() {
-                    let (rid, amount) = items[slot.index];
+                if let Some((rid, amount)) = inv.slot_content(slot.index) {
                     bg.0 = registry
                         .get_opt(&rid.0)
                         .map(|d| d.color)
@@ -162,19 +163,19 @@ pub fn cleanup_inventory_panel(
     }
 }
 
-// ── Drag & Drop (robust: rect hit-test, no Interaction dependency) ──
+// ── Drag & Drop (rect hit-test, no Interaction dependency) ──
 
 pub fn drag_start(
     mut drag: ResMut<DragState>,
     windows: Query<&Window>,
+    keys: Res<ButtonInput<KeyCode>>,
     slots: Query<
         (
             Entity,
             &InventorySlot,
-            &GlobalTransform,
-            Option<&Interaction>,
+            &Interaction,
         ),
-        With<InventorySlot>,
+        (With<InventorySlot>, Changed<Interaction>),
     >,
     grids: Query<(&InventoryGrid, &Children)>,
     inv_query: Query<&Inventory>,
@@ -184,26 +185,15 @@ pub fn drag_start(
         return;
     }
 
-    let Ok(window) = windows.single() else { return };
-    let Some(cursor) = window.cursor_position() else {
-        return;
-    };
+    let cursor = windows
+        .iter()
+        .next()
+        .and_then(|w| w.cursor_position());
 
-    for (slot_entity, slot, tf, interaction) in slots.iter() {
-        // Slot must be pressed (Interaction updated in PostUpdate)
-        let is_pressed = interaction
-            .map(|i| *i == Interaction::Pressed)
-            .unwrap_or(false);
-        if !is_pressed {
+    for (slot_entity, slot, interaction) in slots.iter() {
+        if *interaction != Interaction::Pressed {
             continue;
         }
-        // Also verify cursor is inside the slot rect
-        let center = tf.translation().truncate();
-        let rect = Rect::from_center_size(center, Vec2::splat(SLOT_SIZE));
-        if !rect.contains(cursor) {
-            continue;
-        }
-        // Find parent grid
         for (grid, children) in grids.iter() {
             if !children.iter().any(|c| c == slot_entity) {
                 continue;
@@ -211,25 +201,32 @@ pub fn drag_start(
             let Ok(inv) = inv_query.get(grid.owner) else {
                 continue;
             };
-            let mut items: Vec<(&ResourceId, u32)> =
-                inv.resources.iter().map(|(r, a)| (r, *a)).collect();
-            items.sort_by(|(a, _), (b, _)| a.0.cmp(&b.0));
-            if let Some(&(rid, _)) = items.get(slot.index) {
+            if let Some((rid, slot_amount)) = inv.slot_content(slot.index) {
+                let slot_amount = *slot_amount;
+                let amount = if keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight) {
+                    (slot_amount + 1) / 2
+                } else if keys.pressed(KeyCode::ControlLeft) || keys.pressed(KeyCode::ControlRight) {
+                    1
+                } else {
+                    slot_amount
+                };
+
                 drag.active = true;
                 drag.source_owner = Some(grid.owner);
+                drag.source_slot_index = slot.index;
                 drag.resource = Some(rid.clone());
-                drag.amount = 1;
+                drag.amount = amount;
 
                 let visual = commands
                     .spawn((
                         DraggedItemVisual,
-                        Text::new(rid.0.clone()),
+                        Text::new(format!("{} ×{}", rid.display_name(), amount)),
                         TextFont::from_font_size(14.0),
                         TextColor(Color::WHITE),
                         Node {
                             position_type: PositionType::Absolute,
-                            left: Val::Px(cursor.x - 20.0),
-                            top: Val::Px(cursor.y - 10.0),
+                            left: Val::Px(cursor.map_or(0.0, |c| c.x - 20.0)),
+                            top: Val::Px(cursor.map_or(0.0, |c| c.y - 10.0)),
                             padding: UiRect::all(Val::Px(4.0)),
                             ..default()
                         },
@@ -266,8 +263,7 @@ pub fn drag_update(
 pub fn drag_end(
     mut drag: ResMut<DragState>,
     buttons: Res<ButtonInput<MouseButton>>,
-    windows: Query<&Window>,
-    slots: Query<(Entity, &GlobalTransform), (With<InventorySlot>, Without<InventoryGrid>)>,
+    slots: Query<(Entity, &InventorySlot, &Interaction), (With<InventorySlot>, Without<InventoryGrid>)>,
     grids: Query<(&InventoryGrid, &Children), Without<InventorySlot>>,
     mut inv_query: Query<&mut Inventory>,
     mut commands: Commands,
@@ -284,16 +280,8 @@ pub fn drag_end(
         commands.entity(visual).despawn();
     }
 
-    let Ok(window) = windows.single() else {
-        drag.reset();
-        return;
-    };
-    let Some(cursor) = window.cursor_position() else {
-        drag.reset();
-        return;
-    };
-
     let src_owner = drag.source_owner;
+    let src_idx = drag.source_slot_index;
     let resource = drag.resource.clone();
     let amount = drag.amount;
     drag.reset();
@@ -301,27 +289,81 @@ pub fn drag_end(
     let Some(ref resource) = resource else { return };
     let Some(src_owner) = src_owner else { return };
 
-    // Find target slot under cursor via rect hit-test
+    // Find target slot via Interaction::Hovered (set by bevy's ui_focus_system)
     let mut dst_owner: Option<Entity> = None;
-    'outer: for (slot_entity, tf) in slots.iter() {
-        let center = tf.translation().truncate();
-        let rect = Rect::from_center_size(center, Vec2::splat(SLOT_SIZE));
-        if !rect.contains(cursor) {
+    let mut dst_idx: Option<usize> = None;
+    'outer: for (slot_entity, slot, interaction) in slots.iter() {
+        if *interaction != Interaction::Hovered {
             continue;
         }
         for (grid, children) in grids.iter() {
             if children.iter().any(|c| c == slot_entity) {
                 dst_owner = Some(grid.owner);
+                dst_idx = Some(slot.index);
                 break 'outer;
             }
         }
     }
 
     let Some(dst_owner) = dst_owner else { return };
+    let Some(dst_idx) = dst_idx else { return };
+
+    // ── Same inventory ──
     if dst_owner == src_owner {
+        if let Ok(mut inv) = inv_query.get_mut(src_owner) {
+            if src_idx == dst_idx {
+                return;
+            }
+            let src_amount = inv.slot_content(src_idx).map(|(_, a)| *a).unwrap_or(0);
+            if src_amount == 0 {
+                return;
+            }
+            let dst_empty = inv.slot_content(dst_idx).is_none();
+            let dst_same = inv
+                .slot_content(dst_idx)
+                .map(|(r, _)| *r == *resource)
+                .unwrap_or(false);
+
+            if amount >= src_amount && !dst_same {
+                // Full stack to different/empty → swap
+                inv.swap_slots(src_idx, dst_idx);
+            } else if dst_empty || dst_same {
+                // Merge (full or partial) into same resource or empty slot
+                let max = src_idx.max(dst_idx);
+                if max >= inv.slots.len() {
+                    inv.slots.resize(max + 1, None);
+                }
+                let slot_a;
+                let slot_b;
+                if src_idx < dst_idx {
+                    let (left, right) = inv.slots.split_at_mut(dst_idx);
+                    slot_a = &mut left[src_idx];
+                    slot_b = &mut right[0];
+                } else {
+                    let (left, right) = inv.slots.split_at_mut(src_idx);
+                    slot_b = &mut left[dst_idx];
+                    slot_a = &mut right[0];
+                }
+                let src = slot_a.take();
+                if let Some((res, amt)) = src {
+                    let remaining = amt.saturating_sub(amount);
+                    if remaining > 0 {
+                        *slot_a = Some((res.clone(), remaining));
+                    }
+                    match slot_b {
+                        Some((_, da)) => *da += if amount >= amt { amt } else { amount },
+                        None => *slot_b = Some((res, if amount >= amt { amt } else { amount })),
+                    }
+                }
+            } else {
+                // Different resource → swap entire slots
+                inv.swap_slots(src_idx, dst_idx);
+            }
+        }
         return;
     }
 
+    // ── Cross-inventory transfer (1 unit) ──
     let removed = {
         if let Ok(mut inv) = inv_query.get_mut(src_owner) {
             if inv.get(resource) >= amount {
@@ -344,7 +386,7 @@ pub fn drag_end(
             inv.add(resource, amount);
             toast_queue
                 .0
-                .push(format!("Transféré 1 {}", resource.display_name()));
+                .push(format!("Transféré {} ×{}", resource.display_name(), amount));
         } else {
             if let Ok(mut src_inv) = inv_query.get_mut(src_owner) {
                 src_inv.add(resource, amount);

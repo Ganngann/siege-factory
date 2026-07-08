@@ -1,0 +1,425 @@
+# ============================================================
+# Genesis Protocol — Recettes complètes
+# ============================================================
+
+# ========================
+# PHASE 0 — Réveil
+# ========================
+
+# --- Mining (toujours disponibles) ---
+[recipes.mine_scrap_metal]
+category = "mining"
+input = {}
+output = { scrap_metal = 1 }
+time_sec = 2.0
+
+[recipes.mine_wood]
+category = "mining"
+input = {}
+output = { wood = 1 }
+time_sec = 2.0
+
+[recipes.mine_stone]
+category = "mining"
+input = {}
+output = { stone = 1 }
+time_sec = 2.0
+
+[recipes.mine_clay]
+category = "mining"
+input = {}
+output = { clay = 1 }
+time_sec = 2.0
+
+# --- Workbench (hand_crafting) ---
+[recipes.iron_parts_from_scrap]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { scrap_metal = 2 }
+output = { iron_parts = 1 }
+time_sec = 3.0
+
+[recipes.planks_from_wood]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { wood = 2 }
+output = { planks = 1 }
+time_sec = 2.0
+
+[recipes.stone_brick_cut]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { stone = 1 }
+output = { stone_brick = 1 }
+time_sec = 2.0
+
+[recipes.ceramic_form]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { clay = 2 }
+output = { ceramic = 1 }
+time_sec = 3.0
+
+[recipes.rope_twist]
+category = "hand_crafting"
+craftable_in = ["workbench"]
+input = { plant_fiber = 3 }
+output = { rope = 1 }
+time_sec = 2.0
+
+# --- Campfire (primitive_smelting) ---
+[recipes.ceramic_fire]
+category = "primitive_smelting"
+craftable_in = ["campfire"]
+input = { clay = 3 }
+output = { ceramic = 2 }
+time_sec = 5.0
+
+[recipes.stone_brick_fire]
+category = "primitive_smelting"
+craftable_in = ["campfire"]
+input = { stone = 3 }
+output = { stone_brick = 2 }
+time_sec = 5.0
+
+[recipes.iron_ingot_primitive]
+category = "primitive_smelting"
+craftable_in = ["campfire"]
+input = { iron_parts = 2, coal = 1 }
+output = { iron_ingot = 1 }
+time_sec = 8.0
+
+[recipes.copper_ingot_primitive]
+category = "primitive_smelting"
+craftable_in = ["campfire"]
+input = { copper_ore = 2, coal = 1 }
+output = { copper_ingot = 1 }
+time_sec = 8.0
+
+# ========================
+# PHASE 1 — Étincelle
+# ========================
+
+# --- Furnace (smelting) ---
+[recipes.iron_ingot_smelt]
+category = "smelting"
+craftable_in = ["furnace"]
+input = { iron_ore = 2, coal = 1 }
+output = { iron_ingot = 1 }
+time_sec = 4.0
+
+[recipes.copper_ingot_smelt]
+category = "smelting"
+craftable_in = ["furnace"]
+input = { copper_ore = 2, coal = 1 }
+output = { copper_ingot = 1 }
+time_sec = 4.0
+
+[recipes.ceramic_smelt]
+category = "smelting"
+craftable_in = ["furnace"]
+input = { clay = 2 }
+output = { ceramic = 1 }
+time_sec = 3.0
+
+[recipes.silicon_from_sand]
+category = "smelting"
+craftable_in = ["furnace"]
+input = { sand = 2, coal = 1 }
+output = { silicon = 1 }
+time_sec = 5.0
+
+# --- Anvil (smithing) ---
+[recipes.copper_wire_draw]
+category = "smithing"
+craftable_in = ["anvil"]
+input = { copper_ingot = 1 }
+output = { copper_wire = 4 }
+time_sec = 2.0
+
+[recipes.iron_parts_forge]
+category = "smithing"
+craftable_in = ["anvil"]
+input = { iron_ingot = 1 }
+output = { iron_parts = 3 }
+time_sec = 3.0
+
+# ========================
+# PHASE 2 — Rouille et Vapeur
+# ========================
+
+# --- Water Pump (pumping) ---
+[recipes.pump_water]
+category = "pumping"
+craftable_in = ["water_pump"]
+input = {}
+output = { water = 2 }
+time_sec = 2.0
+
+# --- Gear Press (pressing) ---
+[recipes.gear_cut]
+category = "pressing"
+craftable_in = ["gear_press"]
+input = { iron_ingot = 2 }
+output = { gear = 1 }
+time_sec = 3.0
+
+[recipes.screw_cut]
+category = "pressing"
+craftable_in = ["gear_press"]
+input = { copper_ingot = 1 }
+output = { screw = 2 }
+time_sec = 2.0
+
+# --- Steam Generator (steam) ---
+[recipes.steam_produce]
+category = "steam"
+craftable_in = ["steam_generator"]
+input = { water = 2, coal = 1 }
+output = { steam = 3, energy = 2 }
+time_sec = 4.0
+
+# --- Anvil (smithing) - extended ---
+[recipes.pipe_roll]
+category = "smithing"
+craftable_in = ["anvil"]
+input = { iron_ingot = 2 }
+output = { pipe = 1 }
+time_sec = 3.0
+
+# --- Blast Furnace (steelmaking) ---
+[recipes.steel_produce]
+category = "steelmaking"
+craftable_in = ["blast_furnace"]
+input = { iron_ingot = 3, coal = 1, steam = 1 }
+output = { steel = 1 }
+time_sec = 6.0
+
+# ========================
+# PHASE 3 — Fil du Cuivre
+# ========================
+
+# --- Chemical Lab (refining) ---
+[recipes.petroleum_gas_crack]
+category = "refining"
+craftable_in = ["chemical_lab"]
+input = { crude_oil = 3 }
+output = { petroleum_gas = 4 }
+time_sec = 5.0
+
+[recipes.plastic_synth]
+category = "refining"
+craftable_in = ["chemical_lab"]
+input = { petroleum_gas = 2 }
+output = { plastic = 1 }
+time_sec = 4.0
+
+[recipes.acid_mix]
+category = "refining"
+craftable_in = ["chemical_lab"]
+input = { sulfur = 1, water = 1 }
+output = { acid = 2 }
+time_sec = 3.0
+
+[recipes.glass_melt]
+category = "refining"
+craftable_in = ["chemical_lab"]
+input = { sand = 2, coal = 1 }
+output = { glass = 1 }
+time_sec = 4.0
+
+# --- Assembler (crafting) ---
+[recipes.circuit_etch]
+category = "crafting"
+craftable_in = ["assembler"]
+input = { copper_wire = 3, iron_ingot = 1 }
+output = { circuit = 1 }
+time_sec = 5.0
+
+[recipes.copper_wire_assembler]
+category = "crafting"
+craftable_in = ["assembler"]
+input = { copper_ingot = 1 }
+output = { copper_wire = 4 }
+time_sec = 2.0
+
+[recipes.gear_assembler]
+category = "crafting"
+craftable_in = ["assembler"]
+input = { iron_ingot = 2 }
+output = { gear = 1 }
+time_sec = 3.0
+
+# ========================
+# PHASE 4 — Pouls
+# ========================
+
+# --- Motor Foundry (motor_assembly) ---
+[recipes.motor_assemble]
+category = "motor_assembly"
+craftable_in = ["motor_foundry"]
+input = { steel = 2, copper_wire = 4, copper_ingot = 1 }
+output = { motor = 1 }
+time_sec = 6.0
+
+# --- Battery Station (battery) ---
+[recipes.battery_make]
+category = "battery"
+craftable_in = ["battery_station"]
+input = { acid = 1, copper_ingot = 2, steel = 1 }
+output = { battery = 1 }
+time_sec = 5.0
+
+# --- Electronics Lab (electronics) ---
+[recipes.advanced_circuit_build]
+category = "electronics"
+craftable_in = ["electronics_lab"]
+input = { circuit = 2, silicon = 1 }
+output = { advanced_circuit = 1 }
+time_sec = 6.0
+
+[recipes.electronic_module_build]
+category = "electronics"
+craftable_in = ["electronics_lab"]
+input = { advanced_circuit = 1, copper_wire = 4 }
+output = { electronic_module = 1 }
+time_sec = 5.0
+
+# --- Assembly Crane (heavy_assembly) ---
+[recipes.machine_frame_build]
+category = "heavy_assembly"
+craftable_in = ["assembly_crane"]
+input = { steel = 2, motor = 1, circuit = 1 }
+output = { machine_frame = 1 }
+time_sec = 8.0
+
+# ========================
+# PHASE 5 — Nanites
+# ========================
+
+# --- Nanite Assembler (nano) ---
+[recipes.processor_make]
+category = "nano"
+craftable_in = ["nanite_assembler"]
+input = { advanced_circuit = 2, silicon = 2 }
+output = { processor = 1 }
+time_sec = 8.0
+
+[recipes.nano_pack_synth]
+category = "nano"
+craftable_in = ["nanite_assembler"]
+input = { processor = 1, energy = 5 }
+output = { nano_pack = 1 }
+time_sec = 10.0
+
+# --- Chemical Lab (refining) - advanced ---
+[recipes.composite_make]
+category = "refining"
+craftable_in = ["chemical_lab"]
+input = { steel = 1, plastic = 2, silicon = 1 }
+output = { composite = 1 }
+time_sec = 6.0
+
+[recipes.alloy_make]
+category = "refining"
+craftable_in = ["chemical_lab"]
+input = { steel = 1, copper_ingot = 1, silicon = 1 }
+output = { alloy = 1 }
+time_sec = 6.0
+
+[recipes.laser_crystal_grow]
+category = "refining"
+craftable_in = ["chemical_lab"]
+input = { glass = 2, acid = 1, energy = 3 }
+output = { laser_crystal = 1 }
+time_sec = 8.0
+
+# ========================
+# PHASE 6 — Genèse
+# ========================
+
+# --- Bio-Lab (bio) ---
+[recipes.organic_compound_synth]
+category = "bio"
+craftable_in = ["bio_lab"]
+input = { plant_fiber = 3, water = 2 }
+output = { organic_compound = 1 }
+time_sec = 6.0
+
+[recipes.enzyme_culture]
+category = "bio"
+craftable_in = ["bio_lab"]
+input = { organic_compound = 1, protein = 1 }
+output = { enzyme = 1 }
+time_sec = 8.0
+
+# --- Tissue Cultivator (tissue) ---
+[recipes.stem_cells_grow]
+category = "tissue"
+craftable_in = ["tissue_cultivator"]
+input = { organic_compound = 2, enzyme = 1, energy = 3 }
+output = { stem_cells = 1 }
+time_sec = 10.0
+
+# --- Synthesizer (synthesis) ---
+[recipes.protein_synth]
+category = "synthesis"
+craftable_in = ["synthesizer"]
+input = { organic_compound = 2, energy = 2 }
+output = { protein = 1 }
+time_sec = 7.0
+
+[recipes.synthetic_blood_make]
+category = "synthesis"
+craftable_in = ["synthesizer"]
+input = { protein = 1, iron_ingot = 1, energy = 2 }
+output = { synthetic_blood = 1 }
+time_sec = 8.0
+
+# --- Scanner Array (scanning) ---
+[recipes.neural_map_scan]
+category = "scanning"
+craftable_in = ["scanner_array"]
+input = { advanced_circuit = 1, processor = 1, energy = 5 }
+output = { neural_map = 1 }
+time_sec = 12.0
+
+# --- Bio-Printer / Bio-Lab (bio_printing) ---
+[recipes.bio_mass_print]
+category = "bio_printing"
+craftable_in = ["bio_printer"]
+input = { stem_cells = 1, protein = 2, nano_pack = 1 }
+output = { bio_mass = 1 }
+time_sec = 12.0
+
+# ========================
+# PHASE FINALE — Premier Souffle
+# ========================
+
+[recipes.neural_interface_assemble]
+category = "crafting"
+craftable_in = ["assembler"]
+input = { processor = 1, neural_map = 1 }
+output = { neural_interface = 1 }
+time_sec = 10.0
+
+[recipes.synthetic_heart_build]
+category = "heavy_assembly"
+craftable_in = ["assembly_crane"]
+input = { motor = 1, synthetic_blood = 1, protein = 1, bio_mass = 1 }
+output = { synthetic_heart = 1 }
+time_sec = 15.0
+
+[recipes.genome_sequence_map]
+category = "bio"
+craftable_in = ["bio_lab"]
+input = { stem_cells = 1, neural_map = 1, nano_pack = 1, bio_mass = 1 }
+output = { genome_sequence = 1 }
+time_sec = 15.0
+
+[recipes.fusion_core_build]
+category = "nano"
+craftable_in = ["nanite_assembler"]
+input = { alloy = 1, composite = 1, laser_crystal = 1, nano_pack = 1 }
+output = { fusion_core = 1 }
+time_sec = 20.0

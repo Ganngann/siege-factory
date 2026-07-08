@@ -7,7 +7,7 @@ use crate::economy::components::{
     PowerConsumer, PowerStatusText, ProgressBarFill, RecipeNameText, StatRowText, StatusText,
 };
 use crate::economy::recipe::RecipeRegistry;
-use crate::economy::resource::{Inventory, ResourceRegistry};
+use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
 use crate::economy::window::{BTN_ACTIVE, BTN_INACTIVE};
 use crate::enemy::components::Health;
 use bevy::prelude::*;
@@ -201,14 +201,14 @@ pub fn update_panel_inventory(
             ct.0 = format!("Capacity:  {}/{}", inv.total(), inv.capacity);
         } else if inv.total() > 0 {
             let mut lines: Vec<String> = Vec::new();
-            let mut sorted: Vec<_> = inv.resources.iter().collect();
-            sorted.sort_by(|a, b| b.1.cmp(a.1));
+            let mut sorted: Vec<&(ResourceId, u32)> = inv.iter_occupied().collect();
+            sorted.sort_by(|a, b| b.1.cmp(&a.1));
             for (rid, amount) in sorted.iter().take(5) {
                 let name = resource_registry.display_name(rid);
                 lines.push(format!("{}: {}", name, amount));
             }
-            if inv.resources.len() > 5 {
-                lines.push(format!("... +{} more", inv.resources.len() - 5));
+            if inv.occupied_slot_count() > 5 {
+                lines.push(format!("... +{} more", inv.occupied_slot_count() - 5));
             }
             ct.0 = lines.join("  |  ");
         } else {

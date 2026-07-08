@@ -1,5 +1,6 @@
 use bevy::prelude::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 /// Manifest file loaded from each mod's mod.toml
@@ -17,6 +18,56 @@ pub struct ModManifest {
 pub struct ActiveMod {
     pub manifest: ModManifest,
     pub path: PathBuf,
+    pub enabled: bool,
+}
+
+/// Persisted settings: which mods the user has disabled.
+#[derive(Resource, Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ModSettings {
+    pub disabled: Vec<String>,
+}
+
+impl ModSettings {
+    fn path() -> PathBuf {
+        crate::core::utils::config_dir().join("mod_settings.toml")
+    }
+
+    pub fn load() -> Self {
+        let path = Self::path();
+        if path.exists() {
+            match std::fs::read_to_string(&path) {
+                Ok(content) => {
+                    if let Ok(settings) = toml::from_str(&content) {
+                        return settings;
+                    }
+                    error!("Failed to parse mod_settings.toml, using defaults");
+                }
+                Err(e) => {
+                    error!("Failed to read mod_settings.toml: {e}");
+                }
+            }
+        }
+        Self::default()
+    }
+
+    pub fn save(&self) {
+        let path = Self::path();
+        if let Some(parent) = path.parent() {
+            if !parent.exists() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+        }
+        match toml::to_string_pretty(self) {
+            Ok(content) => {
+                if let Err(e) = std::fs::write(&path, content) {
+                    error!("Failed to write mod_settings.toml: {e}");
+                }
+            }
+            Err(e) => {
+                error!("Failed to serialize mod_settings: {e}");
+            }
+        }
+    }
 }
 
 /// Registry of all discovered mods. The base game mod (id="base") is always first.
@@ -53,7 +104,11 @@ impl ModRegistry {
                     Ok(content) => match toml::from_str::<ModManifest>(&content) {
                         Ok(manifest) => {
                             info!("Discovered mod: {} v{}", manifest.name, manifest.version);
-                            mods.push(ActiveMod { manifest, path });
+                            mods.push(ActiveMod {
+                                enabled: true,
+                                manifest,
+                                path,
+                            });
                         }
                         Err(e) => {
                             error!("Failed to parse {:?}: {}", manifest_path, e);
@@ -71,7 +126,49 @@ impl ModRegistry {
             warn!("base mod not found in mods/, checking data/ as fallback");
         }
 
-        Self { mods }
+        let mut reg = Self { mods };
+        reg.apply_settings(&ModSettings::load());
+        reg
+    }
+
+    /// Apply saved enabled/disabled state from settings.
+    /// Base mod is always enabled.
+    fn apply_settings(&mut self, settings: &ModSettings) {
+        let disabled: HashSet<&str> = settings.disabled.iter().map(|s| s.as_str()).collect();
+        for am in &mut self.mods {
+            if am.manifest.id == "base" {
+                am.enabled = true;
+            } else {
+                am.enabled = !disabled.contains(am.manifest.id.as_str());
+            }
+        }
+    }
+
+    /// Toggle a mod's enabled state and persist.
+    pub fn toggle(&mut self, id: &str) {
+        if id == "base" {
+            info!("ToggleMod(base) ignored — base mod cannot be disabled");
+            return;
+        }
+        if let Some(am) = self.mods.iter_mut().find(|m| m.manifest.id == id) {
+            am.enabled = !am.enabled;
+            info!("ToggleMod({}) → enabled={}", id, am.enabled);
+        } else {
+            error!("ToggleMod({}) — mod not found in registry", id);
+        }
+        self.save_settings();
+    }
+
+    /// Persist current enabled/disabled state to disk.
+    pub fn save_settings(&self) {
+        let disabled: Vec<String> = self
+            .mods
+            .iter()
+            .filter(|m| !m.enabled)
+            .map(|m| m.manifest.id.clone())
+            .collect();
+        let settings = ModSettings { disabled };
+        settings.save();
     }
 
     /// Find a mod by its ID
@@ -79,11 +176,19 @@ impl ModRegistry {
         self.mods.iter().find(|m| m.manifest.id == id)
     }
 
+    /// Iterate over only enabled mods.
+    pub fn enabled(&self) -> impl Iterator<Item = &ActiveMod> {
+        self.mods.iter().filter(|m| m.enabled)
+    }
+
     /// Load a data file from mods in order.
-    /// Returns the content of the FIRST mod that has `data/{filename}`.
+    /// Returns the content of the FIRST **enabled** mod that has `data/{filename}`.
     /// Checks mods in priority order (last active mod wins).
     pub fn load_data(&self, filename: &str) -> Option<String> {
         for am in self.mods.iter().rev() {
+            if !am.enabled {
+                continue;
+            }
             let path = am.path.join("data").join(filename);
             if path.exists() {
                 if let Ok(content) = std::fs::read_to_string(&path) {
@@ -94,11 +199,14 @@ impl ModRegistry {
         None
     }
 
-    /// Load ALL versions of a data file across all mods.
+    /// Load ALL versions of a data file across all **enabled** mods.
     /// Returns (mod_id, content) pairs in mod priority order (base first).
     pub fn load_all_data(&self, filename: &str) -> Vec<(String, String)> {
         let mut results = Vec::new();
         for am in &self.mods {
+            if !am.enabled {
+                continue;
+            }
             let path = am.path.join("data").join(filename);
             if path.exists() {
                 if let Ok(content) = std::fs::read_to_string(&path) {
@@ -113,6 +221,9 @@ impl ModRegistry {
     pub fn load_texture(&self, stem: &str, layer: &str) -> Option<Vec<u8>> {
         let filename = format!("{}_{}.png", stem, layer);
         for am in self.mods.iter().rev() {
+            if !am.enabled {
+                continue;
+            }
             let path = am.path.join("textures").join(&filename);
             if path.exists() {
                 if let Ok(data) = std::fs::read(&path) {
@@ -126,6 +237,9 @@ impl ModRegistry {
     /// Load a story file from mods in order.
     pub fn load_story(&self, filename: &str) -> Option<String> {
         for am in self.mods.iter().rev() {
+            if !am.enabled {
+                continue;
+            }
             let path = am.path.join("story").join(filename);
             if path.exists() {
                 if let Ok(content) = std::fs::read_to_string(&path) {

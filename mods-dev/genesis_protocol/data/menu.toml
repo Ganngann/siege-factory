@@ -1,0 +1,65 @@
+[settings]
+page_size = 9
+
+[[menu]]
+label = "Phase 0 — Réveil"
+items = [
+    { label = "Survie", items = ["workbench", "campfire"] },
+]
+
+[[menu]]
+label = "Phase 1 — Étincelle"
+items = [
+    { label = "Énergie", items = ["burner_generator", "manual_miner"] },
+    { label = "Métallurgie", items = ["furnace", "anvil"] },
+]
+
+[[menu]]
+label = "Phase 2 — Vapeur"
+items = [
+    { label = "Fluides", items = ["water_pump", "steam_generator"] },
+    { label = "Métaux", items = ["gear_press", "blast_furnace"] },
+    { label = "Transport", items = ["belt", "splitter"] },
+]
+
+[[menu]]
+label = "Phase 3 — Électricité"
+items = [
+    { label = "Énergie", items = ["electric_generator", "power_pole"] },
+    { label = "Production", items = ["assembler", "chemical_lab", "oil_pump"] },
+    "storage_chest",
+]
+
+[[menu]]
+label = "Phase 4 — Moteurs"
+items = [
+    { label = "Composants", items = ["motor_foundry", "battery_station"] },
+    { label = "Avancé", items = ["electronics_lab", "assembly_crane"] },
+    { label = "Logistique", items = ["aerial_belt", "sorter"] },
+]
+
+[[menu]]
+label = "Phase 5 — Nanites"
+items = [
+    "nanite_assembler",
+    "deep_core_drill",
+    "compactor",
+    "high_speed_belt",
+    "excavation_rig",
+]
+
+[[menu]]
+label = "Phase 6 — Génèse"
+items = [
+    "bio_lab",
+    "tissue_cultivator",
+    "synthesizer",
+    "scanner_array",
+    "bio_printer",
+]
+
+[[menu]]
+label = "Outils"
+items = [
+    { action = "delete", label = "Démolir" },
+]

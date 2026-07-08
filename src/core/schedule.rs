@@ -36,11 +36,11 @@ impl Plugin for CorePlugin {
         );
         app.add_systems(
             Update,
-            (
-                main_menu::menu_navigation,
-                main_menu::menu_rebind_handler,
-            )
-                .run_if(in_state(GameState::Menu)),
+            main_menu::menu_navigation.run_if(in_state(GameState::Menu)),
+        );
+        app.add_systems(
+            Update,
+            main_menu::menu_rebind_handler.run_if(in_state(GameState::Menu)),
         );
         app.add_systems(OnEnter(GameState::Playing), set_continuous_winit);
         app.add_systems(OnExit(GameState::Playing), set_reactive_winit);

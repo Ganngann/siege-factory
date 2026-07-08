@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use super::types::*;
 use crate::core::input::{InputBinding, KeyBindings};
+use crate::core::modding::ModRegistry;
 use crate::core::utils::silent_despawn;
 
 pub(crate) fn build_rebind_items(bindings: &KeyBindings) -> Vec<(String, String, MenuAction)> {
@@ -21,6 +22,32 @@ pub(crate) fn build_rebind_items(bindings: &KeyBindings) -> Vec<(String, String,
     items
 }
 
+pub(crate) fn build_mod_items(registry: &ModRegistry) -> Vec<(String, String, MenuAction)> {
+    let mut items: Vec<_> = registry
+        .mods
+        .iter()
+        .filter(|am| am.manifest.id != "base")
+        .map(|am| {
+            let check = if am.enabled { "[x]" } else { "[ ]" };
+            let label = format!("{}  {}  v{}", check, am.manifest.name, am.manifest.version);
+            (
+                am.manifest.id.clone(),
+                label,
+                MenuAction::ToggleMod(am.manifest.id.clone()),
+            )
+        })
+        .collect();
+    if items.is_empty() {
+        items.push((
+            "no_extra_mods".to_string(),
+            "(No additional mods found)".to_string(),
+            MenuAction::Back,
+        ));
+    }
+    items.push(("back".to_string(), "Back".to_string(), MenuAction::Back));
+    items
+}
+
 pub(crate) fn binding_to_str(binding: InputBinding) -> String {
     binding.to_string()
 }
@@ -30,6 +57,7 @@ pub(crate) fn spawn_current_screen(
     def: &MainMenuDef,
     nav: &MenuNav,
     bindings: &KeyBindings,
+    registry: &ModRegistry,
     camera_exists: bool,
 ) {
     let screen_id = nav.stack.last().cloned().unwrap_or_default();
@@ -80,8 +108,11 @@ pub(crate) fn spawn_current_screen(
             ));
 
             let is_keybindings = screen_id == "keybindings";
+            let is_mods = screen_id == "mods";
             let items: Vec<(String, String, MenuAction)> = if is_keybindings {
                 build_rebind_items(bindings)
+            } else if is_mods {
+                build_mod_items(registry)
             } else {
                 screen
                     .items

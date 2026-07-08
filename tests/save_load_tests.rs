@@ -430,7 +430,7 @@ fn load_finalize_no_data_goes_to_menu() {
 
 #[test]
 fn is_fresh_game_returns_true_when_set() {
-    let mut app = save_load_test_app();
+    let app = save_load_test_app();
     assert!(app.world().resource::<IsFreshGame>().0);
 }
 

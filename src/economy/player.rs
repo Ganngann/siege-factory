@@ -319,7 +319,7 @@ pub fn finish_construction(
             continue;
         }
         // Consume construction resources
-        inv.resources.clear();
+        inv.clear();
         // Remove ghost visual so attach_building_visuals adds the normal sprite next frame
         commands.entity(entity).remove::<Sprite>();
         commands.entity(entity).remove::<UnbuiltBuilding>();

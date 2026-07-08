@@ -1,0 +1,11 @@
+[crops.plant_fiber]
+name = "Fibre Végétale"
+growth_time = 10.0
+yield_amount = 2
+color = "#5A8C3C"
+
+[crops.wood]
+name = "Bois"
+growth_time = 25.0
+yield_amount = 1
+color = "#8B5E3C"

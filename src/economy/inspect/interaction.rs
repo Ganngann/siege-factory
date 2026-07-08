@@ -4,7 +4,7 @@ use crate::core::utils::tile_to_world;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     BuildMode, Building, BuildingPanel, DeconstructMode, FarmCropSelectButton, FarmRecruitButton,
-    OccupiedTiles, PanelModal, Player, ResourceDeposit, Sorter, SorterInvertButton,
+    OccupiedTiles, Player, ResourceDeposit, Sorter, SorterInvertButton,
     SorterResourceButton, UiIsBlocking,
 };
 use crate::economy::game_components::Level;
@@ -184,85 +184,6 @@ pub fn sorter_invert_click_system(
     }
 }
 
-// ── Draggable panels ──
-
-#[derive(Resource, Default)]
-pub struct PanelDrag {
-    pub dragging: bool,
-    pub cursor_start: Vec2,
-    pub panel_start_left: f32,
-    pub panel_start_top: f32,
-    pub frame_delay: u32,
-}
-
-pub fn drag_panel_system(
-    mut drag: ResMut<PanelDrag>,
-    buttons: Res<ButtonInput<MouseButton>>,
-    windows: Query<&Window>,
-    mut panel_query: Query<&mut Node, With<PanelModal>>,
-) {
-    if panel_query.is_empty() {
-        *drag = PanelDrag::default();
-        return;
-    }
-
-    let Ok(window) = windows.single() else { return };
-    let Some(cursor) = window.cursor_position() else {
-        return;
-    };
-
-    if drag.dragging {
-        if buttons.just_released(MouseButton::Left) {
-            drag.dragging = false;
-        } else if let Ok(mut node) = panel_query.single_mut() {
-            let delta = cursor - drag.cursor_start;
-            node.left = Val::Px(drag.panel_start_left + delta.x);
-            node.top = Val::Px(drag.panel_start_top + delta.y);
-        }
-        return;
-    }
-
-    // Delay drag detection for 2 frames after panel opens
-    // to avoid catching the mouse click that triggered panel spawn
-    if drag.frame_delay < 2 {
-        drag.frame_delay += 1;
-        return;
-    }
-
-    if !buttons.just_pressed(MouseButton::Left) {
-        return;
-    }
-    let Ok(node) = panel_query.single() else {
-        return;
-    };
-
-    let panel_left = match node.left {
-        Val::Px(v) => v,
-        _ => 0.0,
-    };
-    let panel_top = match node.top {
-        Val::Px(v) => v,
-        _ => 0.0,
-    };
-    let panel_w = match node.width {
-        Val::Px(v) => v,
-        _ => super::MODAL_WIDTH,
-    };
-
-    let header_rect = Rect::new(
-        panel_left,
-        panel_top,
-        panel_left + panel_w,
-        panel_top + 40.0,
-    );
-    if header_rect.contains(cursor) {
-        drag.dragging = true;
-        drag.cursor_start = cursor;
-        drag.panel_start_left = panel_left;
-        drag.panel_start_top = panel_top;
-    }
-}
-
 // ── Farm crop select button ──
 
 pub fn farm_crop_select_system(
@@ -374,12 +295,8 @@ pub fn resource_transfer(
     if keys.just_pressed(KeyCode::KeyT) {
         // Take 1 unit of first resource from building → player
         if let Ok(mut build_inv) = building_inv_query.get_mut(inspected) {
-            let resource = build_inv
-                .resources
-                .iter()
-                .find(|&(_, amt)| *amt > 0)
-                .map(|(r, _)| r.clone());
-            if let Some(rid) = resource {
+            let rid = build_inv.first_resource();
+            if let Some(rid) = rid {
                 build_inv.remove(&rid, 1);
                 player_inv.add(&rid, 1);
                 toast_queue.0.push(format!("Pris 1 {}", rid.display_name()));
@@ -392,12 +309,8 @@ pub fn resource_transfer(
     if keys.just_pressed(KeyCode::KeyP) {
         // Put 1 unit of first resource from player → building
         if let Ok(mut build_inv) = building_inv_query.get_mut(inspected) {
-            let resource = player_inv
-                .resources
-                .iter()
-                .find(|&(_, amt)| *amt > 0)
-                .map(|(r, _)| r.clone());
-            if let Some(rid) = resource {
+            let rid = player_inv.first_resource();
+            if let Some(rid) = rid {
                 if build_inv.capacity > 0 && build_inv.is_full() {
                     toast_queue.0.push("Bâtiment plein".to_string());
                     return;

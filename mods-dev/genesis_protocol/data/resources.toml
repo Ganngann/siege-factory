@@ -1,0 +1,282 @@
+# ============================================================
+# Genesis Protocol — Ressources complètes
+# Inclut les ressources du jeu de base (réutilisées) + nouvelles
+# ============================================================
+
+# === Phase 0 — Réveil ===
+[resources.scrap_metal]
+name = "Ferraille"
+max_stack = 999
+color = "#887766"
+
+[resources.wood]
+name = "Bois"
+max_stack = 999
+color = "#8B5E3C"
+
+[resources.stone]
+name = "Pierre"
+max_stack = 999
+color = "#888888"
+
+[resources.clay]
+name = "Argile"
+max_stack = 999
+color = "#C4A882"
+
+[resources.plant_fiber]
+name = "Fibre Végétale"
+max_stack = 999
+color = "#5A8C3C"
+
+[resources.planks]
+name = "Planches"
+max_stack = 999
+color = "#A0724A"
+
+[resources.stone_brick]
+name = "Brique de Pierre"
+max_stack = 999
+color = "#887766"
+
+[resources.ceramic]
+name = "Céramique"
+max_stack = 999
+color = "#C4956A"
+
+[resources.rope]
+name = "Corde"
+max_stack = 999
+color = "#8B7355"
+
+[resources.iron_parts]
+name = "Pièces de Fer"
+max_stack = 999
+color = "#999999"
+
+# === Phase 1 — Étincelle ===
+[resources.iron_ore]
+name = "Minerai de Fer"
+max_stack = 999
+color = "#B35F33"
+
+[resources.copper_ore]
+name = "Minerai de Cuivre"
+max_stack = 999
+color = "#D68A4C"
+
+[resources.coal]
+name = "Charbon"
+max_stack = 999
+color = "#444444"
+
+[resources.iron_ingot]
+name = "Lingot de Fer"
+max_stack = 999
+color = "#AAAAAA"
+
+[resources.copper_ingot]
+name = "Lingot de Cuivre"
+max_stack = 999
+color = "#CC8844"
+
+[resources.energy]
+name = "Énergie"
+max_stack = 9999
+color = "#3399DD"
+
+[resources.sand]
+name = "Sable"
+max_stack = 999
+color = "#DDCC88"
+
+# === Phase 2 — Rouille et Vapeur ===
+[resources.water]
+name = "Eau"
+max_stack = 999
+color = "#3399DD"
+
+[resources.steam]
+name = "Vapeur"
+max_stack = 999
+color = "#CCDDEE"
+
+[resources.steel]
+name = "Acier"
+max_stack = 999
+color = "#666688"
+
+[resources.gear]
+name = "Engrenage"
+max_stack = 999
+color = "#887766"
+
+[resources.screw]
+name = "Vis"
+max_stack = 999
+color = "#AAAAAA"
+
+[resources.pipe]
+name = "Tuyau"
+max_stack = 999
+color = "#557788"
+
+# === Phase 3 — Fil du Cuivre ===
+[resources.copper_wire]
+name = "Fil de Cuivre"
+max_stack = 999
+color = "#CC7733"
+
+[resources.circuit]
+name = "Circuit"
+max_stack = 999
+color = "#44AA44"
+
+[resources.petroleum_gas]
+name = "Gaz Pétrolier"
+max_stack = 999
+color = "#664422"
+
+[resources.plastic]
+name = "Plastique"
+max_stack = 999
+color = "#EEEEBB"
+
+[resources.glass]
+name = "Verre"
+max_stack = 999
+color = "#CCDDEE"
+
+[resources.acid]
+name = "Acide"
+max_stack = 999
+color = "#88FF44"
+
+[resources.sulfur]
+name = "Soufre"
+max_stack = 999
+color = "#DDDD44"
+
+[resources.crude_oil]
+name = "Pétrole Brut"
+max_stack = 999
+color = "#222222"
+
+# === Phase 4 — Pouls ===
+[resources.motor]
+name = "Moteur"
+max_stack = 999
+color = "#AA8844"
+
+[resources.battery]
+name = "Batterie"
+max_stack = 999
+color = "#33AA33"
+
+[resources.advanced_circuit]
+name = "Circuit Avancé"
+max_stack = 999
+color = "#44DD44"
+
+[resources.electronic_module]
+name = "Module Électronique"
+max_stack = 999
+color = "#66CC66"
+
+[resources.machine_frame]
+name = "Châssis Mécanique"
+max_stack = 999
+color = "#8888AA"
+
+[resources.concrete]
+name = "Béton"
+max_stack = 999
+color = "#999999"
+
+[resources.silicon]
+name = "Silicium"
+max_stack = 999
+color = "#AACCDD"
+
+# === Phase 5 — Nanites ===
+[resources.processor]
+name = "Processeur"
+max_stack = 999
+color = "#33BB33"
+
+[resources.laser_crystal]
+name = "Cristal Laser"
+max_stack = 999
+color = "#FF66DD"
+
+[resources.nano_pack]
+name = "Nano-Pack"
+max_stack = 999
+color = "#88DD88"
+
+[resources.composite]
+name = "Composite"
+max_stack = 999
+color = "#77AAAA"
+
+[resources.alloy]
+name = "Alliage"
+max_stack = 999
+color = "#8888AA"
+
+# === Phase 6 — Genèse ===
+[resources.organic_compound]
+name = "Composé Organique"
+max_stack = 999
+color = "#66BB6A"
+
+[resources.enzyme]
+name = "Enzyme"
+max_stack = 999
+color = "#AB47BC"
+
+[resources.protein]
+name = "Protéine"
+max_stack = 999
+color = "#FF7043"
+
+[resources.synthetic_blood]
+name = "Sang Synthétique"
+max_stack = 999
+color = "#EF5350"
+
+[resources.neural_map]
+name = "Carte Neurale"
+max_stack = 999
+color = "#42A5F5"
+
+[resources.stem_cells]
+name = "Cellules Souches"
+max_stack = 999
+color = "#FFD54F"
+
+[resources.bio_mass]
+name = "Bio-Masse"
+max_stack = 999
+color = "#4DB6AC"
+
+# === Phase Finale — Premier Souffle ===
+[resources.neural_interface]
+name = "Interface Neurale"
+max_stack = 99
+color = "#7E57C2"
+
+[resources.synthetic_heart]
+name = "Cœur Synthétique"
+max_stack = 99
+color = "#EF5350"
+
+[resources.genome_sequence]
+name = "Séquence Génome"
+max_stack = 99
+color = "#66BB6A"
+
+[resources.fusion_core]
+name = "Cœur à Fusion"
+max_stack = 99
+color = "#FFAA44"

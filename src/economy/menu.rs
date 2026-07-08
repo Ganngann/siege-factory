@@ -240,6 +240,34 @@ pub fn breadcrumb_at(entries: &[MenuEntry], stack: &[usize]) -> String {
     parts.join(" > ")
 }
 
+fn has_visible_children(
+    entry: &MenuEntry,
+    registry: &BuildingRegistry,
+    unit_cfg: &UnitConfig,
+    global_archive: &GlobalArchive,
+) -> bool {
+    match entry {
+        MenuEntry::Action { action, .. } => match action {
+            MenuAction::Build(id) => registry.get(id).is_some_and(|def| {
+                if def.hidden {
+                    return false;
+                }
+                if let Some(ref req) = def.requires_discovery {
+                    if !global_archive.is_unlocked(req) {
+                        return false;
+                    }
+                }
+                true
+            }),
+            MenuAction::Spawn(id) => unit_cfg.get(id).is_some(),
+            MenuAction::Delete => true,
+        },
+        MenuEntry::SubMenu { items, .. } => items
+            .iter()
+            .any(|child| has_visible_children(child, registry, unit_cfg, global_archive)),
+    }
+}
+
 /// Build the flat item list for UI, applying scroll.
 /// Needs registries to lookup building/unit colors and costs.
 pub fn flat_items_at(
@@ -254,7 +282,7 @@ pub fn flat_items_at(
     let level = items_at(entries, stack);
 
     let mut items = Vec::new();
-    for entry in level.iter().skip(scroll) {
+    for entry in level.iter() {
         match entry {
             MenuEntry::Action { label, action } => match action {
                 MenuAction::Build(id) => {
@@ -297,19 +325,23 @@ pub fn flat_items_at(
                     });
                 }
             },
-            MenuEntry::SubMenu { label, .. } => {
-                items.push(FlatItem {
-                    label: label.clone(),
-                    kind: FlatItemKind::SubMenu,
-                    cost_str: String::new(),
-                    color: Color::srgb(0.4, 0.4, 0.5),
-                    texture_stem: None,
-                });
+            MenuEntry::SubMenu { label, items: children } => {
+                if children
+                    .iter()
+                    .any(|child| has_visible_children(child, registry, unit_cfg, global_archive))
+                {
+                    items.push(FlatItem {
+                        label: label.clone(),
+                        kind: FlatItemKind::SubMenu,
+                        cost_str: String::new(),
+                        color: Color::srgb(0.4, 0.4, 0.5),
+                        texture_stem: None,
+                    });
+                }
             }
         }
     }
 
-    // Apply pagination after filtering
     let total_before_scroll = items.len();
     let page_items: Vec<FlatItem> = items
         .into_iter()

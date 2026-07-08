@@ -4,17 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-#[derive(Resource, Debug, Clone, Serialize, Deserialize)]
+#[derive(Resource, Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Settings {
     pub keybindings: HashMap<String, String>,
-}
-
-impl Default for Settings {
-    fn default() -> Self {
-        Self {
-            keybindings: HashMap::new(),
-        }
-    }
 }
 
 impl Settings {
@@ -32,7 +24,7 @@ impl Settings {
                     }
                 }
                 Err(e) => {
-                    eprintln!("Failed to read settings: {e}");
+                    error!("Failed to read settings: {e}");
                 }
             }
         }
@@ -49,11 +41,11 @@ impl Settings {
         match toml::to_string_pretty(self) {
             Ok(content) => {
                 if let Err(e) = std::fs::write(&path, content) {
-                    eprintln!("Failed to write settings: {e}");
+                    error!("Failed to write settings: {e}");
                 }
             }
             Err(e) => {
-                eprintln!("Failed to serialize settings: {e}");
+                error!("Failed to serialize settings: {e}");
             }
         }
     }

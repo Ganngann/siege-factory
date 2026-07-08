@@ -17,10 +17,7 @@ pub fn archive_delivery_check(
     let mut to_clear: Vec<Entity> = Vec::new();
 
     for (entity, inventory) in &archive_query {
-        for (resource_id, amount) in &inventory.resources {
-            if *amount == 0 {
-                continue;
-            }
+        for (resource_id, _amount) in inventory.iter_occupied() {
             if global_archive.is_unlocked(&resource_id.0) {
                 continue;
             }

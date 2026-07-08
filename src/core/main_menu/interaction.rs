@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 
-use super::spawn::{build_rebind_items, spawn_current_screen};
+use super::spawn::{build_mod_items, build_rebind_items, spawn_current_screen};
 use super::types::*;
 use crate::core::game_state::GameState;
 use crate::core::input::{InputBinding, KeyBindings};
+use crate::core::modding::ModRegistry;
 use crate::core::settings::Settings;
 use crate::core::utils::silent_despawn;
 use crate::economy::components::PeacefulMode;
@@ -20,8 +21,8 @@ pub fn menu_navigation(
     mut rebind: ResMut<RebindState>,
     def: Res<MainMenuDef>,
     keys: Res<ButtonInput<KeyCode>>,
-    _mouse: Res<ButtonInput<MouseButton>>,
     bindings: Res<KeyBindings>,
+    mut registry: ResMut<ModRegistry>,
     mut next_state: ResMut<NextState<GameState>>,
     mut fresh_game: ResMut<crate::core::game_state::IsFreshGame>,
     mut peaceful: ResMut<PeacefulMode>,
@@ -47,6 +48,7 @@ pub fn menu_navigation(
             &def,
             &nav,
             &bindings,
+            &registry,
             !camera_query.is_empty(),
         );
         *last_nav = nav.stack.clone();
@@ -61,6 +63,11 @@ pub fn menu_navigation(
 
     let items: Vec<MenuItemAction> = if screen_id == "keybindings" {
         build_rebind_items(&bindings)
+            .into_iter()
+            .map(|(_id, _, action)| MenuItemAction { action })
+            .collect()
+    } else if screen_id == "mods" {
+        build_mod_items(&registry)
             .into_iter()
             .map(|(_id, _, action)| MenuItemAction { action })
             .collect()
@@ -170,6 +177,10 @@ pub fn menu_navigation(
                     nav.selection = 0;
                     nav.stack.pop();
                 }
+            }
+            MenuAction::ToggleMod(id) => {
+                registry.toggle(id);
+                *last_nav = Vec::new();
             }
             MenuAction::Rebind(action) => {
                 rebind.0 = Some(action.clone());

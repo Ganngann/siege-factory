@@ -188,7 +188,7 @@ pub fn burner_generator_tick(
     let ratio = power_grid.utilization_ratio;
 
     for (mut burner, mut inventory, mut producer) in generator_query.iter_mut() {
-        let has_fuel = inventory.resources.iter().any(|(_, &amount)| amount > 0);
+        let has_fuel = inventory.total() > 0;
 
         if !has_fuel {
             producer.output = 0.0;
@@ -204,7 +204,7 @@ pub fn burner_generator_tick(
             burner.fuel_burn_timer += time.delta_secs() * ratio;
             if burner.fuel_burn_timer >= burner.fuel_burn_interval {
                 burner.fuel_burn_timer -= burner.fuel_burn_interval;
-                let fuel_key = inventory.resources.keys().next().cloned();
+                let fuel_key = inventory.first_resource();
                 if let Some(key) = fuel_key {
                     inventory.remove(&key, 1);
                 }

@@ -1,0 +1,5 @@
+id = "genesis_protocol"
+name = "Genesis Protocol"
+version = "1.0.0"
+description = "Mod complet : 7 phases de progression automation pour réparer une capsule cryo. Réveil → Vapeur → Électricité → Nano → Bio-Ingenierie."
+author = "opencode"

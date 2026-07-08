@@ -1,7 +1,6 @@
 use crate::economy::components::{CloseButton, DragHandle};
 use bevy::ecs::hierarchy::ChildOf;
 use bevy::prelude::*;
-
 // ── Shared UI constants ──
 
 pub const BG_WINDOW: Color = Color::srgba(0.08, 0.08, 0.16, 0.97);
@@ -25,27 +24,13 @@ pub struct WindowRoot;
 
 // ── Drag resource ──
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct WindowDrag {
     pub dragging: bool,
     pub window_entity: Option<Entity>,
     pub cursor_start: Vec2,
     pub window_start_left: f32,
     pub window_start_top: f32,
-    pub frame_delay: u32,
-}
-
-impl Default for WindowDrag {
-    fn default() -> Self {
-        Self {
-            dragging: false,
-            window_entity: None,
-            cursor_start: Vec2::ZERO,
-            window_start_left: 0.0,
-            window_start_top: 0.0,
-            frame_delay: 0,
-        }
-    }
 }
 
 // ── Spawn a standardized window ──
@@ -63,6 +48,8 @@ pub fn spawn_window(
     commands
         .spawn((
             WindowRoot,
+            Transform::default(),
+            bevy::ui::UiTransform::default(),
             Node {
                 position_type: PositionType::Absolute,
                 left: Val::Px(x),
@@ -86,6 +73,7 @@ pub fn spawn_window(
             parent
                 .spawn((
                     DragHandle,
+                    Button,
                     Node {
                         width: Val::Percent(100.0),
                         height: Val::Px(36.0),
@@ -176,6 +164,7 @@ pub fn drag_window_system(
     buttons: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     mut window_query: Query<(Entity, &mut Node), With<WindowRoot>>,
+    handles: Query<(&Interaction, &ChildOf), (Changed<Interaction>, With<DragHandle>)>,
 ) {
     if window_query.is_empty() {
         *drag = WindowDrag::default();
@@ -183,9 +172,7 @@ pub fn drag_window_system(
     }
 
     let Ok(w) = windows.single() else { return };
-    let Some(cursor) = w.cursor_position() else {
-        return;
-    };
+    let Some(cursor) = w.cursor_position() else { return };
 
     if drag.dragging {
         if buttons.just_released(MouseButton::Left) {
@@ -200,33 +187,27 @@ pub fn drag_window_system(
         return;
     }
 
-    if drag.frame_delay < 2 {
-        drag.frame_delay += 1;
-        return;
-    }
+    // Start drag when a DragHandle is pressed (Interaction set by ui_focus_system)
+    for (interaction, child_of) in handles.iter() {
+        if *interaction != Interaction::Pressed {
+            continue;
+        }
 
-    if !buttons.just_pressed(MouseButton::Left) {
-        return;
-    }
-
-    // Find which window header was clicked
-    for (entity, node) in window_query.iter() {
-        let left = match node.left {
-            Val::Px(v) => v,
-            _ => continue,
-        };
-        let top = match node.top {
-            Val::Px(v) => v,
-            _ => continue,
-        };
-        if cursor.x >= left && cursor.x <= left + 600.0 && cursor.y >= top && cursor.y <= top + 36.0
-        {
+        let window_entity = child_of.0;
+        if let Ok((_, node)) = window_query.get(window_entity) {
+            let left = match node.left {
+                Val::Px(v) => v,
+                _ => continue,
+            };
+            let top = match node.top {
+                Val::Px(v) => v,
+                _ => continue,
+            };
             drag.dragging = true;
-            drag.window_entity = Some(entity);
+            drag.window_entity = Some(window_entity);
             drag.cursor_start = cursor;
             drag.window_start_left = left;
             drag.window_start_top = top;
-            return;
         }
     }
 }

@@ -161,12 +161,7 @@ pub fn save_game(
             tile_y: pos.y,
             occupied: occupied.0.clone(),
             hp: hp.map(|h| (h.current, h.max)),
-            inventory: inventory.map(|inv| {
-                inv.resources
-                    .iter()
-                    .map(|(r, a)| (r.0.clone(), *a))
-                    .collect()
-            }),
+            inventory: inventory.map(|inv| inv.to_raw_slots()),
             inventory_capacity: inventory.map(|inv| inv.capacity).unwrap_or(0),
             assembler: assembler.map(|a| super::AssemblerSave {
                 production_timer: a.production_timer,

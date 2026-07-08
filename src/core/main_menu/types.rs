@@ -56,6 +56,7 @@ pub enum MenuAction {
     Quit,
     Rebind(String),
     LoadGame,
+    ToggleMod(String),
 }
 
 #[derive(Debug, Resource)]
