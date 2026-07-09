@@ -103,15 +103,15 @@ d.workbench = "Établi — Bâtiment craft Phase 0. Vue 3/4 open-frame : table d
 
 // ========== CAPSULES ==========
 
-d.genesis_capsule = "Capsule Genesis — Bâtiment narratif central Phase 0 (Réveil). Vue 3/4 : capsule cryo ovale verticale, vitre noire opaque, coque fissurée et envahie de débris. Aucun signe de vie. Elle est l'anomalie parfaite : métal blanc épuré perdu au milieu des ruines végétalisées. 256×256.";
-d.genesis_capsule_t0 = "Capsule Genesis Phase 1 (Étincelle). Débris retirés, coque propre. Un premier voyant vert s'allume sur le côté. La vitre reste noire mais l'espoir renaît. 256×256.";
-d.genesis_capsule_t1 = "Capsule Genesis Phase 2 (Rouille &amp; Vapeur). Condensation visible sur la vitre. Un liquide de refroidissement sombre circule dans des canalisations externes. Bulles. 256×256.";
-d.genesis_capsule_t2 = "Capsule Genesis Phase 3 (Fil du Cuivre). Faible lueur interne derrière la vitre. Le nouveau noyau CPU émet une lumière bleutée. Voyants vert et rouge actifs. 256×256.";
-d.genesis_capsule_t3 = "Capsule Genesis Phase 4 (Pouls). Rétroéclairage rythmé simulant un battement cardiaque. La lumière pulse doucement. Silhouette encore indistincte. 256×256.";
-d.genesis_capsule_t4 = "Capsule Genesis Phase 5 (Nanites). Coque lissée, vitre partiellement transparente révélant une vague silhouette humaine. Teintes argentées et blanches dominent. 256×256.";
-d.genesis_capsule_t5 = "Capsule Genesis Phase 6 (Genèse). Vitre s'éclaircit, teintes biologiques rosées/rouges à l'intérieur. Une main est distinctement visible contre le verre de l'intérieur. 256×256.";
-d.genesis_capsule_t6 = "Capsule Genesis Phase 7 (Premier Souffle). Tous les systèmes au vert. Vitre totalement transparente. La main appuie contre la paroi. L'être à l'intérieur est prêt à naître. 256×256.";
-d.genesis_capsule_t7 = "Capsule Genesis Phase Finale. Apothéose lumineuse. La capsule irradie une lumière blanche chaude. La vitre s'ouvre. 256×256.";
+d.genesis_capsule = "Capsule Genesis — État initial (prélude). Vue 3/4 : capsule cryo ovale verticale, vitre noire opaque, coque fissurée et envahie de débris. Aucun signe de vie. Elle est l'anomalie parfaite : métal blanc épuré perdu au milieu des ruines végétalisées. 256×256.";
+d.genesis_capsule_t0 = "Capsule Genesis — Tier Marteau (Déblayage). Débris retirés, panneaux d'accès ouverts. La capsule reste éteinte mais les premiers connecteurs sont accessibles. 256×256.";
+d.genesis_capsule_t1 = "Capsule Genesis — Tier Corde (Réveil). Un premier voyant vert s'allume. L'écran clignote : ALIMENTATION REQUISE. La capsule montre les premiers signes de réponse. 256×256.";
+d.genesis_capsule_t2 = "Capsule Genesis — Phase 1 (Étincelle). Alimentation primaire rétablie. Faible lueur interne, voyants d'alimentation verts allumés. L'ordinateur de bord émet un signal. 256×256.";
+d.genesis_capsule_t3 = "Capsule Genesis — Phase 2 (Rouille &amp; Vapeur). Liquide de refroidissement visible, condensation sur la vitre. Bulles. Circuit de refroidissement rebranché. 256×256.";
+d.genesis_capsule_t4 = "Capsule Genesis — Phase 3 (Fil du Cuivre). Lueur interne faible due au nouveau noyau CPU. Voyants vert et rouge actifs. Le cœur de la capsule s'éveille. 256×256.";
+d.genesis_capsule_t5 = "Capsule Genesis — Tier 5 (Pouls). Battement cardiaque simulé par rétroéclairage rythmé. Silhouette encore indistincte derrière la vitre. Pompes internes actives. 256×256.";
+d.genesis_capsule_t6 = "Capsule Genesis — Tier 6 (Nanites). Coque lissée, vitre partiellement transparente révélant une silhouette humaine vague. Microfissures scellées. 256×256.";
+d.genesis_capsule_t7 = "Capsule Genesis — Tier 7 (Genèse) et Final (Premier Souffle). Vitre claire, teintes biologiques rosées/rouges à l'intérieur. Une main distinctement visible contre le verre. Signes vitaux stables. Réservoir de stase prêt. La main bouge et tape contre la paroi pendant le compte à rebours final. 256×256.";
 
 // ========== EXTRA ==========
 d.electronic_module = "Module Électronique — Composant Phase 4. Vue 3/4 open-frame : petite puce verte (#66CC66) carrée avec quatre zones de connexion. Géométrie stricte, symétrie parfaite. Reflets métalliques francs. 64×64.";

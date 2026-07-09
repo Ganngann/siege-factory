@@ -151,7 +151,7 @@ pub fn spawn_objective_hud(mut commands: Commands, state: Res<ObjectiveState>) {
             Text::new(format!("OBJECTIF\n{}", state.active_text)),
             TextFont::from_font_size(14.0),
             TextColor(Color::WHITE),
-            TextLayout::justify(Justify::Center),
+            TextLayout::new(Justify::Center, bevy::text::LineBreak::WordBoundary),
             Node {
                 position_type: PositionType::Absolute,
                 top: Val::Px(60.0),
@@ -159,6 +159,7 @@ pub fn spawn_objective_hud(mut commands: Commands, state: Res<ObjectiveState>) {
                 margin: UiRect::left(Val::Percent(-25.0)),
                 width: Val::Percent(50.0),
                 padding: UiRect::all(Val::Px(10.0)),
+                flex_wrap: FlexWrap::Wrap,
                 ..default()
             },
             BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.6)),

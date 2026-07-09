@@ -49,12 +49,14 @@ pub fn toast_system(
             Text::new(text.to_string()),
             TextFont::from_font_size(config.toast.font_size),
             TextColor(config.toast.color),
-            TextLayout::justify(Justify::Center),
+            TextLayout::new(Justify::Center, bevy::text::LineBreak::WordBoundary),
             Node {
                 position_type: PositionType::Absolute,
                 bottom: Val::Px(config.toast.bottom_px),
                 left: Val::Percent(50.0),
                 justify_content: JustifyContent::Center,
+                max_width: Val::Px(700.0),
+                flex_wrap: FlexWrap::Wrap,
                 ..default()
             },
         ));
