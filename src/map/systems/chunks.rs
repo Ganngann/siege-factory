@@ -2,6 +2,7 @@ use crate::core::utils::{tile_to_world, tile_to_world_corner};
 use crate::economy::components::ResourceDeposit;
 use crate::economy::discovery::GlobalArchive;
 use crate::economy::resource::ResourceRegistry;
+use crate::map::biome::BiomeRegistry;
 use crate::map::components::{ChunkMember, Decoration, FogTile, HiddenDeposit, TilePosition};
 use crate::map::config::MapConfig;
 use crate::map::rng::{SimpleRng, chunk_hash};
@@ -12,8 +13,9 @@ use crate::rendering::minimap::MinimapCamera;
 use crate::rendering::{ShapeCache, TextureCache};
 use bevy::asset::RenderAssetUsages;
 use bevy::prelude::{
-    Assets, Camera, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d, MeshMaterial2d,
-    Query, Res, ResMut, Sprite, Transform, Vec2, Visibility, Window, With, Without, default,
+    Assets, Camera, Color, ColorMaterial, Commands, Entity, GlobalTransform, Mesh, Mesh2d,
+    MeshMaterial2d, Query, Res, ResMut, Sprite, Transform, Vec2, Visibility, Window, With, Without,
+    default,
 };
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use std::collections::HashSet;
@@ -119,12 +121,12 @@ pub fn spawn_single_chunk_visuals(
     cfg: &MapConfig,
     res_registry: &ResourceRegistry,
     global_archive: &GlobalArchive,
+    biomes: &BiomeRegistry,
     shapes: &ShapeCache,
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
     textures: &TextureCache,
     visuals: &VisualsConfig,
-    preview: &crate::rendering::cache::PreviewMaterials,
     cx: i32,
     cy: i32,
 ) {
@@ -148,8 +150,14 @@ pub fn spawn_single_chunk_visuals(
 
     let chunk = chunk_grid.ensure_chunk(cx, cy);
 
-    let mat_even = materials.add(visuals.chunk_colors.even);
-    let mat_odd = materials.add(visuals.chunk_colors.odd);
+    // Use biome colors if available, fall back to global chunk_colors
+    let bm = biomes.biome_for_chunk(cfg.seed, cx, cy);
+    let (color_even, color_odd) = match bm {
+        Some(b) => (b.tile_color_even, b.tile_color_odd),
+        None => (visuals.chunk_colors.even, visuals.chunk_colors.odd),
+    };
+    let mat_even = materials.add(color_even);
+    let mat_odd = materials.add(color_odd);
 
     commands.spawn(super::ChunkMarker(cx, cy));
     commands.spawn((
@@ -246,7 +254,14 @@ pub fn spawn_single_chunk_visuals(
     }
 
     let mut rng = SimpleRng::new(chunk_hash);
-    for deco in &visuals.decorations {
+
+    // Use biome decorations if available, otherwise fall back to global decorations
+    let deco_list: Vec<&crate::map::biome::BiomeDecoration> = bm
+        .map(|b| b.decorations.iter().collect())
+        .unwrap_or_default();
+    let has_biome = !deco_list.is_empty();
+
+    for deco in &deco_list {
         let count = (deco.density * (CHUNK_SIZE * CHUNK_SIZE) as f32) as u32;
         let base = cfg.decoration_min_count + (rng.next() % (cfg.decoration_count_variance + 1));
         let total = count.max(base);
@@ -273,12 +288,42 @@ pub fn spawn_single_chunk_visuals(
         }
     }
 
+    // If no biome decorations, use global decorations
+    if !has_biome {
+        for deco in &visuals.decorations {
+            let count = (deco.density * (CHUNK_SIZE * CHUNK_SIZE) as f32) as u32;
+            let base = cfg.decoration_min_count + (rng.next() % (cfg.decoration_count_variance + 1));
+            let total = count.max(base);
+            for _ in 0..total {
+                let dx = rng.next() % CHUNK_SIZE;
+                let dy = rng.next() % CHUNK_SIZE;
+                if occupied.contains(&(dx, dy)) {
+                    continue;
+                }
+                occupied.insert((dx, dy));
+                let wx = world_ox + dx as i32;
+                let wy = world_oy + dy as i32;
+                let mesh = shapes.get_visual(&deco.shape);
+                let mat = materials.add(deco.color);
+                let deco_pos = tile_to_world(wx, wy, tile_size);
+                commands.spawn((
+                    ChunkMember(cx, cy),
+                    Decoration(deco.kind.clone()),
+                    Mesh2d(mesh),
+                    MeshMaterial2d(mat),
+                    Transform::from_xyz(deco_pos.x, deco_pos.y, deco.z),
+                    TilePosition { x: wx, y: wy },
+                ));
+            }
+        }
+    }
+
     // Single fog mesh per chunk at z=1.0 (above deposits/decorations)
     let fog_mesh = build_fog_mesh(cx, cy, chunk, cfg.tile_size);
     commands.spawn((
         FogTile,
         Mesh2d(meshes.add(fog_mesh)),
-        MeshMaterial2d(preview.fog.clone()),
+        MeshMaterial2d(materials.add(Color::BLACK)),
         Transform::from_xyz(0.0, 0.0, 1.0),
         Visibility::default(),
         ChunkMember(cx, cy),
@@ -291,12 +336,12 @@ pub fn spawn_chunks_in_range(
     cfg: &MapConfig,
     res_registry: &ResourceRegistry,
     global_archive: &GlobalArchive,
+    biomes: &BiomeRegistry,
     shapes: &ShapeCache,
     materials: &mut Assets<ColorMaterial>,
     meshes: &mut Assets<Mesh>,
     textures: &TextureCache,
     visuals: &VisualsConfig,
-    preview: &crate::rendering::cache::PreviewMaterials,
     min_cx: i32,
     max_cx: i32,
     min_cy: i32,
@@ -314,12 +359,12 @@ pub fn spawn_chunks_in_range(
                 cfg,
                 res_registry,
                 global_archive,
+                biomes,
                 shapes,
                 materials,
                 meshes,
                 textures,
                 visuals,
-                preview,
                 cx,
                 cy,
             );
@@ -335,6 +380,7 @@ pub fn update_visible_chunks(
     cfg: Res<MapConfig>,
     res_registry: Res<ResourceRegistry>,
     global_archive: Res<GlobalArchive>,
+    biomes: Res<BiomeRegistry>,
     existing_markers: Query<(Entity, &super::ChunkMarker)>,
     existing_members: Query<(Entity, &ChunkMember)>,
     existing_deposits: Query<(Entity, &ResourceDeposit, &TilePosition)>,
@@ -343,7 +389,6 @@ pub fn update_visible_chunks(
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<TextureCache>,
     visuals: Res<VisualsConfig>,
-    preview: Res<crate::rendering::cache::PreviewMaterials>,
 ) {
     let Ok((cam, cam_transform)) = camera.single() else {
         return;
@@ -461,12 +506,12 @@ pub fn update_visible_chunks(
             &cfg,
             &res_registry,
             &global_archive,
+            &biomes,
             &shapes,
             &mut materials,
             &mut meshes,
             &textures,
             &visuals,
-            &preview,
             cx,
             cy,
         );

@@ -79,6 +79,7 @@ fn build_app() -> App {
 
     // Load visuals
     app.insert_resource(VisualsConfig::load(&test_mods()));
+    app.insert_resource(siege_factory::map::biome::BiomeRegistry::load(&test_mods()));
 
     // Initialize asset storage needed by rendering caches
     app.init_asset::<Mesh>();
@@ -135,12 +136,12 @@ fn spawn_single_chunk(
     cfg: Res<MapConfig>,
     res_registry: Res<ResourceRegistry>,
     global_archive: Res<GlobalArchive>,
+    biomes: Res<siege_factory::map::biome::BiomeRegistry>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<TextureCache>,
     visuals: Res<VisualsConfig>,
-    preview: Res<PreviewMaterials>,
 ) {
     if let Some(&(cx, cy)) = chunk_grid.pending_spawns.first() {
         siege_factory::map::systems::spawn_single_chunk_visuals(
@@ -149,12 +150,12 @@ fn spawn_single_chunk(
             &cfg,
             &res_registry,
             &global_archive,
+            &biomes,
             &shapes,
             &mut materials,
             &mut meshes,
             &textures,
             &visuals,
-            &preview,
             cx,
             cy,
         );

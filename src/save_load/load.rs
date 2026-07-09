@@ -15,6 +15,7 @@ use crate::economy::components::{
 use crate::economy::game_components::Miner;
 use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
 use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveState};
+use crate::map::biome::BiomeRegistry;
 use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::map::systems::spawn_single_chunk_visuals;
@@ -60,13 +61,13 @@ pub fn load_chunks(
     cfg: Res<MapConfig>,
     res_registry: Res<ResourceRegistry>,
     global_archive: Res<crate::economy::discovery::GlobalArchive>,
+    biomes: Res<BiomeRegistry>,
     shapes: Res<ShapeCache>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     textures: Res<TextureCache>,
     mut commands: Commands,
     visuals: Res<VisualsConfig>,
-    preview: Res<crate::rendering::cache::PreviewMaterials>,
 ) {
     let data = load_data!(buf);
     chunk_grid.clear();
@@ -98,12 +99,12 @@ pub fn load_chunks(
                 &cfg,
                 &res_registry,
                 &global_archive,
+                &biomes,
                 &shapes,
                 &mut materials,
                 &mut meshes,
                 &textures,
                 &visuals,
-                &preview,
                 cx,
                 cy,
             );

@@ -17,7 +17,7 @@ items = [
 [[menu]]
 label = "Phase 2 — Vapeur"
 items = [
-    { label = "Fluides", items = ["water_pump", "steam_generator"] },
+    { label = "Fluides", items = ["water_pump", "steam_generator", "pipe"] },
     { label = "Métaux", items = ["gear_press", "blast_furnace"] },
     { label = "Transport", items = ["belt", "splitter"] },
 ]

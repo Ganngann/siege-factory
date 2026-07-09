@@ -246,13 +246,55 @@ texture = "genesis_capsule_t7"
 
 ---
 
-## 7. Biomes / Environnement Variable ❌
+## 7. Biomes / Environnement Variable ✅
 
 **Design original** : Différentes zones (clairière, ruines, forêt dense) avec ressources spécifiques.
 
-**Blocage technique** : Pas de système de biomes. Les décorations sont aléatoires et uniformes.
+**Solution implémentée** : Système de biomes data-driven. Chaque chunk se voit assigner un biome de manière déterministe (seed + coordonnées). Le biome définit les couleurs du terrain, les décorations, et la distribution des ressources.
 
-**Solution possible** (code Rust) : Ajouter un système de régions/biomes avec des tables de ressources et décoration par biome.
+**Usage TOML** — Créer `mods/genesis_protocol/data/biomes.toml` :
+
+```toml
+[biomes.ruins]
+name = "Ruines Urbaines"
+tile_color_even = "#444444"
+tile_color_odd = "#555555"
+
+[[biomes.ruins.decorations]]
+kind = "rubble"
+shape = "square"
+density = 0.02
+color = "#666655"
+z = -0.5
+
+[[biomes.ruins.deposits]]
+scrap_metal = 50
+stone = 30
+clay = 20
+
+[biomes.forest]
+name = "Forêt Dense"
+tile_color_even = "#2D5A27"
+tile_color_odd = "#3A6B33"
+
+[[biomes.forest.decorations]]
+kind = "tree"
+shape = "circle"
+density = 0.05
+color = "#4A7C3F"
+z = -0.5
+
+[[biomes.forest.deposits]]
+wood = 60
+plant_fiber = 30
+stone = 10
+```
+
+**Comportement** :
+- Chaque chunk reçoit un biome déterminé par `hash(seed, cx, cy) % biome_count`
+- Les couleurs `tile_color_even/odd` remplacent les couleurs globales du chunk
+- Les décorations du biome remplacent les décorations globales
+- Si aucun biome n'est défini, le système utilise les couleurs et décorations globales existantes
 
 ---
 
@@ -282,6 +324,6 @@ Le système d'outils passif (section 1) donne un usage mécanique à `stone_pick
 | 4 | Foreuse infinie | ✅ Implémenté (infinite_extraction) | — |
 | 5 | Compacteur | ✅ Implémenté (Compactor) | — |
 | 6 | Compte à rebours final | ✅ Implémenté (FinalCountdown) | — |
-| 7 | Biomes | ❌ Non implémenté | Basse |
+| 7 | Biomes | ✅ Implémenté (BiomeRegistry) | — |
 | 8 | Chaînage découvertes | ✅ Contourné via recettes | — |
 | 9 | Outils Pierre décoratifs | ✅ Résolu (système outil passif) | — |

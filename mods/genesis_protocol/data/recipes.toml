@@ -182,7 +182,7 @@ time_sec = 3.0
 category = "pumping"
 craftable_in = ["water_pump"]
 input = {}
-output = { water = 2 }
+fluid_output = { water = 10.0 }
 time_sec = 2.0
 
 # --- Gear Press (pressing) ---
@@ -204,8 +204,10 @@ time_sec = 2.0
 [recipes.steam_produce]
 category = "steam"
 craftable_in = ["steam_generator"]
-input = { water = 2, coal = 1 }
-output = { steam = 3, energy = 2 }
+input = { coal = 1 }
+fluid_input = { water = 2.0 }
+output = { energy = 2 }
+fluid_output = { steam = 3.0 }
 time_sec = 4.0
 
 # --- Anvil (smithing) - extended ---
@@ -220,7 +222,8 @@ time_sec = 3.0
 [recipes.proto_steel]
 category = "steelmaking"
 craftable_in = ["blast_furnace"]
-input = { iron_ingot = 3, coal = 1, steam = 1 }
+input = { iron_ingot = 3, coal = 1 }
+fluid_input = { steam = 1.0 }
 output = { steel = 1 }
 time_sec = 6.0
 
@@ -246,7 +249,8 @@ time_sec = 4.0
 [recipes.acid_mix]
 category = "refining"
 craftable_in = ["chemical_lab"]
-input = { sulfur = 1, water = 1 }
+input = { sulfur = 1 }
+fluid_input = { water = 1.0 }
 output = { acid = 2 }
 time_sec = 3.0
 
@@ -371,7 +375,8 @@ time_sec = 8.0
 [recipes.proto_organic]
 category = "bio"
 craftable_in = ["bio_lab"]
-input = { plant_fiber = 3, water = 2 }
+input = { plant_fiber = 3 }
+fluid_input = { water = 2.0 }
 output = { organic_compound = 1 }
 time_sec = 6.0
 

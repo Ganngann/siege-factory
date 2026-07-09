@@ -34,37 +34,38 @@ const lighten = (hex, factor) => {
 const BUILDINGS = [
   ["workbench", "#8B5E3C", 1, 1],
   ["campfire", "#FF6622", 1, 1],
-  ["furnace", "#884422", 1, 1],
+  ["furnace", "#884422", 2, 1],
   ["anvil", "#666666", 1, 1],
-  ["burner_generator", "#DD6622", 1, 1],
+  ["burner_generator", "#DD6622", 2, 1],
   ["manual_miner", "#AA7733", 1, 1],
-  ["water_pump", "#3399DD", 1, 1],
-  ["steam_generator", "#CCDDEE", 1, 1],
-  ["blast_furnace", "#AA4422", 1, 1],
+  ["water_pump", "#3399DD", 2, 2],
+  ["steam_generator", "#CCDDEE", 3, 1],
+  ["blast_furnace", "#AA4422", 2, 2],
   ["gear_press", "#887766", 1, 1],
   ["belt", "#808080", 1, 1],
   ["splitter", "#AAAA00", 1, 1],
-  ["electric_generator", "#FFAA33", 1, 1],
+  ["pipe", "#557788", 1, 1],
+  ["electric_generator", "#FFAA33", 2, 1],
   ["power_pole", "#888888", 1, 1],
-  ["assembler", "#4D99CC", 1, 1],
+  ["assembler", "#4D99CC", 2, 1],
   ["chemical_lab", "#664488", 2, 2],
-  ["oil_pump", "#444455", 1, 1],
+  ["oil_pump", "#444455", 2, 2],
   ["storage_chest", "#CC9900", 1, 1],
-  ["motor_foundry", "#AA8844", 2, 1],
+  ["motor_foundry", "#AA8844", 2, 2],
   ["battery_station", "#33AA33", 1, 1],
   ["electronics_lab", "#33AA88", 2, 2],
-  ["assembly_crane", "#3377AA", 2, 1],
+  ["assembly_crane", "#3377AA", 3, 2],
   ["aerial_belt", "#88AACC", 1, 1],
   ["sorter", "#66AA66", 1, 1],
   ["nanite_assembler", "#44DDBB", 2, 2],
-  ["deep_core_drill", "#664433", 3, 2],
+  ["deep_core_drill", "#664433", 5, 5],
   ["compactor", "#AAAA77", 1, 1],
   ["high_speed_belt", "#CC8844", 1, 1],
-  ["excavation_rig", "#775533", 2, 2],
+  ["excavation_rig", "#775533", 4, 4],
   ["bio_lab", "#66BB6A", 2, 2],
   ["tissue_cultivator", "#AB47BC", 2, 2],
   ["synthesizer", "#FF7043", 1, 1],
-  ["scanner_array", "#42A5F5", 2, 2],
+  ["scanner_array", "#42A5F5", 3, 3],
   ["bio_printer", "#4DB6AC", 2, 2],
 ];
 
@@ -107,7 +108,6 @@ const RESOURCES = {
   steel: "#666688",
   gear: "#887766",
   screw: "#AAAAAA",
-  pipe: "#557788",
   copper_wire: "#CC7733",
   circuit: "#44AA44",
   motor: "#AA8844",
@@ -153,11 +153,12 @@ function th(n) {
 const TILE = 64;
 
 function makeBuildingSVG(stem, color, w, h) {
-  // Bounding box centered in 64x64, scaled by footprint
-  const bw = (w / 3) * TILE * 0.75; // base width in px
-  const bh = (h / 3) * TILE * 0.75; // base height in px
-  const cx = TILE / 2;
-  const cy = TILE / 2;
+  const vw = w * TILE, vh = h * TILE;
+  const scale = 0.85;
+  const bw = vw * scale;
+  const bh = vh * scale;
+  const cx = vw / 2;
+  const cy = vh / 2;
   const rx = bw / 2;
   const ry = bh / 2;
   const lx = cx - rx;
@@ -358,13 +359,19 @@ function makeBuildingSVG(stem, color, w, h) {
     <rect x="${lx + 3}" y="${ly + 3}" width="${bw - 6}" height="${bh - 6}" rx="3" fill="${darken(color, 0.8)}" stroke="#333" stroke-width="0.5"/>
     <rect x="${cx - 4}" y="${cy - 5}" width="8" height="10" rx="1" fill="${lighten(color, 0.2)}" stroke="#333" stroke-width="0.3"/>
     <line x1="${cx - 3}" y1="${cy}" x2="${cx + 3}" y2="${cy}" stroke="#FFF" stroke-width="0.5"/>`;
+  } else if (stem === "pipe") {
+    extra = `
+    <rect x="${lx}" y="${cy - 6}" width="${bw}" height="12" rx="6" fill="${color}" stroke="#333" stroke-width="1"/>
+    <rect x="${lx}" y="${cy - 10}" width="${bw}" height="4" rx="2" fill="${dark}" opacity="0.4"/>
+    <rect x="${lx}" y="${cy + 6}" width="${bw}" height="4" rx="2" fill="${dark}" opacity="0.4"/>
+    <line x1="${lx + 4}" y1="${cy}" x2="${lx + bw - 4}" y2="${cy}" stroke="${dark}" stroke-width="2"/>`;
   } else {
     // Generic building
     extra = `
     <rect x="${lx}" y="${ly}" width="${bw}" height="${bh}" rx="3" fill="${color}" stroke="#333" stroke-width="1"/>`;
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vw} ${vh}" width="${vw}" height="${vh}">
   ${extra}
 </svg>`;
 }
@@ -572,20 +579,31 @@ function generateAll() {
 }
 
 async function convertToPng() {
+  const buildingSizes = {};
+  for (const [stem, _, w, h] of BUILDINGS) {
+    buildingSizes[stem] = [w * 64, h * 64];
+  }
+  // Capsule textures match genesis_ark tile size (3x3)
+  for (const [stem] of CAPSULE) {
+    buildingSizes[stem] = [192, 192];
+  }
+
   try {
     const sharp = require("sharp");
-    console.log("\nConversion SVG → PNG 64x64...");
+    console.log("\nConversion SVG → PNG...");
     const files = fs.readdirSync(SVG_DIR).filter((f) => f.endsWith("_base.svg"));
     let ok = 0,
       fail = 0;
     for (const file of files) {
+      const stem = file.replace("_base.svg", "");
       const svgPath = path.join(SVG_DIR, file);
       const pngPath = path.join(PNG_DIR, file.replace("_base.svg", "_base.png"));
+      const size = buildingSizes[stem] || [64, 64];
       try {
         const svgBuf = fs.readFileSync(svgPath);
-        await sharp(svgBuf).resize(64, 64).png().toFile(pngPath);
+        await sharp(svgBuf).resize(size[0], size[1]).png().toFile(pngPath);
         ok++;
-        console.log(`  ✓ ${path.basename(pngPath)}`);
+        console.log(`  ✓ ${path.basename(pngPath)} (${size[0]}x${size[1]})`);
       } catch (e) {
         console.log(`  ✗ ${file}: ${e.message}`);
         fail++;

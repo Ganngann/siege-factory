@@ -93,12 +93,14 @@ color = "#DDCC88"
 # === Phase 2 — Rouille et Vapeur ===
 [resources.water]
 name = "Eau"
-max_stack = 999
+fluid = true
+max_stack = 1
 color = "#3399DD"
 
 [resources.steam]
 name = "Vapeur"
-max_stack = 999
+fluid = true
+max_stack = 1
 color = "#CCDDEE"
 
 [resources.steel]

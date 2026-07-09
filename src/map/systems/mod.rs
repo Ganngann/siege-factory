@@ -9,6 +9,7 @@ use crate::core::game_state::GameState;
 use crate::core::schedule::GameplayStep;
 use crate::core::utils::{silent_despawn, tile_to_world};
 use crate::economy::components::UiIsBlocking;
+use crate::map::biome::BiomeRegistry;
 use crate::map::components::{ChunkMember, HoveredTile, cursor_to_tile};
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
@@ -45,6 +46,7 @@ impl Plugin for MapPlugin {
             dep_max_per,
             dep_dist,
         ));
+        app.insert_resource(BiomeRegistry::load(&mods));
         app.insert_resource(HoveredTile::default());
         app.add_systems(
             OnEnter(GameState::Playing),
