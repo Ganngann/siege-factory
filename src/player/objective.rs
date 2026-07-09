@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use serde::Deserialize;
 
+use crate::core::game_font::GameFont;
 use crate::core::tutorial::{TutorialConditions, TutorialState};
 use crate::core::toast::ToastQueue;
 use crate::economy::game_components::CurrentTier;
@@ -140,7 +141,7 @@ pub fn advance_objectives(
     }
 }
 
-pub fn spawn_objective_hud(mut commands: Commands, state: Res<ObjectiveState>) {
+pub fn spawn_objective_hud(mut commands: Commands, state: Res<ObjectiveState>, font: Res<GameFont>) {
     if state.active_text.is_empty() {
         return;
     }
@@ -149,15 +150,19 @@ pub fn spawn_objective_hud(mut commands: Commands, state: Res<ObjectiveState>) {
         .spawn((
             ObjectiveHudMarker,
             Text::new(format!("OBJECTIF\n{}", state.active_text)),
-            TextFont::from_font_size(14.0),
+            TextFont {
+                font: font.0.clone().into(),
+                font_size: 14.0.into(),
+                ..default()
+            },
             TextColor(Color::WHITE),
             TextLayout::new(Justify::Center, bevy::text::LineBreak::WordBoundary),
             Node {
                 position_type: PositionType::Absolute,
                 top: Val::Px(60.0),
-                left: Val::Percent(50.0),
-                margin: UiRect::left(Val::Percent(-25.0)),
-                width: Val::Percent(50.0),
+                left: Val::Auto,
+                right: Val::Auto,
+                max_width: Val::Px(500.0),
                 padding: UiRect::all(Val::Px(10.0)),
                 flex_wrap: FlexWrap::Wrap,
                 ..default()

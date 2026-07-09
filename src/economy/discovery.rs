@@ -137,6 +137,8 @@ pub fn on_discovery(
     let building_name = building_query
         .get(event.building)
         .map(|b| b.name.as_str())
+        // ⚠️ IA ATTENTION: fallback "Building" en dur.
+        // Si le name d'un building est manquant, le toast affiche "Building" au lieu du vrai nom.
         .unwrap_or("Building");
     let item_name = resource_registry
         .get_opt(&event.discovery_id)

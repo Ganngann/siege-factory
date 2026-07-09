@@ -171,6 +171,9 @@ fn collect_building_stems(registry: &BuildingRegistry) -> Vec<String> {
         "miner_east_3x2",
         "miner_east_3x3",
         "wall_v",
+        // ⚠️ IA ATTENTION: cette liste de stems d'unités est en dur.
+        // Si tu ajoutes une unité dans units.toml, ajoute son stem ici.
+        // Solution future: lire les stems depuis UnitConfig automatiquement.
         "soldier",
         "worker",
         "cultivator",

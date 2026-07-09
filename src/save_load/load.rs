@@ -6,13 +6,16 @@ use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::toast::ToastQueue;
 use crate::core::tutorial::TutorialState;
 use crate::core::utils::{tile_to_world, world_to_tile};
+use crate::economy::tiered_structure::FinalCountdown;
+use crate::player::objective::ObjectiveState;
 use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::building::{BuildingRegistry, attach_power_components};
 use crate::economy::components::{
     Active, Assembler, Builder, BuilderState, Building, Direction, HpBarChild, OccupiedTiles,
     PeacefulMode, Player, Sorter, Splitter, Storage, TurretCombat, Unit,
 };
-use crate::economy::game_components::Miner;
+use crate::economy::fluid::FluidTank;
+use crate::economy::game_components::{Compactor, Miner};
 use crate::economy::resource::{Inventory, ResourceId, ResourceRegistry};
 use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveState};
 use crate::map::biome::BiomeRegistry;
@@ -189,6 +192,8 @@ pub fn load_buildings(
             name: bs.kind.clone(),
         };
 
+        // ⚠️ IA ATTENTION: comparaison sur kind string en dur.
+        // Si tu renommes "hq" dans buildings.toml, ce code casse silencieusement.
         if bs.kind == "hq" {
             commands.spawn((
                 Player,
@@ -380,7 +385,21 @@ pub fn load_buildings(
         } else if bs.storage {
             commands.spawn((Storage, building, inv, occupied, tf, tile_pos, Active(true)));
         } else {
-            commands.spawn((building, inv, occupied, tf, tile_pos, Active(true)));
+            let mut e = commands.spawn((building, inv, occupied, tf, tile_pos, Active(true)));
+            if let Some(ft) = &bs.fluid_tank {
+                e.insert(FluidTank {
+                    fluids: ft.fluids.iter().map(|(r, a)| (ResourceId(r.clone()), *a)).collect(),
+                    capacity: ft.capacity,
+                    max_per_fluid: ft.max_per_fluid,
+                });
+            }
+            if let Some(c) = &bs.compactor {
+                e.insert(Compactor {
+                    ratio: c.ratio,
+                    timer: c.timer,
+                    interval: c.interval,
+                });
+            }
         }
     }
 
@@ -493,6 +512,8 @@ pub fn load_finalize(
     mut next_state: ResMut<NextState<GameState>>,
     mut toast: ResMut<ToastQueue>,
     mut tutorial: ResMut<TutorialState>,
+    mut countdown: ResMut<FinalCountdown>,
+    mut objective: ResMut<ObjectiveState>,
 ) {
     let data = match &buf.data {
         Some(d) => d,
@@ -510,6 +531,10 @@ pub fn load_finalize(
     fresh_game.0 = false;
     tutorial.current_index = data.tutorial.current_index;
     tutorial.completed = data.tutorial.completed;
+    countdown.remaining_secs = data.final_countdown.remaining_secs;
+    countdown.running = data.final_countdown.running;
+    objective.current_index = data.objective.current_index;
+    objective.active_text = data.objective.active_text.clone();
     buf.data = None;
     next_state.set(GameState::Playing);
     toast.0.push("Game loaded".to_string());

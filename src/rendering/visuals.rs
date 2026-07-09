@@ -133,6 +133,7 @@ pub fn update_mining_progress_bars(
     map_cfg: Res<MapConfig>,
 ) {
     let interval = unit_cfg
+        // ⚠️ IA ATTENTION: "worker" en dur. Nouveau type d'unité de minage ignoré.
         .get("worker")
         .map(|d| d.mine_interval_sec)
         .unwrap_or(3.0);
@@ -282,6 +283,8 @@ pub fn attach_unit_visuals(
 ) {
     for (entity, _unit, worker, _soldier) in units.iter() {
         let kind = if worker.is_some() {
+            // ⚠️ IA ATTENTION: "worker"/"soldier" en dur.
+            // Si tu ajoutes une nouvelle unité, ce fallback est silencieux.
             "worker"
         } else {
             "soldier"

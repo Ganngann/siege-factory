@@ -12,6 +12,8 @@ use crate::map::components::TilePosition;
 use crate::map::config::MapConfig;
 use crate::map::tile_grid::{CHUNK_SIZE, ChunkGrid};
 
+// ⚠️ IA ATTENTION: cette constante duplique "harvester" défini dans units.toml.
+// Si le kind change dans le TOML, cette const dérive silencieusement.
 const UNIT_KIND_HARVESTER: &str = "harvester";
 
 #[derive(Event)]
@@ -111,6 +113,8 @@ fn spawn_unit_on_trigger(
     }
 }
 
+// ⚠️ IA ATTENTION: ce allow masque un vrai problème de conception.
+// Envisager un struct SystemParam plutôt que d'ignorer le warning.
 #[allow(clippy::too_many_arguments)]
 fn soldier_auto_attack(
     mut commands: Commands,
@@ -120,6 +124,7 @@ fn soldier_auto_attack(
     unit_cfg: Res<UnitConfig>,
     cfg: Res<MapConfig>,
 ) {
+    // ⚠️ IA ATTENTION: "soldier" en dur. Nouvelle unité de combat ignorée.
     let soldier_def = match unit_cfg.get("soldier") {
         Some(d) => d,
         None => return,
@@ -165,6 +170,7 @@ fn worker_harvest(
     mut commands: Commands,
 ) {
     let tile_size = cfg.tile_size;
+    // ⚠️ IA ATTENTION: "worker" en dur. Nouvelle unité de récolte ignorée.
     let worker_def = match unit_cfg.get("worker") {
         Some(d) => d,
         None => return,

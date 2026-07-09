@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::core::game_font::GameFont;
 use crate::core::utils::silent_despawn;
 use crate::rendering::config::VisualsConfig;
 
@@ -36,6 +37,7 @@ pub fn toast_system(
     time: Res<Time>,
     mut toasts: Query<(Entity, &mut ToastMessage)>,
     config: Res<VisualsConfig>,
+    font: Res<GameFont>,
 ) {
     for msg in queue.0.drain(..) {
         let persistent = msg.starts_with("\x00PERSISTENT\x00");
@@ -47,15 +49,20 @@ pub fn toast_system(
                 persistent,
             },
             Text::new(text.to_string()),
-            TextFont::from_font_size(config.toast.font_size),
+            TextFont {
+                font: font.0.clone().into(),
+                font_size: config.toast.font_size.into(),
+                ..default()
+            },
             TextColor(config.toast.color),
             TextLayout::new(Justify::Center, bevy::text::LineBreak::WordBoundary),
             Node {
                 position_type: PositionType::Absolute,
                 bottom: Val::Px(config.toast.bottom_px),
-                left: Val::Percent(50.0),
+                left: Val::Auto,
+                right: Val::Auto,
                 justify_content: JustifyContent::Center,
-                max_width: Val::Px(700.0),
+                max_width: Val::Px(500.0),
                 flex_wrap: FlexWrap::Wrap,
                 ..default()
             },

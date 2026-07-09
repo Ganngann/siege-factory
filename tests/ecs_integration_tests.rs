@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use siege_factory::core::game_state::GameState;
 use siege_factory::core::input::KeyBindings;
 use siege_factory::core::settings::Settings;
+use siege_factory::core::game_font::GameFont;
 use siege_factory::core::toast::{toast_system, ToastMessage, ToastQueue};
 use siege_factory::core::tutorial::{
     tutorial_tick, TutorialConditions, TutorialHighlightEntity, TutorialState, TutorialStepDef,
@@ -607,6 +608,7 @@ fn toast_system_drains_queue_into_entities() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.init_resource::<ToastQueue>();
+    app.init_resource::<GameFont>();
     app.insert_resource(VisualsConfig::load(&test_mods()));
     app.add_systems(Update, toast_system);
 
@@ -632,6 +634,7 @@ fn toast_system_empty_queue_no_entities() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.init_resource::<ToastQueue>();
+    app.init_resource::<GameFont>();
     app.insert_resource(VisualsConfig::load(&test_mods()));
     app.add_systems(Update, toast_system);
 

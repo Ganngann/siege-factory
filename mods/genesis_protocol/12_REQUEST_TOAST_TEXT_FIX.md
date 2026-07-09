@@ -1,70 +1,32 @@
-# Request 12 — Fix affichage toasts narratifs + accents
+# Request 12 — Fix affichage toasts narratifs
 
-## Problème 1 : Texte tronqué (overflow)
+## Problème 1 : Overflow ✅ Résolu
 
-Le toast narratif d'accueil ("Année 2147...") est trop long pour la zone d'affichage. Le texte déborde et on ne peut pas le lire en entier.
+`TextLayout::new(Justify::Center, LineBreak::WordBoundary)` + `flex_wrap: Wrap` — le texte passe à la ligne.
 
-### Solutions possibles
+## Problème 2 : Centrage ✅ Résolu
 
-**A — Word wrap** (recommandé) : Activer le retour à la ligne automatique sur les toasts, surtout les `persistent` du tutoriel.
+`left: Val::Percent(50.0)` → `left: Val::Auto, right: Val::Auto` + `max_width: 500px` — centré sans déborder.
 
-**B — Zone plus large** : Augmenter la largeur maximale du conteneur de toast (surtout pour les toasts centrés en haut).
+## Problème 3 : Premier caractère du toast sauté ❌
 
-**C — Taille de police adaptable** : Réduire automatiquement la taille de police si le texte dépasse la largeur.
+**Cause :** `src/core/toast.rs` ligne 44 — le slice du préfixe persistant est `&msg[14..]` mais le préfixe `\x00PERSISTENT\x00` ne fait que **12 bytes** (2×`\x00` + 10 lettres = 12). Les 2 premiers caractères du message sont avalés → "Année" devient "née".
 
-Le toast concerné est dans `tutorial.toml` :
-```toml
-[[steps]]
-id = "welcome"
-toast = "Année 2147. Les ruines de la cité s'étendent à perte de vue. La capsule cryo s'est ouverte — trop tard pour les autres. Un seul objectif : la réparer."
-persistent = true
+**Fix :** Changer `&msg[14..]` en `&msg[12..]`.
+
+```rust
+// Ligne 30 — format!("\x00PERSISTENT\x00{}", msg)
+//   \x00 = 1, PERSISTENT = 10, \x00 = 1 → total 12
+
+// Ligne 44 — ACTUEL (FAUX) :
+let text = if persistent { &msg[14..] } else { &msg };
+
+// CORRECTION :
+let text = if persistent { &msg[12..] } else { &msg };
 ```
 
-## Problème 2 : Accents non rendus
+## Problème 4 : Accents non rendus ❌
 
-Les caractères accentués (é, è, ê, î, ô, û, ç, à, ù, ë) apparaissent comme des caractères invalides ou sont absents. Tous les textes narratifs du mod utilisent des accents (français).
+Les caractères accentués (é, è, etc.) apparaissent comme des carrés.
 
-### Cause probable
-
-La police chargée par le moteur Bevy ne supporte pas le jeu de caractères étendu (latin-1 supplement). La police utilisée (`Fira Sans` ou autre) doit inclure les glyphes accentués.
-
-### Solutions possibles
-
-**A — Police complète** (recommandé) : S'assurer que la police chargée inclut les caractères Unicode étendus. Vérifier que `FiraSans-Regular.ttf` (ou équivalent) est bien la version complète, pas une variante allégée.
-
-**B — Subset** : Si le problème persiste, remplacer la police par une autre qui supporte les accents français (Ubuntu, Noto Sans, etc.).
-
-**C — Fallback** : Ajouter une police de secours pour les caractères manquants.
-
-## Fichiers concernés
-
-Tous les fichiers TOML contenant des textes en français avec accents :
-- `data/tutorial.toml` (toasts du tutoriel)
-- `data/discoveries.toml` (messages de découverte)
-- `story/logs.toml` (logs narratifs de la capsule)
-- `data/objectives.toml` (objectifs HUD)
-
----
-
-## ✅ Implémentation Rust — terminée
-
-### Fix 1 — Word wrap
-
-| Fichier | Changement |
-|---------|------------|
-| `src/core/toast.rs` | `TextLayout::new(Justify::Center, LineBreak::WordBoundary)` + `max_width: 700px` + `flex_wrap: Wrap` |
-| `src/player/objective.rs` | `TextLayout::new(Justify::Center, LineBreak::WordBoundary)` + `flex_wrap: Wrap` |
-
-Les toasts et l'objectif HUD passent maintenant à la ligne automatiquement au lieu de déborder.
-
-### Fix 2 — Accents
-
-**Analyse** : La police par défaut de Bevy (`FiraMono`) supporte les caractères latin-1 étendus. Le problème d'accents peut venir de l'encodage des fichiers TOML ou de la police système.
-
-**Solution actuelle** : Les toasts et l'UI utilisent la police par défaut de Bevy via `TextFont::from_font_size()`.
-
-**Si le problème persiste** (recommandation pour l'autre développeur) :
-1. Ajouter un fichier `.ttf` complet dans `mods/genesis_protocol/textures/fonts/` (ex: `FiraSans-Regular.ttf`, téléchargeable gratuitement)
-2. Charger la police dans une ressource dédiée et l'assigner aux `TextFont`
-
-Je peux implémenter ce chargement de police personnalisée quand vous aurez le fichier `.ttf`.
+**Analyse :** `TextFont { font: font.0.clone().into(), ... }` — ligne 52-55 du toast utilise `GameFont`. Le problème vient peut-être de la police `GameFont` chargée par le jeu. Si `GameFont` utilise une police qui ne contient pas les glyphes accentués (ex: une variante subset de FiraSans), les accents ne s'affichent nulle part dans le jeu. À vérifier dans `src/core/game_font.rs` et quel fichier `.ttf` est chargé.

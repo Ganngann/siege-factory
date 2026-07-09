@@ -1,3 +1,4 @@
+pub mod game_font;
 pub mod game_state;
 pub mod input;
 pub mod main_menu;

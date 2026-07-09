@@ -211,6 +211,8 @@ pub fn water_pump_tick(
         if tank.is_full() {
             continue;
         }
+        // ⚠️ IA ATTENTION: ResourceId::new("water") en dur.
+        // Si "water" est renommé ou supprimé de resources.toml, ça compile encore.
         let water = ResourceId::new("water");
         tank.add(&water, 10.0 * time.delta_secs());
     }

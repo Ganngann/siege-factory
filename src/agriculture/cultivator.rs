@@ -11,6 +11,8 @@ use super::components::{
 };
 use super::dim_color;
 
+// ⚠️ IA ATTENTION: ce allow masque un vrai problème de conception.
+// Envisager un struct SystemParam plutôt que d'ignorer le warning.
 #[allow(clippy::too_many_arguments)]
 pub fn cultivator_ai(
     time: Res<Time>,

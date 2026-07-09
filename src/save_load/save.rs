@@ -9,12 +9,17 @@ use crate::economy::components::{
     Assembler, Building, OccupiedTiles, PowerConsumer, PowerPole, PowerProducer, Sorter, Splitter,
     Storage, TurretCombat, UnbuiltBuilding, Unit,
 };
+use crate::economy::fluid::FluidTank;
+use crate::economy::game_components::Compactor;
 use crate::economy::resource::Inventory;
 use crate::enemy::components::{Enemy as EnemyComponent, Health, LastWave, WaveState};
 use crate::map::components::TilePosition;
 use crate::map::tile_grid::ChunkGrid;
+use crate::player::objective::ObjectiveState;
 use crate::rendering::minimap::MinimapCamera;
 use crate::unit::{Soldier, Worker, WorkerState};
+
+use crate::economy::tiered_structure::FinalCountdown;
 
 use super::{
     BeltItemSave, BeltSave, BuildingSave, CameraSave, EnemySave, SaveData, SaveRequested, UnitSave,
@@ -31,6 +36,8 @@ pub fn save_game(
     last_wave: Res<LastWave>,
     camera: Query<&Transform, (With<Camera2d>, Without<MinimapCamera>)>,
     tutorial: Res<TutorialState>,
+    countdown: Res<FinalCountdown>,
+    objective: Res<ObjectiveState>,
     tile_positions: Query<&TilePosition>,
     // SUGGEST: type BuildingQuery = Query<(Entity, &Building, ...), Without<UnbuiltBuilding>> — envisager un struct SaveBuildingBundle (clippy::type_complexity)
     buildings: Query<
@@ -53,6 +60,8 @@ pub fn save_game(
         ),
         Without<UnbuiltBuilding>,
     >,
+    fluid_tanks: Query<(&TilePosition, &FluidTank)>,
+    compactors: Query<(&TilePosition, &Compactor)>,
     enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
     // SUGGEST: type UnitQuery = Query<(&Transform, &Health, &TilePosition, Option<&Soldier>, Option<&Worker>), With<Unit>> (clippy::type_complexity)
     units: Query<
@@ -94,6 +103,14 @@ pub fn save_game(
             current_index: tutorial.current_index,
             completed: tutorial.completed,
         },
+        final_countdown: super::FinalCountdownSave {
+            remaining_secs: countdown.remaining_secs,
+            running: countdown.running,
+        },
+        objective: super::ObjectiveSave {
+            current_index: objective.current_index,
+            active_text: objective.active_text.clone(),
+        },
     };
 
     if let Ok(tf) = camera.single() {
@@ -122,6 +139,16 @@ pub fn save_game(
                 .insert((*cx, *cy), chunk.visited.iter().copied().collect());
         }
     }
+
+    // Build maps for extra components by tile position
+    let fluid_tank_map: HashMap<(i32, i32), &FluidTank> = fluid_tanks
+        .iter()
+        .map(|(pos, ft)| ((pos.x, pos.y), ft))
+        .collect();
+    let compactor_map: HashMap<(i32, i32), &Compactor> = compactors
+        .iter()
+        .map(|(pos, c)| ((pos.x, pos.y), c))
+        .collect();
 
     for (
         building,
@@ -195,6 +222,16 @@ pub fn save_game(
             power_draw: power_consumer.map(|pc| pc.draw),
             power_generation: power_producer.map_or(0.0, |pp| pp.output),
             power_pole_range: power_pole.map_or(0.0, |pp| pp.range),
+            fluid_tank: fluid_tank_map.get(&(pos.x, pos.y)).map(|ft| super::FluidTankSave {
+                fluids: ft.fluids.iter().map(|(r, a)| (r.0.clone(), *a)).collect(),
+                capacity: ft.capacity,
+                max_per_fluid: ft.max_per_fluid,
+            }),
+            compactor: compactor_map.get(&(pos.x, pos.y)).map(|c| super::CompactorSave {
+                ratio: c.ratio,
+                timer: c.timer,
+                interval: c.interval,
+            }),
         });
     }
 
@@ -210,6 +247,8 @@ pub fn save_game(
 
     for (tf, hp, _pos, soldier, worker) in units.iter() {
         let kind = if soldier.is_some() {
+            // ⚠️ IA ATTENTION: "soldier"/"worker" en dur.
+            // Nouvelle unité non reconnue ici → sérialisée avec kind vide.
             "soldier"
         } else {
             "worker"

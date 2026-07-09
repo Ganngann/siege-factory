@@ -42,6 +42,18 @@ pub fn save_path() -> PathBuf {
 
 // ── SaveData types ──
 
+#[derive(Serialize, Deserialize, Default)]
+pub struct FinalCountdownSave {
+    pub remaining_secs: f32,
+    pub running: bool,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+pub struct ObjectiveSave {
+    pub current_index: usize,
+    pub active_text: String,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct SaveData {
     pub version: u32,
@@ -55,6 +67,10 @@ pub struct SaveData {
     pub units: Vec<UnitSave>,
     #[serde(default)]
     pub tutorial: TutorialSave,
+    #[serde(default)]
+    pub final_countdown: FinalCountdownSave,
+    #[serde(default)]
+    pub objective: ObjectiveSave,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -83,6 +99,20 @@ pub struct FarmSave {
     pub crop_types: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Default)]
+pub struct FluidTankSave {
+    pub fluids: Vec<(String, f32)>,
+    pub capacity: f32,
+    pub max_per_fluid: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CompactorSave {
+    pub ratio: u32,
+    pub timer: f32,
+    pub interval: f32,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct BuildingSave {
     pub kind: String,
@@ -104,6 +134,10 @@ pub struct BuildingSave {
     pub power_generation: f32,
     #[serde(default)]
     pub power_pole_range: f32,
+    #[serde(default)]
+    pub fluid_tank: Option<FluidTankSave>,
+    #[serde(default)]
+    pub compactor: Option<CompactorSave>,
 }
 
 #[derive(Serialize, Deserialize)]

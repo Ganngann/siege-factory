@@ -1,48 +1,48 @@
-﻿[[steps]]
+[[steps]]
 id = "welcome"
-toast = "AnnÃ©e 2147. Les ruines de la citÃ© s'Ã©tendent Ã  perte de vue. La capsule cryo s'est ouverte â€” trop tard pour les autres. Un seul objectif : la rÃ©parer."
+toast = "Année 2147. Les ruines de la cité s'étendent à perte de vue. La capsule cryo s'est ouverte — trop tard pour les autres. Un seul objectif : la réparer."
 persistent = true
 condition = "player_moved_distance"
 params = { distance = "1" }
 
 [[steps]]
 id = "move"
-toast = "Utilise ZQSD pour te dÃ©placer."
+toast = "Utilise ZQSD pour te déplacer."
 condition = "player_moved_distance"
 params = { distance = "5" }
 
 [[steps]]
 id = "mine"
-toast = "Marche sur un dÃ©pÃ´t et maintiens E pour miner des ressources."
+toast = "Marche sur un dépôt et maintiens E pour miner des ressources."
 condition = "items_collected"
 params = { count = "3" }
 
 [[steps]]
 id = "build_workbench"
-toast = "Ouvre le menu construction (B) et place un Ã‰tabli."
+toast = "Ouvre le menu construction (B) et place un Établi."
 condition = "building_placed"
 params = { building_id = "workbench" }
 
 [[steps]]
 id = "craft_basics"
-toast = "Utilise l'Ã‰tabli pour fabriquer des PiÃ¨ces de Fer et de la Corde."
+toast = "Utilise l'Établi pour fabriquer des Pièces de Fer et de la Corde."
 condition = "item_crafted"
 params = { recipe_id = "iron_parts_from_scrap" }
 
 [[steps]]
 id = "craft_hammer"
-toast = "Fabrique un Marteau (3 pierre + 1 bois + 1 corde) Ã  l'Ã‰tabli."
+toast = "Fabrique un Marteau (3 pierre + 1 bois + 1 corde) à l'Établi."
 condition = "item_crafted"
 params = { recipe_id = "craft_hammer" }
 
 [[steps]]
 id = "approach_capsule"
-toast = "La grande structure se dresse au milieu des dÃ©combres â€” vitre noire, aucun signe de vie. C'est ta capsule. Il faut la rÃ©parer."
+toast = "La grande structure se dresse au milieu des décombres — vitre noire, aucun signe de vie. C'est ta capsule. Il faut la réparer."
 condition = "player_near_structure"
 params = { structure_id = "genesis_ark", distance = "3" }
 
 [[steps]]
 id = "deliver_hammer"
-toast = "Donne le Marteau Ã  la Capsule avec E. Le mÃ©tal grince, le manche se brise â€” mais les panneaux d'accÃ¨s cÃ¨dent. DerriÃ¨re la poussiÃ¨re, un Ã©cran clignote : ALIMENTATION REQUISE."
+toast = "Donne le Marteau à la Capsule avec E. Le métal grince, le manche se brise — mais les panneaux d'accès cèdent. Derrière la poussière, un écran clignote : ALIMENTATION REQUISE."
 condition = "structure_interacted"
 params = { structure_id = "genesis_ark" }

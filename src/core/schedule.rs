@@ -1,3 +1,4 @@
+use crate::core::game_font::{self, GameFont};
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::input::KeyBindings;
 use crate::core::main_menu::{self, MainMenuDef, MenuNav, RebindState};
@@ -30,6 +31,8 @@ impl Plugin for CorePlugin {
         app.insert_resource(MenuNav::default());
         app.insert_resource(RebindState::default());
         app.init_state::<GameState>();
+        app.init_resource::<GameFont>();
+        app.add_systems(Startup, game_font::load_game_font);
         app.add_systems(OnExit(GameState::Menu), main_menu::despawn_menu_ui);
         app.add_systems(
             Update,

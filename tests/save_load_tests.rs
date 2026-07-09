@@ -3,7 +3,9 @@ use siege_factory::core::game_state::{GameState, IsFreshGame};
 use siege_factory::core::input::KeyBindings;
 use siege_factory::core::toast::ToastQueue;
 use siege_factory::core::tutorial::TutorialState;
+use siege_factory::economy::tiered_structure::FinalCountdown;
 use siege_factory::enemy::components::{LastWave, WaveState};
+use siege_factory::player::objective::ObjectiveState;
 use siege_factory::map::tile_grid::ChunkGrid;
 use siege_factory::save_load::*;
 use siege_factory::core::modding::ModRegistry;
@@ -31,6 +33,8 @@ fn save_load_test_app() -> App {
     app.insert_resource(WaveState::new(30.0));
     app.insert_resource(LastWave(0));
     app.insert_resource(TutorialState::default());
+    app.init_resource::<FinalCountdown>();
+    app.init_resource::<ObjectiveState>();
     app
 }
 
@@ -497,6 +501,8 @@ fn save_data_round_trip() {
             current_index: 1,
             completed: false,
         },
+        final_countdown: FinalCountdownSave { remaining_secs: 0.0, running: false },
+        objective: ObjectiveSave { current_index: 0, active_text: String::new() },
     };
 
     let serialized = ron::to_string(&data).unwrap();
