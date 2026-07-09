@@ -8,7 +8,8 @@ use crate::economy::components::{
     DiscoveredRecipes, Ghost, Miner, OccupiedTiles, PowerConsumer, PowerProducer, ProductionCounter,
     RecipeGenerator, ResourceDeposit, TurretCombat, UiIsBlocking, UnbuiltBuilding,
 };
-use crate::economy::game_components::{Compactor, Level, Storage};
+use crate::economy::fluid::{FluidPipe, FluidTank};
+use crate::economy::game_components::{Compactor, Level, Pump, Storage};
 use crate::economy::resource::Inventory;
 use crate::economy::spatial::SpatialRegistry;
 use crate::core::utils::world_to_tile;
@@ -25,6 +26,8 @@ const BUILDING_STORAGE: &str = "storage";
 const BUILDING_FARM: &str = "farm";
 const BUILDING_ARCHIVE: &str = "archive";
 const BUILDING_COMPACTOR: &str = "compactor";
+const BUILDING_PIPE: &str = "pipe";
+const BUILDING_PUMP: &str = "water_pump";
 
 // ── Auto-direction ──
 
@@ -598,6 +601,33 @@ pub fn handle_build_click(
             },
             Level(def.level),
         ));
+        attach_power_components(&mut e, def);
+    } else if def.id == BUILDING_PIPE {
+        let mut e = commands.spawn((
+            base,
+            FluidPipe { transfer_rate: def.pipe_transfer_rate, direction: crate::economy::game_components::Direction::East },
+        ));
+        attach_power_components(&mut e, def);
+    } else if def.id == BUILDING_PUMP {
+        let mut e = commands.spawn((
+            base,
+            inv,
+            Pump,
+            Level(def.level),
+        ));
+        if def.fluid_tank_capacity > 0.0 {
+            e.insert(FluidTank::new(def.fluid_tank_capacity));
+        }
+        if let Some(default_recipe) = &def.default_recipe {
+            let interval = def.production_interval.unwrap_or(2.0);
+            e.insert(Assembler {
+                production_timer: 0.0,
+                interval,
+                recipe_id: default_recipe.clone(),
+            });
+            e.insert(ProductionCounter::default());
+            e.insert(DiscoveredRecipes::default());
+        }
         attach_power_components(&mut e, def);
     } else {
         let mut e = commands.spawn((base, inv, Level(def.level)));

@@ -5,6 +5,7 @@ use crate::economy::components::{
     Active, Assembler, BurnerGenerator, PowerConsumer, PowerPole, PowerProducer, ProductionCounter,
     RecipeGenerator, UnbuiltBuilding,
 };
+use crate::economy::fluid::FluidTank;
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::Inventory;
 use crate::map::config::MapConfig;
@@ -202,11 +203,14 @@ pub fn recipe_generator_tick(
             &Active,
             Option<&PowerConsumer>,
             Option<&mut ProductionCounter>,
+            Option<&mut FluidTank>,
         ),
         Without<UnbuiltBuilding>,
     >,
 ) {
-    for (mut rg, mut inventory, mut producer, active, power, mut counter) in rg_query.iter_mut() {
+    for (mut rg, mut inventory, mut producer, active, power, mut counter, mut tank) in
+        rg_query.iter_mut()
+    {
         if !active.0 {
             producer.output = 0.0;
             continue;
@@ -234,6 +238,22 @@ pub fn recipe_generator_tick(
             continue;
         }
 
+        // Check fluid inputs
+        if let Some(ref tank) = tank {
+            let has_fluids = recipe
+                .fluid_input
+                .iter()
+                .all(|(res, amt)| tank.get(res) >= *amt);
+            if !has_fluids {
+                producer.output = 0.0;
+                continue;
+            }
+        } else if !recipe.fluid_input.is_empty() {
+            producer.output = 0.0;
+            continue;
+        }
+
+        // Check item output room
         if inventory.capacity > 0 {
             let total_output: u32 = recipe.output.iter().map(|(_, a)| a).sum();
             if inventory.total() + total_output > inventory.capacity {
@@ -242,13 +262,36 @@ pub fn recipe_generator_tick(
             }
         }
 
+        // Check fluid output room
+        if let Some(ref tank) = tank {
+            if tank.capacity > 0.0 && !recipe.fluid_output.is_empty() {
+                let total_fluid_out: f32 = recipe.fluid_output.iter().map(|(_, a)| a).sum();
+                if tank.total() + total_fluid_out > tank.capacity {
+                    producer.output = 0.0;
+                    continue;
+                }
+            }
+        }
+
         rg.production_timer += time.delta_secs();
         if rg.production_timer >= recipe.time_sec {
             for (req_resource, req_amount) in &recipe.input {
                 inventory.remove(req_resource, *req_amount);
             }
+            // Consume fluid inputs
+            if let Some(ref mut tank) = tank {
+                for (res, amt) in &recipe.fluid_input {
+                    tank.remove(res, *amt);
+                }
+            }
             for (out_resource, out_amount) in &recipe.output {
                 inventory.add(out_resource, *out_amount);
+            }
+            // Produce fluid outputs
+            if let Some(ref mut tank) = tank {
+                for (res, amt) in &recipe.fluid_output {
+                    tank.add(res, *amt);
+                }
             }
             if let Some(ref mut ctr) = counter {
                 for (_, amount) in &recipe.output {

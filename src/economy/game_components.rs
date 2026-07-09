@@ -191,6 +191,9 @@ pub struct PeacefulMode(pub bool);
 pub struct Capsule;
 
 #[derive(Component)]
+pub struct Pump;
+
+#[derive(Component)]
 pub struct GroundItemStack {
     pub resource_id: String,
     pub amount: u32,

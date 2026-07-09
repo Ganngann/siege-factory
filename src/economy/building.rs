@@ -66,6 +66,8 @@ pub struct BuildingDef {
     pub powered: bool,
     pub station: bool,
     pub tiers: Vec<TierDef>,
+    pub fluid_tank_capacity: f32,
+    pub pipe_transfer_rate: f32,
 }
 
 #[derive(Debug, Clone)]
@@ -251,6 +253,8 @@ impl BuildingRegistry {
                     powered: entry.powered,
                     station: entry.station,
                     tiers,
+                    fluid_tank_capacity: entry.fluid_tank_capacity,
+                    pipe_transfer_rate: entry.pipe_transfer_rate,
                 }
             })
             .collect();
@@ -365,6 +369,10 @@ struct BuildingEntry {
     station: bool,
     #[serde(default)]
     tiers: Vec<TierEntry>,
+    #[serde(default)]
+    fluid_tank_capacity: f32,
+    #[serde(default)]
+    pipe_transfer_rate: f32,
 }
 
 #[derive(Deserialize)]

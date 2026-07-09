@@ -38,6 +38,7 @@ pub struct ResourceDef {
     pub name: String,
     pub max_stack: u32,
     pub color: Color,
+    pub is_fluid: bool,
 }
 
 #[derive(Debug, Clone, Resource)]
@@ -61,6 +62,7 @@ impl ResourceRegistry {
                             .as_deref()
                             .map(parse_hex_color)
                             .unwrap_or(Color::srgb(0.5, 0.5, 0.5)),
+                        is_fluid: entry.fluid,
                     },
                 );
             }
@@ -82,6 +84,13 @@ impl ResourceRegistry {
             None => &id.0,
         }
     }
+
+    pub fn is_fluid(&self, id: &str) -> bool {
+        self.resources
+            .get(id)
+            .map(|r| r.is_fluid)
+            .unwrap_or(false)
+    }
 }
 
 #[derive(Deserialize)]
@@ -94,6 +103,8 @@ struct ResourceEntry {
     name: String,
     max_stack: u32,
     color: Option<String>,
+    #[serde(default)]
+    fluid: bool,
 }
 
 // ── Slot-based Inventory ──

@@ -89,12 +89,40 @@ const RESOURCES = {
   clay: "#C4A882",
   plant_fiber: "#5A8C3C",
   planks: "#A0724A",
+  wood: "#8B5E3C",
+  stone: "#888888",
+  iron_ore: "#B35F33",
+  copper_ore: "#D68A4C",
+  coal: "#444444",
+  sand: "#DDCC88",
+  sulfur: "#DDDD44",
+  crude_oil: "#222222",
+  petroleum_gas: "#664422",
   stone_brick: "#887766",
   ceramic: "#C4956A",
   rope: "#8B7355",
   iron_parts: "#999999",
   iron_ingot: "#AAAAAA",
   copper_ingot: "#CC8844",
+  steel: "#666688",
+  gear: "#887766",
+  screw: "#AAAAAA",
+  pipe: "#557788",
+  copper_wire: "#CC7733",
+  circuit: "#44AA44",
+  motor: "#AA8844",
+  battery: "#33AA33",
+  plastic: "#EEEEBB",
+  glass: "#CCDDEE",
+  advanced_circuit: "#44DD44",
+  electronic_module: "#66CC66",
+  machine_frame: "#8888AA",
+  concrete: "#999999",
+  laser_crystal: "#FF66DD",
+  nano_pack: "#88DD88",
+  composite: "#77AAAA",
+  fusion_core: "#FFAA44",
+  energy: "#3399DD",
   water: "#3399DD",
   steam: "#CCDDEE",
   acid: "#88FF44",
@@ -408,12 +436,13 @@ function makeResourceSVG(stem, color) {
     inner = `<rect x="10" y="20" width="44" height="24" rx="1" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="32" y1="20" x2="32" y2="32" stroke="${darken(color, 0.7)}" stroke-width="0.5"/><line x1="10" y1="32" x2="54" y2="32" stroke="${darken(color, 0.7)}" stroke-width="0.5"/>`;
   } else if (stem === "ceramic") {
     inner = `<path d="M20 20 Q20 48 32 48 Q44 48 44 20 Q44 14 32 14 Q20 14 20 20Z" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="18" rx="12" ry="4" fill="none" stroke="${darken(color, 0.7)}" stroke-width="0.5"/><line x1="32" y1="18" x2="32" y2="44" stroke="${darken(color, 0.7)}" stroke-width="0.3" opacity="0.5"/>`;
-  } else if (["circuit", "processor"].includes(stem)) {
+  } else if (["circuit", "processor", "advanced_circuit"].some((k) => stem.includes(k))) {
     inner = `<rect x="12" y="14" width="40" height="36" rx="2" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="18" y="20" width="28" height="24" rx="1" fill="${darken(color, 0.8)}" stroke="#333" stroke-width="0.3"/>`;
     [22, 30, 38].forEach((px) => {
       inner += `<circle cx="${px}" cy="28" r="1.5" fill="#FFF"/><circle cx="${px}" cy="36" r="1.5" fill="#FFF"/>`;
     });
-    if (stem === "processor") inner += `<rect x="26" y="24" width="12" height="16" rx="1" fill="#FFF" opacity="0.2"/>`;
+    if (stem.includes("processor")) inner += `<rect x="26" y="24" width="12" height="16" rx="1" fill="#FFF" opacity="0.2"/>`;
+    if (stem.includes("advanced")) inner += `<line x1="14" y1="12" x2="50" y2="12" stroke="#FFD700" stroke-width="1.5" opacity="0.6"/>`;
   } else if (stem.includes("gear")) {
     const r = 14;
     inner = `<circle cx="32" cy="32" r="${r}" fill="${color}" stroke="#333" stroke-width="0.5"/><circle cx="32" cy="32" r="4" fill="#333"/>`;
@@ -468,6 +497,40 @@ function makeResourceSVG(stem, color) {
     inner = `<rect x="26" y="24" width="24" height="18" rx="3" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="14" y="42" width="10" height="6" rx="2" fill="${darken(color, 0.7)}"/><rect x="18" y="24" width="10" height="24" rx="2" fill="${darken(color, 0.5)}"/>`;
   } else if (stem.includes("silicon")) {
     inner = `<rect x="16" y="16" width="32" height="32" rx="4" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="16" y1="16" x2="48" y2="48" stroke="${darken(color, 0.7)}" stroke-width="0.3"/><line x1="48" y1="16" x2="16" y2="48" stroke="${darken(color, 0.7)}" stroke-width="0.3"/>`;
+  } else if (stem.includes("ore")) {
+    inner = `<circle cx="32" cy="32" r="18" fill="${color}" stroke="#333" stroke-width="0.5"/><circle cx="26" cy="26" r="5" fill="${darken(color, 0.6)}"/><circle cx="38" cy="34" r="4" fill="${darken(color, 0.6)}"/><circle cx="28" cy="38" r="3" fill="${darken(color, 0.6)}"/><circle cx="36" cy="22" r="3" fill="${darken(color, 0.6)}"/>`;
+  } else if (stem.includes("wood") && !stem.includes("plank")) {
+    inner = `<rect x="18" y="10" width="28" height="44" rx="6" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="32" rx="10" ry="16" fill="none" stroke="${darken(color, 0.7)}" stroke-width="0.5"/><circle cx="32" cy="20" r="2" fill="${darken(color, 0.5)}"/><circle cx="32" cy="44" r="2" fill="${darken(color, 0.5)}"/>`;
+  } else if (stem.includes("stone") && !stem.includes("brick")) {
+    inner = `<circle cx="32" cy="32" r="18" fill="${color}" stroke="#333" stroke-width="0.5"/><path d="M22 24 L28 22 L32 28 L26 30Z" fill="${darken(color, 0.7)}"/><path d="M34 34 L40 32 L42 38 L36 40Z" fill="${darken(color, 0.7)}"/><path d="M24 38 L30 36 L28 42 L22 40Z" fill="${darken(color, 0.6)}"/>`;
+  } else if (stem.includes("coal")) {
+    inner = `<circle cx="32" cy="32" r="18" fill="${color}" stroke="#333" stroke-width="0.5"/><path d="M22 24 L30 20 L34 26 L26 30Z" fill="${darken(color, 0.7)}"/><path d="M32 28 L40 26 L42 34 L34 36Z" fill="${lighten(color, 0.2)}"/><path d="M24 34 L32 32 L30 40 L22 38Z" fill="${lighten(color, 0.2)}"/>`;
+  } else if (stem.includes("sand")) {
+    inner = `<circle cx="32" cy="32" r="18" fill="${color}" stroke="#333" stroke-width="0.5"/><circle cx="24" cy="26" r="2" fill="${darken(color, 0.6)}"/><circle cx="36" cy="28" r="1.5" fill="${darken(color, 0.6)}"/><circle cx="28" cy="36" r="2" fill="${darken(color, 0.6)}"/><circle cx="38" cy="38" r="1.5" fill="${darken(color, 0.6)}"/><circle cx="22" cy="34" r="1" fill="${darken(color, 0.6)}"/>`;
+  } else if (stem.includes("sulfur") && !stem.includes("powder")) {
+    inner = `<polygon points="32,10 48,28 42,48 22,48 16,28" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="32" y1="10" x2="32" y2="48" stroke="${darken(color, 0.6)}" stroke-width="0.5"/><line x1="16" y1="28" x2="48" y2="28" stroke="${darken(color, 0.6)}" stroke-width="0.5"/>`;
+  } else if (stem.includes("oil")) {
+    inner = `<path d="M32 8 Q32 24 32 30 Q32 40 24 40 Q16 40 16 30 Q16 20 24 16 L32 8Z" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="28" rx="8" ry="4" fill="rgba(255,255,255,0.08)"/>`;
+  } else if (stem.includes("petroleum")) {
+    inner = `<path d="M32 8 Q32 20 38 24 Q48 30 40 40 Q34 48 24 44 Q14 40 16 30 Q18 22 28 18 Z" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="26" rx="4" ry="2" fill="rgba(255,200,100,0.2)" transform="rotate(-20,32,26)"/>`;
+  } else if (stem.includes("plastic")) {
+    inner = `<rect x="14" y="16" width="36" height="32" rx="4" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="20" y="22" width="24" height="20" rx="2" fill="${lighten(color, 0.1)}" stroke="#333" stroke-width="0.3"/><line x1="20" y1="28" x2="44" y2="28" stroke="${darken(color, 0.5)}" stroke-width="0.5"/>`;
+  } else if (stem.includes("glass")) {
+    inner = `<path d="M24 12 Q24 12 24 28 L20 52 L44 52 L40 28 Q40 12 40 12Z" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="26" y="30" width="12" height="16" rx="2" fill="rgba(255,255,255,0.15)"/>`;
+  } else if (stem.includes("steel")) {
+    inner = `<path d="M16 22 L22 16 L46 16 L52 22 L48 44 L20 44 Z" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="22" y1="16" x2="22" y2="44" stroke="${darken(color, 0.6)}" stroke-width="0.3"/><line x1="46" y1="16" x2="46" y2="44" stroke="${darken(color, 0.6)}" stroke-width="0.3"/><rect x="24" y="24" width="20" height="8" rx="1" fill="${lighten(color, 0.2)}" opacity="0.3"/>`;
+  } else if (stem.includes("wire")) {
+    inner = `<path d="M12 28 Q24 12 32 20 Q40 28 52 16" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/><path d="M12 36 Q24 20 32 28 Q40 36 52 24" fill="none" stroke="${darken(color, 0.7)}" stroke-width="2" stroke-linecap="round"/>`;
+  } else if (stem.includes("module")) {
+    inner = `<rect x="14" y="14" width="36" height="36" rx="2" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="20" y="20" width="24" height="24" rx="1" fill="${darken(color, 0.8)}" stroke="#333" stroke-width="0.3"/><circle cx="24" cy="24" r="2" fill="#FFF" opacity="0.6"/><circle cx="40" cy="24" r="2" fill="#FFF" opacity="0.6"/><circle cx="24" cy="40" r="2" fill="#FFF" opacity="0.6"/><circle cx="40" cy="40" r="2" fill="#FFF" opacity="0.6"/><line x1="26" y1="24" x2="38" y2="24" stroke="#FFF" stroke-width="0.5" opacity="0.3"/><line x1="24" y1="26" x2="24" y2="38" stroke="#FFF" stroke-width="0.5" opacity="0.3"/>`;
+  } else if (stem.includes("frame")) {
+    inner = `<rect x="12" y="12" width="40" height="40" rx="3" fill="none" stroke="${color}" stroke-width="4"/><rect x="20" y="20" width="24" height="24" rx="2" fill="none" stroke="${darken(color, 0.6)}" stroke-width="2"/><line x1="20" y1="12" x2="20" y2="52" stroke="${darken(color, 0.5)}" stroke-width="1.5"/><line x1="44" y1="12" x2="44" y2="52" stroke="${darken(color, 0.5)}" stroke-width="1.5"/><line x1="12" y1="20" x2="52" y2="20" stroke="${darken(color, 0.5)}" stroke-width="1"/><line x1="12" y1="44" x2="52" y2="44" stroke="${darken(color, 0.5)}" stroke-width="1"/>`;
+  } else if (stem.includes("concrete")) {
+    inner = `<rect x="12" y="14" width="40" height="36" rx="2" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="12" y1="24" x2="52" y2="24" stroke="${darken(color, 0.6)}" stroke-width="0.5"/><line x1="12" y1="34" x2="52" y2="34" stroke="${darken(color, 0.6)}" stroke-width="0.5"/><line x1="22" y1="14" x2="22" y2="50" stroke="${darken(color, 0.6)}" stroke-width="0.3"/><line x1="42" y1="14" x2="42" y2="50" stroke="${darken(color, 0.6)}" stroke-width="0.3"/>`;
+  } else if (stem.includes("energy")) {
+    inner = `<path d="M26 8 L38 8 L34 28 L42 28 L22 48 L28 30 L18 30Z" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="32" rx="4" ry="6" fill="rgba(255,255,255,0.2)"/>`;
+  } else if (stem.includes("core") && stem.includes("fusion")) {
+    inner = `<circle cx="32" cy="32" r="20" fill="${color}" stroke="#333" stroke-width="0.5"/><circle cx="32" cy="32" r="12" fill="none" stroke="${darken(color, 0.6)}" stroke-width="2"/><circle cx="32" cy="32" r="5" fill="#FFF" opacity="0.4"/><line x1="20" y1="32" x2="44" y2="32" stroke="${lighten(color, 0.2)}" stroke-width="1.5"/><line x1="32" y1="20" x2="32" y2="44" stroke="${lighten(color, 0.2)}" stroke-width="1.5"/>`;
   } else {
     inner = `<rect x="16" y="16" width="32" height="32" rx="3" fill="${color}" stroke="#333" stroke-width="0.5"/>`;
   }

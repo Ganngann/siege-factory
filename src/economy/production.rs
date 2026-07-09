@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::economy::components::{Active, Assembler, PowerConsumer, ProductionCounter};
+use crate::economy::fluid::FluidTank;
 use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::Inventory;
 
@@ -13,9 +14,12 @@ pub fn assembler_tick(
         &Active,
         Option<&PowerConsumer>,
         Option<&mut ProductionCounter>,
+        Option<&mut FluidTank>,
     )>,
 ) {
-    for (mut assembler, mut inventory, active, power, mut counter) in assembler_query.iter_mut() {
+    for (mut assembler, mut inventory, active, power, mut counter, mut tank) in
+        assembler_query.iter_mut()
+    {
         if !active.0 {
             continue;
         }
@@ -37,11 +41,34 @@ pub fn assembler_tick(
             continue;
         }
 
-        // Don't produce if inventory is full (capacity > 0)
+        // Check fluid inputs
+        if let Some(ref tank) = tank {
+            let has_fluids = recipe
+                .fluid_input
+                .iter()
+                .all(|(res, amt)| tank.get(res) >= *amt);
+            if !has_fluids {
+                continue;
+            }
+        } else if !recipe.fluid_input.is_empty() {
+            continue;
+        }
+
+        // Check output room (items)
         if inventory.capacity > 0 {
             let total_output: u32 = recipe.output.iter().map(|(_, a)| a).sum();
             if inventory.total() + total_output > inventory.capacity {
                 continue;
+            }
+        }
+
+        // Check fluid output room
+        if let Some(ref tank) = tank {
+            if tank.capacity > 0.0 && !recipe.fluid_output.is_empty() {
+                let total_fluid_out: f32 = recipe.fluid_output.iter().map(|(_, a)| a).sum();
+                if tank.total() + total_fluid_out > tank.capacity {
+                    continue;
+                }
             }
         }
 
@@ -51,8 +78,22 @@ pub fn assembler_tick(
                 inventory.remove(req_resource, *req_amount);
             }
 
+            // Consume fluid inputs
+            if let Some(ref mut tank) = tank {
+                for (res, amt) in &recipe.fluid_input {
+                    tank.remove(res, *amt);
+                }
+            }
+
             for (out_resource, out_amount) in &recipe.output {
                 inventory.add(out_resource, *out_amount);
+            }
+
+            // Produce fluid outputs
+            if let Some(ref mut tank) = tank {
+                for (res, amt) in &recipe.fluid_output {
+                    tank.add(res, *amt);
+                }
             }
 
             if let Some(ref mut ctr) = counter {

@@ -55,13 +55,81 @@ time_sec = 5.0
 
 ---
 
-## 2. Fluides et Transport par Tuyaux (Phase 2) ❌
+## 2. Fluides et Transport par Tuyaux (Phase 2) ✅
 
 **Design original** : Eau pompée transportée par tuyaux, vapeur produite par chaudière, circuits de refroidissement.
 
-**Blocage technique** : Le jeu ne gère que des ressources discrètes (items). Pas de système fluide avec volumes, pression, débit. Les tuyaux comme mécanique de transport n'existent pas (seuls les belts existent).
+**Solution implémentée** : Nouveau système de fluides basé sur `FluidTank` (stockage `f32` continu) et `FluidPipe` (transport entre réservoirs adjacents). Les recettes peuvent spécifier `fluid_input` / `fluid_output` en plus des items classiques. Les systèmes `assembler_tick` et `recipe_generator_tick` vérifient les deux.
 
-**Solution possible** (code Rust) : Ajouter un système de fluides avec réservoirs, tuyaux, pompes. Ou à minima ajouter un type `FluidInventory` parallèle à `Inventory`.
+**Usage TOML** :
+
+**1. Marquer les ressources comme fluides** dans `resources.toml` :
+
+```toml
+[resources.water]
+name = "Eau"
+fluid = true
+max_stack = 1
+color = "#3399DD"
+
+[resources.steam]
+name = "Vapeur"
+fluid = true
+max_stack = 1
+color = "#CCDDEE"
+```
+
+**2. Définir les bâtiments** dans `buildings.toml` :
+
+```toml
+[buildings.pipe]
+name = "Tuyau"
+cost = { pipe = 1 }
+hp = 10
+tile_size = { w = 1, h = 1 }
+powered = false
+pipe_transfer_rate = 5.0     # unités/s
+drag_placement = true        # placement par cliqué-glissé
+
+[buildings.water_pump]
+name = "Pompe à Eau"
+cost = { iron_parts = 3, pipe = 1 }
+hp = 50
+tile_size = { w = 1, h = 1 }
+power_consumption = 8.0
+fluid_tank_capacity = 50.0   # capacité du réservoir en unités
+default_recipe = "pump_water"
+production_interval = 2.0
+
+[buildings.steam_generator]
+# ... existant + ajouter :
+fluid_tank_capacity = 50.0
+```
+
+**3. Définir les recettes fluides** dans `recipes.toml` :
+
+```toml
+[recipes.pump_water]
+craftable_in = ["water_pump"]
+input = {}
+fluid_output = { water = 10.0 }
+time_sec = 2.0
+
+[recipes.steam_produce]
+craftable_in = ["steam_generator"]
+input = { coal = 1 }
+fluid_input = { water = 2.0 }
+output = { energy = 2 }
+fluid_output = { steam = 3.0 }
+time_sec = 4.0
+```
+
+**Comportement** :
+- `FluidTank` stocke les fluides en volumes continus (`f32`), séparément de l'inventaire items
+- `FluidPipe` pousse le fluide du réservoir amont vers le réservoir aval à `transfer_rate` unités/s
+- Les pipelines se connectent automatiquement entre bâtiments adjacents avec un `FluidTank`
+- `water_pump` auto-génère de l'eau via sa recette + `FluidTank`
+- Les recettes peuvent consommer ET produire des items ET des fluides simultanément
 
 ---
 
@@ -209,7 +277,7 @@ Le système d'outils passif (section 1) donne un usage mécanique à `stone_pick
 | # | Fonctionnalité | Statut | Priorité |
 |---|---------------|--------|----------|
 | 1 | Système d'outils | ✅ Implémenté (ToolRegistry passif) | — |
-| 2 | Fluides/tuyaux | ❌ Non implémenté | Haute |
+| 2 | Fluides/tuyaux | ✅ Implémenté (FluidTank + FluidPipe) | — |
 | 3 | Générateur multi-fuel | ✅ Implémenté (RecipeGenerator) | — |
 | 4 | Foreuse infinie | ✅ Implémenté (infinite_extraction) | — |
 | 5 | Compacteur | ✅ Implémenté (Compactor) | — |

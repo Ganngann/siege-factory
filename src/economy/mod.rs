@@ -8,6 +8,7 @@ pub mod components;
 pub mod data_pad;
 pub mod discovery;
 pub mod discovery_components;
+pub mod fluid;
 pub mod game_components;
 pub mod ground_items;
 pub mod inspect;
@@ -245,6 +246,14 @@ impl Plugin for EconomyPlugin {
         app.add_systems(
             FixedUpdate,
             compactor::compactor_tick.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            FixedUpdate,
+            fluid::fluid_pipe_transfer.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            FixedUpdate,
+            fluid::water_pump_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update, discovery::check_discoveries.in_set(PlayingSystems));
         app.add_systems(

@@ -10,6 +10,8 @@ pub struct RecipeDef {
     pub craftable_in: Vec<String>,
     pub input: Vec<(ResourceId, u32)>,
     pub output: Vec<(ResourceId, u32)>,
+    pub fluid_input: Vec<(ResourceId, f32)>,
+    pub fluid_output: Vec<(ResourceId, f32)>,
     pub time_sec: f32,
 }
 
@@ -33,6 +35,16 @@ impl RecipeRegistry {
                     .iter()
                     .map(|(k, v)| (ResourceId::new(k), *v))
                     .collect();
+                let fluid_input = entry
+                    .fluid_input
+                    .iter()
+                    .map(|(k, v)| (ResourceId::new(k), *v))
+                    .collect();
+                let fluid_output = entry
+                    .fluid_output
+                    .iter()
+                    .map(|(k, v)| (ResourceId::new(k), *v))
+                    .collect();
                 recipes.insert(
                     id.clone(),
                     RecipeDef {
@@ -41,6 +53,8 @@ impl RecipeRegistry {
                         craftable_in: entry.craftable_in,
                         input,
                         output,
+                        fluid_input,
+                        fluid_output,
                         time_sec: entry.time_sec,
                     },
                 );
@@ -66,6 +80,10 @@ struct RecipeEntry {
     craftable_in: Vec<String>,
     input: HashMap<String, u32>,
     output: HashMap<String, u32>,
+    #[serde(default)]
+    fluid_input: HashMap<String, f32>,
+    #[serde(default)]
+    fluid_output: HashMap<String, f32>,
     time_sec: f32,
 }
 
