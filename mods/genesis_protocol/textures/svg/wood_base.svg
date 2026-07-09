@@ -1,10 +1,8 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Wood — Ressource naturelle (Phase 0). Bûche de bois brun avec cernes concentriques et écorce. Se trouve dans les dépôts de bois. Couleur : #8B5E3C.</title>
-  <desc>Bois — Ressource naturelle (Phase 0). Bûche de bois brun avec cernes concentriques et écorce. Se trouve dans les dépôts de bois. Couleur : #8B5E3C.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
+  <title>Wood</title>
+  <desc>Bois — Ressource naturelle Phase 0. Vue 3/4 : bûche (#8B5E3C) cylindrique avec cernes concentriques sur la tranche et écorce. Forme organique, aspect naturel brut par opposition aux métaux usinés. 64×64.</desc>
             <defs>
-                <!-- Dégradé pour le corps de la bûche (donne le volume cylindrique) -->
-                <linearGradient id="barkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <linearGradient id="barkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stop-color="#5c3a21" />
                     <stop offset="15%" stop-color="#8b5e3c" />
                     <stop offset="50%" stop-color="#a4724b" />
@@ -12,47 +10,37 @@
                     <stop offset="100%" stop-color="#4a2f1e" />
                 </linearGradient>
                 
-                <!-- Dégradé pour le dessus coupé (les cernes) -->
-                <radialGradient id="ringGrad" cx="50%" cy="50%" r="50%">
+                              <radialGradient id="ringGrad" cx="50%" cy="50%" r="50%">
                     <stop offset="0%" stop-color="#e3b787" />
                     <stop offset="100%" stop-color="#d4a373" />
                 </radialGradient>
             </defs>
 
-            <!-- Ombre portée -->
-            <ellipse cx="32" cy="56" rx="22" ry="6" fill="rgba(0,0,0,0.3)"/>
+                      <ellipse cx="32" cy="56" rx="22" ry="6" fill="rgba(0,0,0,0.3)"/>
 
-            <!-- Corps de la bûche (Cylindre avec bas incurvé) -->
-            <path d="M 12 16 L 12 52 A 20 7 0 0 0 52 52 L 52 16 Z" fill="url(#barkGrad)" stroke="#3e2312" stroke-width="1.5" stroke-linejoin="round"/>
+                      <path d="M 12 16 L 12 52 A 20 7 0 0 0 52 52 L 52 16 Z" fill="url(#barkGrad)" stroke="#3e2312" stroke-width="1.5" stroke-linejoin="round"/>
 
-            <!-- Texture de l'écorce (Lignes verticales ondulées) -->
-            <path d="M 18 20 Q 21 35 17 53" fill="none" stroke="#4a2f1e" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
+                      <path d="M 18 20 Q 21 35 17 53" fill="none" stroke="#4a2f1e" stroke-width="1.5" stroke-linecap="round" opacity="0.7"/>
             <path d="M 26 19 Q 24 28 26 34 T 24 55" fill="none" stroke="#4a2f1e" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
             <path d="M 34 18 Q 36 28 33 40 T 36 56" fill="none" stroke="#5c3a21" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
             <path d="M 44 20 Q 42 35 45 53" fill="none" stroke="#3e2312" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/>
 
-            <!-- Un nœud dans le bois pour plus de réalisme -->
-            <g transform="translate(24, 38)">
+                      <g transform="translate(24, 38)">
                 <ellipse cx="0" cy="0" rx="3.5" ry="5.5" fill="#3e2312" stroke="#4a2f1e" stroke-width="1"/>
                 <ellipse cx="0" cy="0" rx="1.5" ry="2.5" fill="#1a0f08"/>
-                <!-- Écorce qui contourne le nœud -->
-                <path d="M -6 -11 Q -4 -5 -7 0 Q -4 5 -6 11" fill="none" stroke="#4a2f1e" stroke-width="1.2" opacity="0.7"/>
+                              <path d="M -6 -11 Q -4 -5 -7 0 Q -4 5 -6 11" fill="none" stroke="#4a2f1e" stroke-width="1.2" opacity="0.7"/>
                 <path d="M 6 -11 Q 4 -5 7 0 Q 4 5 6 11" fill="none" stroke="#4a2f1e" stroke-width="1.2" opacity="0.7"/>
             </g>
 
-            <!-- Dessus de la bûche (Cernes de l'arbre) -->
-            <ellipse cx="32" cy="16" rx="20" ry="7" fill="url(#ringGrad)" stroke="#3e2312" stroke-width="1.5"/>
+                      <ellipse cx="32" cy="16" rx="20" ry="7" fill="url(#ringGrad)" stroke="#3e2312" stroke-width="1.5"/>
             <ellipse cx="32" cy="16" rx="16" ry="5.5" fill="none" stroke="#c08d5c" stroke-width="1.2"/>
             <ellipse cx="32" cy="16" rx="11" ry="3.8" fill="none" stroke="#c08d5c" stroke-width="1"/>
             <ellipse cx="32" cy="16" rx="6" ry="2" fill="none" stroke="#c08d5c" stroke-width="0.8"/>
             
-            <!-- Cœur de l'arbre -->
-            <circle cx="32" cy="16" r="1.5" fill="#8b5e3c"/>
+                      <circle cx="32" cy="16" r="1.5" fill="#8b5e3c"/>
 
-            <!-- Fissures sur le dessus -->
-            <path d="M 32 16 L 46 18.5" fill="none" stroke="#8b5e3c" stroke-width="1" stroke-linecap="round"/>
+                      <path d="M 32 16 L 46 18.5" fill="none" stroke="#8b5e3c" stroke-width="1" stroke-linecap="round"/>
             <path d="M 32 16 L 22 13.5" fill="none" stroke="#8b5e3c" stroke-width="0.8" stroke-linecap="round"/>
             
-            <!-- Reflet lumineux sur le côté gauche -->
-            <path d="M 14 18 L 14 50 A 18 6 0 0 0 18 51.5 L 18 19.5 Z" fill="rgba(255,255,255,0.08)"/>
+                      <path d="M 14 18 L 14 50 A 18 6 0 0 0 18 51.5 L 18 19.5 Z" fill="rgba(255,255,255,0.08)"/>
         </svg>

@@ -1,27 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Anvil — Bâtiment de forge (Phase 1). Enclume en métal avec corne, base et surface de frappe. Permet la forge de composants métalliques. Couleur : #666666.</title>
-  <desc>Enclume — Bâtiment de forge (Phase 1). Enclume en métal avec corne, base et surface de frappe. Permet la forge de composants métalliques. Couleur : #666666.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
-  <!-- shadow -->
+  <title>Anvil</title>
+  <desc>Enclume — Bâtiment forge Phase 1. Vue 3/4 open-frame : enclume en métal (#666666) avec corne à gauche, base large, surface de frappe polie. Zone supérieure (75%) : la masse de l'enclume elle-même, visible. Façade inférieure (25%) : socle de support. Reflets métalliques francs. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="20" ry="5" fill="rgba(0,0,0,0.12)"/>
-  <!-- anvil base -->
   <rect x="10" y="38" width="44" height="14" rx="2" fill="#555" stroke="#333" stroke-width="0.8"/>
-  <!-- anvil body -->
   <path d="M14 38 L18 18 L24 12 L40 12 L46 18 L50 38Z" fill="#666" stroke="#333" stroke-width="0.8"/>
-  <!-- anvil top flat -->
   <rect x="20" y="10" width="24" height="6" rx="1" fill="#777" stroke="#333" stroke-width="0.6"/>
-  <!-- striking surface -->
   <rect x="22" y="10" width="20" height="3" rx="1" fill="#888" stroke="#333" stroke-width="0.4"/>
-  <!-- horn (pointy end) -->
   <path d="M46 18 L54 14 L50 26 L46 24Z" fill="#555" stroke="#333" stroke-width="0.6"/>
-  <!-- step -->
   <rect x="10" y="38" width="6" height="5" rx="1" fill="#777" stroke="#333" stroke-width="0.4"/>
-  <!-- base plate -->
   <rect x="8" y="48" width="48" height="6" rx="2" fill="#444" stroke="#333" stroke-width="0.6"/>
-  <!-- metal shine -->
   <path d="M22 14 L30 14 L30 16 L22 16Z" fill="rgba(255,255,255,0.08)"/>
   <path d="M24 20 L28 20 L28 22 L24 22Z" fill="rgba(255,255,255,0.06)"/>
-  <!-- test mark -->
   <line x1="24" y1="28" x2="28" y2="30" stroke="#444" stroke-width="0.5" opacity="0.4"/>
   <line x1="28" y1="30" x2="32" y2="28" stroke="#444" stroke-width="0.5" opacity="0.4"/>
   <line x1="32" y1="28" x2="36" y2="30" stroke="#444" stroke-width="0.5" opacity="0.4"/>

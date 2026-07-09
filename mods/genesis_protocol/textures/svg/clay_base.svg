@@ -1,22 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Clay — Ressource naturelle (Phase 0). Motte d'argile humide, texture lisse et craquelée. Se trouve dans les dépôts d'argile. Couleur : #C4A882.</title>
-  <desc>Argile — Ressource naturelle (Phase 0). Motte d'argile humide, texture lisse et craquelée. Se trouve dans les dépôts d'argile. Couleur : #C4A882.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
-  <!-- shadow -->
+  <title>Clay</title>
+  <desc>Argile — Ressource naturelle Phase 0. Vue 3/4 : motte d'argile humide (#C4A882), forme organique irrégulière rugueuse. Aspect naturel brut par opposition aux composants usinés. 64×64.</desc>
   <ellipse cx="34" cy="50" rx="17" ry="5" fill="rgba(0,0,0,0.10)"/>
-  <!-- clay lump - irregular organic shape -->
   <path d="M18 16 L28 10 L42 12 L50 24 L48 38 L40 46 L24 48 L14 38L14 26Z" fill="#C4A882" stroke="#8B7355" stroke-width="0.8"/>
-  <!-- surface crevices -->
   <path d="M18 16 L24 22 L20 28 L14 24Z" fill="#B89C78" opacity="0.5"/>
   <path d="M42 12 L46 22 L40 26 L36 18Z" fill="#B89C78" opacity="0.5"/>
   <path d="M24 48 L28 38 L34 42 L30 48Z" fill="#A88868" opacity="0.4"/>
-  <!-- cracks (moist clay) -->
   <line x1="22" y1="18" x2="26" y2="28" stroke="#9A7D62" stroke-width="0.6" opacity="0.5"/>
   <line x1="36" y1="16" x2="38" y2="26" stroke="#9A7D62" stroke-width="0.5" opacity="0.4"/>
   <line x1="28" y1="32" x2="34" y2="36" stroke="#9A7D62" stroke-width="0.4" opacity="0.4"/>
-  <!-- smooth highlight -->
   <ellipse cx="28" cy="18" rx="6" ry="3" fill="rgba(255,255,255,0.06)"/>
-  <!-- damp spots -->
   <ellipse cx="36" cy="34" rx="4" ry="3" fill="rgba(80,60,40,0.08)"/>
   <ellipse cx="22" cy="36" rx="3" ry="2" fill="rgba(80,60,40,0.06)"/>
 </svg>

@@ -1,16 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Copper Wire — Composant électrique (Phase 2). Bobine de fil cuivré sur support. Utilisé pour les circuits et câblages. Couleur : #CC7733.</title>
-  <desc>Fil de Cuivre — Composant électrique (Phase 2). Bobine de fil cuivré sur support. Utilisé pour les circuits et câblages. Couleur : #CC7733.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
-  <!-- shadow -->
+  <title>Copper Wire</title>
+  <desc>Fil de Cuivre — Composant électrique Phase 2. Vue 3/4 : bobine de fil cuivré (#CC7733) enroulé sur support central avec extrémité libre qui se déroule. Géométrie stricte, reflets métalliques. 64×64.</desc>
   <ellipse cx="32" cy="52" rx="16" ry="4" fill="rgba(0,0,0,0.10)"/>
-  <!-- spool body -->
   <rect x="14" y="10" width="36" height="38" rx="4" fill="#CC7733" stroke="#884422" stroke-width="0.8"/>
-  <!-- top flange -->
   <rect x="10" y="8" width="44" height="6" rx="2" fill="#DDAA55" stroke="#884422" stroke-width="0.5"/>
-  <!-- bottom flange -->
   <rect x="10" y="44" width="44" height="6" rx="2" fill="#BB6622" stroke="#884422" stroke-width="0.5"/>
-  <!-- copper wire wraps -->
   <line x1="16" y1="16" x2="48" y2="16" stroke="#DD8844" stroke-width="1.5"/>
   <line x1="16" y1="20" x2="48" y2="20" stroke="#DD8844" stroke-width="1.5"/>
   <line x1="16" y1="24" x2="48" y2="24" stroke="#DD8844" stroke-width="1.5"/>
@@ -18,9 +12,7 @@
   <line x1="16" y1="32" x2="48" y2="32" stroke="#DD8844" stroke-width="1.5"/>
   <line x1="16" y1="36" x2="48" y2="36" stroke="#DD8844" stroke-width="1.5"/>
   <line x1="16" y1="40" x2="48" y2="40" stroke="#DD8844" stroke-width="1.5"/>
-  <!-- wire end coming off spool -->
   <path d="M14 24 Q8 20 8 16 Q8 12 12 10 Q16 8 20 10" fill="none" stroke="#DD8844" stroke-width="2" stroke-linecap="round"/>
-  <!-- flange highlights -->
   <rect x="10" y="8" width="22" height="3" rx="1" fill="rgba(255,255,255,0.08)"/>
   <rect x="10" y="44" width="22" height="3" rx="1" fill="rgba(0,0,0,0.06)"/>
 </svg>

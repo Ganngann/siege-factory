@@ -1,24 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Ceramic — Ressource cuite (Phase 0). Pot en terre cuite avec bande décorative. Utilisé pour les fours et l'isolation. Couleur : #C4956A.</title>
-  <desc>Céramique — Ressource cuite (Phase 0). Pot en terre cuite avec bande décorative. Utilisé pour les fours et l'isolation. Couleur : #C4956A.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
-  <!-- shadow -->
+  <title>Ceramic</title>
+  <desc>Céramique — Ressource cuite Phase 0. Vue 3/4 : pot en terre cuite (#C4956A) façonné, aspect rugueux artisanal. Forme organique, inspire le primitif par contraste avec les métaux polis des phases suivantes. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="20" ry="5" fill="rgba(0,0,0,0.10)"/>
-  <!-- pot body -->
   <path d="M20 14 Q20 10 24 10 L40 10 Q44 10 44 14 L46 22 Q48 28 44 36 L40 48 Q38 52 32 52 Q26 52 24 48 L20 36 Q16 28 18 22Z" fill="#C4956A" stroke="#8B6B4A" stroke-width="0.8"/>
-  <!-- rim -->
   <rect x="22" y="8" width="20" height="5" rx="2" fill="#D4A57A" stroke="#8B6B4A" stroke-width="0.6"/>
-  <!-- rim inner shadow -->
   <rect x="24" y="8" width="16" height="3" rx="1" fill="#A07850" opacity="0.5"/>
-  <!-- body shading -->
   <path d="M20 14 L22 30 L18 24Z" fill="#A07850" opacity="0.4"/>
   <path d="M44 14 L42 30 L46 24Z" fill="#A07850" opacity="0.4"/>
   <path d="M24 48 L28 36 L20 34 L18 40Z" fill="#8B6B4A" opacity="0.3"/>
-  <!-- decorative band -->
   <path d="M18 24 Q22 26 32 26 Q42 26 46 24" fill="none" stroke="#8B6B4A" stroke-width="0.6" opacity="0.5"/>
   <path d="M18 26 Q22 28 32 28 Q42 28 46 26" fill="none" stroke="#8B6B4A" stroke-width="0.4" opacity="0.4"/>
-  <!-- highlight -->
   <ellipse cx="30" cy="18" rx="4" ry="6" fill="rgba(255,255,255,0.06)"/>
-  <!-- glaze shine -->
   <path d="M26 14 Q28 12 32 12" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
 </svg>

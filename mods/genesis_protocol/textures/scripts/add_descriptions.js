@@ -105,7 +105,7 @@ d.workbench = "Établi — Bâtiment craft Phase 0. Vue 3/4 open-frame : table d
 
 d.genesis_capsule = "Capsule Genesis — Bâtiment narratif central Phase 0 (Réveil). Vue 3/4 : capsule cryo ovale verticale, vitre noire opaque, coque fissurée et envahie de débris. Aucun signe de vie. Elle est l'anomalie parfaite : métal blanc épuré perdu au milieu des ruines végétalisées. 256×256.";
 d.genesis_capsule_t0 = "Capsule Genesis Phase 1 (Étincelle). Débris retirés, coque propre. Un premier voyant vert s'allume sur le côté. La vitre reste noire mais l'espoir renaît. 256×256.";
-d.genesis_capsule_t1 = "Capsule Genesis Phase 2 (Rouille & Vapeur). Condensation visible sur la vitre. Un liquide de refroidissement sombre circule dans des canalisations externes. Bulles. 256×256.";
+d.genesis_capsule_t1 = "Capsule Genesis Phase 2 (Rouille &amp; Vapeur). Condensation visible sur la vitre. Un liquide de refroidissement sombre circule dans des canalisations externes. Bulles. 256×256.";
 d.genesis_capsule_t2 = "Capsule Genesis Phase 3 (Fil du Cuivre). Faible lueur interne derrière la vitre. Le nouveau noyau CPU émet une lumière bleutée. Voyants vert et rouge actifs. 256×256.";
 d.genesis_capsule_t3 = "Capsule Genesis Phase 4 (Pouls). Rétroéclairage rythmé simulant un battement cardiaque. La lumière pulse doucement. Silhouette encore indistincte. 256×256.";
 d.genesis_capsule_t4 = "Capsule Genesis Phase 5 (Nanites). Coque lissée, vitre partiellement transparente révélant une vague silhouette humaine. Teintes argentées et blanches dominent. 256×256.";

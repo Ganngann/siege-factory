@@ -99,5 +99,32 @@ trigger_id = "genesis_final"
 - Un seul objectif affiché à la fois (le plus récent non complété)
 - L'objectif se met à jour automatiquement quand le trigger suivant se déclenche
 - Affichage permanent dans le HUD (ne disparaît pas)
-- Police lisible, fond semi-transparent, en haut à gauche ou à droite
+- Police lisible, fond semi-transparent, centré en haut
 - L'objectif reste affiché jusqu'à ce qu'il soit remplacé par le suivant
+
+---
+
+## ✅ Implémentation Rust — terminée
+
+**Fichier créé** : `src/player/objective.rs`
+
+**Fichiers modifiés** : `src/player/mod.rs`, `src/economy/mod.rs`
+
+### Fonctionnement
+
+1. Créer `mods/genesis_protocol/data/objectives.toml` avec vos objectifs (format ci-dessus)
+2. Les triggers utilisent les données existantes :
+
+| Trigger | Donnée lue |
+|---------|-----------|
+| `game_start` | Toujours vrai au premier frame → passe au suivant |
+| `tutorial_step` | `TutorialState.current_index` (position dans les steps du tutoriel) |
+| `item_crafted` | `TutorialConditions.items_crafted` (déjà tracké automatiquement par les systèmes de craft) |
+| `tier_unlocked` | `CurrentTier` sur l'entité capsule (l'objectif avance quand le tier est dépassé) |
+
+3. L'UI s'affiche centrée en haut, fond noir semi-transparent, avec le préfixe `OBJECTIF`
+4. Un toast est émis à chaque nouvel objectif
+
+### Note
+
+Pas besoin de modifier les TOML existants. Le fichier `objectives.toml` est indépendant et optionnel — si absent, le système ne fait rien.

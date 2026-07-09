@@ -90,6 +90,8 @@ impl Plugin for EconomyPlugin {
         app.insert_resource(discovery_registry);
 
         app.insert_resource(tool::ToolRegistry::load(&mods));
+        app.insert_resource(crate::player::objective::ObjectiveRegistry::load(&mods));
+        app.init_resource::<crate::player::objective::ObjectiveState>();
 
         // Load registries + derive MenuDef in dependency order (avoids double-load)
         let building_registry = building::BuildingRegistry::load(&mods);
@@ -141,6 +143,7 @@ impl Plugin for EconomyPlugin {
                 player::setup_player.run_if(crate::save_load::is_fresh_game),
                 capsule::spawn_capsule.run_if(crate::save_load::is_fresh_game),
                 build_bar::spawn_menu_bar,
+                crate::player::objective::spawn_objective_hud,
             ),
         );
         app.add_systems(
@@ -153,6 +156,7 @@ impl Plugin for EconomyPlugin {
                 inspect::cleanup_popup,
                 ui::cleanup_inventory_panel,
                 crate::player::crafting::cleanup_crafting_panel,
+                crate::player::objective::despawn_objective_hud,
             ),
         );
         app.add_systems(
@@ -206,6 +210,14 @@ impl Plugin for EconomyPlugin {
         app.add_systems(
             Update,
             tiered_structure::final_countdown_tick.run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(
+            Update,
+            crate::player::objective::advance_objectives.in_set(PlayingSystems),
+        );
+        app.add_systems(
+            Update,
+            crate::player::objective::update_objective_hud.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,

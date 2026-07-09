@@ -1,33 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Planks — Ressource transformée (Phase 0). Trois planches de bois juxtaposées avec cernes et nœud. Fabriqué à partir de bois. Couleur : #A0724A.</title>
-  <desc>Planches — Ressource transformée (Phase 0). Trois planches de bois juxtaposées avec cernes et nœud. Fabriqué à partir de bois. Couleur : #A0724A.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
-  <!-- shadow -->
+  <title>Planks</title>
+  <desc>Planches — Ressource transformée Phase 0. Vue 3/4 : trois planches de bois (#A0724A) juxtaposées avec cernes et nœud visible. Aspect artisanal brut. 64×64.</desc>
   <ellipse cx="32" cy="52" rx="20" ry="4" fill="rgba(0,0,0,0.10)"/>
-  <!-- plank 1 -->
   <rect x="6" y="6" width="52" height="18" rx="2" fill="#A0724A" stroke="#6B4A2E" stroke-width="0.6"/>
-  <!-- plank 2 -->
   <rect x="6" y="26" width="52" height="18" rx="2" fill="#A0724A" stroke="#6B4A2E" stroke-width="0.6"/>
-  <!-- plank 3 -->
   <rect x="6" y="46" width="52" height="12" rx="2" fill="#A0724A" stroke="#6B4A2E" stroke-width="0.6"/>
-  <!-- wood grain plank 1 -->
   <line x1="8" y1="10" x2="56" y2="10" stroke="#8A623E" stroke-width="0.4" opacity="0.5"/>
   <line x1="8" y1="14" x2="56" y2="14" stroke="#8A623E" stroke-width="0.3" opacity="0.4"/>
   <line x1="8" y1="18" x2="56" y2="18" stroke="#8A623E" stroke-width="0.4" opacity="0.5"/>
-  <!-- wood grain plank 2 -->
   <line x1="8" y1="30" x2="56" y2="30" stroke="#8A623E" stroke-width="0.4" opacity="0.5"/>
   <line x1="8" y1="34" x2="56" y2="34" stroke="#8A623E" stroke-width="0.3" opacity="0.4"/>
   <line x1="8" y1="38" x2="56" y2="38" stroke="#8A623E" stroke-width="0.4" opacity="0.5"/>
-  <!-- wood grain plank 3 -->
   <line x1="8" y1="48" x2="56" y2="48" stroke="#8A623E" stroke-width="0.4" opacity="0.5"/>
   <line x1="8" y1="52" x2="56" y2="52" stroke="#8A623E" stroke-width="0.3" opacity="0.4"/>
-  <!-- grain curve plank 1 -->
   <path d="M20 6 Q22 12 20 18" fill="none" stroke="#8A623E" stroke-width="0.3" opacity="0.3"/>
   <path d="M44 6 Q42 14 44 18" fill="none" stroke="#8A623E" stroke-width="0.3" opacity="0.3"/>
-  <!-- grain curves plank 2 -->
   <path d="M14 26 Q16 34 14 40" fill="none" stroke="#8A623E" stroke-width="0.3" opacity="0.3"/>
   <path d="M50 26 Q48 34 50 42" fill="none" stroke="#8A623E" stroke-width="0.3" opacity="0.3"/>
-  <!-- knot hole -->
   <ellipse cx="36" cy="36" rx="2" ry="3" fill="#6B4A2E" opacity="0.6"/>
   <ellipse cx="36" cy="36" rx="1" ry="1.5" fill="#4A301E" opacity="0.5"/>
 </svg>

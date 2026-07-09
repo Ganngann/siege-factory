@@ -1,28 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Nano Pack — Conteneur nanotechnologique (Phase 5). Boîte hexagonale verte avec motif moléculaire. Contient des nanomachines de réparation. Couleur : #88DD88.</title>
-  <desc>Nano-Pack — Conteneur nanotechnologique (Phase 5). Boîte hexagonale verte avec motif moléculaire. Contient des nanomachines de réparation. Couleur : #88DD88.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
-  <!-- shadow -->
+  <title>Nano Pack</title>
+  <desc>Nano-Pack — Conteneur Phase 5. Vue 3/4 : boîte hexagonale verte (#88DD88) avec motif moléculaire central, coque fermée. Géométrie stricte, symétrie parfaite. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="18" ry="5" fill="rgba(0,0,0,0.10)"/>
-  <!-- pack body -->
   <rect x="10" y="8" width="44" height="42" rx="4" fill="#88DD88" stroke="#44AA44" stroke-width="0.8"/>
-  <!-- top face (3D bevel) -->
   <path d="M10 8 L32 4 L54 8 L32 12Z" fill="#AAEEAA" stroke="#44AA44" stroke-width="0.5"/>
-  <!-- bottom face -->
   <path d="M10 50 L32 54 L54 50 L32 48Z" fill="#66CC66" stroke="#44AA44" stroke-width="0.5"/>
-  <!-- nano symbol - hexagonal pattern -->
   <polygon points="32,18 40,22 40,32 32,36 24,32 24,22" fill="none" stroke="#44AA44" stroke-width="1.5" opacity="0.6"/>
   <polygon points="32,20 38,23 38,30 32,33 26,30 26,23" fill="none" stroke="#66DD66" stroke-width="0.8" opacity="0.4"/>
-  <!-- inner nano dots -->
   <circle cx="32" cy="26" r="2" fill="#44AA44" opacity="0.7"/>
   <circle cx="28" cy="24" r="1" fill="#44AA44" opacity="0.4"/>
   <circle cx="36" cy="24" r="1" fill="#44AA44" opacity="0.4"/>
   <circle cx="28" cy="28" r="1" fill="#44AA44" opacity="0.4"/>
   <circle cx="36" cy="28" r="1" fill="#44AA44" opacity="0.4"/>
-  <!-- label -->
   <rect x="16" y="34" width="32" height="8" rx="1" fill="#44AA44" opacity="0.3"/>
   <line x1="20" y1="37" x2="44" y2="37" stroke="#44AA44" stroke-width="0.5" opacity="0.5"/>
   <line x1="20" y1="39" x2="44" y2="39" stroke="#44AA44" stroke-width="0.5" opacity="0.5"/>
-  <!-- highlight -->
   <rect x="12" y="10" width="12" height="38" rx="2" fill="rgba(255,255,255,0.06)"/>
 </svg>

@@ -1,21 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Sulfur — Ressource minière (Phase 3). Cristaux jaunes facettés avec éclat. Utilisé dans les réactions chimiques. Couleur : #DDDD44.</title>
-  <desc>Soufre — Ressource minière (Phase 3). Cristaux jaunes facettés avec éclat. Utilisé dans les réactions chimiques. Couleur : #DDDD44.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
-  <!-- shadow -->
+  <title>Sulfur</title>
+  <desc>Soufre — Ressource minière Phase 3. Vue 3/4 : cristaux jaunes (#DDDD44) facettés en forme de pointe avec éclat lumineux. Forme géométrique asymétrique. 64×64.</desc>
   <ellipse cx="32" cy="52" rx="18" ry="5" fill="rgba(0,0,0,0.10)"/>
-  <!-- main crystal -->
   <polygon points="32,6 46,26 40,48 24,48 18,26" fill="#DDDD44" stroke="#888822" stroke-width="0.8"/>
-  <!-- left smaller crystal -->
   <polygon points="18,26 22,38 14,44 10,32" fill="#CCCC33" stroke="#888822" stroke-width="0.6"/>
-  <!-- right small crystal -->
   <polygon points="40,48 44,34 50,40 46,50" fill="#CCCC33" stroke="#888822" stroke-width="0.6"/>
-  <!-- facet shading main -->
   <polygon points="32,6 46,26 38,28 32,12" fill="#EEEE66" opacity="0.5"/>
   <polygon points="32,6 18,26 26,28 32,12" fill="#CCCC33" opacity="0.4"/>
   <polygon points="46,26 40,48 36,40 42,30" fill="#BBBB22" opacity="0.4"/>
-  <!-- glowing center -->
   <ellipse cx="32" cy="26" rx="4" ry="6" fill="rgba(255,255,200,0.15)"/>
-  <!-- sparkle -->
   <circle cx="30" cy="16" r="1.5" fill="rgba(255,255,255,0.5)"/>
 </svg>

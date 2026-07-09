@@ -1,26 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Pipe — Bâtiment de transport fluide (Phase 2). Conduite cylindrique horizontale gris-bleu avec brides aux extrémités. Transporte l'eau et la vapeur entre les bâtiments. Pose par cliqué-glissé. Couleur : #557788.</title>
-  <desc>Tuyau — Bâtiment de transport fluide (Phase 2). Conduite cylindrique horizontale gris-bleu avec brides aux extrémités. Transporte l'eau et la vapeur entre les bâtiments. Pose par cliqué-glissé. Couleur : #557788.</desc>
-  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
-  <!-- shadow -->
+  <title>Pipe</title>
+  <desc>Tuyau — Bâtiment transport fluide Phase 2. Vue 3/4 : conduite horizontale (#557788) avec brides boulonnées aux extrémités et renforts. Pose par cliqué-glissé. Ports de connexion touchant les bords de tuile. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="20" ry="4" fill="rgba(0,0,0,0.10)"/>
-  <!-- pipe body -->
   <rect x="6" y="22" width="52" height="20" rx="4" fill="#557788" stroke="#334455" stroke-width="0.8"/>
-  <!-- pipe interior (hole) -->
   <rect x="8" y="26" width="48" height="12" rx="3" fill="#334455" stroke="#223344" stroke-width="0.5"/>
-  <!-- highlight on top -->
   <rect x="8" y="22" width="48" height="4" rx="2" fill="#778899" opacity="0.5"/>
-  <!-- flange left -->
   <rect x="4" y="18" width="6" height="28" rx="1" fill="#667788" stroke="#334455" stroke-width="0.5"/>
-  <!-- flange right -->
   <rect x="54" y="18" width="6" height="28" rx="1" fill="#667788" stroke="#334455" stroke-width="0.5"/>
-  <!-- bolt holes in flanges -->
   <circle cx="7" cy="22" r="1.5" fill="#334455"/>
   <circle cx="7" cy="32" r="1.5" fill="#334455"/>
   <circle cx="7" cy="42" r="1.5" fill="#334455"/>
   <circle cx="57" cy="22" r="1.5" fill="#334455"/>
   <circle cx="57" cy="32" r="1.5" fill="#334455"/>
   <circle cx="57" cy="42" r="1.5" fill="#334455"/>
-  <!-- pipe shadow bottom -->
   <rect x="8" y="38" width="48" height="4" rx="2" fill="#334455" opacity="0.3"/>
 </svg>
