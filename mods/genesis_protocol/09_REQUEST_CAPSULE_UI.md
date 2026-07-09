@@ -61,3 +61,25 @@ Format UI suggéré :
 - Le joueur voit immédiatement ce qu'il doit apporter à la capsule
 - La progression narrative est lisible
 - Fini la fenêtre "inventaire vide" qui ne veut rien dire
+
+---
+
+## ✅ Implémentation Rust — terminée
+
+**Fichiers modifiés** :
+
+| Fichier | Changement |
+|---------|------------|
+| `src/economy/inspect/interaction.rs` | Détecte les entités avec `Capsule` + tiers → appelle `open_capsule_panel` au lieu du panneau générique |
+| `src/economy/inspect/spawn.rs` | Nouvelle fonction `open_capsule_panel` — affiche la progression de la capsule |
+
+**Contenu du panneau** :
+- Titre : `Capsule — Capsule Genesis`
+- Liste des tiers avec statut : `✅ Tier 0 — Nom (complété)`, `◉ Tier 1 — Nom (en cours)`, `○ Tier 2 — Nom`
+- Items requis pour le tier actuel
+- Texte narratif du log associé (entre guillemets)
+- Indication : `(Appuyez sur E à côté de la capsule)`
+
+**Ouverture** : clic gauche sur la capsule (comme pour inspecter un bâtiment).
+
+**Note** : le compteur d'items requis affiche `0/N` pour le moment — il faudrait lire l'inventaire du joueur pour afficher `X/N`. Ce sera amélioré dans une prochaine itération.

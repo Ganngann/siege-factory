@@ -1,15 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- shadow -->
+  <title>Petroleum Gas</title>
+  <desc>Gaz Pétrolier — Ressource raffinée Phase 3. Vue 3/4 : flamme de gaz orange (#664422) avec cœur blanc vif. Couleur vive simulant l'activité. 64×64.</desc>
   <ellipse cx="32" cy="50" rx="14" ry="4" fill="rgba(0,0,0,0.08)"/>
-  <!-- outer flame -->
   <path d="M32 6 Q42 18 44 28 Q46 38 40 44 Q34 50 32 50 Q30 50 24 44 Q18 38 20 28 Q22 18 32 6Z" fill="#CC8844" stroke="#884422" stroke-width="0.6"/>
-  <!-- inner flame -->
   <path d="M32 14 Q38 22 38 30 Q38 38 34 42 Q32 44 30 42 Q26 38 26 30 Q26 22 32 14Z" fill="#FFCC66" stroke="#AA6633" stroke-width="0.4"/>
-  <!-- core glow -->
   <path d="M32 20 Q34 24 34 30 Q34 34 32 36 Q30 34 30 30 Q30 24 32 20Z" fill="#FFF8E0" opacity="0.8"/>
-  <!-- gas vent holes -->
   <ellipse cx="22" cy="34" rx="3" ry="2" fill="#884422" opacity="0.3"/>
   <ellipse cx="42" cy="34" rx="3" ry="2" fill="#884422" opacity="0.3"/>
-  <!-- glow aura -->
   <ellipse cx="32" cy="28" rx="12" ry="14" fill="rgba(255,200,100,0.06)"/>
 </svg>

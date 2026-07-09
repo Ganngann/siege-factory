@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Iron Ore — Ressource minière (Phase 1). Roche brune avec pépites métalliques brillantes. Se trouve dans les dépôts de fer. Couleur : #B35F33.</title>
+  <desc>Minerai de Fer — Ressource minière (Phase 1). Roche brune avec pépites métalliques brillantes. Se trouve dans les dépôts de fer. Couleur : #B35F33.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="33" cy="50" rx="16" ry="5" fill="rgba(0,0,0,0.12)"/>
   <!-- rock body -->

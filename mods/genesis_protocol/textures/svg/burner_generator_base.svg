@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 64" width="128" height="64">
+  <title>Burner Generator — Bâtiment énergétique (Phase 1). Générateur orange avec grille d'aération, jauge, tuyau d'échappement et bandes d'avertissement. Produit de l'énergie à partir de charbon. 128×64 px. Couleur : #DD6622.</title>
+  <desc>Générateur Charbon — Bâtiment énergétique (Phase 1). Générateur orange avec grille d'aération, jauge, tuyau d'échappement et bandes d'avertissement. Produit de l'énergie à partir de charbon. 128×64 px. Couleur : #DD6622.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="64" cy="56" rx="45" ry="6" fill="rgba(0,0,0,0.10)"/>
   <!-- generator body -->

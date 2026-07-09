@@ -1,32 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 64" width="128" height="64">
-  <!-- shadow -->
+  <title>Electric Generator</title>
+  <desc>Générateur Électrique — Bâtiment énergétique Phase 3. Vue 3/4 open-frame : générateur moderne (#FFAA33) avec ailettes de refroidissement horizontales, panneau de contrôle (manomètre), bornes électriques (+/-) et voyant vert. Zone supérieure (75%) : stator et rotor visibles. Façade inférieure (25%) : base de montage. 128×64.</desc>
   <ellipse cx="64" cy="56" rx="50" ry="6" fill="rgba(0,0,0,0.10)"/>
-  <!-- generator housing -->
   <rect x="10" y="12" width="108" height="40" rx="6" fill="#FFAA33" stroke="#CC7722" stroke-width="0.8"/>
-  <!-- cooling fins -->
   <rect x="10" y="18" width="108" height="3" rx="1" fill="#EE9922" opacity="0.4"/>
   <rect x="10" y="24" width="108" height="3" rx="1" fill="#EE9922" opacity="0.4"/>
   <rect x="10" y="30" width="108" height="3" rx="1" fill="#EE9922" opacity="0.4"/>
   <rect x="10" y="36" width="108" height="3" rx="1" fill="#EE9922" opacity="0.4"/>
   <rect x="10" y="42" width="108" height="3" rx="1" fill="#EE9922" opacity="0.4"/>
-  <!-- control panel -->
   <rect x="14" y="16" width="30" height="34" rx="3" fill="#DD8811" stroke="#CC7722" stroke-width="0.5"/>
-  <!-- power meter -->
   <rect x="18" y="20" width="22" height="10" rx="1" fill="#222" stroke="#CC7722" stroke-width="0.3"/>
   <rect x="20" y="22" width="18" height="6" rx="1" fill="#44DD44" opacity="0.6"/>
-  <!-- dial -->
   <circle cx="29" cy="40" r="6" fill="#333" stroke="#CC7722" stroke-width="0.4"/>
   <circle cx="29" cy="40" r="4" fill="#444"/>
   <line x1="29" y1="40" x2="32" y2="38" stroke="#FF4400" stroke-width="1"/>
-  <!-- power output terminals -->
   <circle cx="104" cy="24" r="4" fill="#CC4400" stroke="#882200" stroke-width="0.6"/>
   <circle cx="104" cy="42" r="4" fill="#CC4400" stroke="#882200" stroke-width="0.6"/>
-  <!-- terminal labels -->
   <rect x="96" y="28" width="3" height="10" rx="1" fill="#882200" opacity="0.6"/>
   <line x1="100" y1="22" x2="108" y2="22" stroke="#FF4400" stroke-width="0.5" opacity="0.5"/>
   <line x1="100" y1="40" x2="108" y2="40" stroke="#444" stroke-width="0.5" opacity="0.5"/>
-  <!-- highlight -->
   <rect x="48" y="14" width="20" height="36" rx="2" fill="rgba(255,255,255,0.05)"/>
-  <!-- indicator light -->
   <circle cx="22" cy="16" r="2" fill="#33FF33" opacity="0.7"/>
 </svg>

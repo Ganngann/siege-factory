@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Planks — Ressource transformée (Phase 0). Trois planches de bois juxtaposées avec cernes et nœud. Fabriqué à partir de bois. Couleur : #A0724A.</title>
+  <desc>Planches — Ressource transformée (Phase 0). Trois planches de bois juxtaposées avec cernes et nœud. Fabriqué à partir de bois. Couleur : #A0724A.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="52" rx="20" ry="4" fill="rgba(0,0,0,0.10)"/>
   <!-- plank 1 -->

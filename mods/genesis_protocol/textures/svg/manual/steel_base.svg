@@ -1,26 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- shadow -->
+  <title>Steel</title>
+  <desc>Acier — Métal avancé Phase 2. Vue 3/4 : plaque d'acier brossé (#666688) avec trous de boulons aux coins, lignes de métal et rivets. Géométrie stricte, symétrie parfaite. Reflets métalliques. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="20" ry="4" fill="rgba(0,0,0,0.12)"/>
-  <!-- steel plate -->
   <rect x="4" y="6" width="56" height="46" rx="3" fill="#666688" stroke="#333344" stroke-width="0.8"/>
-  <!-- beveled edge top -->
   <rect x="4" y="6" width="56" height="4" rx="2" fill="#8888AA" opacity="0.5"/>
-  <!-- beveled edge bottom -->
   <rect x="4" y="48" width="56" height="4" rx="2" fill="#444466" opacity="0.5"/>
-  <!-- bolt holes corners -->
   <circle cx="12" cy="14" r="3" fill="#444466" stroke="#333344" stroke-width="0.5"/>
   <circle cx="52" cy="14" r="3" fill="#444466" stroke="#333344" stroke-width="0.5"/>
   <circle cx="12" cy="42" r="3" fill="#444466" stroke="#333344" stroke-width="0.5"/>
   <circle cx="52" cy="42" r="3" fill="#444466" stroke="#333344" stroke-width="0.5"/>
-  <!-- brushed metal lines -->
   <line x1="12" y1="12" x2="52" y2="12" stroke="#8888AA" stroke-width="0.3" opacity="0.3"/>
   <line x1="12" y1="20" x2="52" y2="20" stroke="#8888AA" stroke-width="0.3" opacity="0.2"/>
   <line x1="12" y1="28" x2="52" y2="28" stroke="#8888AA" stroke-width="0.3" opacity="0.3"/>
   <line x1="12" y1="36" x2="52" y2="36" stroke="#8888AA" stroke-width="0.3" opacity="0.2"/>
   <line x1="12" y1="44" x2="52" y2="44" stroke="#8888AA" stroke-width="0.3" opacity="0.3"/>
-  <!-- specular shine -->
   <rect x="8" y="8" width="20" height="42" rx="1" fill="rgba(255,255,255,0.04)"/>
-  <!-- rivets -->
   <circle cx="32" cy="14" r="1.5" fill="#444466"/>
   <circle cx="32" cy="42" r="1.5" fill="#444466"/>
   <circle cx="32" cy="28" r="1.5" fill="#444466"/>

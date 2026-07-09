@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- shadow -->
+  <title>Concrete</title>
+  <desc>Béton — Matériau de construction Phase 4. Vue 3/4 : bloc gris (#999999) avec granulats apparents et trous de banche. Géométrie stricte. 64×64.</desc>
   <ellipse cx="32" cy="52" rx="18" ry="4" fill="rgba(0,0,0,0.10)"/>
-  <!-- concrete block -->
   <rect x="6" y="8" width="52" height="42" rx="3" fill="#999999" stroke="#666" stroke-width="0.8"/>
-  <!-- aggregate particles -->
   <circle cx="14" cy="18" r="2" fill="#AAA" opacity="0.5"/>
   <circle cx="28" cy="14" r="1.5" fill="#AAA" opacity="0.5"/>
   <circle cx="44" cy="20" r="2" fill="#AAA" opacity="0.5"/>
@@ -16,14 +15,11 @@
   <circle cx="26" cy="36" r="1" fill="#AAA" opacity="0.4"/>
   <circle cx="42" cy="14" r="1" fill="#AAA" opacity="0.4"/>
   <circle cx="12" cy="32" r="1" fill="#AAA" opacity="0.4"/>
-  <!-- darker aggregate -->
   <circle cx="34" cy="18" r="1.5" fill="#777" opacity="0.3"/>
   <circle cx="22" cy="44" r="1" fill="#777" opacity="0.3"/>
   <circle cx="46" cy="36" r="1.5" fill="#777" opacity="0.3"/>
-  <!-- surface wear -->
   <line x1="8" y1="22" x2="28" y2="22" stroke="#AAA" stroke-width="0.3" opacity="0.3"/>
   <line x1="18" y1="14" x2="54" y2="14" stroke="#AAA" stroke-width="0.3" opacity="0.2"/>
   <line x1="10" y1="46" x2="40" y2="46" stroke="#AAA" stroke-width="0.3" opacity="0.2"/>
-  <!-- block edge highlight -->
   <rect x="6" y="8" width="52" height="3" rx="1" fill="rgba(255,255,255,0.06)"/>
 </svg>

@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Silicon — Ressource raffinée (Phase 1). Plaquette ronde de silicium avec circuits intégrés. Produit dans le four à partir de sable. Couleur : #AACCDD.</title>
+  <desc>Silicium — Ressource raffinée (Phase 1). Plaquette ronde de silicium avec circuits intégrés. Produit dans le four à partir de sable. Couleur : #AACCDD.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="54" rx="18" ry="5" fill="rgba(0,0,0,0.10)"/>
   <!-- wafer circle -->

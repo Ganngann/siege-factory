@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Steel — Métal avancé (Phase 2). Plaque d'acier brossée avec trous de boulons et lignes de métal. Produit dans le haut fourneau. Couleur : #666688.</title>
+  <desc>Acier — Métal avancé (Phase 2). Plaque d'acier brossée avec trous de boulons et lignes de métal. Produit dans le haut fourneau. Couleur : #666688.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="54" rx="20" ry="4" fill="rgba(0,0,0,0.12)"/>
   <!-- steel plate -->

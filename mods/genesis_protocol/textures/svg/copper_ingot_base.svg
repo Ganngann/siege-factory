@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Copper Ingot — Métal raffiné (Phase 1). Barre métallique cuivrée avec reflets chauds et rainures. Utilisé pour les fils et composants électriques. Couleur : #CC8844.</title>
+  <desc>Lingot de Cuivre — Métal raffiné (Phase 1). Barre métallique cuivrée avec reflets chauds et rainures. Utilisé pour les fils et composants électriques. Couleur : #CC8844.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="52" rx="20" ry="4" fill="rgba(0,0,0,0.10)"/>
   <!-- ingot body -->

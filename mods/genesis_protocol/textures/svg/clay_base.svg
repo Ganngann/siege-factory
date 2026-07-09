@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Clay — Ressource naturelle (Phase 0). Motte d'argile humide, texture lisse et craquelée. Se trouve dans les dépôts d'argile. Couleur : #C4A882.</title>
+  <desc>Argile — Ressource naturelle (Phase 0). Motte d'argile humide, texture lisse et craquelée. Se trouve dans les dépôts d'argile. Couleur : #C4A882.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="34" cy="50" rx="17" ry="5" fill="rgba(0,0,0,0.10)"/>
   <!-- clay lump - irregular organic shape -->

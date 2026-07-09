@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Iron Parts — Composants métalliques (Phase 0). Assortiment de petites pièces : engrenage, boulon, rondelle, barre, clou. Fabriqué à partir de ferraille. Couleur : #999999.</title>
+  <desc>Pièces de Fer — Composants métalliques (Phase 0). Assortiment de petites pièces : engrenage, boulon, rondelle, barre, clou. Fabriqué à partir de ferraille. Couleur : #999999.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="54" rx="18" ry="5" fill="rgba(0,0,0,0.10)"/>
   <!-- gear part -->

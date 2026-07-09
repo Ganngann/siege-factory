@@ -4,10 +4,11 @@ use crate::core::utils::{silent_despawn, tile_to_world};
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     BuildMode, Building, BuildingPanel, DeconstructMode, FarmCropSelectButton, FarmRecruitButton,
-    OccupiedTiles, Player, ResourceDeposit, Sorter, SorterInvertButton,
+    OccupiedTiles, Player, Sorter, SorterInvertButton,
     SorterResourceButton, UiIsBlocking,
 };
-use crate::economy::game_components::Level;
+use crate::economy::game_components::{Capsule, CurrentTier, Level};
+use crate::economy::tiered_structure::ProgressionLogRegistry;
 use crate::economy::player::PlayerWorldPos;
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::spatial::SpatialRegistry;
@@ -18,14 +19,14 @@ use crate::map::config::MapConfig;
 use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
 
-use super::{close_panel, open_panel, spawn_deposit_panel};
+use super::{close_panel, open_capsule_panel, open_panel};
 
 // ── Click detection ──
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn building_inspect_click(
-    mut commands: Commands,
-    mut panel: ResMut<BuildingPanel>,
+    commands: Commands,
+    panel: ResMut<BuildingPanel>,
     build_mode: Res<BuildMode>,
     deconstruct: Res<DeconstructMode>,
     buttons: Res<ButtonInput<MouseButton>>,
@@ -36,9 +37,10 @@ pub fn building_inspect_click(
     player_pos: Res<PlayerWorldPos>,
     spatial: Res<SpatialRegistry>,
     building_query: Query<(&Building, Option<&OccupiedTiles>)>,
-    deposit_query: Query<(Entity, &ResourceDeposit, &TilePosition)>,
+    tier_q: Query<&CurrentTier, With<Capsule>>,
     resource_registry: Res<ResourceRegistry>,
     reg: Res<BuildingRegistry>,
+    progression_logs: Res<ProgressionLogRegistry>,
     ui_blocking: Res<UiIsBlocking>,
 ) {
     if ui_blocking.0 {
@@ -87,8 +89,26 @@ pub fn building_inspect_click(
             return;
         }
 
-        let farm_crop_types = reg
-            .get(&building.kind)
+        // Check if this building is a Capsule with tiers → show capsule panel
+        let building_def = reg.get(&building.kind);
+        if tier_q.contains(entity) && building_def.map_or(false, |d| !d.tiers.is_empty()) {
+            let current_tier = tier_q
+                .get(entity)
+                .map(|t| t.0)
+                .unwrap_or(0);
+            open_capsule_panel(
+                commands,
+                panel,
+                entity,
+                building,
+                &reg,
+                &progression_logs,
+                current_tier,
+            );
+            return;
+        }
+
+        let farm_crop_types = building_def
             .map(|d| d.crop_types.clone())
             .unwrap_or_default();
         open_panel(
@@ -102,34 +122,6 @@ pub fn building_inspect_click(
             farm_crop_types,
         );
         return;
-    }
-
-    // Fallback: check deposits (they are NOT in SpatialRegistry)
-    if let Some((deposit_entity, deposit, pos)) = deposit_query
-        .iter()
-        .find(|(_, _, pos)| pos.x == tile_x && pos.y == tile_y)
-    {
-        if panel.inspected == Some(deposit_entity) {
-            close_panel(commands, panel);
-            return;
-        }
-
-        // Check proximity (deposit is single tile)
-        let tile_center = tile_to_world(pos.x, pos.y, cfg.tile_size);
-        let (wx, wy) = (tile_center.x, tile_center.y);
-        let dx = player_pos.0.x - wx;
-        let dy = player_pos.0.y - wy;
-        if dx * dx + dy * dy > interact_range_sq {
-            return;
-        }
-
-        spawn_deposit_panel(
-            &mut commands,
-            &mut panel,
-            deposit_entity,
-            deposit,
-            &resource_registry,
-        );
     }
 }
 

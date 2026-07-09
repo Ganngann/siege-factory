@@ -1,38 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 64" width="192" height="64">
-  <!-- shadow -->
+  <title>Steam Generator</title>
+  <desc>Générateur Vapeur — Bâtiment énergétique Phase 2. Vue 3/4 open-frame : chaudière industrielle (#CCDDEE) avec foyer roueoyant à gauche, faisceau de tubes bouilleurs au centre, soupape de sécurité, sortie vapeur et manomètre. Zone supérieure (75%) : la chaudière ouverte montre le bouillonnement de l'eau et les flammes. Façade inférieure (25%) : grille et cendrier. Produit vapeur et électricité. 192×64.</desc>
   <ellipse cx="96" cy="58" rx="80" ry="6" fill="rgba(0,0,0,0.10)"/>
-  <!-- boiler shell -->
   <rect x="20" y="10" width="152" height="42" rx="10" fill="#CCDDEE" stroke="#8899AA" stroke-width="1"/>
-  <!-- firebox -->
   <rect x="14" y="22" width="50" height="36" rx="4" fill="#AA4422" stroke="#663311" stroke-width="0.8"/>
   <rect x="18" y="26" width="42" height="28" rx="3" fill="#CC5533" stroke="#663311" stroke-width="0.5"/>
-  <!-- fire glow -->
   <rect x="22" y="30" width="34" height="20" rx="3" fill="#FF6622" opacity="0.4"/>
   <rect x="26" y="34" width="26" height="12" rx="2" fill="#FFAA00" opacity="0.3"/>
-  <!-- boiler tubes -->
   <rect x="68" y="18" width="16" height="36" rx="3" fill="#8899AA" stroke="#667788" stroke-width="0.5"/>
   <rect x="86" y="18" width="16" height="36" rx="3" fill="#8899AA" stroke="#667788" stroke-width="0.5"/>
   <rect x="104" y="18" width="16" height="36" rx="3" fill="#8899AA" stroke="#667788" stroke-width="0.5"/>
   <rect x="122" y="18" width="16" height="36" rx="3" fill="#8899AA" stroke="#667788" stroke-width="0.5"/>
   <rect x="140" y="18" width="16" height="36" rx="3" fill="#8899AA" stroke="#667788" stroke-width="0.5"/>
-  <!-- steam outlet -->
   <rect x="82" y="2" width="28" height="10" rx="3" fill="#8899AA" stroke="#667788" stroke-width="0.6"/>
   <rect x="88" y="0" width="16" height="4" rx="2" fill="#8899AA" stroke="#667788" stroke-width="0.4"/>
-  <!-- steam wisps -->
   <ellipse cx="92" cy="2" rx="6" ry="3" fill="rgba(255,255,255,0.15)"/>
   <ellipse cx="100" cy="0" rx="4" ry="2" fill="rgba(255,255,255,0.10)"/>
-  <!-- pressure valve -->
   <rect x="72" y="8" width="8" height="6" rx="1" fill="#667788" stroke="#556677" stroke-width="0.4"/>
   <circle cx="76" cy="7" r="3" fill="#667788" stroke="#556677" stroke-width="0.3"/>
-  <!-- water level gauge -->
   <rect x="24" y="14" width="6" height="36" rx="2" fill="#111" opacity="0.4"/>
   <rect x="25" y="18" width="4" height="12" rx="1" fill="#44AADD" opacity="0.5"/>
-  <!-- rivets -->
   <circle cx="30" cy="14" r="2" fill="#8899AA" stroke="#667788" stroke-width="0.3"/>
   <circle cx="162" cy="14" r="2" fill="#8899AA" stroke="#667788" stroke-width="0.3"/>
   <circle cx="30" cy="48" r="2" fill="#8899AA" stroke="#667788" stroke-width="0.3"/>
   <circle cx="162" cy="48" r="2" fill="#8899AA" stroke="#667788" stroke-width="0.3"/>
-  <!-- grate -->
   <line x1="18" y1="54" x2="56" y2="54" stroke="#663311" stroke-width="1.5" opacity="0.5"/>
   <line x1="18" y1="56" x2="56" y2="56" stroke="#663311" stroke-width="1" opacity="0.3"/>
 </svg>

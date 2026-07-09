@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Storage Chest — Bâtiment utilitaire (Phase 3). Coffre en bois jaune avec couvercle bombé, ferrures métalliques, cadenas et rivets. Stocke jusqu'à 64 piles d'items. Couleur : #CC9900.</title>
+  <desc>Coffre de Stockage — Bâtiment utilitaire (Phase 3). Coffre en bois jaune avec couvercle bombé, ferrures métalliques, cadenas et rivets. Stocke jusqu'à 64 piles d'items. Couleur : #CC9900.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="56" rx="22" ry="5" fill="rgba(0,0,0,0.12)"/>
   <!-- chest body -->

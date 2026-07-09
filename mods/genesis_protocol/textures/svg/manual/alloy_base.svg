@@ -1,29 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- shadow -->
+  <title>Alloy</title>
+  <desc>Alliage — Matériau composite Phase 5. Vue 3/4 : plaque métallique renforcée (#8888AA) avec fibres de carbone entrecroisées en surface. Géométrie stricte. Reflets acier brossé. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="20" ry="5" fill="rgba(0,0,0,0.10)"/>
-  <!-- alloy plate -->
   <rect x="6" y="8" width="52" height="42" rx="3" fill="#8888AA" stroke="#555577" stroke-width="0.8"/>
-  <!-- layered top surface -->
   <rect x="6" y="8" width="52" height="3" rx="1" fill="#AAAAAA" opacity="0.4"/>
-  <!-- diagonal brushed lines -->
   <line x1="8" y1="12" x2="56" y2="12" stroke="#7777AA" stroke-width="0.3" opacity="0.3"/>
   <line x1="8" y1="18" x2="56" y2="18" stroke="#7777AA" stroke-width="0.3" opacity="0.3"/>
   <line x1="8" y1="24" x2="56" y2="24" stroke="#7777AA" stroke-width="0.3" opacity="0.3"/>
   <line x1="8" y1="30" x2="56" y2="30" stroke="#7777AA" stroke-width="0.3" opacity="0.3"/>
   <line x1="8" y1="36" x2="56" y2="36" stroke="#7777AA" stroke-width="0.3" opacity="0.3"/>
   <line x1="8" y1="42" x2="56" y2="42" stroke="#7777AA" stroke-width="0.3" opacity="0.3"/>
-  <!-- carbon fiber weave overlay -->
   <path d="M12 14 L18 10 L24 14 L18 18Z" fill="none" stroke="#9999BB" stroke-width="0.4" opacity="0.3"/>
   <path d="M30 14 L36 10 L42 14 L36 18Z" fill="none" stroke="#9999BB" stroke-width="0.4" opacity="0.3"/>
   <path d="M20 28 L26 24 L32 28 L26 32Z" fill="none" stroke="#9999BB" stroke-width="0.4" opacity="0.3"/>
   <path d="M38 28 L44 24 L50 28 L44 32Z" fill="none" stroke="#9999BB" stroke-width="0.4" opacity="0.3"/>
   <path d="M12 40 L18 36 L24 40 L18 44Z" fill="none" stroke="#9999BB" stroke-width="0.4" opacity="0.3"/>
   <path d="M30 40 L36 36 L42 40 L36 44Z" fill="none" stroke="#9999BB" stroke-width="0.4" opacity="0.3"/>
-  <!-- bolt hole -->
   <circle cx="14" cy="14" r="2.5" fill="#555577" stroke="#444466" stroke-width="0.4"/>
   <circle cx="50" cy="14" r="2.5" fill="#555577" stroke="#444466" stroke-width="0.4"/>
   <circle cx="14" cy="44" r="2.5" fill="#555577" stroke="#444466" stroke-width="0.4"/>
   <circle cx="50" cy="44" r="2.5" fill="#555577" stroke="#444466" stroke-width="0.4"/>
-  <!-- highlight -->
   <rect x="8" y="10" width="14" height="38" rx="2" fill="rgba(255,255,255,0.04)"/>
 </svg>

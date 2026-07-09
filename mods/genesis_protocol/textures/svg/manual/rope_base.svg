@@ -1,24 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- shadow -->
+  <title>Rope</title>
+  <desc>Corde — Ressource tressée Phase 0. Vue 3/4 : bobine de fibre (#8B7355) tressée en cercle avec extrémité effilochée. Aspect artisanal brut. 64×64.</desc>
   <ellipse cx="32" cy="52" rx="18" ry="4" fill="rgba(0,0,0,0.10)"/>
-  <!-- rope coil outer -->
   <circle cx="32" cy="30" r="18" fill="#8B7355" stroke="#5A4A35" stroke-width="0.8"/>
   <circle cx="32" cy="30" r="14" fill="#7A6348" stroke="#5A4A35" stroke-width="0.6"/>
   <circle cx="32" cy="30" r="10" fill="#8B7355" stroke="#5A4A35" stroke-width="0.5"/>
   <circle cx="32" cy="30" r="6" fill="#7A6348" stroke="#5A4A35" stroke-width="0.4"/>
-  <!-- twist lines -->
   <line x1="14" y1="30" x2="50" y2="30" stroke="#5A4A35" stroke-width="0.5" opacity="0.4"/>
   <line x1="18" y1="22" x2="46" y2="22" stroke="#5A4A35" stroke-width="0.5" opacity="0.3"/>
   <line x1="18" y1="38" x2="46" y2="38" stroke="#5A4A35" stroke-width="0.5" opacity="0.3"/>
   <line x1="14" y1="30" x2="50" y2="30" stroke="#5A4A35" stroke-width="0.3" opacity="0.3" transform="rotate(45,32,30)"/>
   <line x1="14" y1="30" x2="50" y2="30" stroke="#5A4A35" stroke-width="0.3" opacity="0.3" transform="rotate(-45,32,30)"/>
-  <!-- frayed end -->
   <path d="M46 18 Q48 14 44 12 Q48 16 50 14" fill="none" stroke="#8B7355" stroke-width="1" stroke-linecap="round"/>
-  <!-- fiber texture dots -->
   <circle cx="26" cy="24" r="0.5" fill="#5A4A35" opacity="0.4"/>
   <circle cx="38" cy="26" r="0.5" fill="#5A4A35" opacity="0.4"/>
   <circle cx="28" cy="36" r="0.5" fill="#5A4A35" opacity="0.4"/>
   <circle cx="36" cy="34" r="0.5" fill="#5A4A35" opacity="0.4"/>
-  <!-- highlight -->
   <ellipse cx="28" cy="22" rx="6" ry="3" fill="rgba(255,255,255,0.04)"/>
 </svg>

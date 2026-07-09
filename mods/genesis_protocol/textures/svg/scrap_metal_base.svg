@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Scrap Metal — Ressource de base (Phase 0). Morceau de métal tordu avec bords déchiquetés et taches de rouille. Récolté dans les ruines. Couleur : #887766.</title>
+  <desc>Ferraille — Ressource de base (Phase 0). Morceau de métal tordu avec bords déchiquetés et taches de rouille. Récolté dans les ruines. Couleur : #887766.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="34" cy="50" rx="18" ry="5" fill="rgba(0,0,0,0.10)"/>
   <!-- main bent metal piece -->

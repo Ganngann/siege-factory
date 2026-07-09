@@ -1,19 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- shadow -->
+  <title>Copper Ingot</title>
+  <desc>Lingot de Cuivre — Métal raffiné Phase 1. Vue 3/4 : barre métallique cuivrée (#CC8844) avec face supérieure brillante, rainures usinées et reflets chauds. Géométrie stricte, symétrie parfaite. 64×64.</desc>
   <ellipse cx="32" cy="52" rx="20" ry="4" fill="rgba(0,0,0,0.10)"/>
-  <!-- ingot body -->
   <path d="M10 24 L14 18 L50 18 L54 24 L50 44 L14 44Z" fill="#CC8844" stroke="#884422" stroke-width="0.8"/>
-  <!-- top face -->
   <path d="M14 18 L34 14 L50 18 L34 22Z" fill="#DDAA66" stroke="#884422" stroke-width="0.5"/>
-  <!-- front face -->
   <rect x="14" y="22" width="36" height="22" fill="#BB7733" stroke="#884422" stroke-width="0"/>
-  <!-- bottom edge -->
   <path d="M14 44 L34 48 L50 44 L34 40Z" fill="#AA6622" stroke="#884422" stroke-width="0.5"/>
-  <!-- highlight -->
   <path d="M16 20 L32 17 L48 20" fill="none" stroke="rgba(255,200,150,0.4)" stroke-width="1.5"/>
-  <!-- notch -->
   <rect x="22" y="28" width="20" height="4" rx="1" fill="#AA6622" opacity="0.4"/>
   <rect x="22" y="34" width="20" height="4" rx="1" fill="#AA6622" opacity="0.4"/>
-  <!-- reflection -->
   <rect x="18" y="24" width="14" height="16" rx="3" fill="rgba(255,200,150,0.05)"/>
 </svg>

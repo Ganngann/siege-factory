@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Sand — Ressource naturelle (Phase 1). Monticule de grains fins beiges. Se trouve dans les dépôts de sable. Utilisé pour le verre et le silicium. Couleur : #DDCC88.</title>
+  <desc>Sable — Ressource naturelle (Phase 1). Monticule de grains fins beiges. Se trouve dans les dépôts de sable. Utilisé pour le verre et le silicium. Couleur : #DDCC88.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- sand base -->
   <ellipse cx="32" cy="34" rx="24" ry="22" fill="#DDCC88" stroke="#AA9966" stroke-width="0.8"/>
   <!-- grain texture -->

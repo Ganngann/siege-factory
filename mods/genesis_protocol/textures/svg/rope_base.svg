@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Rope — Ressource tressée (Phase 0). Bobine de fibre tressée en cercle. Fabriquée à partir de fibres végétales. Couleur : #8B7355.</title>
+  <desc>Corde — Ressource tressée (Phase 0). Bobine de fibre tressée en cercle. Fabriquée à partir de fibres végétales. Couleur : #8B7355.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="52" rx="18" ry="4" fill="rgba(0,0,0,0.10)"/>
   <!-- rope coil outer -->

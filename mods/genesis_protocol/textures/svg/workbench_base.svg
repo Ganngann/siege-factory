@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Workbench — Bâtiment de craft manuel (Phase 0). Table de travail en bois avec outils (marteau, pièces métalliques) et tiroir. Permet le craft manuel des premiers items et outils. Couleur : #8B5E3C.</title>
+  <desc>Établi — Bâtiment de craft manuel (Phase 0). Table de travail en bois avec outils (marteau, pièces métalliques) et tiroir. Permet le craft manuel des premiers items et outils. Couleur : #8B5E3C.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="54" rx="22" ry="5" fill="rgba(0,0,0,0.10)"/>
   <!-- table top -->

@@ -1,25 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- glow aura -->
+  <title>Fusion Core</title>
+  <desc>Cœur à Fusion — Composant ultime Phase Finale. Vue 3/4 : sphère énergétique orange (#FFAA44) avec anneaux orbitaux inclinés et particules rayonnantes. Couleur vive, aspect actif. 64×64.</desc>
   <circle cx="32" cy="32" r="28" fill="rgba(255,170,68,0.08)"/>
   <circle cx="32" cy="32" r="24" fill="rgba(255,170,68,0.06)"/>
-  <!-- outer shell -->
   <circle cx="32" cy="32" r="22" fill="#FFAA44" stroke="#CC7722" stroke-width="1"/>
-  <!-- inner core -->
   <circle cx="32" cy="32" r="14" fill="#FFCC66" stroke="#CC7722" stroke-width="0.6"/>
-  <!-- center glow -->
   <circle cx="32" cy="32" r="8" fill="#FFEECC" opacity="0.8"/>
   <circle cx="32" cy="32" r="4" fill="#FFF8E0" opacity="0.9"/>
-  <!-- orbital rings -->
   <ellipse cx="32" cy="32" rx="18" ry="6" fill="none" stroke="#DD8833" stroke-width="1" transform="rotate(30,32,32)" opacity="0.6"/>
   <ellipse cx="32" cy="32" rx="18" ry="5" fill="none" stroke="#DD8833" stroke-width="0.8" transform="rotate(-45,32,32)" opacity="0.5"/>
-  <!-- energy particles -->
   <circle cx="22" cy="18" r="1.5" fill="#FFDD88" opacity="0.7"/>
   <circle cx="42" cy="46" r="1.5" fill="#FFDD88" opacity="0.6"/>
   <circle cx="44" cy="20" r="1" fill="#FFDD88" opacity="0.5"/>
   <circle cx="20" cy="44" r="1" fill="#FFDD88" opacity="0.5"/>
   <circle cx="16" cy="30" r="1" fill="#FFDD88" opacity="0.4"/>
   <circle cx="48" cy="34" r="1" fill="#FFDD88" opacity="0.4"/>
-  <!-- light rays -->
   <line x1="32" y1="10" x2="32" y2="18" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
   <line x1="32" y1="46" x2="32" y2="54" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
   <line x1="10" y1="32" x2="18" y2="32" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>

@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Acid — Ressource chimique (Phase 3). Liquide vert corrosif en flacon. Utilisé pour fabriquer des batteries. Couleur : #88FF44.</title>
+  <desc>Acide — Ressource chimique (Phase 3). Liquide vert corrosif en flacon. Utilisé pour fabriquer des batteries. Couleur : #88FF44.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <ellipse cx="30" cy="50" rx="14" ry="4" fill="rgba(0,0,0,0.10)"/>
   <circle cx="32" cy="30" r="22" fill="#88FF44" stroke="#44AA22" stroke-width="0.8"/>
   <circle cx="32" cy="30" r="16" fill="none" stroke="#66DD33" stroke-width="0.5" opacity="0.5"/>

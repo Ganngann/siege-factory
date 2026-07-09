@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Fusion Core — Composant ultime (Phase Finale). Sphère énergétique orange avec anneaux orbitaux et particules. Requis pour la capsule finale. Couleur : #FFAA44.</title>
+  <desc>Cœur à Fusion — Composant ultime (Phase Finale). Sphère énergétique orange avec anneaux orbitaux et particules. Requis pour la capsule finale. Couleur : #FFAA44.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- glow aura -->
   <circle cx="32" cy="32" r="28" fill="rgba(255,170,68,0.08)"/>
   <circle cx="32" cy="32" r="24" fill="rgba(255,170,68,0.06)"/>

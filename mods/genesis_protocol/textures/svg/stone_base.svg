@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Stone — Ressource naturelle (Phase 0). Roche irrégulière grise avec facettes d'ombre et fissures. Se trouve dans les dépôts de pierre. Couleur : #888888.</title>
+  <desc>Pierre — Ressource naturelle (Phase 0). Roche irrégulière grise avec facettes d'ombre et fissures. Se trouve dans les dépôts de pierre. Couleur : #888888.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="34" cy="50" rx="17" ry="6" fill="rgba(0,0,0,0.12)"/>
   <!-- main rock body - irregular polygon -->

@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Machine Frame — Structure porteuse (Phase 4). Cadre métallique en X avec renforts et rivets. Utilisé dans les bâtiments lourds. Couleur : #8888AA.</title>
+  <desc>Châssis Mécanique — Structure porteuse (Phase 4). Cadre métallique en X avec renforts et rivets. Utilisé dans les bâtiments lourds. Couleur : #8888AA.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="54" rx="20" ry="5" fill="rgba(0,0,0,0.10)"/>
   <!-- outer frame -->

@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Campfire — Bâtiment de cuisson (Phase 0). Cercle de pierres grises avec flammes orangées, cœur jaune vif et étincelles. Permet la fusion basique des minerais. Couleur : #FF6622.</title>
+  <desc>Feu de Camp — Bâtiment de cuisson (Phase 0). Cercle de pierres grises avec flammes orangées, cœur jaune vif et étincelles. Permet la fusion basique des minerais. Couleur : #FF6622.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="52" rx="18" ry="5" fill="rgba(0,0,0,0.12)"/>
   <!-- fire glow on ground -->

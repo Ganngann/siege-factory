@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Stone Brick — Ressource transformée (Phase 0). Assemblage de briques rectangulaires grises avec jointures. Fabriquée à partir de pierre. Couleur : #887766.</title>
+  <desc>Brique de Pierre — Ressource transformée (Phase 0). Assemblage de briques rectangulaires grises avec jointures. Fabriquée à partir de pierre. Couleur : #887766.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="54" rx="20" ry="4" fill="rgba(0,0,0,0.10)"/>
   <!-- brick 1 (top-left) -->

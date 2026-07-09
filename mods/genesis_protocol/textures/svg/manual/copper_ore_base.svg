@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Copper Ore</title>
+  <desc>Minerai de Cuivre — Ressource minière Phase 1. Vue 3/4 : roche brune (#D68A4C) irrégulière avec pépites cuivrées brillantes incrustées. Forme organique asymétrique rugueuse. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="18" ry="5" fill="rgba(0,0,0,0.10)"/>
   <path d="M16 20 L24 10 L44 14 L52 26 L46 44 L26 48 L14 34Z" fill="#D68A4C" stroke="#884422" stroke-width="0.8"/>
   <path d="M16 20 L24 10 L28 24 L18 28Z" fill="#B36E32" opacity="0.6"/>

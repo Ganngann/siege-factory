@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Water — Ressource fluide (Phase 2). Bouteille d'eau bleue avec bouchon, liquide et bulles. Pompée par la pompe à eau. Couleur : #3399DD.</title>
+  <desc>Eau — Ressource fluide (Phase 2). Bouteille d'eau bleue avec bouchon, liquide et bulles. Pompée par la pompe à eau. Couleur : #3399DD.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="30" cy="50" rx="14" ry="5" fill="rgba(0,0,0,0.10)"/>
   <!-- bottle shape -->

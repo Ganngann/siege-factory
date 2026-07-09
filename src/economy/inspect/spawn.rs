@@ -8,6 +8,7 @@ use crate::economy::components::{
     SorterResourceButton, StatRowText, StatusText,
 };
 use crate::economy::resource::ResourceRegistry;
+use crate::economy::tiered_structure::ProgressionLogRegistry;
 use crate::economy::ui_components::{UpgradeButton, UpgradeInfoText};
 use crate::economy::window::{
     ACCENT, BAR_BG, BG_SECTION, HP_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, spawn_window,
@@ -716,4 +717,130 @@ fn spawn_section(
             ));
             content(sec);
         });
+}
+
+// ── Capsule progression panel ──
+
+pub fn open_capsule_panel(
+    mut commands: Commands,
+    mut panel: ResMut<BuildingPanel>,
+    entity: Entity,
+    building: &Building,
+    reg: &BuildingRegistry,
+    logs: &ProgressionLogRegistry,
+    tier_index: usize,
+) {
+    // Close existing panel
+    if let Some(e) = panel.root.take() {
+        silent_despawn(&mut commands, e);
+    }
+    if let Some(e) = panel.overlay.take() {
+        silent_despawn(&mut commands, e);
+    }
+    panel.inspected = None;
+
+    let Some(def) = reg.get(&building.kind) else { return };
+    let total_tiers = def.tiers.len();
+
+    // Build content lines
+    let mut tier_lines: Vec<String> = Vec::new();
+    tier_lines.push(format!("CAPSULE GENESIS — Progression"));
+    tier_lines.push(String::new());
+
+    for i in 0..total_tiers {
+        let tier_def = &def.tiers[i];
+        let log_title = logs
+            .logs
+            .iter()
+            .find(|l| l.id.as_str() == tier_def.log_id.as_deref().unwrap_or(""))
+            .map(|l| l.title.as_str())
+            .unwrap_or(&tier_def.texture);
+        let prefix = if i < tier_index {
+            "✅"
+        } else if i == tier_index {
+            "◉"
+        } else {
+            "○"
+        };
+        let status = if i < tier_index {
+            " (complété)"
+        } else if i == tier_index {
+            " (en cours)"
+        } else {
+            ""
+        };
+        tier_lines.push(format!(" {} Tier {} — {}{}", prefix, i, log_title, status));
+    }
+
+    tier_lines.push(String::new());
+
+    // Current tier requirements
+    if tier_index < total_tiers {
+        let current = &def.tiers[tier_index];
+        if !current.required_items.is_empty() {
+            tier_lines.push("Items requis :".to_string());
+            for (res, amt) in &current.required_items {
+                tier_lines.push(format!("  {} {}/{}", res.display_name(), 0, amt));
+            }
+            tier_lines.push(String::new());
+            tier_lines.push("(Appuyez sur E à côté de la capsule)".to_string());
+        }
+
+        // Log text for current tier
+        if let Some(ref log_id) = current.log_id {
+            if let Some(entry) = logs.logs.iter().find(|l| l.id == *log_id) {
+                tier_lines.push(String::new());
+                tier_lines.push(format!("\"{}\"", entry.text));
+            }
+        }
+    }
+
+    let full_text = tier_lines.join("\n");
+
+    // Build the UI
+    let overlay = commands
+        .spawn((
+            PanelOverlay,
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::ZERO,
+                right: Val::ZERO,
+                top: Val::ZERO,
+                bottom: Val::ZERO,
+                display: Display::Flex,
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.45)),
+            ZIndex(100),
+            Pickable::default(),
+        ))
+        .id();
+
+    let root = spawn_window(
+        &mut commands,
+        &format!("Capsule — {}", building.name),
+        super::DEPOSIT_MODAL_WIDTH,
+        super::DEPOSIT_MODAL_HEIGHT,
+        120.0,
+        80.0,
+        None,
+        |parent| {
+            parent.spawn((
+                Text::new(full_text),
+                TextFont::from_font_size(12.0),
+                TextColor(TEXT_PRIMARY),
+                Node {
+                    padding: UiRect::all(Val::Px(12.0)),
+                    ..default()
+                },
+            ));
+        },
+    );
+
+    panel.overlay = Some(overlay);
+    panel.root = Some(root);
+    panel.inspected = Some(entity);
+    panel.dirty = false;
 }

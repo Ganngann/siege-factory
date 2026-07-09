@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Steam</title>
+  <desc>Vapeur — Ressource fluide Phase 2. Vue 3/4 : nuage de vapeur blanc-bleuté (#CCDDEE) avec petites bulles. Couleur vive simulant l'activité. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="18" ry="5" fill="rgba(0,0,0,0.10)"/>
   <circle cx="32" cy="30" r="20" fill="#CCDDEE" stroke="#8899AA" stroke-width="0.7"/>
   <path d="M22 18 Q32 12 42 18" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>

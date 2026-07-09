@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Anvil — Bâtiment de forge (Phase 1). Enclume en métal avec corne, base et surface de frappe. Permet la forge de composants métalliques. Couleur : #666666.</title>
+  <desc>Enclume — Bâtiment de forge (Phase 1). Enclume en métal avec corne, base et surface de frappe. Permet la forge de composants métalliques. Couleur : #666666.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="32" cy="54" rx="20" ry="5" fill="rgba(0,0,0,0.12)"/>
   <!-- anvil base -->

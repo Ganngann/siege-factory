@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 64" width="128" height="64">
+  <title>Furnace — Bâtiment de production (Phase 1). Four en briques avec chambre de combustion, grille et cheminée. Fond les minerais en lingots. 128×64 px. Couleur : #884422.</title>
+  <desc>Four — Bâtiment de production (Phase 1). Four en briques avec chambre de combustion, grille et cheminée. Fond les minerais en lingots. 128×64 px. Couleur : #884422.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
   <!-- shadow -->
   <ellipse cx="64" cy="56" rx="50" ry="6" fill="rgba(0,0,0,0.10)"/>
   <!-- furnace body -->

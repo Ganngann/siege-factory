@@ -1,35 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- shadow -->
+  <title>Blast Furnace</title>
+  <desc>Haut Fourneau — Bâtiment production Phase 2. Vue 3/4 open-frame : four industriel (#AA4422) avec cuve effilée verticale, anneaux de renfort métalliques et trou de coulée rougeoyant (#FF6622). Zone supérieure (75%) : la cuve ouverte laisse voir la matière en fusion à l'intérieur. Façade inférieure (25%) : base en briques et buses d'aération. Couleurs vives pour simuler l'activité. 128×128.</desc>
   <ellipse cx="64" cy="120" rx="55" ry="8" fill="rgba(0,0,0,0.10)"/>
-  <!-- furnace base -->
   <rect x="20" y="80" width="88" height="34" rx="6" fill="#883322" stroke="#552211" stroke-width="1"/>
-  <!-- furnace body (tapers up) -->
   <path d="M28 80 L34 30 L94 30 L100 80Z" fill="#AA4422" stroke="#552211" stroke-width="1"/>
-  <!-- top section -->
   <rect x="36" y="16" width="56" height="16" rx="4" fill="#BB5533" stroke="#552211" stroke-width="0.8"/>
-  <!-- throat opening -->
   <rect x="50" y="10" width="28" height="8" rx="2" fill="#331100" stroke="#552211" stroke-width="0.5"/>
-  <!-- metal band rings -->
   <rect x="26" y="64" width="76" height="4" rx="1" fill="#664422" stroke="#443311" stroke-width="0.4"/>
   <rect x="30" y="48" width="68" height="4" rx="1" fill="#664422" stroke="#443311" stroke-width="0.4"/>
   <rect x="34" y="36" width="60" height="3" rx="1" fill="#664422" stroke="#443311" stroke-width="0.3"/>
-  <!-- tap hole at bottom -->
   <rect x="54" y="88" width="20" height="14" rx="2" fill="#331100" stroke="#552211" stroke-width="0.6"/>
   <rect x="58" y="90" width="12" height="10" rx="1" fill="#FF4400" opacity="0.3"/>
-  <!-- molten glow -->
   <rect x="56" y="90" width="8" height="8" rx="1" fill="#FFAA00" opacity="0.2"/>
-  <!-- tuyere (air inlet) -->
   <rect x="12" y="72" width="10" height="6" rx="2" fill="#664422" stroke="#443311" stroke-width="0.4"/>
   <rect x="106" y="72" width="10" height="6" rx="2" fill="#664422" stroke="#443311" stroke-width="0.4"/>
-  <!-- auxiliary pipes -->
   <rect x="8" y="40" width="6" height="30" rx="2" fill="#557788" stroke="#334455" stroke-width="0.4"/>
   <rect x="114" y="40" width="6" height="30" rx="2" fill="#557788" stroke="#334455" stroke-width="0.4"/>
-  <!-- heat shimmer -->
   <ellipse cx="64" cy="28" rx="20" ry="4" fill="rgba(255,100,20,0.04)"/>
-  <!-- brick texture lines -->
   <line x1="30" y1="92" x2="98" y2="92" stroke="#663322" stroke-width="0.3" opacity="0.3"/>
   <line x1="30" y1="100" x2="98" y2="100" stroke="#663322" stroke-width="0.3" opacity="0.3"/>
   <line x1="30" y1="108" x2="98" y2="108" stroke="#663322" stroke-width="0.3" opacity="0.3"/>
-  <!-- highlight -->
   <rect x="36" y="32" width="12" height="48" rx="2" fill="rgba(255,255,255,0.04)"/>
 </svg>

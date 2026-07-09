@@ -1,4 +1,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Wood — Ressource naturelle (Phase 0). Bûche de bois brun avec cernes concentriques et écorce. Se trouve dans les dépôts de bois. Couleur : #8B5E3C.</title>
+  <desc>Bois — Ressource naturelle (Phase 0). Bûche de bois brun avec cernes concentriques et écorce. Se trouve dans les dépôts de bois. Couleur : #8B5E3C.</desc>
+  <!-- ⚠️ NE PAS MODIFIER — Corps du SVG inchangé ci-dessous -->
             <defs>
                 <!-- Dégradé pour le corps de la bûche (donne le volume cylindrique) -->
                 <linearGradient id="barkGrad" x1="0%" y1="0%" x2="100%" y2="0%">

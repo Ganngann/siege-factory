@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <!-- shadow -->
+  <title>Composite</title>
+  <desc>Composite — Matériau renforcé Phase 5. Vue 3/4 : plaque stratifiée (#77AAAA) avec fibres croisées en quadrillage. Géométrie stricte, symétrie parfaite. 64×64.</desc>
   <ellipse cx="32" cy="54" rx="20" ry="5" fill="rgba(0,0,0,0.10)"/>
-  <!-- composite block -->
   <rect x="6" y="8" width="52" height="42" rx="3" fill="#77AAAA" stroke="#447777" stroke-width="0.8"/>
-  <!-- fiber strand layers -->
   <line x1="8" y1="14" x2="56" y2="14" stroke="#559999" stroke-width="1.5" opacity="0.5"/>
   <line x1="8" y1="18" x2="56" y2="18" stroke="#559999" stroke-width="1.5" opacity="0.5"/>
   <line x1="8" y1="22" x2="56" y2="22" stroke="#559999" stroke-width="1.5" opacity="0.5"/>
@@ -12,13 +11,11 @@
   <line x1="8" y1="34" x2="56" y2="34" stroke="#559999" stroke-width="1.5" opacity="0.5"/>
   <line x1="8" y1="38" x2="56" y2="38" stroke="#559999" stroke-width="1.5" opacity="0.5"/>
   <line x1="8" y1="42" x2="56" y2="42" stroke="#559999" stroke-width="1.5" opacity="0.5"/>
-  <!-- cross weave -->
   <line x1="14" y1="10" x2="14" y2="48" stroke="#559999" stroke-width="1" opacity="0.4"/>
   <line x1="22" y1="10" x2="22" y2="48" stroke="#559999" stroke-width="1" opacity="0.4"/>
   <line x1="30" y1="10" x2="30" y2="48" stroke="#559999" stroke-width="1" opacity="0.4"/>
   <line x1="38" y1="10" x2="38" y2="48" stroke="#559999" stroke-width="1" opacity="0.4"/>
   <line x1="46" y1="10" x2="46" y2="48" stroke="#559999" stroke-width="1" opacity="0.4"/>
-  <!-- resin gloss -->
   <rect x="8" y="10" width="52" height="38" rx="2" fill="rgba(255,255,255,0.04)"/>
   <rect x="8" y="10" width="14" height="38" rx="2" fill="rgba(255,255,255,0.04)"/>
 </svg>
