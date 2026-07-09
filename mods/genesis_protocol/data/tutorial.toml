@@ -1,6 +1,7 @@
 [[steps]]
 id = "welcome"
 toast = "Année 2147. Les ruines de la cité s'étendent à perte de vue. La capsule cryo s'est ouverte — trop tard pour les autres. Un seul objectif : la réparer."
+persistent = true
 condition = "player_moved_distance"
 params = { distance = "1" }
 
