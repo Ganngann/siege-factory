@@ -6,6 +6,7 @@ impl SimpleRng {
     pub fn new(seed: u64) -> Self {
         Self(seed)
     }
+    // SUGGEST: envisager d'implémenter std::iter::Iterator ou de renommer (clippy::should_implement_trait)
     pub fn next(&mut self) -> u32 {
         self.0 = self
             .0

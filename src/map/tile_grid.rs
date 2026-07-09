@@ -165,6 +165,7 @@ impl ChunkGrid {
     }
 }
 
+// SUGGEST: extraire un struct GenParams (clippy::too_many_arguments)
 fn generate_chunk(
     seed: u64,
     cx: i32,
@@ -184,7 +185,9 @@ fn generate_chunk(
 
     let mut rng = SimpleRng::new(h);
 
+    // SUGGEST: utiliser un itérateur plutôt que des index range loops (clippy::needless_range_loop)
     for ty in 0..CHUNK_SIZE as usize {
+        // SUGGEST: utiliser un itérateur plutôt que des index range loops (clippy::needless_range_loop)
         for tx in 0..CHUNK_SIZE as usize {
             tiles[ty][tx] = TileType::Ground;
         }

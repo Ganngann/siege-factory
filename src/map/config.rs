@@ -90,6 +90,7 @@ impl MapConfig {
         let decoration = merged.decoration.unwrap_or_default();
         let mut distribution: Vec<(String, u32)> =
             deposits.distribution.into_iter().collect();
+        // SUGGEST: utiliser sort_by_key(|b| std::cmp::Reverse(b.1)) (clippy::unnecessary_sort_by)
         distribution.sort_by(|a, b| b.1.cmp(&a.1));
         Self {
             tile_size: map.tile_size,

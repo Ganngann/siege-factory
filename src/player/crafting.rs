@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::core::utils::silent_despawn;
 use crate::economy::components::Player;
 use crate::economy::recipe::{RecipeDef, RecipeRegistry};
 use crate::economy::resource::Inventory;
@@ -68,7 +69,7 @@ pub fn spawn_crafting_panel(
     // Close
     if !open.0 {
         for entity in panel_query.iter() {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         return;
     }
@@ -168,6 +169,7 @@ pub fn spawn_crafting_panel(
 }
 
 pub fn craft_button_system(
+    // SUGGEST: type CraftButtonQuery = Query<(&Interaction, &CraftButton), (Changed<Interaction>, With<Button>)> (clippy::type_complexity)
     mut interaction_query: Query<
         (&Interaction, &CraftButton),
         (Changed<Interaction>, With<Button>),
@@ -278,6 +280,6 @@ pub fn cleanup_crafting_panel(
     panel_query: Query<Entity, With<CraftingPanel>>,
 ) {
     for entity in panel_query.iter() {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 }

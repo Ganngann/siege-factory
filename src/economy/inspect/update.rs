@@ -16,6 +16,7 @@ pub fn update_panel_header(
     panel: Res<BuildingPanel>,
     building_query: Query<(&Building, Option<&Active>)>,
     mut title_text: Query<&mut Text, (With<BuildingTitleText>, Without<ActiveToggleButton>)>,
+    // SUGGEST: type ToggleBtnQuery = Query<(&mut BackgroundColor, &mut Text), (With<ActiveToggleButton>, Without<BuildingTitleText>)> (clippy::type_complexity)
     mut toggle_btn: Query<
         (&mut BackgroundColor, &mut Text),
         (With<ActiveToggleButton>, Without<BuildingTitleText>),
@@ -46,12 +47,14 @@ pub fn update_panel_header(
     }
 }
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn update_panel_production(
     panel: Res<BuildingPanel>,
     building_query: Query<(&Building, Option<&Assembler>, Option<&Active>)>,
     recipes: Res<RecipeRegistry>,
     resource_registry: Res<ResourceRegistry>,
     mut progress_fill: Query<&mut Node, With<ProgressBarFill>>,
+    // SUGGEST: type StatusTextQuery = Query<&mut Text, (With<StatusText>, Without<FlowInputText>, Without<FlowOutputText>)> (clippy::type_complexity)
     mut status_text: Query<
         &mut Text,
         (
@@ -60,6 +63,7 @@ pub fn update_panel_production(
             Without<FlowOutputText>,
         ),
     >,
+    // SUGGEST: type FlowInputQuery = Query<&mut Text, (With<FlowInputText>, Without<StatusText>, Without<FlowOutputText>)> (clippy::type_complexity)
     mut flow_input: Query<
         &mut Text,
         (
@@ -68,6 +72,7 @@ pub fn update_panel_production(
             Without<FlowOutputText>,
         ),
     >,
+    // SUGGEST: type FlowOutputQuery = Query<&mut Text, (With<FlowOutputText>, Without<StatusText>, Without<FlowInputText>)> (clippy::type_complexity)
     mut flow_output: Query<
         &mut Text,
         (
@@ -202,6 +207,7 @@ pub fn update_panel_inventory(
         } else if inv.total() > 0 {
             let mut lines: Vec<String> = Vec::new();
             let mut sorted: Vec<&(ResourceId, u32)> = inv.iter_occupied().collect();
+            // SUGGEST: utiliser sort_by_key(|b| std::cmp::Reverse(b.1)) (clippy::unnecessary_sort_by)
             sorted.sort_by(|a, b| b.1.cmp(&a.1));
             for (rid, amount) in sorted.iter().take(5) {
                 let name = resource_registry.display_name(rid);

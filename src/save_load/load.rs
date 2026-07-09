@@ -55,6 +55,7 @@ pub fn read_save_file(
     buf.data = Some(data);
 }
 
+// SUGGEST: extraire un struct LoadChunkParams (clippy::too_many_arguments)
 pub fn load_chunks(
     buf: Res<LoadBuffer>,
     mut chunk_grid: ResMut<ChunkGrid>,
@@ -84,6 +85,8 @@ pub fn load_chunks(
     let (hx, hy) = data
         .buildings
         .iter()
+        // ⚠️ IA ATTENTION: recherche du HQ par kind == "hq" en dur.
+        // Si tu renommes "hq" dans buildings.toml, ce code casse silencieusement.
         .find(|b| b.kind == "hq")
         .map(|b| (b.tile_x, b.tile_y))
         .unwrap_or((0, 0));
@@ -205,6 +208,9 @@ pub fn load_buildings(
                     ..default()
                 },
             ));
+        // ⚠️ IA ATTENTION: comparaison sur kind string en dur.
+        // Si tu ajoutes un nouveau type de building, ce code ne le détectera pas.
+        // Préférer lire depuis le BuildingRegistry avec un tag (ex: BuildingTag::Miner).
         } else if bs.kind == "miner" {
             if let Some(a) = &bs.assembler {
                 let mut e = commands.spawn((
@@ -344,6 +350,9 @@ pub fn load_buildings(
                     bs.tile_y
                 );
             }
+        // ⚠️ IA ATTENTION: comparaison sur kind string en dur.
+        // Si tu ajoutes un nouveau type de building, ce code ne le détectera pas.
+        // Préférer lire depuis le BuildingRegistry avec un tag (ex: BuildingTag::Turret).
         } else if bs.kind == "turret" {
             if let Some(t) = &bs.turret {
                 commands.spawn((
@@ -376,6 +385,8 @@ pub fn load_buildings(
     }
 
     // Spawn Builder near the HQ
+    // ⚠️ IA ATTENTION: recherche du HQ par kind == "hq" en dur.
+    // Si tu renommes "hq" dans buildings.toml, ce code casse silencieusement.
     if let Some(hq) = data.buildings.iter().find(|b| b.kind == "hq") {
         let hq_pos = tile_to_world(hq.tile_x, hq.tile_y, tile_size);
         let bx = hq_pos.x;
@@ -433,6 +444,8 @@ pub fn load_units(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
     let data = load_data!(buf);
     for us in &data.units {
         let unit_tile = world_to_tile(Vec2::new(us.x, us.y), cfg.tile_size);
+        // ⚠️ IA ATTENTION: comparaison sur kind string en dur.
+        // Si tu ajoutes un nouveau type d'unité, ce code ne le détectera pas.
         if us.kind == "worker" {
             commands.spawn((
                 Worker {
@@ -470,6 +483,7 @@ pub fn load_units(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
     }
 }
 
+// SUGGEST: extraire un struct SystemParam (clippy::too_many_arguments)
 pub fn load_finalize(
     mut buf: ResMut<LoadBuffer>,
     mut wave: ResMut<WaveState>,

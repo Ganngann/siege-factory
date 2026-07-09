@@ -3,6 +3,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 use crate::core::modding::ModRegistry;
+use crate::core::utils::silent_despawn;
 use crate::core::toast::ToastQueue;
 use crate::core::utils::{tile_to_world, world_to_tile};
 use crate::economy::components::{Building, Player};
@@ -23,6 +24,8 @@ pub struct TutorialStepDef {
     pub params: HashMap<String, String>,
     #[serde(default)]
     pub highlight: Option<HighlightDef>,
+    #[serde(default)]
+    pub persistent: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -118,6 +121,9 @@ pub fn track_item_crafted(
     };
     for (recipe_id, recipe) in &recipes.recipes {
         let output_count: u32 = recipe.output.iter().map(|(_, a)| *a).sum();
+        if output_count == 0 {
+            continue;
+        }
         let held = recipe
             .output
             .iter()
@@ -140,6 +146,8 @@ pub fn track_building_placed(
     mut conditions: ResMut<TutorialConditions>,
 ) {
     for building in building_q.iter() {
+        // ⚠️ IA ATTENTION: comparaison sur kind == "hq" en dur.
+        // Si tu renommes "hq" dans buildings.toml, ce code casse silencieusement.
         if building.kind == "hq" {
             continue;
         }
@@ -176,7 +184,11 @@ pub fn tutorial_tick(
 
     if met {
         let toast_msg = step.toast.clone();
-        toast_queue.0.push(toast_msg);
+        if step.persistent {
+            toast_queue.push_persistent(toast_msg);
+        } else {
+            toast_queue.push(toast_msg);
+        }
         state.current_index += 1;
         if state.current_index >= state.steps.len() {
             state.completed = true;
@@ -186,7 +198,7 @@ pub fn tutorial_tick(
     // Allow skipping with Tab for debugging
     if keys.just_pressed(KeyCode::Tab) {
         let toast_msg = state.steps[state.current_index].toast.clone();
-        toast_queue.0.push(toast_msg);
+        toast_queue.push(toast_msg);
         state.current_index += 1;
         if state.current_index >= state.steps.len() {
             state.completed = true;
@@ -283,6 +295,7 @@ fn evaluate_condition(
 #[derive(Resource, Default)]
 pub struct TutorialHighlightEntity(pub Option<Entity>);
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn tutorial_highlight_system(
     mut commands: Commands,
     state: Res<TutorialState>,
@@ -295,7 +308,7 @@ pub fn tutorial_highlight_system(
 ) {
     if state.completed || state.steps.is_empty() {
         if let Some(entity) = highlight_entity.0.take() {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         return;
     }
@@ -303,7 +316,7 @@ pub fn tutorial_highlight_system(
     let step = &state.steps[state.current_index];
     let Some(ref highlight) = step.highlight else {
         if let Some(entity) = highlight_entity.0.take() {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         return;
     };
@@ -326,7 +339,7 @@ pub fn tutorial_highlight_system(
 
     let Some(tile) = target_tile else {
         if let Some(entity) = highlight_entity.0.take() {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         return;
     };

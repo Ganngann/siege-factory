@@ -116,7 +116,12 @@ pub fn builder_work(
     cfg: Res<MapConfig>,
     registry: Res<BuildingRegistry>,
     mut builder_query: Query<(&mut Builder, &mut Transform)>,
+    // 🧩 IA NOTE: cette fonction a 8+ paramètres. L'ordre est important.
+    // Si tu ajoutes un paramètre, vérifie qu'il n'y en a pas déjà un équivalent.
+    // Envisage un struct SystemParam pour grouper les queries.
+    // SUGGEST: type PlayerQuery = Query<(&Transform, &mut Inventory), (With<Player>, Without<Builder>)> (clippy::type_complexity)
     mut player_query: Query<(&Transform, &mut Inventory), (With<Player>, Without<Builder>)>,
+    // SUGGEST: type BuildingQuery = Query<(Entity, &Transform, &Building, &OccupiedTiles, &mut Inventory), (With<UnbuiltBuilding>, Without<Player>, Without<Builder>)> (clippy::type_complexity)
     mut building_query: Query<
         (
             Entity,
@@ -284,6 +289,7 @@ pub fn builder_work(
 fn total_delivered_for(
     entity: Entity,
     cost: &Cost,
+    // SUGGEST: type BuildingQuery = Query<(Entity, &Transform, &Building, &OccupiedTiles, &mut Inventory), (With<UnbuiltBuilding>, Without<Player>, Without<Builder>)> (clippy::type_complexity)
     query: &Query<
         (
             Entity,
@@ -305,6 +311,7 @@ fn total_delivered_for(
 pub fn finish_construction(
     mut commands: Commands,
     registry: Res<BuildingRegistry>,
+    // SUGGEST: type BuildingQueryMut = Query<(Entity, &Building, &mut Inventory), (With<UnbuiltBuilding>, Without<Player>, Without<Builder>)> (clippy::type_complexity)
     mut building_query: Query<
         (Entity, &Building, &mut Inventory),
         (With<UnbuiltBuilding>, Without<Player>, Without<Builder>),
@@ -341,6 +348,7 @@ pub struct MiningTimer(pub f32);
 
 // ── Player mining ──
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn player_mine(
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
@@ -391,10 +399,12 @@ pub fn player_mine(
                 let dx = dep_tile.x.rem_euclid(CHUNK_SIZE as i32) as u32;
                 let dy = dep_tile.y.rem_euclid(CHUNK_SIZE as i32) as u32;
                 chunk_grid.set_deposit_amount(cx, cy, dx, dy, deposit.amount - 1);
-                commands.entity(dep_entity).insert(ResourceDeposit {
-                    resource: deposit.resource.clone(),
-                    amount: deposit.amount - 1,
-                });
+                if let Ok(mut dep_cmd) = commands.get_entity(dep_entity) {
+                    dep_cmd.insert(ResourceDeposit {
+                        resource: deposit.resource.clone(),
+                        amount: deposit.amount - 1,
+                    });
+                }
             }
             mining_timer.0 -= interval;
             return;
@@ -407,6 +417,7 @@ pub fn player_mine(
 
 pub fn camera_follow_player(
     player_query: Query<&Transform, (With<Player>, Without<Camera2d>)>,
+    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform, &mut Transform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     mut camera: Query<
         (&Camera, &GlobalTransform, &mut Transform),
         (With<Camera2d>, Without<MinimapCamera>),

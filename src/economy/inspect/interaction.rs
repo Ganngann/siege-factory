@@ -1,6 +1,6 @@
 use crate::agriculture::components::Cultivator;
 use crate::core::toast::ToastQueue;
-use crate::core::utils::tile_to_world;
+use crate::core::utils::{silent_despawn, tile_to_world};
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     BuildMode, Building, BuildingPanel, DeconstructMode, FarmCropSelectButton, FarmRecruitButton,
@@ -22,6 +22,7 @@ use super::{close_panel, open_panel, spawn_deposit_panel};
 
 // ── Click detection ──
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn building_inspect_click(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
@@ -29,6 +30,7 @@ pub fn building_inspect_click(
     deconstruct: Res<DeconstructMode>,
     buttons: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
+    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: Res<MapConfig>,
     player_pos: Res<PlayerWorldPos>,
@@ -211,6 +213,7 @@ pub fn farm_crop_select_system(
 
 // ── Farm recruit button ──
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn farm_recruit_system(
     mut commands: Commands,
     panel: ResMut<BuildingPanel>,
@@ -402,22 +405,23 @@ pub fn upgrade_button_system(
     let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
 
     // Close panel
+    // SUGGEST: drop() ici n'étend pas la durée de vie du borrow — le drop est inutile (clippy::drop_non_drop)
     drop(player_inv);
     // Inline panel close (can't call close_panel as it moves commands/panel)
     if let Some(e) = panel.root.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(&mut commands, e);
     }
     if let Some(e) = panel.overlay.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(&mut commands, e);
     }
     if let Some(e) = panel.recipe_selector.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(&mut commands, e);
     }
     panel.inspected = None;
     panel.dirty = false;
 
     // Despawn old entity
-    commands.entity(inspected).try_despawn();
+    silent_despawn(&mut commands, inspected);
 
     // Spawn upgraded building at the same position
     let mut e = commands.spawn((

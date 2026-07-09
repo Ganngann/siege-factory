@@ -1,3 +1,4 @@
+use crate::core::utils::silent_despawn;
 use crate::economy::components::{BuildingPanel, PanelModal, PanelOverlay, ResourceDeposit};
 use crate::economy::resource::ResourceRegistry;
 use crate::economy::window::{TEXT_GREEN, TEXT_PRIMARY, spawn_window};
@@ -15,13 +16,13 @@ pub fn spawn_deposit_panel(
         .map_or(deposit.resource.as_str(), |r| &r.name);
 
     if let Some(e) = panel.root.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(commands, e);
     }
     if let Some(e) = panel.overlay.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(commands, e);
     }
     if let Some(e) = panel.recipe_selector.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(commands, e);
     }
     panel.inspected = None;
     panel.dirty = false;

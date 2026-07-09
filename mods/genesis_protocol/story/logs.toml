@@ -1,47 +1,53 @@
 [[logs]]
-id = "genesis_phase_0"
+id = "genesis_phase_0_clear"
 tier = 0
+title = "Déblayage"
+text = "Le marteau frappe les panneaux d'accès. La rouille cède — et le manche avec. Les débris s'effondrent, dévoilant un écran poussiéreux. Un voyant clignote faiblement : ALIMENTATION REQUISE."
+
+[[logs]]
+id = "genesis_phase_0"
+tier = 1
 title = "Réveil"
-text = "Première lumière. Les débris autour de la capsule cèdent sous mes doigts. L'écran reste noir, mais un voyant clignote au fond. Je ne suis pas seul dans cette coquille vide."
+text = "La corde s'enroule autour des connecteurs. Un frémissement parcourt la coque. L'écran s'illumine — faiblement, mais il s'illumine. 'PREMIER CONTACT — SYSTÈMES MINIMAUX EN LIGNE'. Un voyant vert clignote dans l'obscurité."
 
 [[logs]]
 id = "genesis_phase_1"
-tier = 1
+tier = 2
 title = "Étincelle"
 text = "Les voyants d'alimentation s'allument un à un. Un bourdonnement léger traverse la coque. L'ordinateur de bord émet un signal faible — assez pour lire les premiers mots sur l'écran poussiéreux : 'ALIMENTATION REQUISE — CIRCUIT DE REFROIDISSEMENT DÉFAILLANT'. Il y a un plan, quelque part, dans ce chaos."
 
 [[logs]]
 id = "genesis_phase_2"
-tier = 2
+tier = 3
 title = "Rouille et Vapeur"
 text = "Un liquide sombre circule dans les canalisations que j'ai rebranchées. De la condensation apparaît sur la vitre. Je vois une forme à l'intérieur, une silhouette. Mon reflet, peut-être. L'écran clignote : 'CIRCUIT DE REFROIDISSEMENT OK — CPU CALCINÉ'. Il me faut un cerveau pour cette machine."
 
 [[logs]]
 id = "genesis_phase_3"
-tier = 3
+tier = 4
 title = "Fil du Cuivre"
 text = "Un faible halo de lumière éclaire la capsule de l'intérieur. Le nouveau processeur que j'ai assemblé s'intègre parfaitement — comme s'il avait toujours été destiné à cette place. L'écran s'anime : 'CPU OK — POMPES INTERNES BLOQUÉES'. Son cœur ne bat pas encore."
 
 [[logs]]
 id = "genesis_phase_4"
-tier = 4
+tier = 5
 title = "Pouls"
 text = "J'entends un battement. Régulier. Pas le mien. Les pompes internes poussent un fluide réparateur dans les artères de la capsule. La silhouette contre la vitre est plus nette. L'écran affiche : 'POMPES OK — MICROFISSURES COQUE DÉTECTÉES'. Le temps presse, la coque fuit."
 
 [[logs]]
 id = "genesis_phase_5"
-tier = 5
+tier = 6
 title = "Nanites"
 text = "Des milliers de nanomachines rampent sur la coque interne, soudant chaque microfissure avec une précision d'horloger. La vitre s'éclaircit — je vois une main. Une main nue, paume contre la paroi. L'écran: 'COQUE SCELLÉE — FLUIDES BIOLOGIQUES MANQUANTS'. Il lui manque le sang de la vie."
 
 [[logs]]
 id = "genesis_phase_6"
-tier = 6
+tier = 7
 title = "Genèse"
 text = "Le réservoir de stase se remplit d'un liquide ambré, synthétisé fibre par fibre, enzyme par enzyme. Les signes vitaux dansent sur l'écran : température, pression, rythme cardiaque. La main contre la vitre tremble. L'écran : 'RÉSERVOIR DE STASE OK — PRÊT POUR SÉQUENCE DE RÉVEIL'. Je ne peux plus reculer."
 
 [[logs]]
 id = "genesis_final"
-tier = 7
+tier = 8
 title = "Premier Souffle"
 text = "Les quatre composants s'enclenchent dans leurs logements avec un clic parfait. L'écran central s'illumine — compte à rebours : 60 secondes. La capsule vibre. Les lumières pulsent. Le battement s'accélère. 10... 5... La main tape contre la vitre, trois coups. Je réponds. 3... 2... 1... Un souffle. Un premier souffle. Et la vitre s'embue."

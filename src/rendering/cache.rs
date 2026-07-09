@@ -115,28 +115,25 @@ pub fn setup_texture_cache(
 
     for stem in &building_stems {
         let s = stem.as_str();
-        base.insert(
-            stem.clone(),
-            load_png(&mut images, &mods, s, "base").unwrap_or_default(),
-        );
+        if let Some(handle) = load_png(&mut images, &mods, s, "base") {
+            base.insert(stem.clone(), handle);
+        }
         owner.insert(stem.clone(), load_png(&mut images, &mods, s, "owner"));
         level.insert(stem.clone(), load_png(&mut images, &mods, s, "level"));
     }
 
     for stem in &item_stems {
         let s = stem.as_str();
-        base.insert(
-            stem.clone(),
-            load_png(&mut images, &mods, s, "base").unwrap_or_default(),
-        );
+        if let Some(handle) = load_png(&mut images, &mods, s, "base") {
+            base.insert(stem.clone(), handle);
+        }
     }
 
     for stem in &enemy_stems {
         let s = stem.as_str();
-        base.insert(
-            stem.clone(),
-            load_png(&mut images, &mods, s, "base").unwrap_or_default(),
-        );
+        if let Some(handle) = load_png(&mut images, &mods, s, "base") {
+            base.insert(stem.clone(), handle);
+        }
     }
 
     commands.insert_resource(TextureCache { base, owner, level });

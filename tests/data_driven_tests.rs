@@ -136,7 +136,11 @@ fn all_recipes_have_lowercase_output_ids() {
 fn recipe_output_starts_with_nonzero() {
     let reg = RecipeRegistry::load(&test_mods());
     for recipe in reg.recipes.values() {
-        assert!(!recipe.output.is_empty(), "recipe {} has no output", recipe.id);
+        assert!(
+            !recipe.output.is_empty() || !recipe.fluid_output.is_empty(),
+            "recipe {} has no output (neither items nor fluids)",
+            recipe.id,
+        );
     }
 }
 

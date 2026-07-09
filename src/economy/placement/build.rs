@@ -1,5 +1,9 @@
+// 📏 IA NOTE: fichier volumineux (630+ lignes). `handle_build_click` est long,
+// les cas de placement (belts, buildings, etc.) pourraient être extraits.
+
 use crate::agriculture::components::{Crop, Farm};
 use crate::core::input::KeyBindings;
+use crate::core::utils::silent_despawn;
 use crate::core::toast::ToastQueue;
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::{BuildingRegistry, attach_power_components};
@@ -197,7 +201,7 @@ pub fn update_build_preview(
     drag: Res<crate::economy::components::BeltDrag>,
 ) {
     for entity in ghosts.iter() {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
     preview.0 = None;
 
@@ -379,6 +383,7 @@ pub fn handle_build_click(
     cfg: Res<MapConfig>,
     spatial: Res<SpatialRegistry>,
     windows: Query<&Window>,
+    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     deposits: Query<(Entity, &TilePosition, &ResourceDeposit)>,
     keys: Res<ButtonInput<KeyCode>>,
@@ -482,7 +487,7 @@ pub fn handle_build_click(
     for (crop_entity, _, crop_tf) in crops.iter() {
         let (ctx, cty) = world_to_tile(crop_tf.translation.truncate(), tile_size);
         if footprint.iter().any(|&(fx, fy)| fx == ctx && fy == cty) {
-            commands.entity(crop_entity).try_despawn();
+            silent_despawn(&mut commands, crop_entity);
         }
     }
 

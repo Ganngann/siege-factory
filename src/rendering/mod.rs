@@ -11,11 +11,12 @@ pub use hud::*;
 pub use visuals::*;
 
 use crate::core::game_state::GameState;
+use crate::core::utils::silent_despawn;
 use bevy::prelude::*;
 
 fn cleanup_tile_highlight(mut commands: Commands, mut highlight: ResMut<TileHighlightEntity>) {
     if let Some(entity) = highlight.0.take() {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 }
 

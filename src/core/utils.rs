@@ -32,7 +32,9 @@ pub fn parse_hex_color(s: &str) -> Color {
 }
 
 pub fn silent_despawn(commands: &mut Commands, entity: Entity) {
-    commands.entity(entity).try_despawn();
+    if let Ok(mut cmd) = commands.get_entity(entity) {
+        cmd.try_despawn();
+    }
 }
 
 /// Convert tile grid coordinates to world position (center of tile).

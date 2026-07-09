@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::GameState;
+use crate::core::utils::silent_despawn;
 use crate::economy::resource::{Inventory, ResourceId};
 
 pub mod components;
@@ -56,7 +57,7 @@ fn cleanup_crops(
     cultivators: Query<Entity, With<Cultivator>>,
 ) {
     for entity in crops.iter().chain(cultivators.iter()) {
-        commands.entity(entity).try_despawn();
+        silent_despawn(&mut commands, entity);
     }
 }
 

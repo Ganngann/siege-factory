@@ -241,6 +241,7 @@ pub fn cleanup_pause_menu(mut commands: Commands, query: Query<Entity, With<Paus
 pub fn cleanup_world(
     mut commands: Commands,
     belt_slots: Query<&BeltSlots>,
+    // SUGGEST: type DespawnQuery = Query<Entity, Or<(With<Building>, ...)>> — envisager un component tag pour cleanup (clippy::type_complexity)
     to_despawn: Query<
         Entity,
         Or<(
@@ -260,6 +261,7 @@ pub fn cleanup_world(
             With<Projectile>,
         )>,
     >,
+    // SUGGEST: type PlayerBuilderQuery = Query<Entity, Or<(With<Player>, With<Builder>)>> (clippy::type_complexity)
     player_builder: Query<Entity, Or<(With<Player>, With<Builder>)>>,
 ) {
     for bs in belt_slots.iter() {

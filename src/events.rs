@@ -55,9 +55,13 @@ impl Plugin for CleanupPlugin {
 }
 
 fn cleanup_deposits(on: On<DespawnDeposit>, mut commands: Commands) {
-    commands.entity(on.event().0).despawn();
+    if let Ok(mut cmd) = commands.get_entity(on.event().0) {
+        cmd.despawn();
+    }
 }
 
 fn cleanup_enemies(on: On<DespawnEnemy>, mut commands: Commands) {
-    commands.entity(on.event().0).despawn();
+    if let Ok(mut cmd) = commands.get_entity(on.event().0) {
+        cmd.despawn();
+    }
 }

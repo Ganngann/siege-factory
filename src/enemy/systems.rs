@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::toast::ToastQueue;
-use crate::core::utils::tile_to_world;
+use crate::core::utils::{silent_despawn, tile_to_world};
 use crate::economy::components::{PeacefulMode, Player};
 use crate::enemy::components::{Enemy, Health, LastWave, WaveState};
 use crate::enemy::registry::EnemyRegistry;
@@ -29,6 +29,7 @@ pub fn wave_timer(
     }
 }
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn spawn_enemies(
     mut commands: Commands,
     mut wave: ResMut<WaveState>,
@@ -111,7 +112,7 @@ pub fn cleanup_game_entities(
     units: Query<Entity, With<crate::economy::components::Unit>>,
 ) {
     for entity in enemies.iter().chain(units.iter()) {
-        commands.entity(entity).try_despawn();
+        silent_despawn(&mut commands, entity);
     }
 }
 

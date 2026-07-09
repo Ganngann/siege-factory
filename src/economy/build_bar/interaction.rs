@@ -12,6 +12,7 @@ use bevy::prelude::*;
 const UNIT_KIND_COMBAT: &str = "combat";
 const UNIT_KIND_HARVESTER: &str = "harvester";
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn menu_navigation(
     mut menu_state: ResMut<MenuState>,
     menu_def: Res<MenuDef>,
@@ -76,6 +77,7 @@ pub fn menu_navigation(
     }
 }
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn menu_bar_interaction(
     query: Query<(&Interaction, &MenuItemButton), Changed<Interaction>>,
     back_query: Query<&Interaction, (Changed<Interaction>, With<BackButton>)>,

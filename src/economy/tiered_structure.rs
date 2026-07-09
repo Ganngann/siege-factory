@@ -75,6 +75,7 @@ struct LogEntryToml {
     text: String,
 }
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn structure_interact(
     keys: Res<ButtonInput<KeyCode>>,
     mut player_q: Query<(&TilePosition, &mut Inventory), With<Player>>,

@@ -1,3 +1,4 @@
+use crate::core::utils::silent_despawn;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     AlertText, Building, BuildingPanel, CapacityBarFill, CapacityBarText, ConnectionRowText,
@@ -13,9 +14,16 @@ use crate::economy::window::{
 };
 use bevy::prelude::*;
 
+// 📏 IA NOTE: ce fichier fait 700+ lignes. Si tu le modifies, vérifie que
+// tu ne dupliques pas une fonction déjà présente ailleurs dans ce fichier.
+// Envisage de le scinder (ex: spawn_panel_ui dans un fichier séparé).
 const BUILDING_KIND_FARM: &str = "farm";
 const BUILDING_KIND_SORTER: &str = "sorter";
 
+// ⚠️ IA ATTENTION: cette liste de strings doit rester synchronisée avec buildings.toml.
+// Si tu ajoutes un building avec des recettes, ajoute son kind ici.
+// Solution future: ajouter `has_recipes = true` dans BuildingDef du TOML
+// et remplacer cette fonction par `registry.get(kind).map(|d| d.has_recipes).unwrap_or(false)`.
 fn kind_has_recipes(kind: &str) -> bool {
     matches!(
         kind,
@@ -35,6 +43,7 @@ fn kind_has_recipes(kind: &str) -> bool {
     )
 }
 
+// SUGGEST: extraire dans un struct (clippy::too_many_arguments)
 pub fn open_panel(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
@@ -47,13 +56,13 @@ pub fn open_panel(
 ) {
     // Close existing panel first
     if let Some(e) = panel.root.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(&mut commands, e);
     }
     if let Some(e) = panel.overlay.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(&mut commands, e);
     }
     if let Some(e) = panel.recipe_selector.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(&mut commands, e);
     }
     panel.inspected = None;
     panel.dirty = false;
@@ -102,6 +111,7 @@ pub fn open_panel(
     panel.dirty = true;
 }
 
+// SUGGEST: extraire dans un struct (clippy::too_many_arguments)
 fn spawn_panel_ui(
     commands: &mut Commands,
     modal_size: Vec2,

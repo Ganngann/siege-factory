@@ -1,3 +1,4 @@
+use crate::core::utils::silent_despawn;
 use crate::economy::components::{
     DragState, DraggedItemVisual, InventoryGrid, InventorySlot, Player,
 };
@@ -25,7 +26,7 @@ pub fn toggle_inventory_panel(
     }
 
     if let Ok(entity) = panel_query.single() {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
         return;
     }
 
@@ -107,6 +108,7 @@ pub fn toggle_inventory_panel(
 
 pub fn update_inventory_grids(
     inv_grid_query: Query<(&InventoryGrid, &Children)>,
+    // SUGGEST: type SlotQuery = Query<(&mut BackgroundColor, &mut BorderColor, &InventorySlot, Option<&mut ImageNode>, Option<&mut Text>)> (clippy::type_complexity)
     mut slot_query: Query<(
         &mut BackgroundColor,
         &mut BorderColor,
@@ -159,7 +161,7 @@ pub fn cleanup_inventory_panel(
     panel_query: Query<Entity, With<InventoryPanel>>,
 ) {
     for entity in panel_query.iter() {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 }
 
@@ -169,6 +171,7 @@ pub fn drag_start(
     mut drag: ResMut<DragState>,
     windows: Query<&Window>,
     keys: Res<ButtonInput<KeyCode>>,
+    // SUGGEST: type SlotQuery = Query<(Entity, &InventorySlot, &Interaction), (With<InventorySlot>, Changed<Interaction>)> (clippy::type_complexity)
     slots: Query<
         (
             Entity,
@@ -263,6 +266,7 @@ pub fn drag_update(
 pub fn drag_end(
     mut drag: ResMut<DragState>,
     buttons: Res<ButtonInput<MouseButton>>,
+    // SUGGEST: type SlotQuery = Query<(Entity, &InventorySlot, &Interaction), (With<InventorySlot>, Without<InventoryGrid>)> (clippy::type_complexity)
     slots: Query<(Entity, &InventorySlot, &Interaction), (With<InventorySlot>, Without<InventoryGrid>)>,
     grids: Query<(&InventoryGrid, &Children), Without<InventorySlot>>,
     mut inv_query: Query<&mut Inventory>,
@@ -277,7 +281,7 @@ pub fn drag_end(
     }
 
     if let Some(visual) = drag.visual {
-        commands.entity(visual).despawn();
+        silent_despawn(&mut commands, visual);
     }
 
     let src_owner = drag.source_owner;

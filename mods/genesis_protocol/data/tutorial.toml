@@ -1,0 +1,47 @@
+[[steps]]
+id = "welcome"
+toast = "Année 2147. Les ruines de la cité s'étendent à perte de vue. La capsule cryo s'est ouverte — trop tard pour les autres. Un seul objectif : la réparer."
+condition = "player_moved_distance"
+params = { distance = "1" }
+
+[[steps]]
+id = "move"
+toast = "Utilise ZQSD pour te déplacer."
+condition = "player_moved_distance"
+params = { distance = "5" }
+
+[[steps]]
+id = "mine"
+toast = "Marche sur un dépôt et maintiens E pour miner des ressources."
+condition = "items_collected"
+params = { count = "3" }
+
+[[steps]]
+id = "build_workbench"
+toast = "Ouvre le menu construction (B) et place un Établi."
+condition = "building_placed"
+params = { building_id = "workbench" }
+
+[[steps]]
+id = "craft_basics"
+toast = "Utilise l'Établi pour fabriquer des Pièces de Fer et de la Corde."
+condition = "item_crafted"
+params = { recipe_id = "iron_parts_from_scrap" }
+
+[[steps]]
+id = "craft_hammer"
+toast = "Fabrique un Marteau (3 pierre + 1 bois + 1 corde) à l'Établi."
+condition = "item_crafted"
+params = { recipe_id = "craft_hammer" }
+
+[[steps]]
+id = "approach_capsule"
+toast = "La grande structure se dresse au milieu des décombres — vitre noire, aucun signe de vie. C'est ta capsule. Il faut la réparer."
+condition = "player_near_structure"
+params = { structure_id = "genesis_ark", distance = "3" }
+
+[[steps]]
+id = "deliver_hammer"
+toast = "Donne le Marteau à la Capsule avec E. Le métal grince, le manche se brise — mais les panneaux d'accès cèdent. Derrière la poussière, un écran clignote : ALIMENTATION REQUISE."
+condition = "structure_interacted"
+params = { structure_id = "genesis_ark" }

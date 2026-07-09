@@ -487,19 +487,6 @@ belt_variant = "normal"
 drag_placement = true
 level = 2
 
-[buildings.excavation_rig]
-name = "Engin d'Excavation"
-cost = { steel = 8, motor = 4, machine_frame = 2 }
-hp = 200
-tile_size = { w = 4, h = 4 }
-color = "#775533"
-visual = "square"
-texture_stem = "excavation_rig"
-powered = true
-hidden = false
-power_consumption = 20.0
-requires_discovery = "proto_processor"
-
 # ============================================================
 # PHASE 6 — Genèse
 # ============================================================
@@ -591,7 +578,7 @@ requires_discovery = "proto_organic"
 [buildings.genesis_ark]
 name = "Capsule Genesis"
 hp = 9999
-tile_size = { w = 3, h = 3 }
+tile_size = { w = 4, h = 4 }
 color = "#88CCFF"
 visual = "square"
 texture_stem = "genesis_capsule"
@@ -601,8 +588,14 @@ powered = false
 station = false
 
 [[buildings.genesis_ark.tiers]]
-required_items = { rope = 3 }
+required_items = { hammer = 1 }
 unlock_recipes = ["proto_iron"]
+log_id = "genesis_phase_0_clear"
+texture = "genesis_capsule"
+
+[[buildings.genesis_ark.tiers]]
+required_items = { rope = 3 }
+unlock_recipes = []
 log_id = "genesis_phase_0"
 texture = "genesis_capsule_t0"
 

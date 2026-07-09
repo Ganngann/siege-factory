@@ -45,7 +45,6 @@ items = [
     "deep_core_drill",
     "compactor",
     "high_speed_belt",
-    "excavation_rig",
 ]
 
 [[menu]]

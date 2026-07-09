@@ -1,5 +1,5 @@
 use crate::core::game_state::GameState;
-use crate::core::utils::move_toward;
+use crate::core::utils::{move_toward, silent_despawn};
 use crate::enemy::wave_config::WaveConfig;
 use crate::enemy::{Enemy as EnemyComponent, Health};
 use crate::events::DespawnEnemy;
@@ -28,6 +28,7 @@ fn move_and_hit_projectiles(
     mut commands: Commands,
     wave_cfg: Res<WaveConfig>,
     mut projectiles: Query<(Entity, &mut Transform, &Projectile), Without<EnemyComponent>>,
+    // SUGGEST: type TargetQuery = Query<(&mut Health, &Transform), (With<EnemyComponent>, Without<Projectile>)> (clippy::type_complexity)
     mut targets: Query<(&mut Health, &Transform), (With<EnemyComponent>, Without<Projectile>)>,
 ) {
     let hit_dist = wave_cfg.projectile_hit_distance;
@@ -58,6 +59,6 @@ fn move_and_hit_projectiles(
     }
 
     for entity in to_despawn {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 }

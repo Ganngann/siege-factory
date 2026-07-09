@@ -1,4 +1,5 @@
 use crate::core::input::KeyBindings;
+use crate::core::utils::silent_despawn;
 use crate::core::toast::ToastQueue;
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::{BuildingDef, BuildingRegistry};
@@ -12,12 +13,14 @@ use crate::map::config::MapConfig;
 use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn handle_deconstruct_click_v2(
     mut commands: Commands,
     deconstruct: Res<DeconstructMode>,
     cfg: Res<MapConfig>,
     spatial: Res<SpatialRegistry>,
     windows: Query<&Window>,
+    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     building_query: Query<(&Building, &TilePosition)>,
     mut player_query: Query<&mut Inventory, With<Player>>,
@@ -99,14 +102,15 @@ pub fn deconstruct_entity(
     }
     if let Ok(belt_slots) = belt_slots_query.get(entity) {
         for sprite_entity in belt_slots.slot_sprites.iter().flatten() {
-            commands.entity(*sprite_entity).despawn();
+            silent_despawn(commands, *sprite_entity);
         }
     }
-    commands.entity(entity).despawn();
+    silent_despawn(commands, entity);
     refund_names
 }
 
 /// Observer for `DeconstructAreaEvent`. Despawns all buildings in the zone.
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn on_deconstruct_area(
     on: On<DeconstructAreaEvent>,
     mut commands: Commands,

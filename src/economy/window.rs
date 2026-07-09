@@ -1,3 +1,4 @@
+use crate::core::utils::silent_despawn;
 use crate::economy::components::{CloseButton, DragHandle};
 use bevy::ecs::hierarchy::ChildOf;
 use bevy::prelude::*;
@@ -35,6 +36,7 @@ pub struct WindowDrag {
 
 // ── Spawn a standardized window ──
 
+// SUGGEST: envisager un struct WindowConfig (clippy::too_many_arguments)
 pub fn spawn_window(
     commands: &mut Commands,
     title: &str,
@@ -164,6 +166,7 @@ pub fn drag_window_system(
     buttons: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     mut window_query: Query<(Entity, &mut Node), With<WindowRoot>>,
+    // SUGGEST: type DragHandleQuery = Query<(&Interaction, &ChildOf), (Changed<Interaction>, With<DragHandle>)> (clippy::type_complexity)
     handles: Query<(&Interaction, &ChildOf), (Changed<Interaction>, With<DragHandle>)>,
 ) {
     if window_query.is_empty() {
@@ -215,6 +218,7 @@ pub fn drag_window_system(
 
 pub fn close_window_system(
     mut commands: Commands,
+    // SUGGEST: type CloseBtnQuery = Query<(Entity, &Interaction), (Changed<Interaction>, With<CloseButton>)> (clippy::type_complexity)
     buttons: Query<(Entity, &Interaction), (Changed<Interaction>, With<CloseButton>)>,
     parents: Query<&ChildOf>,
     windows: Query<Entity, With<WindowRoot>>,
@@ -227,7 +231,7 @@ pub fn close_window_system(
         let mut current = entity;
         loop {
             if windows.contains(current) {
-                commands.entity(current).despawn();
+                silent_despawn(&mut commands, current);
                 break;
             }
             match parents.get(current) {

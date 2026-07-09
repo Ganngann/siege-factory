@@ -153,6 +153,7 @@ fn soldier_auto_attack(
     }
 }
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 fn worker_harvest(
     time: Res<Time>,
     unit_cfg: Res<UnitConfig>,
@@ -251,7 +252,9 @@ fn worker_harvest(
                 let dx = tile_pos.x.rem_euclid(CHUNK_SIZE as i32) as u32;
                 let dy = tile_pos.y.rem_euclid(CHUNK_SIZE as i32) as u32;
                 chunk_grid.set_deposit_amount(cx, cy, dx, dy, 0);
-                commands.trigger(DespawnDeposit(entity));
+                if commands.get_entity(entity).is_ok() {
+                    commands.trigger(DespawnDeposit(entity));
+                }
             }
         }
     }

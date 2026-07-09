@@ -1,5 +1,5 @@
 use crate::combat::Projectile;
-use crate::core::utils::tile_to_world;
+use crate::core::utils::{silent_despawn, tile_to_world};
 use crate::economy::belt::BeltSlots;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
@@ -25,6 +25,7 @@ pub struct TileHighlight;
 #[derive(Resource, Default)]
 pub struct TileHighlightEntity(pub Option<Entity>);
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn tile_highlight(
     mut commands: Commands,
     build_mode: Res<BuildMode>,
@@ -37,14 +38,14 @@ pub fn tile_highlight(
 ) {
     if build_mode.0.is_some() {
         if let Some(entity) = highlight.0.take() {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         return;
     }
 
     let Some(pos) = hovered.0 else {
         if let Some(entity) = highlight.0.take() {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         return;
     };
@@ -78,6 +79,7 @@ pub fn tile_highlight(
 
 pub fn ensure_hp_bars(
     mut commands: Commands,
+    // SUGGEST: type HpBarQuery = Query<(Entity, &Health), (Without<HasHpBar>, Without<HpBarChild>)> (clippy::type_complexity)
     entities: Query<(Entity, &Health), (Without<HasHpBar>, Without<HpBarChild>)>,
     config: Res<VisualsConfig>,
 ) {
@@ -235,7 +237,7 @@ pub fn sync_belt_slot_sprites(
         }
         for slot_idx in to_destroy {
             if let Some(entity) = bs.slot_sprites[slot_idx].take() {
-                commands.entity(entity).despawn();
+                silent_despawn(&mut commands, entity);
             }
         }
     }
@@ -272,6 +274,7 @@ pub fn animate_belt_positions(
 
 pub fn attach_unit_visuals(
     mut commands: Commands,
+    // SUGGEST: type UnitQuery = Query<(Entity, &Unit, Option<&Worker>, Option<&Soldier>), Without<Sprite>> (clippy::type_complexity)
     units: Query<(Entity, &Unit, Option<&Worker>, Option<&Soldier>), Without<Sprite>>,
     textures: Res<TextureCache>,
     unit_cfg: Res<UnitConfig>,
@@ -313,8 +316,10 @@ pub fn attach_unit_visuals(
     }
 }
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn attach_building_visuals(
     mut commands: Commands,
+    // SUGGEST: type BuildingSpriteQuery = Query<(Entity, &Building), (Without<Sprite>, Without<BeltSlots>, Without<UnbuiltBuilding>)> (clippy::type_complexity)
     buildings: Query<
         (Entity, &Building),
         (
@@ -323,6 +328,7 @@ pub fn attach_building_visuals(
             Without<UnbuiltBuilding>,
         ),
     >,
+    // SUGGEST: type UnbuiltQuery = Query<(Entity, &Building), (With<UnbuiltBuilding>, Without<Sprite>, Without<BeltSlots>)> (clippy::type_complexity)
     unbuilt: Query<
         (Entity, &Building),
         (With<UnbuiltBuilding>, Without<Sprite>, Without<BeltSlots>),

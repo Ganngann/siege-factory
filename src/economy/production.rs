@@ -8,6 +8,7 @@ use crate::economy::resource::Inventory;
 pub fn assembler_tick(
     time: Res<Time<Fixed>>,
     recipes: Res<RecipeRegistry>,
+    // SUGGEST: type AssemblerQuery = Query<(&mut Assembler, &mut Inventory, &Active, Option<&PowerConsumer>, Option<&mut ProductionCounter>, Option<&mut FluidTank>)> (clippy::type_complexity)
     mut assembler_query: Query<(
         &mut Assembler,
         &mut Inventory,

@@ -61,7 +61,6 @@ const BUILDINGS = [
   ["deep_core_drill", "#664433", 5, 5],
   ["compactor", "#AAAA77", 1, 1],
   ["high_speed_belt", "#CC8844", 1, 1],
-  ["excavation_rig", "#775533", 4, 4],
   ["bio_lab", "#66BB6A", 2, 2],
   ["tissue_cultivator", "#AB47BC", 2, 2],
   ["synthesizer", "#FF7043", 1, 1],
@@ -469,9 +468,21 @@ function makeResourceSVG(stem, color) {
     inner = `<rect x="14" y="14" width="36" height="36" rx="4" fill="${color}" stroke="#333" stroke-width="0.5"/><circle cx="32" cy="32" r="8" fill="${lighten(color, 0.3)}" opacity="0.8"/><circle cx="32" cy="32" r="3" fill="#FFF" opacity="0.5"/>`;
   } else if (stem.includes("crystal")) {
     inner = `<polygon points="32,8 48,48 16,48" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="32" y1="8" x2="32" y2="48" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>`;
-  } else if (["ingot", "parts", "scrap"].some((k) => stem.includes(k))) {
-    inner = `<path d="M16 24 L24 16 L44 16 L52 24 L44 44 L24 44 Z" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="24" y1="16" x2="24" y2="44" stroke="${darken(color, 0.7)}" stroke-width="0.3"/><line x1="44" y1="16" x2="44" y2="44" stroke="${darken(color, 0.7)}" stroke-width="0.3"/>`;
-    if (stem.includes("scrap")) inner += `<line x1="16" y1="24" x2="52" y2="24" stroke="${darken(color, 0.7)}" stroke-width="0.3"/>`;
+  } else if (["ingot", "parts"].some((k) => stem.includes(k))) {
+    inner = `<path d="M14 22 L22 14 L46 14 L54 22 L48 46 L20 46 Z" fill="${color}" stroke="#333" stroke-width="0.7"/>
+      <line x1="22" y1="14" x2="22" y2="46" stroke="${darken(color, 0.6)}" stroke-width="0.4"/>
+      <line x1="46" y1="14" x2="46" y2="46" stroke="${darken(color, 0.6)}" stroke-width="0.4"/>
+      <rect x="24" y="20" width="20" height="4" rx="1" fill="${lighten(color, 0.2)}" opacity="0.3"/>
+      <rect x="24" y="28" width="20" height="4" rx="1" fill="${lighten(color, 0.2)}" opacity="0.3"/>
+      <rect x="24" y="36" width="20" height="4" rx="1" fill="${lighten(color, 0.2)}" opacity="0.3"/>`;
+    if (stem.includes("parts")) inner += `<line x1="14" y1="22" x2="22" y2="14" stroke="${lighten(color, 0.2)}" stroke-width="0.5" opacity="0.4"/>`;
+  } else if (stem.includes("scrap")) {
+    inner = `<path d="M16 12 L30 8 L46 14 L52 30 L48 48 L20 50 L12 34 Z" fill="${color}" stroke="#333" stroke-width="0.7"/>
+      <path d="M16 12 L24 22 L18 30 L12 24Z" fill="${darken(color, 0.5)}" opacity="0.5"/>
+      <path d="M46 14 L38 26 L44 34 L50 28Z" fill="${darken(color, 0.5)}" opacity="0.5"/>
+      <path d="M20 50 L28 38 L22 30 L14 42Z" fill="${lighten(color, 0.2)}" opacity="0.3"/>
+      <line x1="30" y1="20" x2="36" y2="20" stroke="${darken(color, 0.3)}" stroke-width="0.5" opacity="0.5"/>
+      <line x1="24" y1="34" x2="42" y2="34" stroke="${darken(color, 0.3)}" stroke-width="0.5" opacity="0.5"/>`;
   } else if (stem.includes("blood")) {
     inner = `<path d="M32 10 Q32 30 32 34 Q32 42 24 42 Q16 42 16 34 Q16 26 24 22 L32 10Z" fill="${color}" stroke="#333" stroke-width="0.5"/><circle cx="24" cy="34" r="4" fill="${lighten(color, 0.3)}" opacity="0.5"/>`;
   } else if (stem.includes("neural")) {
@@ -505,29 +516,90 @@ function makeResourceSVG(stem, color) {
   } else if (stem.includes("silicon")) {
     inner = `<rect x="16" y="16" width="32" height="32" rx="4" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="16" y1="16" x2="48" y2="48" stroke="${darken(color, 0.7)}" stroke-width="0.3"/><line x1="48" y1="16" x2="16" y2="48" stroke="${darken(color, 0.7)}" stroke-width="0.3"/>`;
   } else if (stem.includes("ore")) {
-    inner = `<circle cx="32" cy="32" r="18" fill="${color}" stroke="#333" stroke-width="0.5"/><circle cx="26" cy="26" r="5" fill="${darken(color, 0.6)}"/><circle cx="38" cy="34" r="4" fill="${darken(color, 0.6)}"/><circle cx="28" cy="38" r="3" fill="${darken(color, 0.6)}"/><circle cx="36" cy="22" r="3" fill="${darken(color, 0.6)}"/>`;
+    inner = `<path d="M18 16 L44 14 L50 30 L46 48 L22 48 L14 32Z" fill="${color}" stroke="#333" stroke-width="0.7"/>
+      <path d="M18 16 L26 24 L20 32 L14 26Z" fill="${darken(color, 0.4)}" opacity="0.6"/>
+      <path d="M44 14 L40 26 L48 30 L48 22Z" fill="${darken(color, 0.4)}" opacity="0.6"/>
+      <circle cx="28" cy="22" r="3" fill="${lighten(color, 0.3)}" opacity="0.6"/>
+      <circle cx="38" cy="30" r="2.5" fill="${lighten(color, 0.3)}" opacity="0.6"/>
+      <circle cx="24" cy="38" r="2" fill="${lighten(color, 0.3)}" opacity="0.5"/>
+      <circle cx="36" cy="42" r="1.5" fill="${lighten(color, 0.3)}" opacity="0.5"/>
+      <circle cx="30" cy="34" r="2" fill="${lighten(color, 0.3)}" opacity="0.5"/>
+      <line x1="14" y1="32" x2="32" y2="28" stroke="${darken(color, 0.3)}" stroke-width="0.3" opacity="0.5"/>
+      <line x1="32" y1="28" x2="50" y2="30" stroke="${darken(color, 0.3)}" stroke-width="0.3" opacity="0.5"/>
+      <line x1="26" y1="24" x2="26" y2="38" stroke="${darken(color, 0.3)}" stroke-width="0.3" opacity="0.4"/>`;
   } else if (stem.includes("wood") && !stem.includes("plank")) {
-    inner = `<rect x="18" y="10" width="28" height="44" rx="6" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="32" rx="10" ry="16" fill="none" stroke="${darken(color, 0.7)}" stroke-width="0.5"/><circle cx="32" cy="20" r="2" fill="${darken(color, 0.5)}"/><circle cx="32" cy="44" r="2" fill="${darken(color, 0.5)}"/>`;
+    inner = `<rect x="18" y="8" width="28" height="48" rx="7" fill="${color}" stroke="#333" stroke-width="0.8"/>
+      <ellipse cx="32" cy="16" rx="10" ry="4" fill="none" stroke="${darken(color, 0.6)}" stroke-width="0.4"/>
+      <ellipse cx="32" cy="24" rx="10" ry="4" fill="none" stroke="${darken(color, 0.6)}" stroke-width="0.4"/>
+      <ellipse cx="32" cy="32" rx="10" ry="4" fill="none" stroke="${darken(color, 0.6)}" stroke-width="0.4"/>
+      <ellipse cx="32" cy="40" rx="10" ry="4" fill="none" stroke="${darken(color, 0.6)}" stroke-width="0.4"/>
+      <ellipse cx="32" cy="48" rx="10" ry="4" fill="none" stroke="${darken(color, 0.6)}" stroke-width="0.4"/>
+      <line x1="24" y1="10" x2="26" y2="54" stroke="${darken(color, 0.4)}" stroke-width="0.3" opacity="0.5"/>
+      <line x1="40" y1="10" x2="38" y2="54" stroke="${darken(color, 0.4)}" stroke-width="0.3" opacity="0.5"/>`;
   } else if (stem.includes("stone") && !stem.includes("brick")) {
-    inner = `<circle cx="32" cy="32" r="18" fill="${color}" stroke="#333" stroke-width="0.5"/><path d="M22 24 L28 22 L32 28 L26 30Z" fill="${darken(color, 0.7)}"/><path d="M34 34 L40 32 L42 38 L36 40Z" fill="${darken(color, 0.7)}"/><path d="M24 38 L30 36 L28 42 L22 40Z" fill="${darken(color, 0.6)}"/>`;
+    inner = `<path d="M20 16 L44 14 L50 28 L46 46 L30 50 L14 44 L16 26Z" fill="${color}" stroke="#333" stroke-width="0.8"/>
+      <path d="M20 16 L30 22 L24 34 L14 28Z" fill="${darken(color, 0.5)}" opacity="0.5"/>
+      <path d="M44 14 L46 30 L36 28 L38 18Z" fill="${darken(color, 0.5)}" opacity="0.5"/>
+      <path d="M30 50 L34 38 L44 40 L40 46Z" fill="${darken(color, 0.4)}" opacity="0.4"/>
+      <line x1="26" y1="22" x2="28" y2="34" stroke="${darken(color, 0.3)}" stroke-width="0.5" opacity="0.6"/>
+      <line x1="36" y1="28" x2="38" y2="40" stroke="${darken(color, 0.3)}" stroke-width="0.5" opacity="0.6"/>`;
   } else if (stem.includes("coal")) {
-    inner = `<circle cx="32" cy="32" r="18" fill="${color}" stroke="#333" stroke-width="0.5"/><path d="M22 24 L30 20 L34 26 L26 30Z" fill="${darken(color, 0.7)}"/><path d="M32 28 L40 26 L42 34 L34 36Z" fill="${lighten(color, 0.2)}"/><path d="M24 34 L32 32 L30 40 L22 38Z" fill="${lighten(color, 0.2)}"/>`;
+    inner = `<path d="M20 14 L44 12 L50 28 L46 48 L24 50 L14 38 Z" fill="${color}" stroke="#333" stroke-width="0.8"/>
+      <path d="M20 14 L24 24 L16 30 L14 22Z" fill="${lighten(color, 0.3)}" opacity="0.4"/>
+      <path d="M44 12 L48 26 L38 24 L40 14Z" fill="${lighten(color, 0.3)}" opacity="0.4"/>
+      <path d="M24 50 L28 38 L20 36 L18 44Z" fill="${darken(color, 0.4)}" opacity="0.5"/>
+      <line x1="14" y1="38" x2="34" y2="50" stroke="${darken(color, 0.3)}" stroke-width="0.5" opacity="0.4"/>
+      <line x1="38" y1="24" x2="46" y2="48" stroke="${darken(color, 0.3)}" stroke-width="0.5" opacity="0.4"/>`;
   } else if (stem.includes("sand")) {
-    inner = `<circle cx="32" cy="32" r="18" fill="${color}" stroke="#333" stroke-width="0.5"/><circle cx="24" cy="26" r="2" fill="${darken(color, 0.6)}"/><circle cx="36" cy="28" r="1.5" fill="${darken(color, 0.6)}"/><circle cx="28" cy="36" r="2" fill="${darken(color, 0.6)}"/><circle cx="38" cy="38" r="1.5" fill="${darken(color, 0.6)}"/><circle cx="22" cy="34" r="1" fill="${darken(color, 0.6)}"/>`;
+    inner = `<circle cx="32" cy="32" r="20" fill="${color}" stroke="#333" stroke-width="0.5"/>
+      <circle cx="18" cy="22" r="2.5" fill="${darken(color, 0.5)}"/>
+      <circle cx="28" cy="18" r="1.5" fill="${darken(color, 0.5)}"/>
+      <circle cx="42" cy="20" r="2" fill="${darken(color, 0.5)}"/>
+      <circle cx="22" cy="32" r="1.5" fill="${darken(color, 0.5)}"/>
+      <circle cx="14" cy="38" r="2" fill="${darken(color, 0.5)}"/>
+      <circle cx="36" cy="36" r="2.5" fill="${darken(color, 0.5)}"/>
+      <circle cx="46" cy="34" r="1.5" fill="${darken(color, 0.5)}"/>
+      <circle cx="26" cy="44" r="2" fill="${darken(color, 0.5)}"/>
+      <circle cx="44" cy="44" r="1.5" fill="${darken(color, 0.5)}"/>
+      <circle cx="34" cy="26" r="1" fill="${darken(color, 0.4)}"/>
+      <circle cx="38" cy="48" r="1" fill="${darken(color, 0.4)}"/>`;
   } else if (stem.includes("sulfur") && !stem.includes("powder")) {
-    inner = `<polygon points="32,10 48,28 42,48 22,48 16,28" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="32" y1="10" x2="32" y2="48" stroke="${darken(color, 0.6)}" stroke-width="0.5"/><line x1="16" y1="28" x2="48" y2="28" stroke="${darken(color, 0.6)}" stroke-width="0.5"/>`;
+    inner = `<polygon points="32,8 50,26 44,50 20,50 14,26" fill="${color}" stroke="#333" stroke-width="0.7"/>
+      <line x1="32" y1="8" x2="32" y2="50" stroke="${darken(color, 0.5)}" stroke-width="0.5"/>
+      <line x1="14" y1="26" x2="50" y2="26" stroke="${darken(color, 0.5)}" stroke-width="0.5"/>
+      <path d="M32 8 L32 26 L20 26 L24 16Z" fill="${lighten(color, 0.3)}" opacity="0.5"/>
+      <path d="M32 26 L44 26 L38 38 L32 38Z" fill="${lighten(color, 0.2)}" opacity="0.4"/>`;
   } else if (stem.includes("oil")) {
-    inner = `<path d="M32 8 Q32 24 32 30 Q32 40 24 40 Q16 40 16 30 Q16 20 24 16 L32 8Z" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="28" rx="8" ry="4" fill="rgba(255,255,255,0.08)"/>`;
+    inner = `<path d="M32 6 Q32 22 32 28 Q34 38 26 40 Q16 40 16 30 Q16 20 24 16 L32 6Z" fill="${color}" stroke="#333" stroke-width="0.7"/>
+      <path d="M32 6 L36 16 L32 14 Z" fill="${lighten(color, 0.2)}" opacity="0.3"/>
+      <ellipse cx="24" cy="34" rx="6" ry="3" fill="rgba(0,0,0,0.2)"/>
+      <path d="M18 28 Q24 24 32 28 Q40 24 44 28" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
   } else if (stem.includes("petroleum")) {
     inner = `<path d="M32 8 Q32 20 38 24 Q48 30 40 40 Q34 48 24 44 Q14 40 16 30 Q18 22 28 18 Z" fill="${color}" stroke="#333" stroke-width="0.5"/><ellipse cx="32" cy="26" rx="4" ry="2" fill="rgba(255,200,100,0.2)" transform="rotate(-20,32,26)"/>`;
   } else if (stem.includes("plastic")) {
-    inner = `<rect x="14" y="16" width="36" height="32" rx="4" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="20" y="22" width="24" height="20" rx="2" fill="${lighten(color, 0.1)}" stroke="#333" stroke-width="0.3"/><line x1="20" y1="28" x2="44" y2="28" stroke="${darken(color, 0.5)}" stroke-width="0.5"/>`;
+    inner = `<rect x="16" y="10" width="32" height="44" rx="6" fill="${color}" stroke="#333" stroke-width="0.7"/>
+      <rect x="20" y="16" width="24" height="26" rx="3" fill="${lighten(color, 0.15)}" stroke="#333" stroke-width="0.3"/>
+      <rect x="26" y="8" width="12" height="6" rx="2" fill="${darken(color, 0.4)}" stroke="#333" stroke-width="0.3"/>
+      <line x1="20" y1="26" x2="44" y2="26" stroke="${darken(color, 0.3)}" stroke-width="0.5"/>
+      <line x1="20" y1="36" x2="44" y2="36" stroke="${darken(color, 0.3)}" stroke-width="0.5"/>`;
   } else if (stem.includes("glass")) {
-    inner = `<path d="M24 12 Q24 12 24 28 L20 52 L44 52 L40 28 Q40 12 40 12Z" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="26" y="30" width="12" height="16" rx="2" fill="rgba(255,255,255,0.15)"/>`;
+    inner = `<path d="M26 8 Q26 12 26 24 L22 50 Q32 54 42 50 L38 24 Q38 12 38 8Z" fill="${color}" stroke="#333" stroke-width="0.6"/>
+      <path d="M28 10 Q28 14 28 24 L25 46 Q32 48 39 46 L36 24 Q36 14 36 10Z" fill="rgba(255,255,255,0.08)"/>
+      <rect x="30" y="12" width="4" height="16" rx="1" fill="rgba(255,255,255,0.12)"/>
+      <line x1="24" y1="34" x2="40" y2="34" stroke="rgba(255,255,255,0.06)" stroke-width="0.5"/>`;
   } else if (stem.includes("steel")) {
-    inner = `<path d="M16 22 L22 16 L46 16 L52 22 L48 44 L20 44 Z" fill="${color}" stroke="#333" stroke-width="0.5"/><line x1="22" y1="16" x2="22" y2="44" stroke="${darken(color, 0.6)}" stroke-width="0.3"/><line x1="46" y1="16" x2="46" y2="44" stroke="${darken(color, 0.6)}" stroke-width="0.3"/><rect x="24" y="24" width="20" height="8" rx="1" fill="${lighten(color, 0.2)}" opacity="0.3"/>`;
+    inner = `<rect x="12" y="12" width="40" height="40" rx="4" fill="${color}" stroke="#333" stroke-width="0.7"/>
+      <rect x="16" y="16" width="32" height="32" rx="2" fill="none" stroke="${lighten(color, 0.2)}" stroke-width="0.5" opacity="0.4"/>
+      <line x1="16" y1="32" x2="48" y2="32" stroke="${darken(color, 0.4)}" stroke-width="0.5"/>
+      <line x1="32" y1="16" x2="32" y2="48" stroke="${darken(color, 0.4)}" stroke-width="0.5"/>
+      <circle cx="24" cy="24" r="4" fill="none" stroke="${lighten(color, 0.3)}" stroke-width="0.5" opacity="0.5"/>
+      <circle cx="40" cy="40" r="4" fill="none" stroke="${lighten(color, 0.3)}" stroke-width="0.5" opacity="0.5"/>
+      <circle cx="32" cy="32" r="2.5" fill="${lighten(color, 0.3)}" opacity="0.4"/>`;
   } else if (stem.includes("wire")) {
-    inner = `<path d="M12 28 Q24 12 32 20 Q40 28 52 16" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/><path d="M12 36 Q24 20 32 28 Q40 36 52 24" fill="none" stroke="${darken(color, 0.7)}" stroke-width="2" stroke-linecap="round"/>`;
+    inner = `<path d="M12 26 Q22 10 32 20 Q42 30 52 14" fill="none" stroke="${color}" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M12 38 Q22 22 32 32 Q42 42 52 26" fill="none" stroke="${darken(color, 0.7)}" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="12" cy="26" r="3" fill="${color}"/><circle cx="12" cy="38" r="3" fill="${color}"/>
+      <circle cx="52" cy="14" r="3" fill="${color}"/><circle cx="52" cy="26" r="3" fill="${color}"/>`;
   } else if (stem.includes("module")) {
     inner = `<rect x="14" y="14" width="36" height="36" rx="2" fill="${color}" stroke="#333" stroke-width="0.5"/><rect x="20" y="20" width="24" height="24" rx="1" fill="${darken(color, 0.8)}" stroke="#333" stroke-width="0.3"/><circle cx="24" cy="24" r="2" fill="#FFF" opacity="0.6"/><circle cx="40" cy="24" r="2" fill="#FFF" opacity="0.6"/><circle cx="24" cy="40" r="2" fill="#FFF" opacity="0.6"/><circle cx="40" cy="40" r="2" fill="#FFF" opacity="0.6"/><line x1="26" y1="24" x2="38" y2="24" stroke="#FFF" stroke-width="0.5" opacity="0.3"/><line x1="24" y1="26" x2="24" y2="38" stroke="#FFF" stroke-width="0.5" opacity="0.3"/>`;
   } else if (stem.includes("frame")) {
@@ -571,6 +643,16 @@ function generateAll() {
     console.log(`  ✓ ${stem}_base.svg`);
   }
 
+  // Override with manual SVGs if they exist
+  const manualDir = path.join(SVG_DIR, "manual");
+  if (fs.existsSync(manualDir)) {
+    const manualFiles = fs.readdirSync(manualDir).filter(f => f.endsWith("_base.svg"));
+    for (const f of manualFiles) {
+      fs.copyFileSync(path.join(manualDir, f), path.join(SVG_DIR, f));
+      console.log(`  ◎ ${f} (manuel)`);
+    }
+  }
+
   console.log(
     `\n✨ ${
       BUILDINGS.length + CAPSULE.length + Object.keys(RESOURCES).length
@@ -583,9 +665,9 @@ async function convertToPng() {
   for (const [stem, _, w, h] of BUILDINGS) {
     buildingSizes[stem] = [w * 64, h * 64];
   }
-  // Capsule textures match genesis_ark tile size (3x3)
+  // Capsule textures match genesis_ark tile size (4x4)
   for (const [stem] of CAPSULE) {
-    buildingSizes[stem] = [192, 192];
+    buildingSizes[stem] = [256, 256];
   }
 
   try {

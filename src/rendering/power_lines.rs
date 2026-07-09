@@ -4,6 +4,7 @@ use bevy::prelude::*;
 
 pub fn render_power_lines(
     poles: Query<(&PowerPole, &Transform), Without<UnbuiltBuilding>>,
+    // SUGGEST: type ConsumerQuery = Query<(&PowerConsumer, &Transform), (Without<UnbuiltBuilding>, Without<BurnerGenerator>)> (clippy::type_complexity)
     consumers: Query<
         (&PowerConsumer, &Transform),
         (Without<UnbuiltBuilding>, Without<BurnerGenerator>),

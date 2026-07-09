@@ -117,6 +117,7 @@ pub fn recenter_on_player(
 pub fn update_hovered_tile(
     mut hovered: ResMut<HoveredTile>,
     windows: Query<&Window>,
+    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: Res<MapConfig>,
     ui_blocking: Res<UiIsBlocking>,

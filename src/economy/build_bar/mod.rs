@@ -20,6 +20,7 @@ const SCROLL_BUTTON_WIDTH: f32 = 24.0;
 const BACK_BUTTON_WIDTH: f32 = 60.0;
 const BORDER_WIDTH: f32 = 2.0;
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn spawn_menu_bar(
     mut commands: Commands,
     menu_def: Res<MenuDef>,
@@ -43,6 +44,7 @@ pub fn spawn_menu_bar(
     build_menu_bar(&mut commands, &menu_items, &textures);
 }
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn refresh_menu_bar(
     mut commands: Commands,
     menu_def: Res<MenuDef>,

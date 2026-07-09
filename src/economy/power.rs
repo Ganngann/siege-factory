@@ -27,6 +27,7 @@ impl Default for PowerGrid {
 
 pub fn detect_power_changes(
     mut grid: ResMut<PowerGrid>,
+    // SUGGEST: type AddedQuery = Query<Entity, Or<(Added<PowerConsumer>, Added<PowerProducer>, Added<PowerPole>)>> (clippy::type_complexity)
     added: Query<Entity, Or<(Added<PowerConsumer>, Added<PowerProducer>, Added<PowerPole>)>>,
     mut removals: RemovedComponents<UnbuiltBuilding>,
 ) {
@@ -102,15 +103,18 @@ pub fn consumer_can_produce(
 /// - Which consumers have their power needs satisfied
 pub fn rebuild_power_grid(
     mut grid: ResMut<PowerGrid>,
+    // SUGGEST: type ProducerQuery = Query<(Entity, &PowerProducer, &Transform), (Without<UnbuiltBuilding>, Without<BurnerGenerator>)> (clippy::type_complexity)
     producers: Query<
         (Entity, &PowerProducer, &Transform),
         (Without<UnbuiltBuilding>, Without<BurnerGenerator>),
     >,
+    // SUGGEST: type BurnerQuery = Query<(Entity, &PowerProducer, &Transform), (With<BurnerGenerator>, Without<UnbuiltBuilding>)> (clippy::type_complexity)
     burners: Query<
         (Entity, &PowerProducer, &Transform),
         (With<BurnerGenerator>, Without<UnbuiltBuilding>),
     >,
     poles: Query<(Entity, &PowerPole, &Transform), Without<UnbuiltBuilding>>,
+    // SUGGEST: type ConsumerQuery = Query<(Entity, &Transform, &mut PowerConsumer, Option<&Active>, Option<&Assembler>, Option<&RecipeGenerator>, Option<&Inventory>), Without<UnbuiltBuilding>> (clippy::type_complexity)
     mut consumers: Query<
         (
             Entity,
@@ -195,6 +199,7 @@ pub fn rebuild_power_grid(
 pub fn recipe_generator_tick(
     time: Res<Time<Fixed>>,
     recipes: Res<RecipeRegistry>,
+    // SUGGEST: type RgQuery = Query<(&mut RecipeGenerator, &mut Inventory, &mut PowerProducer, &Active, Option<&PowerConsumer>, Option<&mut ProductionCounter>, Option<&mut FluidTank>), Without<UnbuiltBuilding>> (clippy::type_complexity)
     mut rg_query: Query<
         (
             &mut RecipeGenerator,

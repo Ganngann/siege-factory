@@ -73,6 +73,7 @@ pub fn advance_belt_slots(
     time: Res<Time<Fixed>>,
     spatial: Res<SpatialRegistry>,
     mut belt_query: Query<(Entity, &TilePosition, &mut BeltSlots)>,
+    // SUGGEST: type BuildingInventoryQuery = Query<(Entity, &mut Inventory), (With<Building>, Without<BeltSlots>, Without<UnbuiltBuilding>)> (clippy::type_complexity)
     mut inventory_query: Query<
         (Entity, &mut Inventory),
         (With<Building>, Without<BeltSlots>, Without<UnbuiltBuilding>),
@@ -308,6 +309,7 @@ pub fn advance_belt_slots(
 pub fn building_output_tick(
     spatial: Res<SpatialRegistry>,
     mut belt_query: Query<(&TilePosition, &mut BeltSlots)>,
+    // SUGGEST: type BuildingInventoryQuery = Query<(Entity, &mut Inventory), (With<Building>, Without<BeltSlots>, Without<UnbuiltBuilding>)> (clippy::type_complexity)
     mut inventory_query: Query<
         (Entity, &mut Inventory),
         (With<Building>, Without<BeltSlots>, Without<UnbuiltBuilding>),

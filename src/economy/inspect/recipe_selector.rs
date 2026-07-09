@@ -1,4 +1,5 @@
 use crate::economy::building::BuildingRegistry;
+use crate::core::utils::silent_despawn;
 use crate::economy::components::{
     Assembler, Building, BuildingPanel, CloseButton, DiscoveredRecipes, RecipeCategoryLabel,
     RecipeChangeButton, RecipeSelectorItem, RecipeSelectorRoot,
@@ -11,6 +12,7 @@ use bevy::prelude::*;
 
 // ── Recipe change button → open selector ──
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn recipe_change_system(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
@@ -39,7 +41,7 @@ pub fn recipe_change_system(
         };
 
         if let Some(e) = panel.recipe_selector.take() {
-            commands.entity(e).try_despawn();
+            silent_despawn(&mut commands, e);
         }
 
         let categories = reg
@@ -289,7 +291,7 @@ pub fn recipe_selector_click(
             panel.dirty = true;
         }
         if let Some(e) = panel.recipe_selector.take() {
-            commands.entity(e).try_despawn();
+            silent_despawn(&mut commands, e);
         }
         return;
     }

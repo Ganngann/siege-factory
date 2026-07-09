@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::core::utils::tile_to_world;
+use crate::core::utils::{silent_despawn, tile_to_world};
 use crate::economy::components::Player;
 use crate::economy::game_components::GroundItemStack;
 use crate::economy::resource::{Inventory, ResourceId};
@@ -57,7 +57,7 @@ pub fn player_pickup_ground_items(
         let dy = (player_tile.y - tile.y).abs();
         if dx <= 1 && dy <= 1 {
             inv.add(&ResourceId(item.resource_id.clone()), item.amount);
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
     }
 }

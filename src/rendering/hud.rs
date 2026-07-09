@@ -1,3 +1,4 @@
+use crate::core::utils::silent_despawn;
 use crate::economy::components::PeacefulMode;
 use crate::enemy::components::{Enemy, GameOverUi, WaveCounterText, WaveState};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
@@ -106,7 +107,7 @@ pub fn spawn_game_over_ui(mut commands: Commands, wave: Res<WaveState>) {
 
 pub fn despawn_game_over_ui(mut commands: Commands, query: Query<Entity, With<GameOverUi>>) {
     for entity in &query {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 }
 

@@ -34,9 +34,7 @@ impl DiscoveryRegistry {
                     message: entry.message,
                 });
             }
-            if starter_recipes.is_empty() {
-                starter_recipes = parsed.starter_recipes.recipes;
-            }
+            starter_recipes.extend(parsed.starter_recipes.recipes);
         }
         Self {
             discoveries,

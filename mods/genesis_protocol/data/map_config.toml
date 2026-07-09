@@ -11,16 +11,16 @@ spawn_chance_pct = 25
 min_per_chunk = 3
 max_per_chunk = 6
 infinite = true
-[deposits.distribution]
-scrap_metal = 40
-wood = 30
-stone = 20
-clay = 10
 [deposits.resource_discovery_map]
 scrap_metal = "mine_scrap_metal"
 wood = "mine_wood"
 stone = "mine_stone"
 clay = "mine_clay"
+iron_ore = "mine_iron_ore"
+copper_ore = "mine_copper_ore"
+coal = "mine_coal"
+crude_oil = "mine_crude_oil"
+plant_fiber = "mine_plant_fiber"
 
 [player]
 hp = 100
@@ -37,10 +37,6 @@ mining_interval = 1.0
 [chunk]
 initial_margin = 3
 despawn_margin = 3
-
-[decoration]
-min_count = 4
-count_variance = 5
 
 [starting_area]
 enable = true

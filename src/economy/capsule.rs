@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 
 use crate::core::game_state::IsFreshGame;
-use crate::core::utils::tile_to_world;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{Building, OccupiedTiles};
 use crate::economy::game_components::{Capsule, CurrentTier};
@@ -42,17 +41,31 @@ pub fn spawn_capsule(
     textures: Res<TextureCache>,
     capsule_cfg: Res<CapsuleConfig>,
     fresh: Res<IsFreshGame>,
+    building_registry: Res<BuildingRegistry>,
 ) {
     if !fresh.0 {
         return;
     }
 
+    let Some(def) = building_registry.get(&capsule_cfg.building_kind) else {
+        return;
+    };
+    let (tw, th) = def.tile_size;
+    let tsize = cfg.tile_size;
+
     let (sx, sy) = (capsule_cfg.spawn_tile_x, capsule_cfg.spawn_tile_y);
-    let tile_size = cfg.tile_size;
-    let pos = tile_to_world(sx, sy, tile_size);
+    let cx = (sx as f32 + (tw as f32 - 1.0) * 0.5) * tsize;
+    let cy = (sy as f32 + (th as f32 - 1.0) * 0.5) * tsize;
 
     let stem = &capsule_cfg.building_kind;
     let tex = textures.base(stem);
+
+    let mut tiles = Vec::with_capacity((tw * th) as usize);
+    for dx in 0..tw as i32 {
+        for dy in 0..th as i32 {
+            tiles.push((sx + dx, sy + dy));
+        }
+    }
 
     commands.spawn((
         Capsule,
@@ -61,19 +74,20 @@ pub fn spawn_capsule(
             kind: capsule_cfg.building_kind.clone(),
             name: capsule_cfg.building_kind.clone(),
         },
-        OccupiedTiles(vec![(sx, sy)]),
+        OccupiedTiles(tiles),
         Inventory::new(),
         TilePosition { x: sx, y: sy },
-        Transform::from_xyz(pos.x, pos.y, 5.0),
+        Transform::from_xyz(cx, cy, 5.0),
         Visibility::default(),
         Sprite {
             image: tex,
-            custom_size: Some(Vec2::new(tile_size, tile_size)),
+            custom_size: Some(Vec2::new(tw as f32 * tsize, th as f32 * tsize)),
             ..default()
         },
     ));
 }
 
+// SUGGEST: type CapsuleQuery = Query<(&CurrentTier, &mut Sprite), (With<Capsule>, Changed<CurrentTier>)> (clippy::type_complexity)
 pub fn update_capsule_visual(
     mut capsule_q: Query<
         (&CurrentTier, &mut Sprite),

@@ -21,6 +21,7 @@ use crate::rendering::minimap::MinimapCamera;
 use crate::rendering::{PreviewMaterials, ShapeCache};
 use bevy::prelude::*;
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
     mut deconstruct: ResMut<DeconstructMode>,
@@ -76,6 +77,7 @@ pub fn track_belt_drag(
     cfg: Res<MapConfig>,
     spatial: Res<SpatialRegistry>,
     windows: Query<&Window>,
+    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     producers: Query<&TilePosition, With<crate::economy::components::Miner>>,
     belt_read: Query<(&TilePosition, &BeltSlots)>,
@@ -166,6 +168,7 @@ pub fn track_belt_drag(
 }
 
 /// Preview the deconstruct drag zone as a red ghost overlay of actual buildings
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn deconstruct_drag_preview(
     mut commands: Commands,
     deconstruct: Res<DeconstructMode>,
@@ -235,12 +238,14 @@ pub fn deconstruct_drag_preview(
 
 // ── Deconstruct drag ──
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn track_deconstruct_drag(
     mut commands: Commands,
     mut drag: ResMut<DeconstructDrag>,
     deconstruct: Res<DeconstructMode>,
     cfg: Res<MapConfig>,
     windows: Query<&Window>,
+    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<MouseButton>>,

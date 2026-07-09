@@ -1,4 +1,4 @@
-use crate::core::utils::{tile_to_world, tile_to_world_corner};
+use crate::core::utils::{silent_despawn, tile_to_world, tile_to_world_corner};
 use crate::economy::components::ResourceDeposit;
 use crate::economy::discovery::GlobalArchive;
 use crate::economy::resource::ResourceRegistry;
@@ -115,6 +115,7 @@ fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
     mesh
 }
 
+// SUGGEST: extraire un struct ChunkParams (clippy::too_many_arguments)
 pub fn spawn_single_chunk_visuals(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
@@ -330,6 +331,7 @@ pub fn spawn_single_chunk_visuals(
     ));
 }
 
+// SUGGEST: extraire un struct ChunkParams (clippy::too_many_arguments)
 pub fn spawn_chunks_in_range(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
@@ -372,6 +374,7 @@ pub fn spawn_chunks_in_range(
     }
 }
 
+// SUGGEST: extraire un struct ChunkParams (clippy::too_many_arguments)
 pub fn update_visible_chunks(
     mut commands: Commands,
     camera: Query<(&Camera, &Transform), Without<MinimapCamera>>,
@@ -470,7 +473,7 @@ pub fn update_visible_chunks(
     }
 
     for entity in to_despawn {
-        commands.entity(entity).despawn();
+        silent_despawn(&mut commands, entity);
     }
 
     for ((cx, cy, dx, dy), amount) in deposit_updates {
@@ -583,7 +586,7 @@ pub fn update_fog_of_war(
 
         if all_visited {
             if let Some(&entity) = fog_map.get(&(cx, cy)) {
-                commands.entity(entity).despawn();
+                silent_despawn(&mut commands, entity);
             }
             continue;
         }

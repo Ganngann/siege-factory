@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::core::utils::parse_hex_color;
 
@@ -25,12 +25,12 @@ pub struct BiomeDef {
 
 #[derive(Debug, Clone, Resource)]
 pub struct BiomeRegistry {
-    pub biomes: HashMap<String, BiomeDef>,
+    pub biomes: BTreeMap<String, BiomeDef>,
 }
 
 impl BiomeRegistry {
     pub fn load(mods: &crate::core::modding::ModRegistry) -> Self {
-        let mut biomes = HashMap::new();
+        let mut biomes = BTreeMap::new();
         for (_mod_id, parsed) in mods.load_all_toml::<BiomesToml>("biomes.toml") {
             for (id, entry) in parsed.biomes {
                 let tile_color_even = entry
@@ -83,6 +83,7 @@ impl BiomeRegistry {
     }
 
     /// Pick a biome deterministically from seed + chunk coords.
+    /// Uses BTreeMap for deterministic iteration order (sorted by key).
     pub fn biome_for_chunk(&self, seed: u64, cx: i32, cy: i32) -> Option<&BiomeDef> {
         if self.biomes.is_empty() {
             return None;
@@ -96,7 +97,7 @@ impl BiomeRegistry {
 #[derive(Deserialize)]
 struct BiomesToml {
     #[serde(default)]
-    biomes: HashMap<String, BiomeEntry>,
+    biomes: BTreeMap<String, BiomeEntry>,
 }
 
 #[derive(Deserialize)]

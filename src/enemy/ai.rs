@@ -53,6 +53,7 @@ pub fn bfs(
 }
 
 pub fn move_enemies(
+    // SUGGEST: type EnemySet = ParamSet<(Query<(Entity, &Enemy, &mut Transform, &mut TilePosition)>, Query<&TilePosition, With<Player>>)> (clippy::type_complexity)
     mut set: ParamSet<(
         Query<(Entity, &Enemy, &mut Transform, &mut TilePosition)>,
         Query<&TilePosition, With<Player>>,

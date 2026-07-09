@@ -1,0 +1,55 @@
+[biomes.ruins]
+name = "Ruines"
+tile_color_even = "#5A5040"
+tile_color_odd = "#4D4436"
+
+[[biomes.ruins.decorations]]
+kind = "rubble"
+shape = "square"
+density = 0.003
+color = "#6B6050"
+z = -0.5
+
+[biomes.ruins.deposits]
+scrap_metal = 40
+stone = 25
+clay = 20
+wood = 10
+iron_ore = 5
+
+[biomes.forest]
+name = "Forêt"
+tile_color_even = "#2D5A27"
+tile_color_odd = "#3A6B33"
+
+[[biomes.forest.decorations]]
+kind = "tree_stump"
+shape = "circle"
+density = 0.002
+color = "#4A5A3A"
+z = -0.5
+
+[biomes.forest.deposits]
+wood = 50
+plant_fiber = 30
+stone = 15
+clay = 5
+
+[biomes.industrial]
+name = "Friche Industrielle"
+tile_color_even = "#3D3D3D"
+tile_color_odd = "#484848"
+
+[[biomes.industrial.decorations]]
+kind = "debris"
+shape = "square"
+density = 0.002
+color = "#555544"
+z = -0.5
+
+[biomes.industrial.deposits]
+scrap_metal = 35
+coal = 25
+iron_ore = 20
+copper_ore = 15
+stone = 5

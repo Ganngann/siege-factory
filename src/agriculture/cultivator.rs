@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::collections::HashSet;
 
-use crate::core::utils::{move_toward, parse_hex_color, tile_to_world, world_to_tile};
+use crate::core::utils::{move_toward, parse_hex_color, silent_despawn, tile_to_world, world_to_tile};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::unit_config::UnitConfig;
 use crate::map::config::MapConfig;
@@ -19,6 +19,7 @@ pub fn cultivator_ai(
     crop_registry: Res<CropRegistry>,
     unit_cfg: Res<UnitConfig>,
     crops: Query<(Entity, &Crop, &Transform)>,
+    // SUGGEST: type CultivatorSet = ParamSet<(Query<(Entity, &Farm, &Transform)>, Query<&Cultivator, (Without<Crop>, Without<Farm>)>, Query<(Entity, &mut Cultivator, &mut Transform), (Without<Crop>, Without<Farm>)>)> (clippy::type_complexity)
     mut set: ParamSet<(
         Query<(Entity, &Farm, &Transform)>,
         Query<&Cultivator, (Without<Crop>, Without<Farm>)>,
@@ -215,7 +216,7 @@ pub fn cultivator_ai(
                                 .unwrap_or(1);
                             cultivator.carried_resource = Some(crop.resource.clone());
                             cultivator.carried_amount += yield_amount;
-                            commands.entity(target).despawn();
+                            silent_despawn(&mut commands, target);
 
                             if cultivator.carried_amount >= carry_capacity {
                                 if let Some(farm_entity) =

@@ -31,7 +31,7 @@ pub mod window;
 
 use crate::core::game_state::GameState;
 use crate::core::schedule::GameplayStep;
-use crate::core::toast::{ToastQueue, toast_system};
+use crate::core::toast::{ToastQueue, dismiss_persistent_toasts, toast_system};
 use crate::core::tooltip::{TooltipText, tooltip_ui};
 use crate::core::utils::silent_despawn;
 use bevy::ecs::hierarchy::ChildOf;
@@ -332,6 +332,10 @@ impl Plugin for EconomyPlugin {
                 .in_set(PlayingSystems),
         );
         app.add_systems(Update, toast_system.in_set(PlayingSystems));
+        app.add_systems(
+            Update,
+            dismiss_persistent_toasts.run_if(in_state(GameState::Playing)),
+        );
         app.add_systems(Update, tooltip_ui.in_set(PlayingSystems));
         app.add_systems(
             Update,

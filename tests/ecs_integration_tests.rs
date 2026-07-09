@@ -45,6 +45,7 @@ fn make_step(condition: &str, params: Vec<(&str, &str)>) -> TutorialStepDef {
             .map(|(k, v)| (k.to_string(), v.to_string()))
             .collect(),
         highlight: None,
+        persistent: false,
     }
 }
 

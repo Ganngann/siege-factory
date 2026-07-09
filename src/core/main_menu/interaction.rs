@@ -15,6 +15,7 @@ struct MenuItemAction {
 }
 
 /// Handles menu navigation and UI rebuild when nav state changes.
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn menu_navigation(
     mut commands: Commands,
     mut nav: ResMut<MenuNav>,
@@ -192,6 +193,7 @@ pub fn menu_navigation(
 }
 
 /// Handles key capture during rebind mode.
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn menu_rebind_handler(
     mut commands: Commands,
     mut rebind: ResMut<RebindState>,
@@ -205,7 +207,7 @@ pub fn menu_rebind_handler(
     let Some(ref action) = rebind.0.clone() else {
         // Clean up prompt if rebind was somehow cancelled externally
         for entity in &prompt_query {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         return;
     };
@@ -246,7 +248,7 @@ pub fn menu_rebind_handler(
     // Escape cancels rebind mode
     if keys.just_pressed(KeyCode::Escape) {
         for entity in &prompt_query {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         rebind.0 = None;
         return;
@@ -267,7 +269,7 @@ pub fn menu_rebind_handler(
             .insert(action.clone(), binding.to_string());
         settings.save();
         for entity in &prompt_query {
-            commands.entity(entity).despawn();
+            silent_despawn(&mut commands, entity);
         }
         rebind.0 = None;
         // Pop back to parent screen so user sees the change
@@ -290,7 +292,7 @@ pub fn menu_rebind_handler(
                 .insert(action.clone(), binding.to_string());
             settings.save();
             for entity in &prompt_query {
-                commands.entity(entity).despawn();
+                silent_despawn(&mut commands, entity);
             }
             rebind.0 = None;
             if nav.stack.len() > 1 {

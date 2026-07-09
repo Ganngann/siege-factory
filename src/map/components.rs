@@ -35,6 +35,7 @@ pub struct FogTile;
 
 pub fn cursor_to_tile(
     windows: &Query<&Window>,
+    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: &Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: &MapConfig,
 ) -> Option<TilePosition> {

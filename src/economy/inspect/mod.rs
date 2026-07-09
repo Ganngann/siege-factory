@@ -11,6 +11,7 @@ pub use spawn::*;
 pub use update::*;
 
 use crate::core::input::KeyBindings;
+use crate::core::utils::silent_despawn;
 use crate::economy::components::{
     Active, ActiveToggleButton, BuildingPanel, CloseButton, PanelModal, PanelOverlay,
 };
@@ -32,13 +33,13 @@ const CLOSE_BUTTON_FONT: f32 = 14.0;
 
 fn close_panel_impl(commands: &mut Commands, panel: &mut BuildingPanel) {
     if let Some(e) = panel.root.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(commands, e);
     }
     if let Some(e) = panel.overlay.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(commands, e);
     }
     if let Some(e) = panel.recipe_selector.take() {
-        commands.entity(e).try_despawn();
+        silent_despawn(commands, e);
     }
     panel.inspected = None;
     panel.dirty = false;
@@ -55,6 +56,7 @@ pub fn overlay_click_system(
     mut panel: ResMut<BuildingPanel>,
     buttons: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
+    // SUGGEST: type ModalQuery = Query<(&Node, &GlobalTransform), (With<PanelModal>, Without<PanelOverlay>)> (clippy::type_complexity)
     modal_query: Query<(&Node, &GlobalTransform), (With<PanelModal>, Without<PanelOverlay>)>,
 ) {
     if panel.overlay.is_none() {
@@ -83,7 +85,7 @@ pub fn overlay_click_system(
     // Click is outside the modal → close
     if panel.recipe_selector.is_some() {
         if let Some(e) = panel.recipe_selector.take() {
-            commands.entity(e).try_despawn();
+            silent_despawn(&mut commands, e);
         }
     } else {
         close_panel(commands, panel);
@@ -103,7 +105,7 @@ pub fn close_button_system(
         }
         if panel.recipe_selector.is_some() {
             if let Some(e) = panel.recipe_selector.take() {
-                commands.entity(e).try_despawn();
+                silent_despawn(&mut commands, e);
             }
         } else {
             close_panel(commands, panel);
@@ -126,9 +128,9 @@ pub fn close_popup_on_escape(
     }
     if panel.recipe_selector.is_some() {
         if let Some(e) = panel.recipe_selector.take() {
-            commands.entity(e).try_despawn();
-        }
-    } else if panel.overlay.is_some() {
+                silent_despawn(&mut commands, e);
+            }
+        } else if panel.overlay.is_some() {
         close_panel(commands, panel);
     }
 }
@@ -157,6 +159,6 @@ pub fn active_toggle_system(
 
 pub fn cleanup_popup(mut commands: Commands, query: Query<Entity, With<PanelModal>>) {
     for entity in &query {
-        commands.entity(entity).try_despawn();
+        silent_despawn(&mut commands, entity);
     }
 }

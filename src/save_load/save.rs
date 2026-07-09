@@ -21,6 +21,7 @@ use super::{
     WorkerStateSave, save_path,
 };
 
+// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn save_game(
     keys: Res<ButtonInput<KeyCode>>,
     mut save_req: ResMut<SaveRequested>,
@@ -31,6 +32,7 @@ pub fn save_game(
     camera: Query<&Transform, (With<Camera2d>, Without<MinimapCamera>)>,
     tutorial: Res<TutorialState>,
     tile_positions: Query<&TilePosition>,
+    // SUGGEST: type BuildingQuery = Query<(Entity, &Building, ...), Without<UnbuiltBuilding>> — envisager un struct SaveBuildingBundle (clippy::type_complexity)
     buildings: Query<
         (
             &Building,
@@ -52,6 +54,7 @@ pub fn save_game(
         Without<UnbuiltBuilding>,
     >,
     enemies: Query<(&EnemyComponent, &Transform, &Health, &TilePosition)>,
+    // SUGGEST: type UnitQuery = Query<(&Transform, &Health, &TilePosition, Option<&Soldier>, Option<&Worker>), With<Unit>> (clippy::type_complexity)
     units: Query<
         (
             &Transform,
