@@ -2,6 +2,7 @@ pub mod agriculture;
 pub mod combat;
 pub mod core;
 pub mod economy;
+pub mod ui;
 pub mod enemy;
 pub mod events;
 pub mod map;
@@ -21,6 +22,7 @@ use events::CleanupPlugin;
 use map::systems::MapPlugin;
 use rendering::RenderPlugin;
 use save_load::SaveLoadPlugin;
+use ui::UiPlugin;
 
 pub fn run() {
     App::new()
@@ -37,6 +39,7 @@ pub fn run() {
         .add_plugins(FrameTimeDiagnosticsPlugin::default())
         .add_plugins(RenderPlugin)
         .add_plugins(CleanupPlugin)
+        .add_plugins(UiPlugin)
         .add_plugins(SaveLoadPlugin)
         .insert_resource(WinitSettings::desktop_app())
         .configure_sets(Update, (

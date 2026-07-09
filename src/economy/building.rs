@@ -67,6 +67,7 @@ pub struct BuildingDef {
     pub station: bool,
     pub has_recipes: bool,
     pub tiers: Vec<TierDef>,
+    pub panel: Option<String>,
     pub fluid_tank_capacity: f32,
     pub pipe_transfer_rate: f32,
 }
@@ -255,6 +256,7 @@ impl BuildingRegistry {
                     station: entry.station,
                     has_recipes: entry.has_recipes,
                     tiers,
+                    panel: entry.panel.clone(),
                     fluid_tank_capacity: entry.fluid_tank_capacity,
                     pipe_transfer_rate: entry.pipe_transfer_rate,
                 }
@@ -373,6 +375,8 @@ struct BuildingEntry {
     has_recipes: bool,
     #[serde(default)]
     tiers: Vec<TierEntry>,
+    #[serde(default)]
+    panel: Option<String>,
     #[serde(default)]
     fluid_tank_capacity: f32,
     #[serde(default)]

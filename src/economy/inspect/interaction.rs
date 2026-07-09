@@ -1,14 +1,15 @@
 use crate::agriculture::components::Cultivator;
+use crate::core::modding::ModRegistry;
 use crate::core::toast::ToastQueue;
 use crate::core::utils::silent_despawn;
+use crate::ui::engine::LayoutEngine;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    BuildMode, Building, BuildingPanel, DeconstructMode, FarmCropSelectButton, FarmRecruitButton,
+    BuildMode, Building, BuildingPanel, FarmCropSelectButton, FarmRecruitButton,
     OccupiedTiles, Player, Sorter, SorterInvertButton,
     SorterResourceButton, UiIsBlocking,
 };
 use crate::economy::game_components::{Capsule, CurrentTier, Level};
-use crate::economy::tiered_structure::ProgressionLogRegistry;
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::ui_components::UpgradeButton;
@@ -18,17 +19,17 @@ use crate::map::config::MapConfig;
 use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
 
-use crate::economy::ui_components::DataPadSelected;
-use super::{close_panel, open_capsule_panel, open_panel};
+use crate::ui::types::PanelType;
+use crate::ui::panels::PanelRegistry;
+use super::close_panel;
 
 // ── Click detection ──
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn building_inspect_click(
-    commands: Commands,
-    panel: ResMut<BuildingPanel>,
+    mut commands: Commands,
+    mut panel: ResMut<BuildingPanel>,
     build_mode: Res<BuildMode>,
-    deconstruct: Res<DeconstructMode>,
     buttons: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
@@ -37,16 +38,17 @@ pub fn building_inspect_click(
     spatial: Res<SpatialRegistry>,
     building_query: Query<(&Building, Option<&OccupiedTiles>)>,
     tier_q: Query<&CurrentTier, With<Capsule>>,
-    data_pad_selected: Res<DataPadSelected>,
-    resource_registry: Res<ResourceRegistry>,
+    panel_registry: Res<PanelRegistry>,
+    mods: Res<ModRegistry>,
+    layout_engine: Res<LayoutEngine>,
     reg: Res<BuildingRegistry>,
-    progression_logs: Res<ProgressionLogRegistry>,
     ui_blocking: Res<UiIsBlocking>,
+    world: &World,
 ) {
     if ui_blocking.0 {
         return;
     }
-    if build_mode.0.is_some() || deconstruct.0 {
+    if build_mode.0.is_some() {
         return;
     }
     if !buttons.just_pressed(MouseButton::Left) {
@@ -73,40 +75,25 @@ pub fn building_inspect_click(
         };
 
         // Check if this building is a Capsule with tiers → show capsule panel
-        let building_def = reg.get(&building.kind);
-        if tier_q.contains(entity) && building_def.map_or(false, |d| !d.tiers.is_empty()) {
-            let current_tier = tier_q
-                .get(entity)
-                .map(|t| t.0)
-                .unwrap_or(0);
-            let selected_log = data_pad_selected.log_id.clone();
-            open_capsule_panel(
-                commands,
-                panel,
+        // Route ALL building clicks through the modular Panel system
+        let panel_type = if tier_q.contains(entity) {
+            PanelType::Capsule
+        } else {
+            PanelType::Building
+        };
+
+        if let Some(panel_impl) = panel_registry.get(&panel_type) {
+            let ctx = crate::ui::panels::PanelSpawnCtx {
                 entity,
-                building,
-                &reg,
-                &progression_logs,
-                current_tier,
-                selected_log,
-            );
+                building_kind: &building.kind,
+                building_registry: &reg,
+                world,
+                mods: &mods,
+                layout_engine: &layout_engine,
+            };
+            panel_impl.spawn(&mut commands, &mut panel, &ctx);
             return;
         }
-
-        let farm_crop_types = building_def
-            .map(|d| d.crop_types.clone())
-            .unwrap_or_default();
-        open_panel(
-            commands,
-            panel,
-            entity,
-            building,
-            &building.kind,
-            &resource_registry,
-            &reg,
-            farm_crop_types,
-        );
-        return;
     }
 }
 
@@ -398,3 +385,4 @@ pub fn upgrade_button_system(
         .0
         .push(format!("Upgraded {} to {}", old_name, target_def.name));
 }
+

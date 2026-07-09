@@ -324,11 +324,6 @@ impl Plugin for EconomyPlugin {
             Update,
             inspect::upgrade_button_system.in_set(PlayingSystems),
         );
-        app.add_systems(
-            Update,
-            inspect::data_pad_select_log.in_set(PlayingSystems),
-        );
-
         app.add_systems(Update, window::drag_window_system.in_set(PlayingSystems));
         app.add_systems(
             Update,
