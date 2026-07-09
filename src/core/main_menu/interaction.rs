@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 use super::spawn::{build_mod_items, build_rebind_items, spawn_current_screen};
 use super::types::*;
 use crate::core::game_state::GameState;
@@ -239,7 +241,7 @@ pub fn menu_rebind_handler(
                         "Press a key for \"{}\"...\n\n(ESC to cancel)",
                         action
                     )),
-                    TextFont::from_font_size(28.0),
+                    tf(28.0),
                     TextColor(Color::srgb(1.0, 1.0, 0.8)),
                 ));
             });

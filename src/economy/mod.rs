@@ -110,6 +110,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::DeconstructMode>();
         app.init_resource::<components::DeconstructDrag>();
         app.init_resource::<components::BuildingPanel>();
+        app.init_resource::<crate::economy::ui_components::DataPadSelected>();
         app.init_resource::<window::WindowDrag>();
         app.init_resource::<PeacefulMode>();
         app.init_resource::<MenuState>();
@@ -322,6 +323,10 @@ impl Plugin for EconomyPlugin {
         app.add_systems(
             Update,
             inspect::upgrade_button_system.in_set(PlayingSystems),
+        );
+        app.add_systems(
+            Update,
+            inspect::data_pad_select_log.in_set(PlayingSystems),
         );
 
         app.add_systems(Update, window::drag_window_system.in_set(PlayingSystems));

@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Screw</title>
-  <desc>Vis — Composant d'assemblage Phase 2. Vue 3/4 : tige filetée métallique (#AAAAAA) avec tête plate. Géométrie stricte, reflets métalliques francs. 64×64.</desc>
-<ellipse cx="32" cy="54" rx="14" ry="4" fill="rgba(0,0,0,0.10)"/><rect x="24" y="10" width="16" height="44" rx="4" fill="#AAAAAA" stroke="#666" stroke-width="0.7"/><rect x="24" y="10" width="16" height="8" rx="3" fill="#BBBBBB"/><line x1="24" y1="22" x2="40" y2="18" stroke="#888" stroke-width="0.8"/><line x1="24" y1="30" x2="40" y2="26" stroke="#888" stroke-width="0.8"/><line x1="24" y1="38" x2="40" y2="34" stroke="#888" stroke-width="0.8"/><line x1="24" y1="46" x2="40" y2="42" stroke="#888" stroke-width="0.8"/><rect x="28" y="8" width="8" height="4" rx="1" fill="#999"/><ellipse cx="28" cy="14" rx="2" ry="4" fill="rgba(255,255,255,0.06)"/></svg>

@@ -10,6 +10,8 @@ use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::window::{BTN_CLOSE, TEXT_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, TEXT_YELLOW};
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 // ── Recipe change button → open selector ──
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
@@ -121,7 +123,7 @@ fn spawn_recipe_selector(
                 .with_children(|title| {
                     title.spawn((
                         Text::new("Select Recipe"),
-                        TextFont::from_font_size(super::CLOSE_BUTTON_FONT),
+                        tf(super::CLOSE_BUTTON_FONT),
                         TextColor(TEXT_PRIMARY),
                     ));
                     title
@@ -140,7 +142,7 @@ fn spawn_recipe_selector(
                         .with_children(|btn| {
                             btn.spawn((
                                 Text::new("X"),
-                                TextFont::from_font_size(12.0),
+                                tf(12.0),
                                 TextColor(Color::WHITE),
                             ));
                         });
@@ -165,7 +167,7 @@ fn spawn_recipe_selector(
                 parent.spawn((
                     RecipeCategoryLabel,
                     Text::new(format!("-- {} --", cat_name.to_uppercase())),
-                    TextFont::from_font_size(super::SECTION_FONT_SIZE),
+                    tf(super::SECTION_FONT_SIZE),
                     TextColor(TEXT_YELLOW),
                     Node {
                         margin: UiRect::vertical(Val::Px(4.0)),
@@ -247,7 +249,7 @@ fn spawn_recipe_selector(
                                 .map_or(recipe.id.as_str(), |r| &r.name);
                             btn.spawn((
                                 Text::new(format!("{}{}", prefix, recipe_name)),
-                                TextFont::from_font_size(12.0),
+                                tf(12.0),
                                 TextColor(if is_active {
                                     TEXT_GREEN
                                 } else if can_craft {
@@ -261,7 +263,7 @@ fn spawn_recipe_selector(
                                     "    {}  ->  {}  |  {:.1}s",
                                     input_str, output_str, recipe.time_sec
                                 )),
-                                TextFont::from_font_size(10.0),
+                                tf(10.0),
                                 TextColor(TEXT_SECONDARY),
                             ));
                         });

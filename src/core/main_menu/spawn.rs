@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 use super::types::*;
 use crate::core::input::{InputBinding, KeyBindings};
 use crate::core::modding::ModRegistry;
@@ -87,7 +89,7 @@ pub(crate) fn spawn_current_screen(
             parent.spawn((
                 MenuRoot,
                 Text::new(&screen.title),
-                TextFont::from_font_size(48.0),
+                tf(48.0),
                 TextColor(Color::srgb(0.8, 0.8, 1.0)),
             ));
 
@@ -95,7 +97,7 @@ pub(crate) fn spawn_current_screen(
                 parent.spawn((
                     MenuRoot,
                     Text::new(sub.as_str()),
-                    TextFont::from_font_size(16.0),
+                    tf(16.0),
                     TextColor(Color::srgb(0.6, 0.6, 0.8)),
                 ));
             }
@@ -146,7 +148,7 @@ pub(crate) fn spawn_current_screen(
                         p.spawn((
                             MenuRoot,
                             Text::new(label.as_str()),
-                            TextFont::from_font_size(20.0),
+                            tf(20.0),
                             TextColor(color),
                         ));
                     });

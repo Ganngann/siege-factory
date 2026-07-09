@@ -5,6 +5,8 @@ use crate::economy::menu::MenuItems;
 use crate::rendering::TextureCache;
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 use super::{
     BACK_BUTTON_WIDTH, BORDER_WIDTH, ITEM_HEIGHT, ITEM_WIDTH, PANEL_HEIGHT, SCROLL_BUTTON_WIDTH,
 };
@@ -47,7 +49,7 @@ pub fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures:
             parent.spawn((
                 BreadcrumbText,
                 Text::new(&menu_items.breadcrumb),
-                TextFont::from_font_size(12.0),
+                tf(12.0),
                 TextColor(Color::srgba(0.8, 0.8, 0.9, 0.8)),
                 Node {
                     height: Val::Px(16.0),
@@ -86,7 +88,7 @@ pub fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures:
                         .with_children(|b| {
                             b.spawn((
                                 Text::new("<-1 Retour"),
-                                TextFont::from_font_size(11.0),
+                                tf(11.0),
                                 TextColor(Color::WHITE),
                             ));
                         });
@@ -107,7 +109,7 @@ pub fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures:
                         .with_children(|b| {
                             b.spawn((
                                 Text::new("1"),
-                                TextFont::from_font_size(11.0),
+                                tf(11.0),
                                 TextColor(Color::srgba(0.5, 0.5, 0.5, 0.5)),
                             ));
                         });
@@ -131,7 +133,7 @@ pub fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures:
                         .with_children(|b| {
                             b.spawn((
                                 Text::new("<"),
-                                TextFont::from_font_size(14.0),
+                                tf(14.0),
                                 TextColor(Color::WHITE),
                             ));
                         });
@@ -179,18 +181,18 @@ pub fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures:
                                 }
                             b.spawn((
                                 Text::new(format!("{} {}", key, sub_prefix)),
-                                TextFont::from_font_size(9.0),
+                                tf(9.0),
                                 TextColor(Color::srgba(1.0, 1.0, 1.0, 0.5)),
                             ));
                             b.spawn((
                                 Text::new(&item.label),
-                                TextFont::from_font_size(12.0),
+                                tf(12.0),
                                 TextColor(Color::WHITE),
                             ));
                             if !item.cost_str.is_empty() {
                                 b.spawn((
                                     Text::new(&item.cost_str),
-                                    TextFont::from_font_size(9.0),
+                                    tf(9.0),
                                     TextColor(Color::srgb(1.0, 0.85, 0.3)),
                                 ));
                             }
@@ -215,7 +217,7 @@ pub fn build_menu_bar(commands: &mut Commands, menu_items: &MenuItems, textures:
                         .with_children(|b| {
                             b.spawn((
                                 Text::new(">"),
-                                TextFont::from_font_size(14.0),
+                                tf(14.0),
                                 TextColor(Color::WHITE),
                             ));
                         });

@@ -1,7 +1,10 @@
 use crate::core::utils::silent_despawn;
 use crate::economy::components::{CloseButton, DragHandle};
+use crate::economy::ui_components::ManagedByPanel;
 use bevy::ecs::hierarchy::ChildOf;
 use bevy::prelude::*;
+
+use crate::core::game_font::tf;
 // ── Shared UI constants ──
 
 pub const BG_WINDOW: Color = Color::srgba(0.08, 0.08, 0.16, 0.97);
@@ -97,7 +100,7 @@ pub fn spawn_window(
                 .with_children(|header| {
                     header.spawn((
                         Text::new(title),
-                        TextFont::from_font_size(16.0),
+                        tf(16.0),
                         TextColor(TEXT_PRIMARY),
                     ));
                     header
@@ -116,7 +119,7 @@ pub fn spawn_window(
                         .with_children(|btn| {
                             btn.spawn((
                                 Text::new("X"),
-                                TextFont::from_font_size(14.0),
+                                tf(14.0),
                                 TextColor(Color::WHITE),
                             ));
                         });
@@ -148,7 +151,7 @@ pub fn spawn_section(
         .with_children(|sec| {
             sec.spawn((
                 Text::new(title),
-                TextFont::from_font_size(11.0),
+                tf(11.0),
                 TextColor(ACCENT),
                 Node {
                     margin: UiRect::bottom(Val::Px(6.0)),
@@ -222,6 +225,7 @@ pub fn close_window_system(
     buttons: Query<(Entity, &Interaction), (Changed<Interaction>, With<CloseButton>)>,
     parents: Query<&ChildOf>,
     windows: Query<Entity, With<WindowRoot>>,
+    managed: Query<&ManagedByPanel>,
 ) {
     for (entity, interaction) in &buttons {
         if *interaction != Interaction::Pressed {
@@ -231,6 +235,10 @@ pub fn close_window_system(
         let mut current = entity;
         loop {
             if windows.contains(current) {
+                // Ignore windows managed by BuildingPanel (they handle their own close)
+                if managed.contains(current) {
+                    break;
+                }
                 silent_despawn(&mut commands, current);
                 break;
             }

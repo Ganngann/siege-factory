@@ -39,6 +39,22 @@ impl DragState {
     }
 }
 
+#[derive(Component)]
+pub struct DataPadEntry {
+    pub log_id: String,
+}
+
+#[derive(Component)]
+pub struct DataPadFullText;
+
+#[derive(Resource, Default)]
+pub struct DataPadSelected {
+    pub log_id: Option<String>,
+}
+
+#[derive(Component)]
+pub struct ManagedByPanel;
+
 #[derive(Resource, Default)]
 pub struct UiIsBlocking(pub bool);
 

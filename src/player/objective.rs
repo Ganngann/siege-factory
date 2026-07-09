@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use serde::Deserialize;
 
-use crate::core::game_font::GameFont;
+use crate::core::game_font::tf;
 use crate::core::tutorial::{TutorialConditions, TutorialState};
 use crate::core::toast::ToastQueue;
 use crate::economy::game_components::CurrentTier;
@@ -141,7 +141,7 @@ pub fn advance_objectives(
     }
 }
 
-pub fn spawn_objective_hud(mut commands: Commands, state: Res<ObjectiveState>, font: Res<GameFont>) {
+pub fn spawn_objective_hud(mut commands: Commands, state: Res<ObjectiveState>) {
     if state.active_text.is_empty() {
         return;
     }
@@ -149,25 +149,26 @@ pub fn spawn_objective_hud(mut commands: Commands, state: Res<ObjectiveState>, f
     commands
         .spawn((
             ObjectiveHudMarker,
-            Text::new(format!("OBJECTIF\n{}", state.active_text)),
-            TextFont {
-                font: font.0.clone().into(),
-                font_size: 14.0.into(),
-                ..default()
-            },
+            Text::new(format!("OBJECTIF\n  > {}", state.active_text)),
+            tf(14.0),
             TextColor(Color::WHITE),
-            TextLayout::new(Justify::Center, bevy::text::LineBreak::WordBoundary),
+            TextLayout::new(Justify::Left, bevy::text::LineBreak::WordBoundary),
             Node {
                 position_type: PositionType::Absolute,
-                top: Val::Px(60.0),
-                left: Val::Auto,
-                right: Val::Auto,
-                max_width: Val::Px(500.0),
-                padding: UiRect::all(Val::Px(10.0)),
-                flex_wrap: FlexWrap::Wrap,
+                top: Val::Px(8.0),
+                left: Val::Px(8.0),
+                max_width: Val::Px(400.0),
+                padding: UiRect::all(Val::Px(8.0)),
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(2.0),
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.6)),
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.35)),
+            Outline {
+                width: Val::Px(2.0),
+                offset: Val::ZERO,
+                color: Color::WHITE,
+            },
             ZIndex(50),
         ));
 }
@@ -180,7 +181,7 @@ pub fn update_objective_hud(
         if state.active_text.is_empty() {
             text.0 = String::new();
         } else {
-            text.0 = format!("OBJECTIF\n{}", state.active_text);
+            text.0 = format!("OBJECTIF\n  > {}", state.active_text);
         }
     }
 }

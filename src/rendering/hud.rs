@@ -4,6 +4,8 @@ use crate::enemy::components::{Enemy, GameOverUi, WaveCounterText, WaveState};
 use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 fn spawn_hud_node(
     commands: &mut Commands,
     text: &str,
@@ -15,7 +17,7 @@ fn spawn_hud_node(
     commands
         .spawn((
             Text::new(text),
-            TextFont::from_font_size(font_size),
+            tf(font_size),
             TextColor(color),
             Node {
                 position_type: PositionType::Absolute,
@@ -81,13 +83,13 @@ pub fn spawn_game_over_ui(mut commands: Commands, wave: Res<WaveState>) {
             parent.spawn((
                 GameOverUi,
                 Text::new("GAME OVER"),
-                TextFont::from_font_size(48.0),
+                tf(48.0),
                 TextColor(Color::srgb(1.0, 0.3, 0.3)),
             ));
             parent.spawn((
                 GameOverUi,
                 Text::new(format!("Waves survived: {}", wave.wave - 1)),
-                TextFont::from_font_size(24.0),
+                tf(24.0),
                 TextColor(Color::WHITE),
             ));
             parent.spawn((
@@ -99,7 +101,7 @@ pub fn spawn_game_over_ui(mut commands: Commands, wave: Res<WaveState>) {
             parent.spawn((
                 GameOverUi,
                 Text::new("Press R to restart  |  ESC for main menu"),
-                TextFont::from_font_size(20.0),
+                tf(20.0),
                 TextColor(Color::srgb(0.8, 0.8, 1.0)),
             ));
         });

@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 use crate::combat::Projectile;
 use crate::core::game_state::GameState;
 use crate::core::utils::silent_despawn;
@@ -84,7 +86,7 @@ pub fn spawn_pause_menu(
                     .with_children(|panel| {
                         panel.spawn((
                             Text::new("PAUSED"),
-                            TextFont::from_font_size(28.0),
+                            tf(28.0),
                             TextColor(Color::srgb(0.8, 0.8, 1.0)),
                             Node {
                                 margin: UiRect::bottom(Val::Px(12.0)),
@@ -107,7 +109,7 @@ pub fn spawn_pause_menu(
                             .with_children(|btn| {
                                 btn.spawn((
                                     Text::new("Save Game"),
-                                    TextFont::from_font_size(16.0),
+                                    tf(16.0),
                                     TextColor(Color::WHITE),
                                 ));
                             });
@@ -127,7 +129,7 @@ pub fn spawn_pause_menu(
                             .with_children(|btn| {
                                 btn.spawn((
                                     Text::new("Load Game"),
-                                    TextFont::from_font_size(16.0),
+                                    tf(16.0),
                                     TextColor(Color::WHITE),
                                 ));
                             });
@@ -147,7 +149,7 @@ pub fn spawn_pause_menu(
                             .with_children(|btn| {
                                 btn.spawn((
                                     Text::new("Resume"),
-                                    TextFont::from_font_size(16.0),
+                                    tf(16.0),
                                     TextColor(Color::WHITE),
                                 ));
                             });
@@ -167,7 +169,7 @@ pub fn spawn_pause_menu(
                             .with_children(|btn| {
                                 btn.spawn((
                                     Text::new("Main Menu"),
-                                    TextFont::from_font_size(16.0),
+                                    tf(16.0),
                                     TextColor(Color::WHITE),
                                 ));
                             });

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::core::game_font::GameFont;
+use crate::core::game_font::tf;
 use crate::core::utils::silent_despawn;
 use crate::rendering::config::VisualsConfig;
 
@@ -37,7 +37,6 @@ pub fn toast_system(
     time: Res<Time>,
     mut toasts: Query<(Entity, &mut ToastMessage)>,
     config: Res<VisualsConfig>,
-    font: Res<GameFont>,
 ) {
     for msg in queue.0.drain(..) {
         let persistent = msg.starts_with("\x00PERSISTENT\x00");
@@ -49,11 +48,7 @@ pub fn toast_system(
                 persistent,
             },
             Text::new(text.to_string()),
-            TextFont {
-                font: font.0.clone().into(),
-                font_size: config.toast.font_size.into(),
-                ..default()
-            },
+            tf(config.toast.font_size),
             TextColor(config.toast.color),
             TextLayout::new(Justify::Center, bevy::text::LineBreak::WordBoundary),
             Node {
@@ -79,14 +74,13 @@ pub fn toast_system(
     }
 }
 
-/// Dismiss les toasts persistants quand le joueur clique ou appuie sur Espace.
+/// Dismiss les toasts persistants quand le joueur appuie sur Espace.
 pub fn dismiss_persistent_toasts(
     mut commands: Commands,
-    buttons: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
     toasts: Query<(Entity, &ToastMessage)>,
 ) {
-    if !buttons.just_pressed(MouseButton::Left) && !keys.just_pressed(KeyCode::Space) {
+    if !keys.just_pressed(KeyCode::Space) {
         return;
     }
     for (entity, msg) in toasts.iter() {

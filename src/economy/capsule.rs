@@ -72,7 +72,7 @@ pub fn spawn_capsule(
         CurrentTier(0),
         Building {
             kind: capsule_cfg.building_kind.clone(),
-            name: capsule_cfg.building_kind.clone(),
+            name: def.name.clone(),
         },
         OccupiedTiles(tiles),
         Inventory::new(),

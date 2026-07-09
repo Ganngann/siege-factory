@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
   <title>Capsule Genesis T1</title>
-  <desc>Capsule Genesis — Tier Corde (Réveil). Un premier voyant vert s'allume. L'écran clignote : ALIMENTATION REQUISE. La capsule montre les premiers signes de réponse. 256×256.</desc>
-<ellipse cx="128" cy="140" rx="90" ry="30" fill="rgba(0,0,0,0.12)"/><ellipse cx="128" cy="128" rx="80" ry="64" fill="#5577AA" stroke="#334466" stroke-width="6"/><ellipse cx="128" cy="128" rx="64" ry="48" fill="none" stroke="#445588" stroke-width="2"/><circle cx="128" cy="128" r="24" fill="#334466" stroke="#334466" stroke-width="4"/><circle cx="128" cy="128" r="10" fill="#446688" opacity="0.3"/></svg>
+  <desc>Capsule Genesis — Tier 1 (Déblayage). Débris retirés, panneaux d'accès ouverts. La capsule reste éteinte mais les premiers connecteurs sont accessibles. 256×256.</desc>
+<ellipse cx="128" cy="140" rx="90" ry="30" fill="rgba(0,0,0,0.12)"/><ellipse cx="128" cy="128" rx="80" ry="64" fill="#445566" stroke="#333" stroke-width="6"/><ellipse cx="128" cy="128" rx="64" ry="48" fill="none" stroke="#334455" stroke-width="2"/><circle cx="128" cy="128" r="24" fill="#223344" stroke="#333" stroke-width="4"/></svg>

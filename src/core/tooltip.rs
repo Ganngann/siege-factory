@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 #[derive(Resource, Default)]
 pub struct TooltipText(pub Option<String>);
 
@@ -25,7 +27,7 @@ pub fn tooltip_ui(
                 commands.spawn((
                     TooltipMarker,
                     Text::new(msg.as_str()),
-                    TextFont::from_font_size(12.0),
+                    tf(12.0),
                     TextColor(Color::WHITE),
                     Node {
                         position_type: PositionType::Absolute,

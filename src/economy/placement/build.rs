@@ -25,6 +25,8 @@ use crate::rendering::minimap::MinimapCamera;
 use crate::rendering::{PreviewMaterials, ShapeCache, direction_arrow};
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 const BUILDING_TURRET: &str = "turret";
 const BUILDING_STORAGE: &str = "storage";
 const BUILDING_FARM: &str = "farm";
@@ -260,7 +262,7 @@ pub fn update_build_preview(
                         Transform::from_xyz(cx, cy, 1.8)
                             .with_rotation(Quat::from_rotation_z(angle)),
                         Text2d::new(direction_arrow(dir).to_string()),
-                        TextFont::from_font_size(18.0),
+                        tf(18.0),
                         TextColor(if valid {
                             Color::srgba(0.0, 0.8, 0.0, 0.6)
                         } else {
@@ -319,7 +321,7 @@ pub fn update_build_preview(
                 MeshMaterial2d(mat_handle),
                 Transform::from_xyz(cx, cy, z).with_rotation(Quat::from_rotation_z(angle)),
                 Text2d::new(direction_arrow(dir).to_string()),
-                TextFont::from_font_size(18.0),
+                tf(18.0),
                 TextColor(text_color),
                 TextLayout::justify(Justify::Center),
             ))

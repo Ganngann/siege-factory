@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 use crate::core::utils::silent_despawn;
 use crate::economy::components::Player;
 use crate::economy::recipe::{RecipeDef, RecipeRegistry};
@@ -156,7 +158,7 @@ pub fn spawn_crafting_panel(
                             .with_children(|btn| {
                                 btn.spawn((
                                     Text::new("Craft"),
-                                    TextFont::from_font_size(13.0),
+                                    tf(13.0),
                                     TextColor(Color::WHITE),
                                 ));
                             });

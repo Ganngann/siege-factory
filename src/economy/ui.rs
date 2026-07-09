@@ -5,6 +5,8 @@ use crate::economy::components::{
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::window::{BG_SECTION, spawn_window};
 use bevy::prelude::*;
+
+use crate::core::game_font::tf;
 use bevy::ui::widget::ImageNode;
 use bevy::ui::UiTransform;
 
@@ -94,7 +96,7 @@ pub fn toggle_inventory_panel(
                             BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
                             ImageNode::default(),
                             Text::new(String::new()),
-                            TextFont::from_font_size(11.0),
+                            tf(11.0),
                             TextColor(Color::WHITE),
                         ));
                     }
@@ -224,7 +226,7 @@ pub fn drag_start(
                     .spawn((
                         DraggedItemVisual,
                         Text::new(format!("{} ×{}", rid.display_name(), amount)),
-                        TextFont::from_font_size(14.0),
+                        tf(14.0),
                         TextColor(Color::WHITE),
                         Node {
                             position_type: PositionType::Absolute,

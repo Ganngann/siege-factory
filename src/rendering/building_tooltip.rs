@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{Active, Building, PowerConsumer, PowerProducer};
 use crate::economy::resource::Inventory;
@@ -102,7 +104,7 @@ pub fn building_tooltip_system(
     commands.spawn((
         BuildingTooltip,
         Text::new(full_text),
-        TextFont::from_font_size(11.0),
+        tf(11.0),
         TextColor(Color::srgb(0.9, 0.9, 0.9)),
         Node {
             position_type: PositionType::Absolute,

@@ -4,6 +4,8 @@ use crate::economy::resource::ResourceRegistry;
 use crate::economy::window::{TEXT_GREEN, TEXT_PRIMARY, spawn_window};
 use bevy::prelude::*;
 
+use crate::core::game_font::tf;
+
 pub fn spawn_deposit_panel(
     commands: &mut Commands,
     panel: &mut BuildingPanel,
@@ -67,7 +69,7 @@ pub fn spawn_deposit_panel(
                 .with_children(|body| {
                     body.spawn((
                         Text::new(format!("Resource: {}", resource_name)),
-                        TextFont::from_font_size(super::CLOSE_BUTTON_FONT),
+                        tf(super::CLOSE_BUTTON_FONT),
                         TextColor(TEXT_PRIMARY),
                         Node {
                             margin: UiRect::bottom(Val::Px(8.0)),
@@ -76,7 +78,7 @@ pub fn spawn_deposit_panel(
                     ));
                     body.spawn((
                         Text::new(format!("Remaining: {}", deposit.amount)),
-                        TextFont::from_font_size(super::CLOSE_BUTTON_FONT),
+                        tf(super::CLOSE_BUTTON_FONT),
                         TextColor(TEXT_GREEN),
                     ));
                 });

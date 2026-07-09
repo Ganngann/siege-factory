@@ -18,6 +18,7 @@ use crate::map::config::MapConfig;
 use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
 
+use crate::economy::ui_components::DataPadSelected;
 use super::{close_panel, open_capsule_panel, open_panel};
 
 // ── Click detection ──
@@ -36,6 +37,7 @@ pub fn building_inspect_click(
     spatial: Res<SpatialRegistry>,
     building_query: Query<(&Building, Option<&OccupiedTiles>)>,
     tier_q: Query<&CurrentTier, With<Capsule>>,
+    data_pad_selected: Res<DataPadSelected>,
     resource_registry: Res<ResourceRegistry>,
     reg: Res<BuildingRegistry>,
     progression_logs: Res<ProgressionLogRegistry>,
@@ -77,6 +79,7 @@ pub fn building_inspect_click(
                 .get(entity)
                 .map(|t| t.0)
                 .unwrap_or(0);
+            let selected_log = data_pad_selected.log_id.clone();
             open_capsule_panel(
                 commands,
                 panel,
@@ -85,6 +88,7 @@ pub fn building_inspect_click(
                 &reg,
                 &progression_logs,
                 current_tier,
+                selected_log,
             );
             return;
         }

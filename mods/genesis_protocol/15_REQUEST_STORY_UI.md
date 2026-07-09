@@ -148,12 +148,14 @@ Alternative plus simple : **Supprimer le dismiss par clic gauche** — ne garder
 
 ---
 
-## Résumé des fichiers
+## ✅ Implémentation Rust — terminée
 
-| Fichier | Action |
-|---------|--------|
-| `src/player/objective.rs` | Correction rendu HUD objectif (visible, positionné, mis à jour) |
-| `src/economy/data_pad.rs` | NOUVEAU — UI liste des logs + affichage texte complet |
-| `src/economy/inspect/spawn.rs` | Ajouter section Data Pad dans le panneau capsule |
-| `src/core/toast.rs` | Sécuriser dismiss : clic sur le toast seulement ou Espace |
-| `src/economy/mod.rs` | Enregistrer `data_pad` |
+| Fichier | Changement |
+|---------|------------|
+| `src/player/objective.rs` | HUD positionné haut-gauche, fond semi-transparent, bordure gauche blanche, texte au format `OBJECTIF > ...` |
+| `src/economy/inspect/data_pad_ui.rs` | **NOUVEAU** — système `data_pad_select_log` qui met à jour l'affichage au clic |
+| `src/economy/ui_components.rs` | **NOUVEAUX** composants `DataPadEntry`, `DataPadFullText`, ressource `DataPadSelected` |
+| `src/economy/inspect/spawn.rs` | `open_capsule_panel` réécrit : progression, items requis, **liste des logs cliquable**, texte complet |
+| `src/core/toast.rs` | Dismiss par Espace uniquement (clic gauche supprimé) |
+| `src/economy/inspect/interaction.rs` | Passage de `DataPadSelected` à `open_capsule_panel` |
+| `src/economy/mod.rs` | Enregistrement de `DataPadSelected` + `data_pad_select_log` |

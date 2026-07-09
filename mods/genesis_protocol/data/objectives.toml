@@ -1,65 +1,65 @@
-ï»¿[[objectives]]
+[[objectives]]
 id = "welcome"
 text = "Réparer la capsule Genesis"
 trigger_type = "game_start"
 
 [[objectives]]
 id = "craft_hammer"
-text = "Fabriquer un marteau Ã  l'Ãtabli pour dégager les débris"
+text = "Fabriquer un marteau à l'Établi pour dégager les débris"
 trigger_type = "tutorial_step"
 trigger_id = "craft_hammer"
 
 [[objectives]]
 id = "deliver_hammer"
-text = "Apporter le marteau Ã  la capsule (approche-toi et presse E)"
+text = "Apporter le marteau à la capsule (approche-toi et presse E)"
 trigger_type = "item_crafted"
 trigger_id = "hammer"
 
 [[objectives]]
 id = "tier_rope"
-text = "Apporter 3Ã corde Ã  la capsule pour rétablir l'alimentation primaire"
+text = "Apporter 3× corde à la capsule pour rétablir l'alimentation primaire"
 trigger_type = "tier_unlocked"
 trigger_id = "genesis_phase_0_clear"
 
 [[objectives]]
 id = "tier_iron_parts"
-text = "Apporter 5Ã pièces de fer pour restaurer les circuits internes"
+text = "Apporter 5× pièces de fer pour restaurer les circuits internes"
 trigger_type = "tier_unlocked"
 trigger_id = "genesis_phase_0"
 
 [[objectives]]
 id = "tier_gear"
-text = "Apporter 3Ã engrenages + 2Ã tuyaux pour rétablir la pression"
+text = "Apporter 3× engrenages + 2× tuyaux pour rétablir la pression"
 trigger_type = "tier_unlocked"
 trigger_id = "genesis_phase_1"
 
 [[objectives]]
 id = "tier_circuit"
-text = "Apporter 3Ã circuits pour remplacer le noyau informatique"
+text = "Apporter 3× circuits pour remplacer le noyau informatique"
 trigger_type = "tier_unlocked"
 trigger_id = "genesis_phase_2"
 
 [[objectives]]
 id = "tier_motor"
-text = "Apporter 2Ã moteurs + 2Ã batteries pour débloquer les pompes internes"
+text = "Apporter 2× moteurs + 2× batteries pour débloquer les pompes internes"
 trigger_type = "tier_unlocked"
 trigger_id = "genesis_phase_3"
 
 [[objectives]]
 id = "tier_processor"
-text = "Apporter 2Ã nano-packs pour souder les microfissures de la coque"
+text = "Apporter 2× nano-packs pour souder les microfissures de la coque"
 trigger_type = "tier_unlocked"
 trigger_id = "genesis_phase_4"
 
 [[objectives]]
 id = "tier_organic"
-text = "Apporter 3Ã composés organiques + 1Ã protéine pour synthétiser les fluides biologiques"
+text = "Apporter 3× composés organiques + 1× protéine pour synthétiser les fluides biologiques"
 trigger_type = "tier_unlocked"
 trigger_id = "genesis_phase_5"
 
 [[objectives]]
 id = "tier_neural"
-text = "Apporter 1Ã interface neurale Ã  la capsule pour amorcer la séquence de réveil"
+text = "Apporter 1× interface neurale à la capsule pour amorcer la séquence de réveil"
 trigger_type = "tier_unlocked"
 trigger_id = "genesis_phase_6"
 

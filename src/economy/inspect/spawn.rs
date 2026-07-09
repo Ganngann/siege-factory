@@ -3,17 +3,19 @@ use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     AlertText, Building, BuildingPanel, CapacityBarFill, CapacityBarText, ConnectionRowText,
     FarmCropSelectButton, FarmCropText, FarmCultivatorCountText, FarmRecruitButton, FlowInputText,
-    FlowOutputText, FuelBarBg, FuelBarFill, HpBarFill, HpText, PanelOverlay, PowerStatusText,
-    ProgressBarBg, ProgressBarFill, RecipeChangeButton, RecipeNameText, SorterInvertButton,
-    SorterResourceButton, StatRowText, StatusText,
+    FlowOutputText, FuelBarBg, FuelBarFill, HpBarFill, HpText, PanelModal, PanelOverlay,
+    PowerStatusText, ProgressBarBg, ProgressBarFill, RecipeChangeButton, RecipeNameText,
+    SorterInvertButton, SorterResourceButton, StatRowText, StatusText,
 };
 use crate::economy::resource::ResourceRegistry;
 use crate::economy::tiered_structure::ProgressionLogRegistry;
-use crate::economy::ui_components::{UpgradeButton, UpgradeInfoText};
+use crate::economy::ui_components::{DataPadEntry, DataPadFullText, ManagedByPanel, UpgradeButton, UpgradeInfoText};
 use crate::economy::window::{
     ACCENT, BAR_BG, BG_SECTION, HP_GREEN, TEXT_PRIMARY, TEXT_SECONDARY, spawn_window,
 };
 use bevy::prelude::*;
+
+use crate::core::game_font::tf;
 
 // 📏 IA NOTE: ce fichier fait 700+ lignes. Si tu le modifies, vérifie que
 // tu ne dupliques pas une fonction déjà présente ailleurs dans ce fichier.
@@ -87,6 +89,7 @@ pub fn open_panel(
     );
 
     commands.entity(overlay).add_child(root);
+    commands.entity(root).insert((PanelModal, ManagedByPanel));
     panel.overlay = Some(overlay);
     panel.root = Some(root);
     panel.inspected = Some(entity);
@@ -239,7 +242,7 @@ fn spawn_status_bar(parent: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
             status.spawn((
                 StatusText,
                 Text::new("Idle"),
-                TextFont::from_font_size(12.0),
+                tf(12.0),
                 TextColor(TEXT_SECONDARY),
                 Node {
                     margin: UiRect::top(Val::Px(4.0)),
@@ -253,7 +256,7 @@ fn spawn_flow_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     sec.spawn((
         FlowInputText,
         Text::new("Inputs: --"),
-        TextFont::from_font_size(12.0),
+        tf(12.0),
         TextColor(TEXT_SECONDARY),
         Node {
             margin: UiRect::bottom(Val::Px(2.0)),
@@ -263,7 +266,7 @@ fn spawn_flow_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     sec.spawn((
         FlowOutputText,
         Text::new("Outputs: --"),
-        TextFont::from_font_size(12.0),
+        tf(12.0),
         TextColor(TEXT_SECONDARY),
     ));
 }
@@ -293,7 +296,7 @@ fn spawn_inventory_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
     sec.spawn((
         CapacityBarText,
         Text::new("Capacity: 0/0"),
-        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        tf(super::SECTION_FONT_SIZE),
         TextColor(TEXT_SECONDARY),
         Node {
             margin: UiRect::vertical(Val::Px(4.0)),
@@ -339,7 +342,7 @@ fn spawn_inventory_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
                 BorderColor::all(Color::srgba(0.3, 0.3, 0.4, 1.0)),
                 BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
                 Text::new(String::new()),
-                TextFont::from_font_size(9.0),
+                tf(9.0),
                 TextColor(Color::WHITE),
             ));
         }
@@ -350,7 +353,7 @@ fn spawn_connections_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommand
     sec.spawn((
         ConnectionRowText,
         Text::new("No connections"),
-        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        tf(super::SECTION_FONT_SIZE),
         TextColor(TEXT_SECONDARY),
     ));
 }
@@ -366,7 +369,7 @@ fn spawn_stats_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
         sec.spawn((
             StatRowText,
             Text::new(line),
-            TextFont::from_font_size(super::SECTION_FONT_SIZE),
+            tf(super::SECTION_FONT_SIZE),
             TextColor(TEXT_SECONDARY),
             Node {
                 margin: UiRect::bottom(Val::Px(1.0)),
@@ -380,7 +383,7 @@ fn spawn_power_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     sec.spawn((
         PowerStatusText,
         Text::new("Power: --"),
-        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        tf(super::SECTION_FONT_SIZE),
         TextColor(TEXT_SECONDARY),
     ));
 }
@@ -389,7 +392,7 @@ fn spawn_recipe_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     sec.spawn((
         RecipeNameText,
         Text::new("Recipe: --"),
-        TextFont::from_font_size(12.0),
+        tf(12.0),
         TextColor(TEXT_PRIMARY),
         Node {
             margin: UiRect::bottom(Val::Px(4.0)),
@@ -411,7 +414,7 @@ fn spawn_recipe_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     .with_children(|btn| {
         btn.spawn((
             Text::new("[Change Recipe]"),
-            TextFont::from_font_size(super::SECTION_FONT_SIZE),
+            tf(super::SECTION_FONT_SIZE),
             TextColor(ACCENT),
         ));
     });
@@ -424,7 +427,7 @@ fn spawn_farm_content(
     sec.spawn((
         FarmCropText,
         Text::new("Crops:  --"),
-        TextFont::from_font_size(12.0),
+        tf(12.0),
         TextColor(TEXT_PRIMARY),
         Node {
             margin: UiRect::bottom(Val::Px(4.0)),
@@ -452,7 +455,7 @@ fn spawn_farm_content(
         .with_children(|btn| {
             btn.spawn((
                 Text::new(crop_type),
-                TextFont::from_font_size(super::SECTION_FONT_SIZE),
+                tf(super::SECTION_FONT_SIZE),
                 TextColor(TEXT_SECONDARY),
             ));
         });
@@ -461,7 +464,7 @@ fn spawn_farm_content(
     sec.spawn((
         FarmCultivatorCountText,
         Text::new("Cultivators:  --"),
-        TextFont::from_font_size(12.0),
+        tf(12.0),
         TextColor(TEXT_SECONDARY),
         Node {
             margin: UiRect::vertical(Val::Px(4.0)),
@@ -483,7 +486,7 @@ fn spawn_farm_content(
     .with_children(|btn| {
         btn.spawn((
             Text::new("[Recruit Cultivator]  8 ore"),
-            TextFont::from_font_size(12.0),
+            tf(12.0),
             TextColor(TEXT_PRIMARY),
         ));
     });
@@ -509,7 +512,7 @@ fn spawn_sorter_content(
     .with_children(|btn| {
         btn.spawn((
             Text::new("Invert: OFF"),
-            TextFont::from_font_size(12.0),
+            tf(12.0),
             TextColor(TEXT_PRIMARY),
         ));
     });
@@ -538,7 +541,7 @@ fn spawn_sorter_content(
         .with_children(|btn| {
             btn.spawn((
                 Text::new(res),
-                TextFont::from_font_size(super::SECTION_FONT_SIZE),
+                tf(super::SECTION_FONT_SIZE),
                 TextColor(TEXT_SECONDARY),
             ));
         });
@@ -568,7 +571,7 @@ fn spawn_hp_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     sec.spawn((
         HpText,
         Text::new("HP: --/--"),
-        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        tf(super::SECTION_FONT_SIZE),
         TextColor(TEXT_SECONDARY),
         Node {
             margin: UiRect::top(Val::Px(4.0)),
@@ -581,7 +584,7 @@ fn spawn_alerts_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     sec.spawn((
         AlertText,
         Text::new("No alerts"),
-        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        tf(super::SECTION_FONT_SIZE),
         TextColor(TEXT_SECONDARY),
     ));
 }
@@ -601,7 +604,7 @@ fn spawn_upgrade_section(
     sec.spawn((
         UpgradeInfoText,
         Text::new(format!("Upgrade to: {}", target_def.name)),
-        TextFont::from_font_size(12.0),
+        tf(12.0),
         TextColor(TEXT_PRIMARY),
         Node {
             margin: UiRect::bottom(Val::Px(4.0)),
@@ -610,7 +613,7 @@ fn spawn_upgrade_section(
     ));
     sec.spawn((
         Text::new(format!("Cost: {}", cost_str)),
-        TextFont::from_font_size(super::SECTION_FONT_SIZE),
+        tf(super::SECTION_FONT_SIZE),
         TextColor(TEXT_SECONDARY),
         Node {
             margin: UiRect::bottom(Val::Px(4.0)),
@@ -634,7 +637,7 @@ fn spawn_upgrade_section(
     .with_children(|btn| {
         btn.spawn((
             Text::new("[Upgrade]"),
-            TextFont::from_font_size(12.0),
+            tf(12.0),
             TextColor(TEXT_PRIMARY),
         ));
     });
@@ -643,7 +646,7 @@ fn spawn_upgrade_section(
 fn spawn_burner_content(sec: &mut bevy::ecs::hierarchy::ChildSpawnerCommands) {
     sec.spawn((
         Text::new("Combustion"),
-        TextFont::from_font_size(10.0),
+        tf(10.0),
         TextColor(TEXT_SECONDARY),
     ));
     sec.spawn((
@@ -689,7 +692,7 @@ fn spawn_section(
         .with_children(|sec| {
             sec.spawn((
                 Text::new(title),
-                TextFont::from_font_size(10.0),
+                tf(10.0),
                 TextColor(TEXT_SECONDARY),
                 Node {
                     margin: UiRect::bottom(Val::Px(6.0)),
@@ -710,6 +713,7 @@ pub fn open_capsule_panel(
     reg: &BuildingRegistry,
     logs: &ProgressionLogRegistry,
     tier_index: usize,
+    selected_log: Option<String>,
 ) {
     // Close existing panel
     if let Some(e) = panel.root.take() {
@@ -723,62 +727,15 @@ pub fn open_capsule_panel(
     let Some(def) = reg.get(&building.kind) else { return };
     let total_tiers = def.tiers.len();
 
-    // Build content lines
-    let mut tier_lines: Vec<String> = Vec::new();
-    tier_lines.push(format!("CAPSULE GENESIS — Progression"));
-    tier_lines.push(String::new());
-
-    for i in 0..total_tiers {
-        let tier_def = &def.tiers[i];
-        let log_title = logs
-            .logs
-            .iter()
-            .find(|l| l.id.as_str() == tier_def.log_id.as_deref().unwrap_or(""))
-            .map(|l| l.title.as_str())
-            .unwrap_or(&tier_def.texture);
-        let prefix = if i < tier_index {
-            "✅"
-        } else if i == tier_index {
-            "◉"
+    // Default selected log: last unlocked tier's log, or first locked
+    let display_log_id = selected_log.or_else(|| {
+        if tier_index > 0 {
+            def.tiers[tier_index - 1].log_id.clone()
         } else {
-            "○"
-        };
-        let status = if i < tier_index {
-            " (complété)"
-        } else if i == tier_index {
-            " (en cours)"
-        } else {
-            ""
-        };
-        tier_lines.push(format!(" {} Tier {} — {}{}", prefix, i, log_title, status));
-    }
-
-    tier_lines.push(String::new());
-
-    // Current tier requirements
-    if tier_index < total_tiers {
-        let current = &def.tiers[tier_index];
-        if !current.required_items.is_empty() {
-            tier_lines.push("Items requis :".to_string());
-            for (res, amt) in &current.required_items {
-                tier_lines.push(format!("  {} {}/{}", res.display_name(), 0, amt));
-            }
-            tier_lines.push(String::new());
-            tier_lines.push("(Appuyez sur E à côté de la capsule)".to_string());
+            def.tiers.first().and_then(|t| t.log_id.clone())
         }
+    });
 
-        // Log text for current tier
-        if let Some(ref log_id) = current.log_id {
-            if let Some(entry) = logs.logs.iter().find(|l| l.id == *log_id) {
-                tier_lines.push(String::new());
-                tier_lines.push(format!("\"{}\"", entry.text));
-            }
-        }
-    }
-
-    let full_text = tier_lines.join("\n");
-
-    // Build the UI
     let overlay = commands
         .spawn((
             PanelOverlay,
@@ -803,23 +760,143 @@ pub fn open_capsule_panel(
         &mut commands,
         &format!("Capsule — {}", building.name),
         super::DEPOSIT_MODAL_WIDTH,
-        super::DEPOSIT_MODAL_HEIGHT,
-        120.0,
+        super::DEPOSIT_MODAL_HEIGHT + 120.0,
         80.0,
+        60.0,
         None,
         |parent| {
-            parent.spawn((
-                Text::new(full_text),
-                TextFont::from_font_size(12.0),
-                TextColor(TEXT_PRIMARY),
-                Node {
-                    padding: UiRect::all(Val::Px(12.0)),
-                    ..default()
-                },
-            ));
+            // ── Content container ──
+            parent
+                .spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        padding: UiRect::all(Val::Px(12.0)),
+                        row_gap: Val::Px(4.0),
+                        width: Val::Percent(100.0),
+                        ..default()
+                    },
+                    BackgroundColor(Color::NONE),
+                ))
+                .with_children(|col| {
+                    // ── Tier progression ──
+                    col.spawn((
+                        Text::new("PROGRESSION".to_string()),
+                        tf(11.0),
+                        TextColor(TEXT_SECONDARY),
+                    ));
+
+                    let total_logs = logs.logs.len();
+                    let completed_count = tier_index.min(total_logs);
+                    col.spawn((
+                        Text::new(format!("Tiers: {}/{} complétés", completed_count, total_tiers)),
+                        tf(12.0),
+                        TextColor(TEXT_PRIMARY),
+                    ));
+
+                    for i in 0..total_tiers {
+                        let tier_def = &def.tiers[i];
+                        let log_title = logs
+                            .logs
+                            .iter()
+                            .find(|l| l.id.as_str() == tier_def.log_id.as_deref().unwrap_or(""))
+                            .map(|l| l.title.as_str())
+                            .unwrap_or(&tier_def.texture);
+                        let prefix = if i < tier_index { "✅" } else if i == tier_index { "◉" } else { "○" };
+                        let status = if i < tier_index { " (fait)" } else if i == tier_index { " (en cours)" } else { "" };
+                        col.spawn((
+                            Text::new(format!(" {} Tier {} — {}{}", prefix, i, log_title, status)),
+                            tf(12.0),
+                            TextColor(TEXT_PRIMARY),
+                        ));
+                    }
+
+                    // ── Current tier requirements ──
+                    if tier_index < total_tiers {
+                        let current = &def.tiers[tier_index];
+                        if !current.required_items.is_empty() {
+                            col.spawn((Text::new(String::new()), TextFont::default(), TextColor::default()));
+                            col.spawn((
+                                Text::new("Items requis :".to_string()),
+                                tf(11.0),
+                                TextColor(TEXT_SECONDARY),
+                            ));
+                            for (res, amt) in &current.required_items {
+                                col.spawn((
+                                    Text::new(format!("  {} 0/{}", res.display_name(), amt)),
+                                    tf(12.0),
+                                    TextColor(TEXT_PRIMARY),
+                                ));
+                            }
+                            col.spawn((
+                                Text::new("(Appuyez sur E à côté de la capsule)".to_string()),
+                                tf(11.0),
+                                TextColor(TEXT_SECONDARY),
+                            ));
+                        }
+                    }
+
+                    // ── Data Pad section ──
+                    col.spawn((Text::new(String::new()), TextFont::default(), TextColor::default()));
+                    col.spawn((
+                        Text::new("📖 DATA PAD".to_string()),
+                        tf(11.0),
+                        TextColor(TEXT_SECONDARY),
+                    ));
+
+                    for entry in &logs.logs {
+                        let unlocked = entry.tier < tier_index || (entry.tier == tier_index && tier_index == total_tiers);
+                        let icon = if unlocked { "●" } else { "○" };
+                        let is_selected = display_log_id.as_deref() == Some(&entry.id);
+                        let color = if is_selected {
+                            Color::srgb(1.0, 1.0, 0.8)
+                        } else if unlocked {
+                            TEXT_PRIMARY
+                        } else {
+                            Color::srgb(0.5, 0.5, 0.5)
+                        };
+
+                        let mut row = col.spawn((
+                            Button,
+                            DataPadEntry { log_id: entry.id.clone() },
+                            Node {
+                                padding: UiRect::all(Val::Px(3.0)),
+                                ..default()
+                            },
+                            BackgroundColor(if is_selected { Color::srgba(0.3, 0.3, 0.3, 0.5) } else { Color::NONE }),
+                        ));
+                        row.with_children(|btn| {
+                            btn.spawn((
+                                Text::new(format!(" {}  {}", icon, entry.title)),
+                                tf(12.0),
+                                TextColor(color),
+                            ));
+                        });
+                    }
+
+                    // ── Full log text ──
+                    col.spawn((Text::new(String::new()), TextFont::default(), TextColor::default()));
+                    if let Some(ref lid) = display_log_id {
+                        if let Some(entry) = logs.logs.iter().find(|l| l.id == *lid) {
+                            col.spawn((
+                                DataPadFullText,
+                                Text::new(format!("\"{}\"\n\nTier {} — {}", entry.text, entry.tier, entry.title)),
+                                tf(12.0),
+                                TextColor(Color::srgb(0.8, 0.85, 0.9)),
+                                Node {
+                                    padding: UiRect::all(Val::Px(8.0)),
+                                    max_width: Val::Px(360.0),
+                                    flex_wrap: FlexWrap::Wrap,
+                                    ..default()
+                                },
+                                BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.2)),
+                            ));
+                        }
+                    }
+                });
         },
     );
 
+    commands.entity(root).insert((PanelModal, ManagedByPanel));
     panel.overlay = Some(overlay);
     panel.root = Some(root);
     panel.inspected = Some(entity);

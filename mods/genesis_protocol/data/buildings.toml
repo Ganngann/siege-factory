@@ -26,6 +26,7 @@ station = true
 hidden = false
 
 has_recipes = true
+recipe_categories = ["proto"]
 
 [buildings.campfire]
 name = "Feu de Camp"
@@ -39,6 +40,7 @@ powered = false
 hidden = false
 
 has_recipes = true
+recipe_categories = ["proto"]
 production_interval = 4.0
 default_recipe = "ceramic_fire"
 
@@ -617,46 +619,46 @@ texture = "genesis_capsule"
 required_items = { rope = 3 }
 unlock_recipes = []
 log_id = "genesis_phase_0"
-texture = "genesis_capsule_t0"
+texture = "genesis_capsule_t1"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { iron_parts = 5 }
 unlock_recipes = ["proto_steel"]
 log_id = "genesis_phase_1"
-texture = "genesis_capsule_t1"
+texture = "genesis_capsule_t2"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { gear = 3, pipe = 2 }
 unlock_recipes = ["proto_circuit"]
 log_id = "genesis_phase_2"
-texture = "genesis_capsule_t2"
+texture = "genesis_capsule_t3"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { circuit = 3 }
 unlock_recipes = ["proto_motor"]
 log_id = "genesis_phase_3"
-texture = "genesis_capsule_t3"
+texture = "genesis_capsule_t4"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { motor = 2, battery = 2 }
 unlock_recipes = ["proto_processor"]
 log_id = "genesis_phase_4"
-texture = "genesis_capsule_t4"
+texture = "genesis_capsule_t5"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { nano_pack = 2 }
 unlock_recipes = ["proto_organic"]
 log_id = "genesis_phase_5"
-texture = "genesis_capsule_t5"
+texture = "genesis_capsule_t6"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { organic_compound = 3, protein = 1 }
 unlock_recipes = ["proto_neural"]
 log_id = "genesis_phase_6"
-texture = "genesis_capsule_t6"
+texture = "genesis_capsule_t7"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { neural_interface = 1, synthetic_heart = 1, genome_sequence = 1, fusion_core = 1 }
 unlock_recipes = []
 log_id = "genesis_final"
-texture = "genesis_capsule_t7"
+texture = "genesis_capsule_t8"

@@ -1,4 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <title>Stone Pickaxe</title>
-  <desc>Pioche en Pierre — Outil Phase 0. Vue 3/4 : tête de pierre (#8B7355) pointue sur manche en bois, liée par des liens primitifs. Aspect brut, contraste avec les métaux. 64×64.</desc>
-<ellipse cx="32" cy="54" rx="14" ry="4" fill="rgba(0,0,0,0.10)"/><path d="M28 48 L28 28 L16 16 L20 12 L32 24 L36 20 L40 24 L36 28 L36 48Z" fill="#8B7355" stroke="#5A4A35" stroke-width="0.7"/><rect x="26" y="44" width="12" height="6" rx="2" fill="#6B5A40"/><line x1="16" y1="16" x2="20" y2="12" stroke="#A09070" stroke-width="0.5" opacity="0.5"/></svg>
