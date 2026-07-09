@@ -1,6 +1,6 @@
 use crate::agriculture::components::Cultivator;
 use crate::core::toast::ToastQueue;
-use crate::core::utils::{silent_despawn, tile_to_world};
+use crate::core::utils::silent_despawn;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     BuildMode, Building, BuildingPanel, DeconstructMode, FarmCropSelectButton, FarmRecruitButton,
@@ -9,7 +9,6 @@ use crate::economy::components::{
 };
 use crate::economy::game_components::{Capsule, CurrentTier, Level};
 use crate::economy::tiered_structure::ProgressionLogRegistry;
-use crate::economy::player::PlayerWorldPos;
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::ui_components::UpgradeButton;
@@ -34,7 +33,6 @@ pub fn building_inspect_click(
     // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: Res<MapConfig>,
-    player_pos: Res<PlayerWorldPos>,
     spatial: Res<SpatialRegistry>,
     building_query: Query<(&Building, Option<&OccupiedTiles>)>,
     tier_q: Query<&CurrentTier, With<Capsule>>,
@@ -61,8 +59,6 @@ pub fn building_inspect_click(
         return;
     };
 
-    let interact_range_sq = (cfg.inspect_range_tiles * cfg.tile_size).powi(2);
-
     // Check buildings first (they occupy tiles in SpatialRegistry)
     if let Some(entity) = spatial.at(tile_x, tile_y) {
         if panel.inspected == Some(entity) {
@@ -70,24 +66,9 @@ pub fn building_inspect_click(
             return;
         }
 
-        let Ok((building, occupied)) = building_query.get(entity) else {
+        let Ok((building, _occupied)) = building_query.get(entity) else {
             return;
         };
-
-        // Check proximity using footprint
-        let footprint: Vec<(i32, i32)> = occupied
-            .map(|o| o.0.clone())
-            .unwrap_or_else(|| vec![(tile_x, tile_y)]);
-        let in_proximity = footprint.iter().any(|(tx, ty)| {
-            let tile_center = tile_to_world(*tx, *ty, cfg.tile_size);
-            let (wx, wy) = (tile_center.x, tile_center.y);
-            let dx = player_pos.0.x - wx;
-            let dy = player_pos.0.y - wy;
-            dx * dx + dy * dy <= interact_range_sq
-        });
-        if !in_proximity {
-            return;
-        }
 
         // Check if this building is a Capsule with tiers → show capsule panel
         let building_def = reg.get(&building.kind);
@@ -268,57 +249,6 @@ pub fn farm_recruit_system(
             Transform::from_translation(spawn_pos),
         ));
         toast_queue.0.push("Cultivator recruited".to_string());
-    }
-}
-
-// ── Manual resource transfer (T = take from building, P = put to building) ──
-
-pub fn resource_transfer(
-    keys: Res<ButtonInput<KeyCode>>,
-    panel: Res<BuildingPanel>,
-    mut building_inv_query: Query<&mut Inventory, Without<Player>>,
-    mut player_inv_query: Query<&mut Inventory, With<Player>>,
-    mut toast_queue: ResMut<ToastQueue>,
-) {
-    let Some(inspected) = panel.inspected else {
-        return;
-    };
-    let Ok(mut player_inv) = player_inv_query.single_mut() else {
-        return;
-    };
-
-    if keys.just_pressed(KeyCode::KeyT) {
-        // Take 1 unit of first resource from building → player
-        if let Ok(mut build_inv) = building_inv_query.get_mut(inspected) {
-            let rid = build_inv.first_resource();
-            if let Some(rid) = rid {
-                build_inv.remove(&rid, 1);
-                player_inv.add(&rid, 1);
-                toast_queue.0.push(format!("Pris 1 {}", rid.display_name()));
-            } else {
-                toast_queue.0.push("Rien à prendre".to_string());
-            }
-        }
-    }
-
-    if keys.just_pressed(KeyCode::KeyP) {
-        // Put 1 unit of first resource from player → building
-        if let Ok(mut build_inv) = building_inv_query.get_mut(inspected) {
-            let rid = player_inv.first_resource();
-            if let Some(rid) = rid {
-                if build_inv.capacity > 0 && build_inv.is_full() {
-                    toast_queue.0.push("Bâtiment plein".to_string());
-                    return;
-                }
-                player_inv.remove(&rid, 1);
-                build_inv.add(&rid, 1);
-                toast_queue
-                    .0
-                    .push(format!("Déposé 1 {}", rid.display_name()));
-            } else {
-                toast_queue.0.push("Rien à déposer".to_string());
-            }
-        }
     }
 }
 

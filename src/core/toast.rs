@@ -41,7 +41,7 @@ pub fn toast_system(
 ) {
     for msg in queue.0.drain(..) {
         let persistent = msg.starts_with("\x00PERSISTENT\x00");
-        let text = if persistent { &msg[14..] } else { &msg };
+        let text = if persistent { &msg[12..] } else { &msg };
 
         commands.spawn((
             ToastMessage {

@@ -198,14 +198,14 @@ impl Plugin for EconomyPlugin {
             .in_set(GameplayStep::CameraFollow));
         app.add_systems(Update, player::builder_work.in_set(PlayingSystems));
         app.add_systems(Update, player::finish_construction.in_set(PlayingSystems));
-        app.add_systems(Update, player::player_mine.in_set(PlayingSystems));
+
         app.add_systems(Update, player::player_pickup_belt.in_set(PlayingSystems));
         app.add_systems(Update, capsule::update_capsule_visual.in_set(PlayingSystems));
         app.add_systems(Update, ground_items::player_pickup_ground_items.in_set(PlayingSystems));
         app.add_systems(Update, data_pad::interact_data_pad.in_set(PlayingSystems));
         app.add_systems(
             Update,
-            tiered_structure::structure_interact.in_set(PlayingSystems),
+            crate::player::interact::contextual_interact.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
@@ -323,7 +323,7 @@ impl Plugin for EconomyPlugin {
             Update,
             inspect::upgrade_button_system.in_set(PlayingSystems),
         );
-        app.add_systems(Update, inspect::resource_transfer.in_set(PlayingSystems));
+
         app.add_systems(Update, window::drag_window_system.in_set(PlayingSystems));
         app.add_systems(
             Update,

@@ -1,3 +1,4 @@
+pub mod building_tooltip;
 pub mod cache;
 pub mod config;
 pub mod hud;
@@ -12,6 +13,7 @@ pub use visuals::*;
 
 use crate::core::game_state::GameState;
 use crate::core::utils::silent_despawn;
+use crate::rendering::building_tooltip::{building_tooltip_system, TooltipTarget};
 use bevy::prelude::*;
 
 fn cleanup_tile_highlight(mut commands: Commands, mut highlight: ResMut<TileHighlightEntity>) {
@@ -66,5 +68,10 @@ impl Plugin for RenderPlugin {
             minimap::update_minimap.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(OnExit(GameState::Playing), cleanup_tile_highlight);
+        app.init_resource::<TooltipTarget>();
+        app.add_systems(
+            Update,
+            building_tooltip_system.run_if(in_state(GameState::Playing)),
+        );
     }
 }
