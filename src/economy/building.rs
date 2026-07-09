@@ -65,6 +65,7 @@ pub struct BuildingDef {
     pub belt_variant: BeltVariant,
     pub powered: bool,
     pub station: bool,
+    pub has_recipes: bool,
     pub tiers: Vec<TierDef>,
     pub fluid_tank_capacity: f32,
     pub pipe_transfer_rate: f32,
@@ -252,6 +253,7 @@ impl BuildingRegistry {
                     belt_variant,
                     powered: entry.powered,
                     station: entry.station,
+                    has_recipes: entry.has_recipes,
                     tiers,
                     fluid_tank_capacity: entry.fluid_tank_capacity,
                     pipe_transfer_rate: entry.pipe_transfer_rate,
@@ -367,6 +369,8 @@ struct BuildingEntry {
     powered: bool,
     #[serde(default)]
     station: bool,
+    #[serde(default)]
+    has_recipes: bool,
     #[serde(default)]
     tiers: Vec<TierEntry>,
     #[serde(default)]

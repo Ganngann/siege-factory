@@ -1,5 +1,5 @@
-# ============================================================
-# Genesis Protocol — Découvertes (déblocage des phases)
+﻿# ============================================================
+# Genesis Protocol â€” DÃ©couvertes (dÃ©blocage des phases)
 # ============================================================
 
 [starter_recipes]
@@ -28,7 +28,7 @@ recipes = [
     "copper_ingot_primitive",
 ]
 
-# Phase 1 → Phase 2 : Fusion avancée
+# Phase 1 â†’ Phase 2 : Fusion avancÃ©e
 [[discovery]]
 building = "furnace"
 threshold = 3
@@ -36,42 +36,42 @@ type = "recipe"
 id = "proto_steel"
 message = "La chaleur intense fusionne le fer et le charbon en acier."
 
-# Phase 2 → Phase 3 : Premiers circuits
+# Phase 2 â†’ Phase 3 : Premiers circuits
 [[discovery]]
 building = "gear_press"
 threshold = 3
 type = "recipe"
 id = "proto_circuit"
-message = "Des connexions de cuivre sur du fer créent un circuit primitif."
+message = "Des connexions de cuivre sur du fer crÃ©ent un circuit primitif."
 
-# Phase 3 → Phase 4 : Mécanisation
+# Phase 3 â†’ Phase 4 : MÃ©canisation
 [[discovery]]
 building = "assembler"
 threshold = 5
 type = "recipe"
 id = "proto_motor"
-message = "La précision mécanique donne naissance au moteur."
+message = "La prÃ©cision mÃ©canique donne naissance au moteur."
 
-# Phase 4 → Phase 5 : Nano-technologie
+# Phase 4 â†’ Phase 5 : Nano-technologie
 [[discovery]]
 building = "electronics_lab"
 threshold = 3
 type = "recipe"
 id = "proto_processor"
-message = "Des circuits superposés forment une unité de traitement."
+message = "Des circuits superposÃ©s forment une unitÃ© de traitement."
 
-# Phase 5 → Phase 6 : Matière vivante
+# Phase 5 â†’ Phase 6 : MatiÃ¨re vivante
 [[discovery]]
 building = "bio_lab"
 threshold = 1
 type = "recipe"
 id = "proto_organic"
-message = "La vie jaillit du métal et de l'eau."
+message = "La vie jaillit du mÃ©tal et de l'eau."
 
-# Phase 6 → Finale : Le dernier composant
+# Phase 6 â†’ Finale : Le dernier composant
 [[discovery]]
 building = "bio_lab"
 threshold = 5
 type = "recipe"
 id = "proto_neural"
-message = "La carte neurale est prête. Le cerveau de la capsule peut être connecté."
+message = "La carte neurale est prÃªte. Le cerveau de la capsule peut Ãªtre connectÃ©."

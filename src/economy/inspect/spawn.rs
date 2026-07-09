@@ -21,27 +21,8 @@ use bevy::prelude::*;
 const BUILDING_KIND_FARM: &str = "farm";
 const BUILDING_KIND_SORTER: &str = "sorter";
 
-// ⚠️ IA ATTENTION: cette liste de strings doit rester synchronisée avec buildings.toml.
-// Si tu ajoutes un building avec des recettes, ajoute son kind ici.
-// Solution future: ajouter `has_recipes = true` dans BuildingDef du TOML
-// et remplacer cette fonction par `registry.get(kind).map(|d| d.has_recipes).unwrap_or(false)`.
-fn kind_has_recipes(kind: &str) -> bool {
-    matches!(
-        kind,
-        "assembler"
-            | "assembler_ii"
-            | "assembler_iii"
-            | "furnace"
-            | "furnace_ii"
-            | "blast_furnace"
-            | "assembly_crane"
-            | "alchemy_lab"
-            | "electronics_lab"
-            | "foundry"
-            | "guild_hall"
-            | "enchanting_array"
-            | "pumpjack"
-    )
+fn kind_has_recipes(kind: &str, registry: &BuildingRegistry) -> bool {
+    registry.get(kind).map(|d| d.has_recipes).unwrap_or(false)
 }
 
 // SUGGEST: extraire dans un struct (clippy::too_many_arguments)
@@ -69,7 +50,7 @@ pub fn open_panel(
     panel.dirty = false;
 
     let modal_size = Vec2::new(super::MODAL_WIDTH, super::MODAL_HEIGHT);
-    let show_recipes = kind_has_recipes(kind);
+    let show_recipes = kind_has_recipes(kind, reg);
     let is_farm = kind == BUILDING_KIND_FARM;
 
     let overlay = commands

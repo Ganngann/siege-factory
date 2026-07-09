@@ -1,53 +1,53 @@
-[[logs]]
+﻿[[logs]]
 id = "genesis_phase_0_clear"
 tier = 0
-title = "Déblayage"
-text = "Le marteau frappe les panneaux d'accès. La rouille cède — et le manche avec. Les débris s'effondrent, dévoilant un écran poussiéreux. Un voyant clignote faiblement : ALIMENTATION REQUISE."
+title = "DÃ©blayage"
+text = "Le marteau frappe les panneaux d'accÃ¨s. La rouille cÃ¨de â€” et le manche avec. Les dÃ©bris s'effondrent, dÃ©voilant un Ã©cran poussiÃ©reux. Un voyant clignote faiblement : ALIMENTATION REQUISE."
 
 [[logs]]
 id = "genesis_phase_0"
 tier = 1
-title = "Réveil"
-text = "La corde s'enroule autour des connecteurs. Un frémissement parcourt la coque. L'écran s'illumine — faiblement, mais il s'illumine. 'PREMIER CONTACT — SYSTÈMES MINIMAUX EN LIGNE'. Un voyant vert clignote dans l'obscurité."
+title = "RÃ©veil"
+text = "La corde s'enroule autour des connecteurs. Un frÃ©missement parcourt la coque. L'Ã©cran s'illumine â€” faiblement, mais il s'illumine. 'PREMIER CONTACT â€” SYSTÃˆMES MINIMAUX EN LIGNE'. Un voyant vert clignote dans l'obscuritÃ©."
 
 [[logs]]
 id = "genesis_phase_1"
 tier = 2
-title = "Étincelle"
-text = "Les voyants d'alimentation s'allument un à un. Un bourdonnement léger traverse la coque. L'ordinateur de bord émet un signal faible — assez pour lire les premiers mots sur l'écran poussiéreux : 'ALIMENTATION REQUISE — CIRCUIT DE REFROIDISSEMENT DÉFAILLANT'. Il y a un plan, quelque part, dans ce chaos."
+title = "Ã‰tincelle"
+text = "Les voyants d'alimentation s'allument un Ã  un. Un bourdonnement lÃ©ger traverse la coque. L'ordinateur de bord Ã©met un signal faible â€” assez pour lire les premiers mots sur l'Ã©cran poussiÃ©reux : 'ALIMENTATION REQUISE â€” CIRCUIT DE REFROIDISSEMENT DÃ‰FAILLANT'. Il y a un plan, quelque part, dans ce chaos."
 
 [[logs]]
 id = "genesis_phase_2"
 tier = 3
 title = "Rouille et Vapeur"
-text = "Un liquide sombre circule dans les canalisations que j'ai rebranchées. De la condensation apparaît sur la vitre. Je vois une forme à l'intérieur, une silhouette. Mon reflet, peut-être. L'écran clignote : 'CIRCUIT DE REFROIDISSEMENT OK — CPU CALCINÉ'. Il me faut un cerveau pour cette machine."
+text = "Un liquide sombre circule dans les canalisations que j'ai rebranchÃ©es. De la condensation apparaÃ®t sur la vitre. Je vois une forme Ã  l'intÃ©rieur, une silhouette. Mon reflet, peut-Ãªtre. L'Ã©cran clignote : 'CIRCUIT DE REFROIDISSEMENT OK â€” CPU CALCINÃ‰'. Il me faut un cerveau pour cette machine."
 
 [[logs]]
 id = "genesis_phase_3"
 tier = 4
 title = "Fil du Cuivre"
-text = "Un faible halo de lumière éclaire la capsule de l'intérieur. Le nouveau processeur que j'ai assemblé s'intègre parfaitement — comme s'il avait toujours été destiné à cette place. L'écran s'anime : 'CPU OK — POMPES INTERNES BLOQUÉES'. Son cœur ne bat pas encore."
+text = "Un faible halo de lumiÃ¨re Ã©claire la capsule de l'intÃ©rieur. Le nouveau processeur que j'ai assemblÃ© s'intÃ¨gre parfaitement â€” comme s'il avait toujours Ã©tÃ© destinÃ© Ã  cette place. L'Ã©cran s'anime : 'CPU OK â€” POMPES INTERNES BLOQUÃ‰ES'. Son cÅ“ur ne bat pas encore."
 
 [[logs]]
 id = "genesis_phase_4"
 tier = 5
 title = "Pouls"
-text = "J'entends un battement. Régulier. Pas le mien. Les pompes internes poussent un fluide réparateur dans les artères de la capsule. La silhouette contre la vitre est plus nette. L'écran affiche : 'POMPES OK — MICROFISSURES COQUE DÉTECTÉES'. Le temps presse, la coque fuit."
+text = "J'entends un battement. RÃ©gulier. Pas le mien. Les pompes internes poussent un fluide rÃ©parateur dans les artÃ¨res de la capsule. La silhouette contre la vitre est plus nette. L'Ã©cran affiche : 'POMPES OK â€” MICROFISSURES COQUE DÃ‰TECTÃ‰ES'. Le temps presse, la coque fuit."
 
 [[logs]]
 id = "genesis_phase_5"
 tier = 6
 title = "Nanites"
-text = "Des milliers de nanomachines rampent sur la coque interne, soudant chaque microfissure avec une précision d'horloger. La vitre s'éclaircit — je vois une main. Une main nue, paume contre la paroi. L'écran: 'COQUE SCELLÉE — FLUIDES BIOLOGIQUES MANQUANTS'. Il lui manque le sang de la vie."
+text = "Des milliers de nanomachines rampent sur la coque interne, soudant chaque microfissure avec une prÃ©cision d'horloger. La vitre s'Ã©claircit â€” je vois une main. Une main nue, paume contre la paroi. L'Ã©cran: 'COQUE SCELLÃ‰E â€” FLUIDES BIOLOGIQUES MANQUANTS'. Il lui manque le sang de la vie."
 
 [[logs]]
 id = "genesis_phase_6"
 tier = 7
-title = "Genèse"
-text = "Le réservoir de stase se remplit d'un liquide ambré, synthétisé fibre par fibre, enzyme par enzyme. Les signes vitaux dansent sur l'écran : température, pression, rythme cardiaque. La main contre la vitre tremble. L'écran : 'RÉSERVOIR DE STASE OK — PRÊT POUR SÉQUENCE DE RÉVEIL'. Je ne peux plus reculer."
+title = "GenÃ¨se"
+text = "Le rÃ©servoir de stase se remplit d'un liquide ambrÃ©, synthÃ©tisÃ© fibre par fibre, enzyme par enzyme. Les signes vitaux dansent sur l'Ã©cran : tempÃ©rature, pression, rythme cardiaque. La main contre la vitre tremble. L'Ã©cran : 'RÃ‰SERVOIR DE STASE OK â€” PRÃŠT POUR SÃ‰QUENCE DE RÃ‰VEIL'. Je ne peux plus reculer."
 
 [[logs]]
 id = "genesis_final"
 tier = 8
 title = "Premier Souffle"
-text = "Les quatre composants s'enclenchent dans leurs logements avec un clic parfait. L'écran central s'illumine — compte à rebours : 60 secondes. La capsule vibre. Les lumières pulsent. Le battement s'accélère. 10... 5... La main tape contre la vitre, trois coups. Je réponds. 3... 2... 1... Un souffle. Un premier souffle. Et la vitre s'embue."
+text = "Les quatre composants s'enclenchent dans leurs logements avec un clic parfait. L'Ã©cran central s'illumine â€” compte Ã  rebours : 60 secondes. La capsule vibre. Les lumiÃ¨res pulsent. Le battement s'accÃ©lÃ¨re. 10... 5... La main tape contre la vitre, trois coups. Je rÃ©ponds. 3... 2... 1... Un souffle. Un premier souffle. Et la vitre s'embue."
