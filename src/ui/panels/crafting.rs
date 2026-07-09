@@ -14,7 +14,7 @@ impl Panel for CraftingPanelImpl {
     fn spawn(
         &self,
         commands: &mut Commands,
-        panel: &mut BuildingPanel,
+        _panel: &mut BuildingPanel,
         _ctx: &PanelSpawnCtx,
     ) -> (Entity, Entity) {
         let dummy = commands.spawn((

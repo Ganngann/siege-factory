@@ -6,6 +6,13 @@ pub use interaction::*;
 pub use recipe_selector::*;
 pub use update::*;
 
+const MODAL_WIDTH: f32 = 800.0;
+const MODAL_HEIGHT: f32 = 560.0;
+const RECIPE_SELECTOR_WIDTH: f32 = 420.0;
+const RECIPE_SELECTOR_HEIGHT: f32 = 300.0;
+const SECTION_FONT_SIZE: f32 = 11.0;
+const CLOSE_BUTTON_FONT: f32 = 14.0;
+
 use crate::core::input::KeyBindings;
 use crate::core::utils::silent_despawn;
 use crate::economy::components::{
@@ -13,17 +20,7 @@ use crate::economy::components::{
 };
 use bevy::prelude::*;
 
-const MODAL_WIDTH: f32 = 800.0;
-const MODAL_HEIGHT: f32 = 560.0;
-const DEPOSIT_MODAL_WIDTH: f32 = 400.0;
-const DEPOSIT_MODAL_HEIGHT: f32 = 200.0;
-const RECIPE_SELECTOR_WIDTH: f32 = 420.0;
-const RECIPE_SELECTOR_HEIGHT: f32 = 300.0;
 
-const SECTION_FONT_SIZE: f32 = 11.0;
-const BAR_HEIGHT: f32 = 12.0;
-const CLOSE_BUTTON_SIZE: f32 = 26.0;
-const CLOSE_BUTTON_FONT: f32 = 14.0;
 
 // ── Open / close panel ──
 

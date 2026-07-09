@@ -2,9 +2,7 @@ use bevy::prelude::*;
 
 use crate::core::utils::silent_despawn;
 use crate::economy::components::{BuildingPanel, PanelModal, PanelOverlay};
-use crate::economy::game_components::CurrentTier;
-use crate::economy::tiered_structure::ProgressionLogRegistry;
-use crate::economy::ui_components::{DataPadEntry, DataPadFullText, ManagedByPanel};
+use crate::economy::ui_components::ManagedByPanel;
 use crate::economy::window::{TEXT_PRIMARY, TEXT_SECONDARY, spawn_window};
 use crate::ui::types::PanelType;
 use crate::ui::panels::{Panel, PanelSpawnCtx};

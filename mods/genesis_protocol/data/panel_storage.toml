@@ -1,0 +1,16 @@
+title = "Stockage"
+width = 400
+height = 400
+
+[[sections]]
+type = "section"
+title = "INVENTAIRE"
+elements = [
+    { type = "data_label", key = "inventory.total", style = "title" },
+    { type = "data_label", key = "inventory.capacity", style = "body" },
+    { type = "spacer", height = 4 },
+    { type = "inventory_grid", cols = 4, rows = 4 },
+]
+
+[[sections]]
+type = "hp_bar"

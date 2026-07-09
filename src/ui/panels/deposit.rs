@@ -27,7 +27,7 @@ impl Panel for DepositPanelImpl {
         panel.inspected = None;
         panel.dirty = false;
 
-        let deposit_name = ctx.resource_registry()
+        let deposit_name = ctx.resource_registry
             .get_opt(ctx.building_kind)
             .map(|r| r.name.as_str())
             .unwrap_or(ctx.building_kind);

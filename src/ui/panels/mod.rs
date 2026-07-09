@@ -10,6 +10,7 @@ use crate::core::modding::ModRegistry;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::BuildingPanel;
 use crate::economy::resource::ResourceRegistry;
+use crate::ui::context::UiDataContext;
 use crate::ui::engine::LayoutEngine;
 use crate::ui::types::PanelType;
 
@@ -19,16 +20,10 @@ pub struct PanelSpawnCtx<'a> {
     pub entity: Entity,
     pub building_kind: &'a str,
     pub building_registry: &'a BuildingRegistry,
-    pub world: &'a World,
+    pub resource_registry: &'a ResourceRegistry,
+    pub data: &'a UiDataContext,
     pub mods: &'a ModRegistry,
     pub layout_engine: &'a LayoutEngine,
-}
-
-impl<'a> PanelSpawnCtx<'a> {
-    /// Raccourci pour accéder au ResourceRegistry depuis le World.
-    pub fn resource_registry(&self) -> &ResourceRegistry {
-        self.world.resource::<ResourceRegistry>()
-    }
 }
 
 /// Cycle de vie standardisé d'un panneau UI.

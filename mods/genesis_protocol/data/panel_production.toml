@@ -1,0 +1,37 @@
+title = "Production"
+width = 800
+height = 560
+
+[[sections]]
+type = "h_split"
+left_width = 58
+right_width = 38
+
+[[sections.left]]
+type = "inventory_grid"
+cols = 3
+rows = 2
+
+[[sections.left]]
+type = "section"
+title = "PRODUCTION"
+elements = [
+    { type = "data_label", key = "active", style = "green" },
+]
+
+[[sections.right]]
+type = "active_toggle"
+
+[[sections.right]]
+type = "section"
+title = "RECETTES"
+elements = [
+    { type = "button", text = "[Changer Recette]" },
+]
+
+[[sections.right]]
+type = "section"
+title = "HP"
+elements = [
+    { type = "hp_bar" },
+]

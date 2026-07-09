@@ -2,7 +2,6 @@ use crate::agriculture::components::Cultivator;
 use crate::core::modding::ModRegistry;
 use crate::core::toast::ToastQueue;
 use crate::core::utils::silent_despawn;
-use crate::ui::engine::LayoutEngine;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
     BuildMode, Building, BuildingPanel, FarmCropSelectButton, FarmRecruitButton,
@@ -17,6 +16,8 @@ use crate::economy::unit_config::UnitConfig;
 use crate::map::components::{TilePosition, cursor_to_tile};
 use crate::map::config::MapConfig;
 use crate::rendering::minimap::MinimapCamera;
+use crate::ui::context::UiDataContext;
+use crate::ui::engine::LayoutEngine;
 use bevy::prelude::*;
 
 use crate::ui::types::PanelType;
@@ -25,14 +26,12 @@ use super::close_panel;
 
 // ── Click detection ──
 
-// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn building_inspect_click(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
     build_mode: Res<BuildMode>,
     buttons: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
-    // SUGGEST: type CameraQuery = Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)> (clippy::type_complexity)
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
     cfg: Res<MapConfig>,
     spatial: Res<SpatialRegistry>,
@@ -43,39 +42,24 @@ pub fn building_inspect_click(
     layout_engine: Res<LayoutEngine>,
     reg: Res<BuildingRegistry>,
     ui_blocking: Res<UiIsBlocking>,
-    world: &World,
+    resource_registry: Res<ResourceRegistry>,
 ) {
-    if ui_blocking.0 {
-        return;
-    }
-    if build_mode.0.is_some() {
-        return;
-    }
-    if !buttons.just_pressed(MouseButton::Left) {
-        return;
-    }
+    if ui_blocking.0 { return; }
+    if build_mode.0.is_some() { return; }
+    if !buttons.just_pressed(MouseButton::Left) { return; }
 
-    let Some(TilePosition {
-        x: tile_x,
-        y: tile_y,
-    }) = cursor_to_tile(&windows, &camera, &cfg)
-    else {
-        return;
-    };
+    let Some(TilePosition { x: tile_x, y: tile_y }) =
+        cursor_to_tile(&windows, &camera, &cfg)
+    else { return };
 
-    // Check buildings first (they occupy tiles in SpatialRegistry)
     if let Some(entity) = spatial.at(tile_x, tile_y) {
         if panel.inspected == Some(entity) {
             close_panel(commands, panel);
             return;
         }
 
-        let Ok((building, _occupied)) = building_query.get(entity) else {
-            return;
-        };
+        let Ok((building, _occupied)) = building_query.get(entity) else { return };
 
-        // Check if this building is a Capsule with tiers → show capsule panel
-        // Route ALL building clicks through the modular Panel system
         let panel_type = if tier_q.contains(entity) {
             PanelType::Capsule
         } else {
@@ -83,11 +67,21 @@ pub fn building_inspect_click(
         };
 
         if let Some(panel_impl) = panel_registry.get(&panel_type) {
+            // Pré-résoudre les données pour UiDataContext (évite de passer &World)
+            let mut panel_data = std::collections::HashMap::new();
+            panel_data.insert("building.name".into(), building.name.clone());
+            panel_data.insert("building.kind".into(), building.kind.clone());
+            if let Ok(tier) = tier_q.get(entity) {
+                panel_data.insert("tier.current".into(), tier.0.to_string());
+            }
+
+            let data_ctx = UiDataContext::new(entity, panel_data);
             let ctx = crate::ui::panels::PanelSpawnCtx {
                 entity,
                 building_kind: &building.kind,
                 building_registry: &reg,
-                world,
+                resource_registry: &resource_registry,
+                data: &data_ctx,
                 mods: &mods,
                 layout_engine: &layout_engine,
             };

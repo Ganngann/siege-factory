@@ -1,41 +1,23 @@
+use std::collections::HashMap;
+
 use bevy::prelude::*;
 
-use crate::economy::components::{Active, Building};
-use crate::economy::game_components::CurrentTier;
-use crate::economy::resource::Inventory;
-
 /// Résout les clés de données comme "building.name" ou "health.current"
-/// en valeurs String à partir des composants ECS de l'entité inspectée.
-pub struct UiDataContext<'a> {
+/// en valeurs String à partir d'une HashMap pré-remplie au moment du clic.
+/// Plus besoin de &World — les données sont résolues en amont.
+pub struct UiDataContext {
     pub entity: Entity,
-    pub world: &'a World,
+    pub data: HashMap<String, String>,
 }
 
-impl<'a> UiDataContext<'a> {
-    pub fn new(entity: Entity, world: &'a World) -> Self {
-        Self { entity, world }
+impl UiDataContext {
+    pub fn new(entity: Entity, data: HashMap<String, String>) -> Self {
+        Self { entity, data }
     }
 
     /// Résout une clé de donnée en String.
-    /// Format: "component.field" (ex: "inventory.capacity")
-    /// Si la clé ne contient pas de point, cherche un composant dont le nom correspond.
+    /// Si la clé n'existe pas, retourne une chaîne vide.
     pub fn resolve(&self, key: &str) -> String {
-        match key {
-            "entity.id" => format!("{}", self.entity.to_bits()),
-            "building.name" => self.get::<Building>().map(|b| b.name.clone()).unwrap_or_default(),
-            "building.kind" => self.get::<Building>().map(|b| b.kind.clone()).unwrap_or_default(),
-            "active" => self.get::<Active>().map(|a| if a.0 { "ON" } else { "OFF" }).unwrap_or("OFF").to_string(),
-            "inventory.total" => self.get::<Inventory>().map(|i| i.total().to_string()).unwrap_or("0".to_string()),
-            "inventory.capacity" => self.get::<Inventory>().map(|i| i.capacity.to_string()).unwrap_or("0".to_string()),
-            _ => {
-                // Essayer de trouver un composant avec ce nom
-                // Fallback: retourner la clé elle-même
-                key.to_string()
-            }
-        }
-    }
-
-    fn get<T: Component>(&self) -> Option<&'a T> {
-        self.world.get::<T>(self.entity)
+        self.data.get(key).cloned().unwrap_or_default()
     }
 }

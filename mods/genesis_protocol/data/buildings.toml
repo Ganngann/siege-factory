@@ -27,6 +27,7 @@ hidden = false
 
 has_recipes = true
 recipe_categories = ["proto"]
+panel = "crafting"
 
 [buildings.campfire]
 name = "Feu de Camp"
@@ -42,6 +43,7 @@ hidden = false
 has_recipes = true
 recipe_categories = ["proto"]
 production_interval = 4.0
+panel = "crafting"
 default_recipe = "ceramic_fire"
 
 # ============================================================
@@ -60,6 +62,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 3.0
 default_recipe = "proto_iron"
 power_consumption = 5.0
@@ -77,6 +80,7 @@ powered = false
 hidden = false
 
 has_recipes = true
+panel = "crafting"
 production_interval = 2.0
 default_recipe = "copper_wire_draw"
 requires_discovery = "proto_iron"
@@ -92,6 +96,7 @@ texture_stem = "burner_generator"
 powered = false
 hidden = false
 inventory_capacity = 16
+panel = "energy"
 power_generation = 50.0
 fuel_burn_interval = 2.0
 requires_discovery = "proto_iron"
@@ -107,6 +112,7 @@ texture_stem = "manual_miner"
 powered = false
 hidden = false
 requires_deposit = true
+panel = "extractor"
 production = { resource = "ore", interval_sec = 3.0 }
 requires_discovery = "proto_iron"
 
@@ -126,6 +132,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "extractor"
 production_interval = 2.0
 default_recipe = "pump_water"
 fluid_tank_capacity = 50.0
@@ -144,6 +151,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "energy"
 production_interval = 4.0
 default_recipe = "steam_produce"
 power_consumption = 5.0
@@ -178,6 +186,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 6.0
 default_recipe = "proto_steel"
 power_consumption = 15.0
@@ -195,6 +204,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 3.0
 default_recipe = "gear_cut"
 power_consumption = 10.0
@@ -248,6 +258,7 @@ texture_stem = "electric_generator"
 powered = false
 hidden = false
 inventory_capacity = 16
+panel = "energy"
 power_generation = 80.0
 fuel_burn_interval = 3.0
 power_consumption = 5.0
@@ -278,6 +289,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 2.0
 default_recipe = "proto_circuit"
 power_consumption = 12.0
@@ -295,6 +307,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 4.0
 default_recipe = "petroleum_gas_crack"
 fluid_tank_capacity = 50.0
@@ -312,6 +325,7 @@ texture_stem = "oil_pump"
 powered = true
 hidden = false
 requires_deposit = true
+panel = "extractor"
 production = { resource = "crude_oil", interval_sec = 3.0 }
 power_consumption = 15.0
 requires_discovery = "proto_circuit"
@@ -327,6 +341,7 @@ texture_stem = "storage_chest"
 powered = false
 hidden = false
 inventory_capacity = 64
+panel = "storage"
 requires_discovery = "proto_circuit"
 
 # ============================================================
@@ -345,6 +360,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 6.0
 default_recipe = "proto_motor"
 power_consumption = 25.0
@@ -362,6 +378,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 5.0
 default_recipe = "battery_make"
 power_consumption = 15.0
@@ -379,6 +396,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 5.0
 default_recipe = "advanced_circuit_build"
 power_consumption = 30.0
@@ -396,6 +414,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 8.0
 default_recipe = "machine_frame_build"
 power_consumption = 25.0
@@ -449,6 +468,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 8.0
 default_recipe = "proto_processor"
 power_consumption = 40.0
@@ -465,6 +485,7 @@ texture_stem = "deep_core_drill"
 powered = true
 hidden = false
 requires_deposit = true
+panel = "extractor"
 infinite_extraction = true
 production = { resource = "ore", interval_sec = 1.0 }
 power_consumption = 50.0
@@ -481,6 +502,7 @@ texture_stem = "compactor"
 powered = true
 hidden = false
 inventory_capacity = 32
+panel = "compactor"
 compactor_ratio = 4
 compactor_interval = 2.0
 power_consumption = 10.0
@@ -520,6 +542,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 6.0
 default_recipe = "proto_organic"
 power_consumption = 30.0
@@ -537,6 +560,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 10.0
 default_recipe = "stem_cells_grow"
 power_consumption = 35.0
@@ -554,6 +578,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 7.0
 default_recipe = "protein_synth"
 power_consumption = 20.0
@@ -571,6 +596,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 12.0
 default_recipe = "neural_map_scan"
 power_consumption = 40.0
@@ -588,6 +614,7 @@ powered = true
 hidden = false
 
 has_recipes = true
+panel = "production"
 production_interval = 12.0
 default_recipe = "bio_mass_print"
 power_consumption = 45.0
@@ -608,6 +635,7 @@ hidden = true
 can_deconstruct = false
 powered = false
 station = false
+panel = "capsule"
 
 [[buildings.genesis_ark.tiers]]
 required_items = { hammer = 1 }

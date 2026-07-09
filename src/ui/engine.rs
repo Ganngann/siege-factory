@@ -19,10 +19,9 @@ impl LayoutEngine {
         &self,
         commands: &mut Commands,
         panel_config: &toml::Value,
-        entity: Entity,
-        world: &World,
+        _entity: Entity,
+        data: &UiDataContext,
     ) -> (Entity, Entity) {
-        let data = UiDataContext::new(entity, world);
         let title = panel_config.get("title").and_then(|v| v.as_str()).unwrap_or("Panel");
         let width = panel_config.get("width").and_then(|v| v.as_float()).unwrap_or(800.0) as f32;
         let height = panel_config.get("height").and_then(|v| v.as_float()).unwrap_or(560.0) as f32;

@@ -34,7 +34,7 @@ impl Panel for BuildingPanelImpl {
                         commands,
                         &config,
                         ctx.entity,
-                        ctx.world,
+                        ctx.data,
                     );
                     commands.entity(root).insert(PanelModal);
                     panel.overlay = Some(overlay);
@@ -71,7 +71,7 @@ impl Panel for BuildingPanelImpl {
 
         let root = build_building_panel_ui(
             commands, modal_size, ctx.entity, kind,
-            show_recipes, is_farm, ctx.resource_registry(),
+            show_recipes, is_farm, ctx.resource_registry,
             ctx.building_registry, farm_crop_types,
         );
 

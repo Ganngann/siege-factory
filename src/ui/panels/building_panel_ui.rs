@@ -7,7 +7,6 @@ use crate::economy::resource::ResourceRegistry;
 use crate::economy::ui_components::*;
 use crate::economy::window::*;
 
-const BUILDING_KIND_FARM: &str = "farm";
 const BUILDING_KIND_SORTER: &str = "sorter";
 
 /// Construit l'UI complète du panneau d'inspection d'un bâtiment.
