@@ -9,13 +9,17 @@ pub mod types;
 use bevy::prelude::*;
 
 use crate::ui::components::{
-    active_toggle::ActiveToggleComponent, button::ButtonComponent, data_label::DataLabelComponent,
+    active_toggle::ActiveToggleComponent, button::ButtonComponent,
+    conditional_text::ConditionalTextComponent, data_label::DataLabelComponent,
+    data_list::DataListComponent, data_text::DataTextComponent,
     h_split::HSplitComponent, hp_bar::HpBarComponent, inventory_grid::InventoryGridComponent,
-    label::LabelComponent, progress_bar::ProgressBarComponent, section::SectionComponent,
-    spacer::SpacerComponent, v_stack::VStackComponent,
+    label::LabelComponent, progress_bar::ProgressBarComponent,
+    recipe_category::RecipeCategoryComponent, recipe_name::RecipeNameComponent,
+    recipe_progress::RecipeProgressComponent, section::SectionComponent,
+    spacer::SpacerComponent, tier_progress::TierProgressComponent, v_stack::VStackComponent,
 };
 use crate::ui::engine::LayoutEngine;
-use crate::ui::panels::{PanelRegistry, building::BuildingPanelImpl, capsule::CapsulePanelImpl, deposit::DepositPanelImpl};
+use crate::ui::panels::{PanelRegistry, building::BuildingPanelImpl, capsule::CapsulePanelImpl};
 use crate::ui::registry::ComponentRegistry;
 use crate::ui::theme::Theme;
 
@@ -39,6 +43,15 @@ impl Plugin for UiPlugin {
         comp_registry.register(Box::new(HpBarComponent));
         comp_registry.register(Box::new(InventoryGridComponent));
         comp_registry.register(Box::new(ActiveToggleComponent));
+        comp_registry.register(Box::new(RecipeNameComponent));
+        comp_registry.register(Box::new(RecipeProgressComponent));
+        comp_registry.register(Box::new(TierProgressComponent));
+        comp_registry.register(Box::new(RecipeCategoryComponent));
+        comp_registry.register(Box::new(DataListComponent));
+        comp_registry.register(Box::new(DataTextComponent));
+        comp_registry.register(Box::new(ConditionalTextComponent));
+
+        app.insert_resource(crate::ui::components::data_list::DataListSelected::default());
 
         let theme = app.world().resource::<Theme>().clone();
         let layout_engine = LayoutEngine::new(comp_registry, theme);
@@ -48,7 +61,6 @@ impl Plugin for UiPlugin {
         let mut panel_registry = PanelRegistry::default();
         panel_registry.register(Box::new(BuildingPanelImpl));
         panel_registry.register(Box::new(CapsulePanelImpl));
-        panel_registry.register(Box::new(DepositPanelImpl));
         app.insert_resource(panel_registry);
     }
 }

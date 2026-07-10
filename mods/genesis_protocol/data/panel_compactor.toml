@@ -13,8 +13,4 @@ elements = [
 ]
 
 [[sections]]
-type = "section"
-title = "HP"
-elements = [
-    { type = "hp_bar" },
-]
+type = "hp_bar"

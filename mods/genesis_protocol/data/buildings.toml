@@ -43,7 +43,7 @@ hidden = false
 has_recipes = true
 recipe_categories = ["proto"]
 production_interval = 4.0
-panel = "crafting"
+panel = "campfire"
 default_recipe = "ceramic_fire"
 
 # ============================================================

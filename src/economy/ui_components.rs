@@ -40,19 +40,6 @@ impl DragState {
 }
 
 #[derive(Component)]
-pub struct DataPadEntry {
-    pub log_id: String,
-}
-
-#[derive(Component)]
-pub struct DataPadFullText;
-
-#[derive(Resource, Default)]
-pub struct DataPadSelected {
-    pub log_id: Option<String>,
-}
-
-#[derive(Component)]
 pub struct ManagedByPanel;
 
 #[derive(Resource, Default)]
@@ -63,7 +50,6 @@ pub struct BuildingPanel {
     pub inspected: Option<Entity>,
     pub root: Option<Entity>,
     pub overlay: Option<Entity>,
-    pub recipe_selector: Option<Entity>,
     pub dirty: bool,
 }
 
@@ -114,8 +100,6 @@ pub struct MenuItemButton {
 
 #[derive(Component)]
 pub struct PanelOverlay;
-#[derive(Component)]
-pub struct PanelModal;
 
 #[derive(Component)]
 pub struct BuildingTitleText;
@@ -150,8 +134,6 @@ pub struct StatRowText;
 #[derive(Component)]
 pub struct RecipeNameText;
 #[derive(Component)]
-pub struct RecipeChangeButton;
-#[derive(Component)]
 pub struct HpBarFill;
 #[derive(Component)]
 pub struct HpText;
@@ -159,17 +141,6 @@ pub struct HpText;
 pub struct AlertText;
 #[derive(Component)]
 pub struct PowerStatusText;
-
-// ── Recipe selector sub-window ──
-
-#[derive(Component)]
-pub struct RecipeSelectorRoot;
-#[derive(Component)]
-pub struct RecipeSelectorItem {
-    pub recipe_id: String,
-}
-#[derive(Component)]
-pub struct RecipeCategoryLabel;
 
 // ── Sorter settings ──
 

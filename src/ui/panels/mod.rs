@@ -1,8 +1,5 @@
 pub mod building;
-pub mod building_panel_ui;
 pub mod capsule;
-pub mod crafting;
-pub mod deposit;
 
 use bevy::prelude::*;
 
@@ -50,9 +47,6 @@ pub trait Panel: Send + Sync {
             silent_despawn(commands, e);
         }
         if let Some(e) = panel.overlay.take() {
-            silent_despawn(commands, e);
-        }
-        if let Some(e) = panel.recipe_selector.take() {
             silent_despawn(commands, e);
         }
         panel.inspected = None;

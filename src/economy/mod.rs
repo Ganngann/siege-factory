@@ -110,7 +110,7 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::DeconstructMode>();
         app.init_resource::<components::DeconstructDrag>();
         app.init_resource::<components::BuildingPanel>();
-        app.init_resource::<crate::economy::ui_components::DataPadSelected>();
+
         app.init_resource::<window::WindowDrag>();
         app.init_resource::<PeacefulMode>();
         app.init_resource::<MenuState>();
@@ -293,7 +293,9 @@ impl Plugin for EconomyPlugin {
         app.add_systems(Update, build_bar::update_menu_bar.in_set(PlayingSystems));
         app.add_systems(
             Update,
-            inspect::building_inspect_click.in_set(PlayingSystems),
+            inspect::building_inspect_click
+                .in_set(PlayingSystems)
+                .run_if(inspect::not_build_mode),
         );
         app.add_systems(Update, inspect::overlay_click_system.in_set(PlayingSystems));
         app.add_systems(Update, inspect::close_button_system.in_set(PlayingSystems));
@@ -302,11 +304,11 @@ impl Plugin for EconomyPlugin {
             inspect::close_popup_on_escape.in_set(PlayingSystems),
         );
         app.add_systems(Update, inspect::active_toggle_system.in_set(PlayingSystems));
-        app.add_systems(Update, inspect::recipe_change_system.in_set(PlayingSystems));
-        app.add_systems(
-            Update,
-            inspect::recipe_selector_click.in_set(PlayingSystems),
-        );
+        app.add_systems(Update, crate::ui::components::recipe_row::recipe_row_click_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::recipe_category::populate_recipe_categories.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::data_list::populate_data_list.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::data_list::data_list_click_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::data_text::update_data_text_system.in_set(PlayingSystems));
         app.add_systems(Update, inspect::farm_recruit_system.in_set(PlayingSystems));
         app.add_systems(
             Update,

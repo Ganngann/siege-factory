@@ -4,11 +4,12 @@ use crate::core::toast::ToastQueue;
 use crate::core::utils::silent_despawn;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{
-    BuildMode, Building, BuildingPanel, FarmCropSelectButton, FarmRecruitButton,
-    OccupiedTiles, Player, Sorter, SorterInvertButton,
-    SorterResourceButton, UiIsBlocking,
+    Assembler, BuildMode, Building, BuildingPanel, FarmCropSelectButton, FarmRecruitButton,
+    OccupiedTiles, Player, ProductionCounter, Sorter, SorterInvertButton,
+    SorterResourceButton,
 };
 use crate::economy::game_components::{Capsule, CurrentTier, Level};
+use crate::economy::recipe::RecipeRegistry;
 use crate::economy::resource::{Inventory, ResourceRegistry};
 use crate::economy::spatial::SpatialRegistry;
 use crate::economy::ui_components::UpgradeButton;
@@ -24,12 +25,15 @@ use crate::ui::types::PanelType;
 use crate::ui::panels::PanelRegistry;
 use super::close_panel;
 
+pub fn not_build_mode(build_mode: Res<BuildMode>) -> bool {
+    build_mode.0.is_none()
+}
+
 // ── Click detection ──
 
 pub fn building_inspect_click(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
-    build_mode: Res<BuildMode>,
     buttons: Res<ButtonInput<MouseButton>>,
     windows: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), (With<Camera2d>, Without<MinimapCamera>)>,
@@ -41,11 +45,10 @@ pub fn building_inspect_click(
     mods: Res<ModRegistry>,
     layout_engine: Res<LayoutEngine>,
     reg: Res<BuildingRegistry>,
-    ui_blocking: Res<UiIsBlocking>,
     resource_registry: Res<ResourceRegistry>,
+    asm_q: Query<&Assembler>,
+    recipes: Res<RecipeRegistry>,
 ) {
-    if ui_blocking.0 { return; }
-    if build_mode.0.is_some() { return; }
     if !buttons.just_pressed(MouseButton::Left) { return; }
 
     let Some(TilePosition { x: tile_x, y: tile_y }) =
@@ -67,16 +70,39 @@ pub fn building_inspect_click(
         };
 
         if let Some(panel_impl) = panel_registry.get(&panel_type) {
-            // Pré-résoudre les données pour UiDataContext (évite de passer &World)
             let mut panel_data = std::collections::HashMap::new();
             panel_data.insert("building.name".into(), building.name.clone());
             panel_data.insert("building.kind".into(), building.kind.clone());
+
             if let Ok(tier) = tier_q.get(entity) {
                 panel_data.insert("tier.current".into(), tier.0.to_string());
+                panel_data.insert("capsule.current_tier".into(), tier.0.to_string());
+                if let Some(def) = reg.get(&building.kind) {
+                    panel_data.insert("capsule.total_tiers".into(), def.tiers.len().to_string());
+                }
+            }
+
+            if let Ok(asm) = asm_q.get(entity) {
+                if let Some(def) = recipes.get(&asm.recipe_id) {
+                    panel_data.insert("recipe.name".into(), resource_registry.display_name(&crate::economy::resource::ResourceId::new(&asm.recipe_id)).to_string());
+                    let inputs: Vec<String> = def.input.iter()
+                        .map(|(rid, amt)| format!("{} {}×", resource_registry.display_name(rid), amt))
+                        .collect();
+                    panel_data.insert("recipe.inputs".into(), inputs.join(" + "));
+                    let outputs: Vec<String> = def.output.iter()
+                        .map(|(rid, amt)| format!("{} {}×", resource_registry.display_name(rid), amt))
+                        .collect();
+                    panel_data.insert("recipe.outputs".into(), outputs.join(" + "));
+                    let progress = if def.time_sec > 0.0 {
+                        (asm.production_timer / def.time_sec).min(1.0)
+                    } else { 0.0 };
+                    panel_data.insert("recipe.progress".into(), progress.to_string());
+                    panel_data.insert("recipe.time_sec".into(), def.time_sec.to_string());
+                }
             }
 
             let data_ctx = UiDataContext::new(entity, panel_data);
-            let ctx = crate::ui::panels::PanelSpawnCtx {
+            let pctx = crate::ui::panels::PanelSpawnCtx {
                 entity,
                 building_kind: &building.kind,
                 building_registry: &reg,
@@ -85,8 +111,7 @@ pub fn building_inspect_click(
                 mods: &mods,
                 layout_engine: &layout_engine,
             };
-            panel_impl.spawn(&mut commands, &mut panel, &ctx);
-            return;
+            panel_impl.spawn(&mut commands, &mut panel, &pctx);
         }
     }
 }
@@ -100,17 +125,11 @@ pub fn sorter_resource_click_system(
     mut toast_queue: ResMut<ToastQueue>,
 ) {
     for (interaction, btn) in &query {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
-        let Some(inspected) = panel.inspected else {
-            continue;
-        };
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
         if let Ok(mut sorter) = sorter_query.get_mut(inspected) {
             sorter.filter = btn.resource.clone();
-            toast_queue
-                .0
-                .push(format!("Sorter filter: {}", btn.resource.display_name()));
+            toast_queue.0.push(format!("Sorter filter: {}", btn.resource.display_name()));
             panel.dirty = true;
         }
     }
@@ -125,19 +144,11 @@ pub fn sorter_invert_click_system(
     mut toast_queue: ResMut<ToastQueue>,
 ) {
     for interaction in &query {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
-        let Some(inspected) = panel.inspected else {
-            continue;
-        };
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
         if let Ok(mut sorter) = sorter_query.get_mut(inspected) {
             sorter.inverted = !sorter.inverted;
-            let mode = if sorter.inverted {
-                "inverted"
-            } else {
-                "normal"
-            };
+            let mode = if sorter.inverted { "inverted" } else { "normal" };
             toast_queue.0.push(format!("Sorter: {}", mode));
             panel.dirty = true;
         }
@@ -153,12 +164,8 @@ pub fn farm_crop_select_system(
     mut toast_queue: ResMut<ToastQueue>,
 ) {
     for (interaction, btn) in &query {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
-        let Some(inspected) = panel.inspected else {
-            continue;
-        };
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
         if let Ok(mut farm) = farm_query.get_mut(inspected) {
             let idx = farm.crop_types.iter().position(|c| c == &btn.crop_type);
             if let Some(i) = idx {
@@ -171,7 +178,6 @@ pub fn farm_crop_select_system(
 
 // ── Farm recruit button ──
 
-// SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
 pub fn farm_recruit_system(
     mut commands: Commands,
     panel: ResMut<BuildingPanel>,
@@ -184,27 +190,16 @@ pub fn farm_recruit_system(
     mut toast_queue: ResMut<ToastQueue>,
 ) {
     for interaction in &query {
-        if *interaction != Interaction::Pressed {
-            continue;
-        }
-        let Some(inspected) = panel.inspected else {
-            continue;
-        };
-        if farm_query.get(inspected).is_err() {
-            continue;
-        }
+        if *interaction != Interaction::Pressed { continue; }
+        let Some(inspected) = panel.inspected else { continue; };
+        if farm_query.get(inspected).is_err() { continue; }
 
-        let Some(def) = unit_cfg.get("cultivator") else {
-            continue;
-        };
+        let Some(def) = unit_cfg.get("cultivator") else { continue; };
         let mut player_inv = match player_inv_query.single_mut() {
             Ok(inv) => inv,
             Err(_) => continue,
         };
-        let can_afford = def
-            .cost
-            .iter()
-            .all(|c| player_inv.get(&c.resource) >= c.amount);
+        let can_afford = def.cost.iter().all(|c| player_inv.get(&c.resource) >= c.amount);
         if !can_afford {
             toast_queue.0.push("Not enough resources".to_string());
             continue;
@@ -227,10 +222,7 @@ pub fn farm_recruit_system(
                 carry_capacity: def.carry_capacity,
             },
             crate::economy::components::Unit,
-            crate::enemy::components::Health {
-                current: def.hp,
-                max: def.hp,
-            },
+            crate::enemy::components::Health { current: def.hp, max: def.hp },
             Transform::from_translation(spawn_pos),
         ));
         toast_queue.0.push("Cultivator recruited".to_string());
@@ -251,56 +243,34 @@ pub fn upgrade_button_system(
     cfg: Res<MapConfig>,
     mut toast_queue: ResMut<ToastQueue>,
 ) {
-    let Some(inspected) = panel.inspected else {
-        return;
-    };
+    let Some(inspected) = panel.inspected else { return; };
 
-    // Check if upgrade button was pressed
     let mut pressed = false;
     for interaction in &query {
-        if *interaction == Interaction::Pressed
-            && upgrade_query.get(inspected).is_ok() {
-                pressed = true;
-                break;
-            }
+        if *interaction == Interaction::Pressed && upgrade_query.get(inspected).is_ok() {
+            pressed = true; break;
+        }
     }
-    if !pressed {
-        return;
-    }
+    if !pressed { return; }
 
-    let Ok((building, tile_pos, occupied)) = building_query.get(inspected) else {
-        return;
-    };
-    let Ok(upgrade_btn) = upgrade_query.get(inspected) else {
-        return;
-    };
-
+    let Ok((building, tile_pos, occupied)) = building_query.get(inspected) else { return; };
+    let Ok(upgrade_btn) = upgrade_query.get(inspected) else { return; };
     let target_kind = &upgrade_btn.target_kind;
     let Some(target_def) = registry.get(target_kind) else {
         toast_queue.0.push("Upgrade target not found".to_string());
         return;
     };
 
-    // Check cost
     let mut player_inv = match player_inv_query.single_mut() {
         Ok(inv) => inv,
         Err(_) => return,
     };
-    let can_afford = target_def
-        .cost
-        .iter()
-        .all(|c| player_inv.get(&c.resource) >= c.amount);
+    let can_afford = target_def.cost.iter().all(|c| player_inv.get(&c.resource) >= c.amount);
     if !can_afford {
-        toast_queue
-            .0
-            .push("Not enough resources to upgrade".to_string());
+        toast_queue.0.push("Not enough resources to upgrade".to_string());
         return;
     }
-
-    // Deduct cost
-    for c in &target_def.cost {
-        player_inv.remove(&c.resource, c.amount);
-    }
+    for c in &target_def.cost { player_inv.remove(&c.resource, c.amount); }
 
     let old_name = building.name.clone();
     let tx = tile_pos.x;
@@ -311,72 +281,41 @@ pub fn upgrade_button_system(
     let cx = (tx as f32 + (tw as f32 - 1.0) * 0.5) * tile_size;
     let cy = (ty as f32 + (th as f32 - 1.0) * 0.5) * tile_size;
 
-    // Close panel
-    // SUGGEST: drop() ici n'étend pas la durée de vie du borrow — le drop est inutile (clippy::drop_non_drop)
     drop(player_inv);
-    // Inline panel close (can't call close_panel as it moves commands/panel)
-    if let Some(e) = panel.root.take() {
-        silent_despawn(&mut commands, e);
-    }
-    if let Some(e) = panel.overlay.take() {
-        silent_despawn(&mut commands, e);
-    }
-    if let Some(e) = panel.recipe_selector.take() {
-        silent_despawn(&mut commands, e);
-    }
+    if let Some(e) = panel.root.take() { silent_despawn(&mut commands, e); }
+    if let Some(e) = panel.overlay.take() { silent_despawn(&mut commands, e); }
     panel.inspected = None;
     panel.dirty = false;
 
-    // Despawn old entity
     silent_despawn(&mut commands, inspected);
 
-    // Spawn upgraded building at the same position
     let mut e = commands.spawn((
-        Building {
-            kind: target_kind.clone(),
-            name: target_def.name.clone(),
-        },
+        Building { kind: target_kind.clone(), name: target_def.name.clone() },
         OccupiedTiles(footprint),
         TilePosition { x: tx, y: ty },
         Transform::from_xyz(cx, cy, 2.0),
         Level(target_def.level),
     ));
 
-    // Attach production if the target has a default recipe
     if let Some(ref recipe) = target_def.default_recipe {
         let interval = target_def.production_interval.unwrap_or(2.0);
-        e.insert(crate::economy::components::Assembler {
-            production_timer: 0.0,
-            interval,
-            recipe_id: recipe.clone(),
-        });
-        e.insert(crate::economy::components::ProductionCounter::default());
+        e.insert(Assembler { production_timer: 0.0, interval, recipe_id: recipe.clone() });
+        e.insert(ProductionCounter::default());
         e.insert(crate::economy::components::DiscoveredRecipes::default());
     }
-
-    // Attach combat if target has combat stats
     if let Some(ref stats) = target_def.combat {
         e.insert(crate::economy::components::TurretCombat {
-            damage: stats.damage,
-            range_sq: stats.range,
-            fire_interval: stats.fire_rate_sec,
-            timer: 0.0,
+            damage: stats.damage, range_sq: stats.range,
+            fire_interval: stats.fire_rate_sec, timer: 0.0,
             projectile_speed: stats.projectile_speed,
         });
     }
-
-    // Attach inventory
     if target_def.inventory_capacity > 0 {
         e.insert(Inventory::with_capacity(target_def.inventory_capacity));
     } else {
         e.insert(Inventory::new());
     }
-
-    // Attach power components
     crate::economy::building::attach_power_components(&mut e, target_def);
 
-    toast_queue
-        .0
-        .push(format!("Upgraded {} to {}", old_name, target_def.name));
+    toast_queue.0.push(format!("Upgraded {} to {}", old_name, target_def.name));
 }
-

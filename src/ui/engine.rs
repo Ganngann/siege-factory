@@ -56,7 +56,6 @@ impl LayoutEngine {
             }
         }
 
-        commands.entity(root).insert(crate::economy::components::PanelModal);
         (overlay, root)
     }
 }

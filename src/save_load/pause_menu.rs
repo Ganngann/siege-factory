@@ -8,7 +8,7 @@ use crate::core::utils::silent_despawn;
 use crate::economy::belt::BeltSlots;
 use crate::economy::components::Unit;
 use crate::economy::components::{
-    Builder, Building, Ghost, HpBarChild, PanelModal, Player, ResourceDeposit,
+    Builder, Building, Ghost, HpBarChild, PanelOverlay, Player, ResourceDeposit,
 };
 use crate::economy::ui::InventoryPanel;
 use crate::enemy::components::Enemy as EnemyComponent;
@@ -257,7 +257,7 @@ pub fn cleanup_world(
             With<Ghost>,
             With<HpBarChild>,
             With<crate::economy::components::MenuBarPanel>,
-            With<PanelModal>,
+            With<PanelOverlay>,
             With<InventoryPanel>,
             With<PauseMenuRoot>,
             With<Projectile>,

@@ -13,11 +13,7 @@ cols = 3
 rows = 2
 
 [[sections.left]]
-type = "section"
-title = "PRODUCTION"
-elements = [
-    { type = "data_label", key = "active", style = "green" },
-]
+type = "recipe_progress"
 
 [[sections.right]]
 type = "active_toggle"
@@ -26,12 +22,23 @@ type = "active_toggle"
 type = "section"
 title = "RECETTES"
 elements = [
-    { type = "button", text = "[Changer Recette]" },
+    { type = "recipe_name" },
+    { type = "spacer", height = 4 },
+    { type = "recipe_category", category = "smelting" },
+    { type = "recipe_category", category = "crafting" },
+    { type = "recipe_category", category = "steelmaking" },
+    { type = "recipe_category", category = "refining" },
+    { type = "recipe_category", category = "motor_assembly" },
+    { type = "recipe_category", category = "battery" },
+    { type = "recipe_category", category = "electronics" },
+    { type = "recipe_category", category = "heavy_assembly" },
+    { type = "recipe_category", category = "nano" },
+    { type = "recipe_category", category = "bio" },
+    { type = "recipe_category", category = "tissue" },
+    { type = "recipe_category", category = "synthesis" },
+    { type = "recipe_category", category = "scanning" },
+    { type = "recipe_category", category = "bio_printing" },
 ]
 
 [[sections.right]]
-type = "section"
-title = "HP"
-elements = [
-    { type = "hp_bar" },
-]
+type = "hp_bar"

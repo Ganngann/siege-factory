@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::utils::silent_despawn;
-use crate::economy::components::{BuildingPanel, PanelModal, PanelOverlay};
-use crate::economy::ui_components::ManagedByPanel;
+use crate::economy::components::{BuildingPanel, PanelOverlay};
 use crate::economy::window::{TEXT_PRIMARY, TEXT_SECONDARY, spawn_window};
 use crate::ui::types::PanelType;
 use crate::ui::panels::{Panel, PanelSpawnCtx};
@@ -24,7 +23,26 @@ impl Panel for CapsulePanelImpl {
         if let Some(e) = panel.overlay.take() { silent_despawn(commands, e); }
         panel.inspected = None;
 
-        let Some(def) = ctx.building_registry.get(ctx.building_kind) else {
+        // TOML panel first
+        let def = ctx.building_registry.get(ctx.building_kind);
+        if let Some(panel_key) = def.and_then(|d| d.panel.as_deref()) {
+            let filename = format!("panel_{}.toml", panel_key);
+            if let Some(content) = ctx.mods.load_data(&filename) {
+                if let Ok(config) = toml::from_str::<toml::Value>(&content) {
+                    let (overlay, root) = ctx.layout_engine.render_panel(
+                        commands, &config, ctx.entity, ctx.data,
+                    );
+                    panel.overlay = Some(overlay);
+                    panel.root = Some(root);
+                    panel.inspected = Some(ctx.entity);
+                    panel.dirty = true;
+                    return (overlay, root);
+                }
+            }
+        }
+
+        // Fallback: legacy Rust code
+        let Some(def) = def else {
             let d = commands.spawn(Text::new("")).id();
             return (d, d);
         };
@@ -107,7 +125,6 @@ impl Panel for CapsulePanelImpl {
                 });
             },
         );
-        commands.entity(root).insert((PanelModal, ManagedByPanel));
         commands.entity(overlay).add_child(root);
         panel.overlay = Some(overlay);
         panel.root = Some(root);

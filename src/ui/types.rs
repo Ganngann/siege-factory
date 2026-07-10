@@ -8,10 +8,6 @@ use crate::core::game_font::tf;
 pub enum PanelType {
     Building,
     Capsule,
-    Deposit,
-    Crafting,
-    Pause,
-    MainMenu,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
