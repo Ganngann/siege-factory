@@ -1,5 +1,4 @@
-// 🏗️ LEGACY UI — définitions des menus (items, catégories, breadcrumb).
-// Partagé entre l'ancien système et le nouveau. À migrer dans ui/panels/ quand possible.
+// Menu data types (items, categories, breadcrumb) loaded from TOML menus.
 
 use crate::economy::building::BuildingRegistry;
 use crate::economy::discovery::GlobalArchive;

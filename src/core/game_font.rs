@@ -35,7 +35,6 @@ pub fn load_game_font(mut font: ResMut<GameFont>, asset_server: Res<AssetServer>
     if font_path.exists() {
         font.0 = asset_server.load("fonts/font.ttf");
         set_global_font(font.0.clone());
-        info!("GameFont: loaded fonts/font.ttf");
     } else {
         error!("GameFont: assets/fonts/font.ttf not found — place a .ttf file there");
         // Fallback: police Bevy par défaut

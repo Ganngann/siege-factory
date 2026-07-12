@@ -67,7 +67,6 @@ impl Plugin for RenderPlugin {
         );
         app.add_systems(OnEnter(GameState::GameOver), spawn_game_over_overlay);
         app.add_systems(OnExit(GameState::GameOver), despawn_game_over_overlay);
-        app.add_systems(OnEnter(GameState::Playing), minimap::setup_minimap);
         app.add_systems(
             Update,
             minimap::update_minimap.run_if(in_state(GameState::Playing)),

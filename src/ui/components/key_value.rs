@@ -36,8 +36,10 @@ impl UiComponent for KeyValueComponent {
             BackgroundColor(Color::NONE),
         ));
         commands.entity(row).with_children(|p| {
-            p.spawn((Text::new(format!("{}:", key)), tf(theme.font_size_small), TextColor(theme.text_secondary)));
-            p.spawn((Text::new(value), tf(theme.font_size_small), TextColor(Color::srgb(0.60, 0.60, 0.75))));
+            let mut key_font = tf(theme.font_size_label);
+            key_font.weight = FontWeight::BOLD;
+            p.spawn((Text::new(format!("{}:", key)), key_font, TextColor(theme.text_secondary)));
+            p.spawn((Text::new(value), tf(theme.font_size_body), TextColor(Color::srgb(0.60, 0.60, 0.75))));
         });
         row
     }
@@ -63,6 +65,7 @@ impl UiComponent for KeyValueListComponent {
             for item in arr {
                 let key = item.get("key").and_then(|v| v.as_str()).unwrap_or("").to_string();
                 let value_key = item.get("value_key").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                let icon = item.get("icon").and_then(|v| v.as_str()).unwrap_or("");
                 let system_id = value_key.trim_start_matches("capsule.status_").to_string();
                 commands.entity(container).with_children(|p| {
                     p.spawn((
@@ -75,10 +78,13 @@ impl UiComponent for KeyValueListComponent {
                         },
                         BackgroundColor(Color::NONE),
                     )).with_children(|row| {
-                        row.spawn((Text::new(key), tf(_theme.font_size_small), TextColor(_theme.text_secondary)));
+                        let prefix = if icon.is_empty() { String::new() } else { format!("{} ", icon) };
+                        let mut key_font = tf(_theme.font_size_label);
+                        key_font.weight = FontWeight::BOLD;
+                        row.spawn((Text::new(format!("{}{}:", prefix, key)), key_font, TextColor(_theme.text_secondary)));
                         row.spawn((
                             Text::new(String::new()),
-                            tf(_theme.font_size_small),
+                            tf(_theme.font_size_body),
                             TextColor(Color::srgb(0.60, 0.60, 0.75)),
                             CapsuleStatusRow { system_id },
                         ));

@@ -26,8 +26,8 @@ impl LayoutEngine {
         data: &UiDataContext,
     ) -> (Entity, Entity) {
         let title = panel_config.get("title").and_then(|v| v.as_str()).unwrap_or("Panel");
-        let width = panel_config.get("width").and_then(|v| v.as_float()).unwrap_or(800.0) as f32;
-        let height = panel_config.get("height").and_then(|v| v.as_float()).unwrap_or(560.0) as f32;
+        let width = panel_config.get("width").and_then(|v| v.as_integer()).unwrap_or(800) as f32;
+        let height = panel_config.get("height").and_then(|v| v.as_integer()).unwrap_or(560) as f32;
         let x = (1280.0 - width) / 2.0;
         let y = (720.0 - height) / 2.0;
 
@@ -57,7 +57,6 @@ impl LayoutEngine {
                 flex_direction: FlexDirection::Column,
                 width: Val::Px(width),
                 height: Val::Px(height),
-                overflow: Overflow::clip(),
                 ..default()
             },
             BackgroundColor(self.theme.window_bg),

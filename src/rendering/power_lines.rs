@@ -1,5 +1,4 @@
-// 🏗️ LEGACY UI — rendu des lignes électriques (gizmos).
-// Pas de plan de migration pour ce fichier — il restera probablement un système à part.
+// Power line rendering using gizmos.
 
 use crate::economy::components::{PowerConsumer, PowerPole, UnbuiltBuilding};
 use crate::economy::power_components::BurnerGenerator;

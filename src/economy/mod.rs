@@ -320,6 +320,8 @@ impl Plugin for EconomyPlugin {
         app.add_systems(Update, crate::ui::components::animate::animation_tick_system.in_set(PlayingSystems));
         app.add_systems(Update, crate::ui::components::key_value::update_capsule_statuses_system.in_set(PlayingSystems));
         app.add_systems(Update, crate::ui::components::wireframe::update_capsule_wireframe_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::frame::led_pulse_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::minimap::update_minimap_border_system.in_set(PlayingSystems));
         app.add_systems(Update, inspect::farm_recruit_system.in_set(PlayingSystems));
         app.add_systems(
             Update,

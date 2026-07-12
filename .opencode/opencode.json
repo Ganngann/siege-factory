@@ -4,19 +4,19 @@
   "permission": "allow",
   "agent": {
     "build": {
-      "model": "deepseek/deepseek-v4-flash",
+      "model": "opencode-go/deepseek-v4-flash",
       "mode": "primary"
     },
     "plan": {
-      "model": "deepseek/deepseek-v4-flash",
+      "model": "opencode-go/deepseek-v4-flash",
       "mode": "primary"
     },
     "explore": {
-      "model": "deepseek/deepseek-v4-flash",
+      "model": "opencode-go/deepseek-v4-flash",
       "mode": "subagent"
     },
     "general": {
-      "model": "deepseek/deepseek-v4-flash",
+      "model": "opencode-go/deepseek-v4-flash",
       "mode": "subagent"
     }
   }

@@ -1,6 +1,4 @@
-// 🏗️ LEGACY UI — gestion des clics sur le panneau d'inspection.
-// Non encore migrée vers src/ui/panels/building.rs.
-// Si tu ajoutes un bouton ou une interaction, ajoute-la dans ui/panels/building.rs
+// Click handling on building inspection panels. Spawns TOML-driven panels via LayoutEngine.
 // et reproduis ici seulement si nécessaire pour la rétrocompatibilité.
 
 use crate::agriculture::components::Cultivator;
@@ -105,10 +103,11 @@ pub fn building_inspect_click(
                     "Phase 5 (Nanites)",
                     "Phase 6 (Genèse)",
                     "SÉQUENCE FINALE",
+                    "APOTHÉOSE",
                 ];
                 let items: Vec<String> = phase_names.iter().enumerate().map(|(i, name)| {
                     let state = if i < tier.0 { "done" } else if i == tier.0 { "current" } else { "locked" };
-                    let sep = if i == 7 { "separator = true," } else { "" };
+                    let sep = if i == 7 || i == 8 { "separator = true," } else { "" };
                     format!("{{id = \"{}\", title = \"{}\", state = \"{}\", {}}}", i, name, state, sep)
                 }).collect();
                 panel_data.insert("capsule.phase_list".into(), format!("items = [{}]", items.join(",")));

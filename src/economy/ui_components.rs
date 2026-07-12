@@ -1,6 +1,4 @@
-// 🏗️ LEGACY UI — ces composants sont progressivement remplacés par src/ui/components/ et src/ui/types.rs.
-// - InventoryGrid, InventorySlot, DragState, DraggedItemVisual → ui/components/inventory_grid.rs
-// - BuildingPanel, PanelOverlay, PanelModal → ui/types.rs
+// Data types for inventory grids, slots, and drag state.
 // - Tous les *Button, *Text, *Fill → ui/components/ (label, progress_bar, hp_bar, etc.)
 // Si tu ajoutes un composant UI, ajoute-le dans ui/components/ avec le trait UiComponent.
 // 🪣 IA NOTE: les composants legacy sont re-exportés ici.

@@ -22,6 +22,7 @@ pub struct Theme {
     pub progress_fill: Color,
     pub border: Color,
     pub font_size_title: f32,
+    pub font_size_medium: f32,
     pub font_size_body: f32,
     pub font_size_small: f32,
     pub font_size_label: f32,
@@ -47,6 +48,7 @@ impl Default for Theme {
             progress_fill: Color::srgb(0.30, 0.55, 1.00),
             border: Color::srgb(0.20, 0.20, 0.30),
             font_size_title: 16.0,
+            font_size_medium: 14.0,
             font_size_body: 12.0,
             font_size_small: 10.0,
             font_size_label: 11.0,
@@ -70,6 +72,8 @@ struct ThemeToml {
     btn_close: Option<String>,
     #[serde(default)]
     font_size_body: Option<f32>,
+    #[serde(default)]
+    font_size_medium: Option<f32>,
 }
 
 impl Theme {
@@ -91,6 +95,7 @@ impl Theme {
         if let Some(c) = t.accent { self.accent = parse_hex(&c); }
         if let Some(c) = t.btn_close { self.btn_close = parse_hex(&c); }
         if let Some(s) = t.font_size_body { self.font_size_body = s; }
+        if let Some(s) = t.font_size_medium { self.font_size_medium = s; }
     }
 }
 

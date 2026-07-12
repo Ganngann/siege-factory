@@ -10,11 +10,11 @@ use crate::ui::registry::ComponentRegistry;
 pub struct DataTextComponent;
 impl UiComponent for DataTextComponent {
     fn id(&self) -> &str { "data_text" }
-    fn render(&self, commands: &mut Commands, parent: Entity, config: &toml::Value, _data: &UiDataContext, _theme: &Theme, _registry: &ComponentRegistry) -> Entity {
+    fn render(&self, commands: &mut Commands, parent: Entity, config: &toml::Value, _data: &UiDataContext, theme: &Theme, _registry: &ComponentRegistry) -> Entity {
         let data_key = config.get("data_key").and_then(|v| v.as_str()).unwrap_or("").to_string();
         spawn_child(commands, parent, (
             Text::new("(Select a log)".to_string()),
-            tf(12.0),
+            tf(theme.font_size_body),
             TextColor(Color::srgb(0.60, 0.60, 0.75)),
             DataText { data_key },
         ))

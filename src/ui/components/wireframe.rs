@@ -22,6 +22,11 @@ fn parse_hex(hex: &str) -> Option<Color> {
 #[derive(Component, Clone)]
 pub struct WireframeTierTracker;
 
+#[derive(Component, Clone)]
+pub struct WireframeShape {
+    pub color_key: String,
+}
+
 pub struct WireframeComponent;
 impl UiComponent for WireframeComponent {
     fn id(&self) -> &str { "wireframe" }
@@ -44,8 +49,8 @@ impl UiComponent for WireframeComponent {
         if let Some(arr) = shapes {
             for s in arr {
                 let stype = s.get("type").and_then(|v| v.as_str()).unwrap_or("");
-                let ckey = s.get("color_key").and_then(|v| v.as_str()).unwrap_or("#ffffff");
-                let color = parse_hex(ckey).unwrap_or(Color::srgb(0.60, 0.60, 0.75));
+                let ckey = s.get("color_key").and_then(|v| v.as_str()).unwrap_or("power");
+                let shape_color = parse_hex(ckey).unwrap_or(Color::srgb(0.60, 0.60, 0.75));
                 match stype {
                     "rect" => {
                         let x = s.get("x").and_then(|v| v.as_float()).unwrap_or(0.0) as f32;
@@ -62,7 +67,8 @@ impl UiComponent for WireframeComponent {
                                     height: Val::Px(h),
                                     ..default()
                                 },
-                                BackgroundColor(color),
+                                BackgroundColor(shape_color),
+                                WireframeShape { color_key: ckey.to_string() },
                             ));
                         });
                     },
@@ -83,7 +89,8 @@ impl UiComponent for WireframeComponent {
                                     ..default()
                                 },
                                 BackgroundColor(Color::NONE),
-                                BorderColor::all(color),
+                                BorderColor::all(shape_color),
+                                WireframeShape { color_key: ckey.to_string() },
                             ));
                         });
                     },
@@ -101,7 +108,8 @@ impl UiComponent for WireframeComponent {
                                     height: Val::Px((y2 - y1).abs()),
                                     ..default()
                                 },
-                                BackgroundColor(color),
+                                BackgroundColor(shape_color),
+                                WireframeShape { color_key: ckey.to_string() },
                             ));
                         });
                     },
@@ -119,7 +127,8 @@ impl UiComponent for WireframeComponent {
                                     height: Val::Px(1.0),
                                     ..default()
                                 },
-                                BackgroundColor(color),
+                                BackgroundColor(shape_color),
+                                WireframeShape { color_key: ckey.to_string() },
                             ));
                         });
                     },
@@ -136,13 +145,23 @@ pub fn update_capsule_wireframe_system(
     status_registry: Res<CapsuleStatusRegistry>,
     tier_q: Query<&CurrentTier, With<crate::economy::game_components::Capsule>>,
     panel: Res<BuildingPanel>,
-    mut q: Query<&mut BackgroundColor, With<WireframeTierTracker>>,
+    container_q: Query<&Children, With<WireframeTierTracker>>,
+    mut shape_q: Query<(&WireframeShape, &mut BackgroundColor, Option<&mut BorderColor>)>,
 ) {
     let Some(inspected) = panel.inspected else { return; };
     let Ok(tier) = tier_q.get(inspected) else { return; };
-    let color_hex = status_registry.status_color("power", tier.0);
-    let color = parse_hex(&color_hex).unwrap_or(Color::srgb(1.0, 0.3, 0.2));
-    for mut bg in q.iter_mut() {
-        bg.0 = color;
+    for children in &container_q {
+        for child in children.iter() {
+            let Ok((shape, mut bg, border)) = shape_q.get_mut(child) else { continue; };
+            let color_hex = status_registry.status_color(&shape.color_key, tier.0);
+            let color = parse_hex(&color_hex).unwrap_or(Color::srgb(1.0, 0.3, 0.2));
+            bg.0 = color;
+            if let Some(mut b) = border {
+                b.top = color;
+                b.bottom = color;
+                b.left = color;
+                b.right = color;
+            }
+        }
     }
 }

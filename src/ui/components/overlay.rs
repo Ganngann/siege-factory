@@ -12,17 +12,12 @@ impl UiComponent for OverlayComponent {
         let opacity = config.get("opacity").and_then(|v| v.as_float()).unwrap_or(0.25) as f32;
 
         let bg = match effect {
-            "scanlines" => {
-                // Semi-transparent black overlay with repeating horizontal lines
-                Color::srgba(0.0, 0.0, 0.0, opacity * 0.3)
-            },
-            "vignette" => {
-                Color::srgba(0.0, 0.0, 0.0, opacity * 0.5)
-            },
+            "scanlines" => Color::srgba(0.0, 0.0, 0.0, opacity * 0.3),
+            "vignette" => Color::srgba(0.0, 0.0, 0.0, opacity * 0.5),
             _ => Color::srgba(0.0, 0.0, 0.0, 0.0),
         };
 
-        spawn_child(commands, parent, (
+        let container = spawn_child(commands, parent, (
             Node {
                 position_type: PositionType::Absolute,
                 left: Val::ZERO, right: Val::ZERO,
@@ -31,6 +26,26 @@ impl UiComponent for OverlayComponent {
             },
             BackgroundColor(bg),
             Pickable::IGNORE,
-        ))
+        ));
+
+        if effect == "scanlines" {
+            commands.entity(container).with_children(|p| {
+                for i in 0..120 {
+                    p.spawn((
+                        Node {
+                            position_type: PositionType::Absolute,
+                            left: Val::ZERO,
+                            right: Val::ZERO,
+                            top: Val::Px(i as f32 * 6.0),
+                            height: Val::Px(1.0),
+                            ..default()
+                        },
+                        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, opacity * 0.6)),
+                    ));
+                }
+            });
+        }
+
+        container
     }
 }

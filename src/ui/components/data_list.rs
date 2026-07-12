@@ -65,7 +65,7 @@ pub fn populate_data_list(
                 )).with_children(|btn| {
                     btn.spawn((
                         Text::new(format!("{}  {} (Tier {})", prefix, log.title, log.tier)),
-                        tf(12.0),
+                        tf(11.0),
                         TextColor(Color::srgb(0.60, 0.60, 0.75)),
                     ));
                 });

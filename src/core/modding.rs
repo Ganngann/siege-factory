@@ -103,7 +103,6 @@ impl ModRegistry {
                 match std::fs::read_to_string(&manifest_path) {
                     Ok(content) => match toml::from_str::<ModManifest>(&content) {
                         Ok(manifest) => {
-                            info!("Discovered mod: {} v{}", manifest.name, manifest.version);
                             mods.push(ActiveMod {
                                 enabled: true,
                                 manifest,
@@ -147,12 +146,10 @@ impl ModRegistry {
     /// Toggle a mod's enabled state and persist.
     pub fn toggle(&mut self, id: &str) {
         if id == "base" {
-            info!("ToggleMod(base) ignored — base mod cannot be disabled");
             return;
         }
         if let Some(am) = self.mods.iter_mut().find(|m| m.manifest.id == id) {
             am.enabled = !am.enabled;
-            info!("ToggleMod({}) → enabled={}", id, am.enabled);
         } else {
             error!("ToggleMod({}) — mod not found in registry", id);
         }
@@ -292,7 +289,6 @@ pub struct ModPlugin;
 impl Plugin for ModPlugin {
     fn build(&self, app: &mut App) {
         let registry = ModRegistry::discover();
-        info!("ModPlugin: {} mod(s) loaded", registry.mods.len());
         app.insert_resource(registry);
     }
 }

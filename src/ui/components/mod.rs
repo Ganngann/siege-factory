@@ -22,6 +22,7 @@ pub mod pause_menu;
 pub mod inventory_grid;
 pub mod key_value;
 pub mod label;
+pub mod minimap;
 pub mod overlay;
 pub mod progress_bar;
 pub mod recipe_category;

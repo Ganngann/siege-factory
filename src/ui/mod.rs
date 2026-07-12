@@ -21,6 +21,7 @@ use crate::ui::components::{
     hand_crafting_progress::HandCraftingProgressComponent,
     hp_bar::HpBarComponent, hud_text::HudTextComponent,
     icon::IconComponent, inventory_grid::InventoryGridComponent,
+    minimap::MinimapComponent,
     key_value::{KeyValueComponent, KeyValueListComponent},
     label::LabelComponent, overlay::OverlayComponent, progress_bar::ProgressBarComponent,
     recipe_category::RecipeCategoryComponent, recipe_name::RecipeNameComponent,
@@ -70,6 +71,7 @@ impl Plugin for UiPlugin {
         comp_registry.register(Box::new(AlertHeaderComponent));
         comp_registry.register(Box::new(BadgeListComponent));
         comp_registry.register(Box::new(IconComponent));
+        comp_registry.register(Box::new(MinimapComponent));
         comp_registry.register(Box::new(HudTextComponent));
         comp_registry.register(Box::new(BuildBarComponent));
         comp_registry.register(Box::new(HandCraftingListComponent));

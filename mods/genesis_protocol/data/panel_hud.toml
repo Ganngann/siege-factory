@@ -1,5 +1,11 @@
 title = "HUD"
-# Elements are positioned absolutely within the screen space
+
+[[sections]]
+type = "minimap"
+size = 200
+margin = 10
+border = { width = 1, color = "#33ff33" }
+
 [[sections]]
 type = "hud_text"
 data_key = "hud.wave_counter"

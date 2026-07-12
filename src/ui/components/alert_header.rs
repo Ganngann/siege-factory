@@ -20,17 +20,17 @@ impl UiComponent for AlertHeaderComponent {
         ));
 
         commands.entity(container).with_children(|p| {
-            p.spawn((Text::new(title.to_string()), tf(14.0), TextColor(Color::srgb(0.80, 0.80, 1.00))));
+            p.spawn((Text::new(title.to_string()), tf(theme.font_size_medium), TextColor(theme.text_primary)));
             if !alert.is_empty() {
                 p.spawn((
                     Node { padding: UiRect::all(Val::Px(4.0)), ..default() },
                     BackgroundColor(Color::srgb(0.60, 0.15, 0.15)),
                 )).with_children(|banner| {
-                    banner.spawn((Text::new(format!("█ {} █", alert)), tf(11.0), TextColor(Color::WHITE)));
+                    banner.spawn((Text::new(format!("█ {} █", alert)), tf(theme.font_size_small), TextColor(Color::WHITE)));
                 });
             }
             if !subtitle.is_empty() {
-                p.spawn((Text::new(subtitle), tf(11.0), TextColor(theme.text_secondary)));
+                p.spawn((Text::new(subtitle), tf(theme.font_size_small), TextColor(theme.text_secondary)));
             }
         });
 

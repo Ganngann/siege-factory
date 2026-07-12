@@ -5,6 +5,12 @@ use crate::ui::registry::{UiComponent, spawn_child};
 use crate::ui::theme::Theme;
 use crate::ui::registry::ComponentRegistry;
 
+#[derive(Component)]
+pub struct LedPulse {
+    pub base_color: Color,
+    pub phase_offset: f32,
+}
+
 fn led_color(name: &str) -> Color {
     match name {
         "red" => Color::srgb(1.0, 0.2, 0.2),
@@ -45,6 +51,7 @@ impl UiComponent for FrameComponent {
         ));
 
         if !led.is_empty() {
+            let led_c = led_color(led);
             commands.entity(container_e).with_children(|p| {
                 p.spawn((
                     Node {
@@ -55,14 +62,15 @@ impl UiComponent for FrameComponent {
                         height: Val::Px(8.0),
                         ..default()
                     },
-                    BackgroundColor(led_color(led)),
+                    BackgroundColor(led_c),
+                    LedPulse { base_color: led_c, phase_offset: 0.0 },
                 ));
             });
         }
 
         if !title.is_empty() {
             commands.entity(container_e).with_children(|p| {
-                p.spawn((Text::new(title), tf(theme.font_size_small), TextColor(theme.text_secondary)));
+                p.spawn((Text::new(title), tf(theme.font_size_medium), TextColor(theme.text_primary)));
             });
         }
 
@@ -76,5 +84,16 @@ impl UiComponent for FrameComponent {
         }
 
         container_e
+    }
+}
+
+pub fn led_pulse_system(
+    time: Res<Time>,
+    mut q: Query<(&mut BackgroundColor, &LedPulse)>,
+) {
+    for (mut bg, led) in q.iter_mut() {
+        let pulse = ((time.elapsed_secs() * 2.0 + led.phase_offset).sin() * 0.5 + 0.5) * 0.6 + 0.4;
+        let srgba = led.base_color.to_srgba();
+        bg.0 = Color::srgba(srgba.red, srgba.green, srgba.blue, pulse);
     }
 }

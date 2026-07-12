@@ -62,7 +62,7 @@ pub struct PanelRegistry {
 
 impl PanelRegistry {
     pub fn register(&mut self, panel: Box<dyn Panel>) {
-        info!("PanelRegistry: registered {}", panel.panel_name());
+
         self.panels.push(panel);
     }
 
