@@ -6,7 +6,7 @@ height = 300
 type = "section"
 title = "PUISSANCE"
 elements = [
-    { type = "data_label", key = "active", style = "green" },
+    { type = "data_label", key = "building.name", style = "title" },
 ]
 
 [[sections]]

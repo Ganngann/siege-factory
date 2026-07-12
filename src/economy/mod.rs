@@ -35,6 +35,10 @@ use crate::core::schedule::GameplayStep;
 use crate::core::toast::{ToastQueue, dismiss_persistent_toasts, toast_system};
 use crate::core::tooltip::{TooltipText, tooltip_ui};
 use crate::core::utils::silent_despawn;
+use crate::ui::components::hud_text::{spawn_hud, despawn_hud};
+use crate::ui::components::hand_crafting_list::populate_hand_crafting_list;
+use crate::ui::components::hand_crafting_progress::update_hand_crafting_progress;
+use crate::ui::global_panels::{toggle_crafting, toggle_inventory, cleanup_crafting, cleanup_inventory};
 use bevy::ecs::hierarchy::ChildOf;
 use bevy::picking::hover::HoverMap;
 use bevy::prelude::*;
@@ -43,7 +47,6 @@ use components::{Building, PeacefulMode, UiIsBlocking};
 use menu::{MenuItems, MenuState};
 use resource::ResourceRegistry;
 use spatial::SpatialRegistry;
-use ui::InventoryPanel;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 struct PlayingSystems;
@@ -119,7 +122,6 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<player::PlayerWorldPos>();
         app.init_resource::<player::MiningTimer>();
         app.init_resource::<crate::player::crafting::CraftingProgress>();
-        app.init_resource::<crate::player::crafting::CraftingOpen>();
         app.init_resource::<components::DragState>();
         app.init_resource::<crate::core::tutorial::TutorialState>();
         app.init_resource::<crate::core::tutorial::TutorialConditions>();
@@ -143,6 +145,7 @@ impl Plugin for EconomyPlugin {
                 capsule::spawn_capsule.run_if(crate::save_load::is_fresh_game),
                 build_bar::spawn_menu_bar,
                 crate::player::objective::spawn_objective_hud,
+                spawn_hud,
             ),
         );
         app.add_systems(
@@ -153,9 +156,10 @@ impl Plugin for EconomyPlugin {
                 cleanup_buildings,
                 build_bar::cleanup_menu_bar,
                 inspect::cleanup_popup,
-                ui::cleanup_inventory_panel,
-                crate::player::crafting::cleanup_crafting_panel,
                 crate::player::objective::despawn_objective_hud,
+                despawn_hud,
+                cleanup_inventory,
+                cleanup_crafting,
             ),
         );
         app.add_systems(
@@ -220,11 +224,7 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
-            crate::player::crafting::crafting_input.in_set(PlayingSystems),
-        );
-        app.add_systems(
-            Update,
-            crate::player::crafting::spawn_crafting_panel.in_set(PlayingSystems),
+            toggle_crafting.in_set(PlayingSystems),
         );
         app.add_systems(
             Update,
@@ -236,7 +236,11 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(
             Update,
-            crate::player::crafting::update_crafting_progress_text.in_set(PlayingSystems),
+            populate_hand_crafting_list.in_set(PlayingSystems),
+        );
+        app.add_systems(
+            Update,
+            update_hand_crafting_progress.in_set(PlayingSystems),
         );
         app.add_systems(
             FixedUpdate,
@@ -276,7 +280,7 @@ impl Plugin for EconomyPlugin {
             FixedUpdate,
             belt::building_output_tick.run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update, ui::toggle_inventory_panel.in_set(PlayingSystems));
+        app.add_systems(Update, toggle_inventory.in_set(PlayingSystems));
         app.add_systems(Update, ui::update_inventory_grids.in_set(PlayingSystems));
         app.add_systems(Update, ui::drag_start.in_set(PlayingSystems));
         app.add_systems(Update, ui::drag_update.in_set(PlayingSystems));
@@ -382,21 +386,9 @@ fn cleanup_buildings(
 
 fn cleanup_playing_ui(
     mut commands: Commands,
-    query: Query<Entity, With<InventoryPanel>>,
     camera: Query<Entity, With<Camera2d>>,
-    waves: Query<Entity, With<crate::enemy::components::WaveCounterText>>,
-    fps: Query<Entity, With<crate::rendering::FpsOverlay>>,
 ) {
-    for entity in &query {
-        silent_despawn(&mut commands, entity);
-    }
     for entity in &camera {
-        silent_despawn(&mut commands, entity);
-    }
-    for entity in &waves {
-        silent_despawn(&mut commands, entity);
-    }
-    for entity in &fps {
         silent_despawn(&mut commands, entity);
     }
 }

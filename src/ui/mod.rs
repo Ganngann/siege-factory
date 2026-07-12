@@ -1,6 +1,7 @@
 pub mod components;
 pub mod context;
 pub mod engine;
+pub mod global_panels;
 pub mod panels;
 pub mod registry;
 pub mod theme;
@@ -15,6 +16,8 @@ use crate::ui::components::{
     conditional_text::ConditionalTextComponent, data_label::DataLabelComponent,
     data_list::DataListComponent, data_text::DataTextComponent,
     frame::FrameComponent, grid::GridComponent, h_split::HSplitComponent,
+    hand_crafting_list::HandCraftingListComponent,
+    hand_crafting_progress::HandCraftingProgressComponent,
     hp_bar::HpBarComponent, hud_text::HudTextComponent,
     icon::IconComponent, inventory_grid::InventoryGridComponent,
     key_value::{KeyValueComponent, KeyValueListComponent},
@@ -66,6 +69,10 @@ impl Plugin for UiPlugin {
         comp_registry.register(Box::new(AlertHeaderComponent));
         comp_registry.register(Box::new(BadgeListComponent));
         comp_registry.register(Box::new(IconComponent));
+        comp_registry.register(Box::new(HudTextComponent));
+        comp_registry.register(Box::new(BuildBarComponent));
+        comp_registry.register(Box::new(HandCraftingListComponent));
+        comp_registry.register(Box::new(HandCraftingProgressComponent));
 
         app.insert_resource(crate::ui::components::data_list::DataListSelected::default());
 

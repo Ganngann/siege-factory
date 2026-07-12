@@ -6,7 +6,7 @@ height = 300
 type = "section"
 title = "PRODUCTION"
 elements = [
-    { type = "data_label", key = "active", style = "green" },
+    { type = "data_label", key = "objective.current", style = "body" },
     { type = "data_label", key = "inventory.total", style = "body" },
 ]
 

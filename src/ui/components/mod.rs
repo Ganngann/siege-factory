@@ -10,6 +10,8 @@ pub mod data_list;
 pub mod data_text;
 pub mod frame;
 pub mod grid;
+pub mod hand_crafting_list;
+pub mod hand_crafting_progress;
 pub mod h_split;
 pub mod hp_bar;
 pub mod hud_text;

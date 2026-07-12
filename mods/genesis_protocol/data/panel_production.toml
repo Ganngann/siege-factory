@@ -40,5 +40,5 @@ elements = [
     { type = "recipe_category", category = "bio_printing" },
 ]
 
-[[sections.right]]
+[[sections]]
 type = "hp_bar"

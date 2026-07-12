@@ -38,12 +38,6 @@ impl WaveState {
 
 // WaveState uses WaveConfig::first_wave_delay for its initial timer,
 
-#[derive(Component)]
-pub struct WaveCounterText;
-
-#[derive(Component)]
-pub struct GameOverUi;
-
 #[derive(Resource)]
 pub struct LastWave(pub u32);
 

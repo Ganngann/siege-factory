@@ -8,8 +8,9 @@ title = "COMPRESSION"
 elements = [
     { type = "data_label", key = "building.name", style = "title" },
     { type = "spacer", height = 4 },
+    { type = "data_label", key = "objective.current", style = "body" },
+    { type = "spacer", height = 8 },
     { type = "data_label", key = "inventory.total", style = "body" },
-    { type = "data_label", key = "inventory.capacity", style = "body" },
 ]
 
 [[sections]]

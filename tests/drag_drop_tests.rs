@@ -178,28 +178,36 @@ fn test_drag_start_no_press() {
     assert!(!drag.active, "drag must NOT start without Interaction::Pressed");
 }
 
-/// After opening the inventory panel, inserting Interaction::Pressed on a slot starts the drag.
+/// After opening the inventory (via direct spawn), inserting Interaction::Pressed on a slot starts the drag.
 #[test]
 fn test_drag_after_inventory_open() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
     app.insert_resource(ButtonInput::<KeyCode>::default());
     app.init_resource::<DragState>();
-    app.add_systems(Update, (
-        siege_factory::economy::ui::toggle_inventory_panel,
-        siege_factory::economy::ui::drag_start,
-    ));
+    app.add_systems(Update, siege_factory::economy::ui::drag_start);
 
     let mut inv = Inventory::with_slots(20, 0);
     inv.add(&ResourceId("ore".into()), 5);
-    app.world_mut().spawn((Player, inv));
+    let player = app.world_mut().spawn((Player, inv)).id();
 
-    app.world_mut()
-        .resource_mut::<ButtonInput<KeyCode>>()
-        .press(KeyCode::KeyI);
+    // Directly spawn an inventory grid + slots (bypass TOML for test simplicity)
+    use siege_factory::economy::components::InventoryGrid;
+    use siege_factory::economy::components::InventorySlot;
+    let grid = app.world_mut().spawn((
+        InventoryGrid { cols: 5, rows: 4, owner: player },
+        Node::default(),
+    )).id();
+    for i in 0..20 {
+        let slot = app.world_mut().spawn((
+            InventorySlot { index: i },
+            Button,
+            Node::default(),
+        )).id();
+        app.world_mut().entity_mut(grid).add_child(slot);
+    }
+
     app.update();
-
-    app.world_mut().resource_mut::<ButtonInput<KeyCode>>().clear();
 
     // Simulate ui_focus_system: mark slot 0 as pressed
     let slot_ids: Vec<Entity> = app

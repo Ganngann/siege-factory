@@ -1,117 +1,17 @@
-// 🏗️ LEGACY UI — inventaire et drag & drop.
-// - Le grid d'inventaire est remplacé par ui/components/inventory_grid.rs
-// - Le drag & drop n'est PAS encore migré vers le nouveau système
-// Si tu modifies le drag & drop, mets-le à jour dans les DEUX systèmes ou migre-le.
+// Drag & drop (pas encore migré vers TOML).
+// La grille d'inventaire est gérée par ui/components/inventory_grid.rs (data-driven).
 use crate::core::utils::silent_despawn;
 use crate::economy::components::{
-    DragState, DraggedItemVisual, InventoryGrid, InventorySlot, Player,
+    DragState, DraggedItemVisual, InventoryGrid, InventorySlot,
 };
 use crate::economy::resource::{Inventory, ResourceRegistry};
-use crate::economy::window::{BG_SECTION, spawn_window};
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;
 use bevy::ui::widget::ImageNode;
-use bevy::ui::UiTransform;
-
-const SLOT_SIZE: f32 = 48.0;
-const SLOT_GAP: f32 = 4.0;
-const GRID_COLS: usize = 5;
 
 #[derive(Component)]
 pub struct InventoryPanel;
-
-pub fn toggle_inventory_panel(
-    keys: Res<ButtonInput<KeyCode>>,
-    mut commands: Commands,
-    panel_query: Query<Entity, With<InventoryPanel>>,
-    player_query: Query<Entity, With<Player>>,
-) {
-    // ⚠️ IA ATTENTION: KeyI en dur (inventaire). Devrait utiliser le système KeyBindings.
-    if !keys.just_pressed(KeyCode::KeyI) {
-        return;
-    }
-
-    if let Ok(entity) = panel_query.single() {
-        silent_despawn(&mut commands, entity);
-        return;
-    }
-
-    let Ok(player_entity) = player_query.single() else {
-        return;
-    };
-
-    let cols = GRID_COLS;
-    let rows = 4;
-    let w = 280.0;
-    let h = rows as f32 * (SLOT_SIZE + SLOT_GAP) + SLOT_GAP + 50.0;
-
-    let panel_root = spawn_window(
-        &mut commands,
-        "Inventaire",
-        w,
-        h,
-        100.0,
-        80.0,
-        None,
-        |parent| {
-            parent
-                .spawn((
-                    InventoryGrid {
-                        cols,
-                        rows,
-                        owner: player_entity,
-                    },
-                    Transform::default(),
-                    UiTransform::default(),
-                    Node {
-                        width: Val::Px(cols as f32 * (SLOT_SIZE + SLOT_GAP) + SLOT_GAP * 2.0),
-                        padding: UiRect::all(Val::Px(SLOT_GAP)),
-                        display: Display::Flex,
-                        flex_wrap: FlexWrap::Wrap,
-                        align_content: AlignContent::FlexStart,
-                        margin: UiRect::all(Val::Px(8.0)),
-                        ..default()
-                    },
-                    BackgroundColor(BG_SECTION),
-                ))
-                .with_children(|grid| {
-                    for i in 0..rows * cols {
-                        grid.spawn((
-                            InventorySlot { index: i },
-                            Button,
-                            Transform::default(),
-                            UiTransform::default(),
-                            Node {
-                                width: Val::Px(SLOT_SIZE),
-                                height: Val::Px(SLOT_SIZE),
-                                flex_shrink: 0.0,
-                                margin: UiRect::axes(
-                                    Val::Px(SLOT_GAP / 2.0),
-                                    Val::Px(SLOT_GAP / 2.0),
-                                ),
-                                border: UiRect::all(Val::Px(1.0)),
-                                display: Display::Flex,
-                                flex_direction: FlexDirection::Column,
-                                align_items: AlignItems::Center,
-                                justify_content: JustifyContent::Center,
-                                ..default()
-                            },
-                            // ⚠️ IA ATTENTION: couleurs de slot d'inventaire en dur.
-                            // Devrait venir du Theme.
-                            BorderColor::all(Color::srgba(0.3, 0.3, 0.4, 1.0)),
-                            BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
-                            ImageNode::default(),
-                            Text::new(String::new()),
-                            tf(11.0),
-                            TextColor(Color::WHITE),
-                        ));
-                    }
-                });
-        },
-    );
-    commands.entity(panel_root).insert(InventoryPanel);
-}
 
 // ── Update slot visuals from inventory data ──
 
@@ -165,15 +65,6 @@ pub fn update_inventory_grids(
                 }
             }
         }
-    }
-}
-
-pub fn cleanup_inventory_panel(
-    mut commands: Commands,
-    panel_query: Query<Entity, With<InventoryPanel>>,
-) {
-    for entity in panel_query.iter() {
-        silent_despawn(&mut commands, entity);
     }
 }
 

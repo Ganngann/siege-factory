@@ -1,19 +1,19 @@
 pub mod building_tooltip;
 pub mod cache;
 pub mod config;
-pub mod hud;
 pub mod minimap;
 pub mod power_lines;
 pub mod visuals;
 
 pub use cache::*;
 pub use config::*;
-pub use hud::*;
 pub use visuals::*;
 
 use crate::core::game_state::GameState;
 use crate::core::utils::silent_despawn;
 use crate::rendering::building_tooltip::{building_tooltip_system, TooltipTarget};
+use crate::ui::components::hud_text::{update_hud_wave_counter, update_hud_fps, FpsUpdateTimer};
+use crate::ui::global_panels::{spawn_game_over_overlay, despawn_game_over_overlay};
 use bevy::prelude::*;
 
 fn cleanup_tile_highlight(mut commands: Commands, mut highlight: ResMut<TileHighlightEntity>) {
@@ -32,7 +32,7 @@ impl Plugin for RenderPlugin {
         app.init_resource::<PreviewMaterials>();
         app.init_resource::<TileHighlightEntity>();
         app.add_systems(Startup, setup_texture_cache);
-        app.insert_resource(FpsUpdateTimer::default());
+        app.init_resource::<FpsUpdateTimer>();
         app.add_systems(
             Update,
             (
@@ -54,14 +54,20 @@ impl Plugin for RenderPlugin {
                 attach_unit_visuals,
                 animate_belt_positions,
                 update_tier_visuals,
-                wave_counter_ui,
                 power_lines::render_power_lines,
             )
                 .run_if(in_state(GameState::Playing)),
         );
-        app.add_systems(Update, fps_overlay.run_if(in_state(GameState::Playing)));
-        app.add_systems(OnEnter(GameState::GameOver), spawn_game_over_ui);
-        app.add_systems(OnExit(GameState::GameOver), despawn_game_over_ui);
+        app.add_systems(
+            Update,
+            (
+                update_hud_wave_counter,
+                update_hud_fps,
+            )
+                .run_if(in_state(GameState::Playing)),
+        );
+        app.add_systems(OnEnter(GameState::GameOver), spawn_game_over_overlay);
+        app.add_systems(OnExit(GameState::GameOver), despawn_game_over_overlay);
         app.add_systems(OnEnter(GameState::Playing), minimap::setup_minimap);
         app.add_systems(
             Update,

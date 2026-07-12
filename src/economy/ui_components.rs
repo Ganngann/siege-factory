@@ -110,8 +110,6 @@ pub struct MenuItemButton {
 pub struct PanelOverlay;
 
 #[derive(Component)]
-pub struct BuildingTitleText;
-#[derive(Component)]
 pub struct DragHandle;
 #[derive(Component)]
 pub struct ActiveToggleButton;
@@ -142,5 +140,3 @@ pub struct FarmCropSelectButton {
 pub struct UpgradeButton {
     pub target_kind: String,
 }
-#[derive(Component)]
-pub struct UpgradeInfoText;

@@ -7,7 +7,7 @@ use crate::ui::registry::ComponentRegistry;
 pub struct BuildBarComponent;
 impl UiComponent for BuildBarComponent {
     fn id(&self) -> &str { "build_bar" }
-    fn render(&self, commands: &mut Commands, parent: Entity, config: &toml::Value, _data: &UiDataContext, _theme: &Theme, _registry: &ComponentRegistry) -> Entity {
+    fn render(&self, commands: &mut Commands, parent: Entity, _config: &toml::Value, _data: &UiDataContext, _theme: &Theme, _registry: &ComponentRegistry) -> Entity {
         let child = spawn_child(commands, parent, (
             crate::economy::components::MenuBarPanel,
             Node {

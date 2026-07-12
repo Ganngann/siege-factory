@@ -15,7 +15,8 @@ use bevy::window::PrimaryWindow;
 use bevy::input::touch::Touches;
 use siege_factory::economy::components::{DragState, InventorySlot, Player};
 use siege_factory::economy::resource::{Inventory, ResourceId};
-use siege_factory::economy::ui::{drag_start, toggle_inventory_panel};
+use siege_factory::economy::ui::drag_start;
+use siege_factory::ui::global_panels::toggle_inventory;
 
 fn main() {
     let mut app = App::new();
@@ -27,7 +28,7 @@ fn main() {
     app.init_resource::<Touches>();
 
     app.init_resource::<DragState>();
-    app.add_systems(Update, (toggle_inventory_panel, drag_start));
+    app.add_systems(Update, (toggle_inventory, drag_start));
 
     app.world_mut().spawn((Window::default(), PrimaryWindow));
     app.world_mut().spawn(Camera2d);

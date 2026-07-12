@@ -28,5 +28,5 @@ elements = [
     { type = "recipe_category", category = "smithing" },
 ]
 
-[[sections.right]]
+[[sections]]
 type = "hp_bar"

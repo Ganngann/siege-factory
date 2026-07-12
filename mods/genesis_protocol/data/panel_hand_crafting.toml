@@ -4,11 +4,14 @@ height = 500
 
 [[sections]]
 type = "section"
-title = "RECETTES À LA MAIN"
+title = "EN COURS"
 elements = [
-    { type = "recipe_name" },
-    { type = "spacer", height = 4 },
-    { type = "recipe_progress" },
-    { type = "spacer", height = 8 },
-    { type = "recipe_category", category = "hand_crafting" },
+    { type = "hand_crafting_progress" },
+]
+
+[[sections]]
+type = "section"
+title = "RECETTES"
+elements = [
+    { type = "hand_crafting_list" },
 ]

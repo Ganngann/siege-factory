@@ -1,21 +1,10 @@
-// 🏗️ LEGACY UI — panneau d'artisanat (crafting).
-// Partiellement remplacé par src/ui/panels/crafting.rs.
-// Si tu ajoutes une fonctionnalité de crafting, mets-la dans ui/panels/crafting.rs.
-
 use bevy::prelude::*;
 
-use crate::core::game_font::tf;
-
-use crate::core::utils::silent_despawn;
 use crate::economy::components::Player;
 use crate::economy::recipe::{RecipeDef, RecipeRegistry};
 use crate::economy::resource::Inventory;
-use crate::economy::window::{BG_SECTION, spawn_window};
 
 // ── Resources ──
-
-#[derive(Resource, Default)]
-pub struct CraftingOpen(pub bool);
 
 #[derive(Resource, Default)]
 pub struct CraftingProgress {
@@ -26,24 +15,8 @@ pub struct CraftingProgress {
 // ── Marker component ──
 
 #[derive(Component)]
-pub struct CraftingPanel;
-
-#[derive(Component)]
 pub struct CraftButton {
     pub recipe_id: String,
-}
-
-#[derive(Component)]
-pub struct CraftingProgressText;
-
-// ── Helper ──
-
-pub fn filter_hand_recipes(registry: &RecipeRegistry) -> Vec<&RecipeDef> {
-    registry
-        .recipes
-        .values()
-        .filter(|r| r.craftable_in.iter().any(|s| s == "hand"))
-        .collect()
 }
 
 fn can_afford(inv: &Inventory, recipe: &RecipeDef) -> bool {
@@ -51,127 +24,6 @@ fn can_afford(inv: &Inventory, recipe: &RecipeDef) -> bool {
         .input
         .iter()
         .all(|(rid, amount)| inv.get(rid) >= *amount)
-}
-
-// ── Systems ──
-
-pub fn crafting_input(keys: Res<ButtonInput<KeyCode>>, mut open: ResMut<CraftingOpen>) {
-    if keys.just_pressed(KeyCode::KeyC) {
-        open.0 = !open.0;
-    }
-}
-
-pub fn spawn_crafting_panel(
-    mut commands: Commands,
-    open: Res<CraftingOpen>,
-    panel_query: Query<Entity, With<CraftingPanel>>,
-    recipe_registry: Res<RecipeRegistry>,
-    player_query: Query<Entity, With<Player>>,
-) {
-    if !open.is_changed() {
-        return;
-    }
-
-    // Close
-    if !open.0 {
-        for entity in panel_query.iter() {
-            silent_despawn(&mut commands, entity);
-        }
-        return;
-    }
-
-    // Already open
-    if !panel_query.is_empty() {
-        return;
-    }
-
-    let Ok(_player_entity) = player_query.single() else {
-        return;
-    };
-
-    let hand_recipes = filter_hand_recipes(&recipe_registry);
-    let recipe_count = hand_recipes.len().max(1);
-    let row_height = 52.0;
-    let header_height = 36.0;
-    let padding = 16.0;
-    let w = 320.0;
-    let h = padding + header_height + recipe_count as f32 * row_height + padding;
-
-    let panel_root = spawn_window(
-        &mut commands,
-        "Crafting",
-        w,
-        h,
-        120.0,
-        120.0,
-        None,
-        |parent| {
-            parent
-                .spawn((
-                    Node {
-                        flex_direction: FlexDirection::Column,
-                        padding: UiRect::all(Val::Px(8.0)),
-                        row_gap: Val::Px(4.0),
-                        width: Val::Percent(100.0),
-                        flex_grow: 1.0,
-                        ..default()
-                    },
-                    BackgroundColor(Color::NONE),
-                ))
-                .with_children(|col| {
-                    for recipe in &hand_recipes {
-                        let rid = recipe.id.clone();
-                        let input_text: String = recipe
-                            .input
-                            .iter()
-                            .map(|(r, a)| format!("{} x{}", r.display_name(), a))
-                            .collect::<Vec<_>>()
-                            .join(", ");
-                        let output_text: String = recipe
-                            .output
-                            .iter()
-                            .map(|(r, a)| format!("{} x{}", r.display_name(), a))
-                            .collect::<Vec<_>>()
-                            .join(", ");
-
-                        col.spawn((
-                            Node {
-                                flex_direction: FlexDirection::Column,
-                                padding: UiRect::all(Val::Px(6.0)),
-                                ..default()
-                            },
-                            BackgroundColor(BG_SECTION),
-                        ))
-                        .with_children(|row| {
-                            row.spawn(Text::new(format!("{} -> {}", input_text, output_text)));
-                            row.spawn((
-                                CraftButton {
-                                    recipe_id: rid.clone(),
-                                },
-                                Button,
-                                Node {
-                                    width: Val::Percent(100.0),
-                                    height: Val::Px(28.0),
-                                    margin: UiRect::top(Val::Px(4.0)),
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                BackgroundColor(Color::srgb(0.2, 0.4, 0.2)),
-                            ))
-                            .with_children(|btn| {
-                                btn.spawn((
-                                    Text::new("Craft"),
-                                    tf(13.0),
-                                    TextColor(Color::WHITE),
-                                ));
-                            });
-                        });
-                    }
-                });
-        },
-    );
-    commands.entity(panel_root).insert(CraftingPanel);
 }
 
 pub fn craft_button_system(
@@ -252,40 +104,4 @@ pub fn crafting_tick(
     }
 }
 
-pub fn update_crafting_progress_text(
-    progress: Res<CraftingProgress>,
-    recipe_registry: Res<RecipeRegistry>,
-    mut query: Query<&mut Text, With<CraftingProgressText>>,
-) {
-    if !progress.is_changed() {
-        return;
-    }
 
-    for mut text in query.iter_mut() {
-        if let Some(ref recipe_id) = progress.active_recipe {
-            if let Some(recipe) = recipe_registry.get(recipe_id) {
-                let pct = (progress.timer / recipe.time_sec * 100.0).min(100.0) as u32;
-                let name = recipe
-                    .output
-                    .iter()
-                    .map(|(r, _)| r.display_name())
-                    .collect::<Vec<_>>()
-                    .join(", ");
-                text.0 = format!("Crafting {}... {}%", name, pct);
-            } else {
-                text.0 = String::new();
-            }
-        } else {
-            text.0 = String::new();
-        }
-    }
-}
-
-pub fn cleanup_crafting_panel(
-    mut commands: Commands,
-    panel_query: Query<Entity, With<CraftingPanel>>,
-) {
-    for entity in panel_query.iter() {
-        silent_despawn(&mut commands, entity);
-    }
-}

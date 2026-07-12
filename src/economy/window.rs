@@ -14,14 +14,8 @@ use crate::core::game_font::tf;
 
 pub const BG_WINDOW: Color = Color::srgba(0.08, 0.08, 0.16, 0.97);
 pub const BG_SECTION: Color = Color::srgb(0.10, 0.10, 0.18);
-pub const ACCENT: Color = Color::srgb(0.30, 0.55, 1.00);
 pub const TEXT_PRIMARY: Color = Color::srgb(0.90, 0.90, 1.00);
-pub const TEXT_SECONDARY: Color = Color::srgb(0.60, 0.60, 0.75);
-pub const TEXT_GREEN: Color = Color::srgb(0.40, 0.85, 0.40);
-pub const TEXT_YELLOW: Color = Color::srgb(0.85, 0.85, 0.35);
 pub const BTN_CLOSE: Color = Color::srgb(0.50, 0.12, 0.12);
-pub const HP_GREEN: Color = Color::srgb(0.20, 0.65, 0.20);
-pub const BAR_BG: Color = Color::srgb(0.15, 0.15, 0.22);
 pub const SEPARATOR: Color = Color::srgb(0.20, 0.20, 0.30);
 
 // ── Components ──
@@ -131,38 +125,6 @@ pub fn spawn_window(
             content(parent);
         })
         .id()
-}
-
-// ── Section helper (used inside content callback) ──
-
-pub fn spawn_section(
-    parent: &mut bevy::ecs::hierarchy::ChildSpawnerCommands,
-    title: &str,
-    content: impl FnOnce(&mut bevy::ecs::hierarchy::ChildSpawnerCommands),
-) {
-    parent
-        .spawn((
-            Node {
-                width: Val::Percent(100.0),
-                flex_direction: FlexDirection::Column,
-                padding: UiRect::all(Val::Px(8.0)),
-                margin: UiRect::bottom(Val::Px(6.0)),
-                ..default()
-            },
-            BackgroundColor(BG_SECTION),
-        ))
-        .with_children(|sec| {
-            sec.spawn((
-                Text::new(title),
-                tf(11.0),
-                TextColor(ACCENT),
-                Node {
-                    margin: UiRect::bottom(Val::Px(6.0)),
-                    ..default()
-                },
-            ));
-            content(sec);
-        });
 }
 
 // ── Generic window drag system ──
