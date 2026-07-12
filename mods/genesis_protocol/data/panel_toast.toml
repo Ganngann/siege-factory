@@ -1,0 +1,6 @@
+style = "toast"
+position = { bottom = 90 }
+font_size = 16
+color = "#FFD94C"
+lifetime = 5.0
+max_width = 500

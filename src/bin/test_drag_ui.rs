@@ -15,7 +15,7 @@ use bevy::window::PrimaryWindow;
 use bevy::input::touch::Touches;
 use siege_factory::economy::components::{DragState, InventorySlot, Player};
 use siege_factory::economy::resource::{Inventory, ResourceId};
-use siege_factory::economy::ui::drag_start;
+use siege_factory::ui::components::inventory_drag::drag_start;
 use siege_factory::ui::global_panels::toggle_inventory;
 
 fn main() {

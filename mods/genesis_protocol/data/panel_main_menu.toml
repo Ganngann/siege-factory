@@ -1,0 +1,16 @@
+# Visual config for the main menu
+bg_color = "#0d0d1a"
+title_font_size = 48.0
+title_color = "#ccccff"
+subtitle_font_size = 16.0
+subtitle_color = "#9999cc"
+item_font_size = 20.0
+item_selected_color = "#ffffff"
+item_default_color = "#9999b3"
+item_padding_y = 4.0
+item_padding_x = 20.0
+item_min_width = 300.0
+rebind_bg_color = "#000000"
+rebind_opacity = 0.75
+rebind_text_color = "#ffffcc"
+rebind_font_size = 28.0

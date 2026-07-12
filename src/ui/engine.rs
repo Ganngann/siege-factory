@@ -1,8 +1,10 @@
 use bevy::prelude::*;
-use crate::economy::window::spawn_window;
+use crate::core::game_font::tf;
+use crate::economy::components::{CloseButton, DragHandle};
 use crate::ui::context::UiDataContext;
 use crate::ui::registry::ComponentRegistry;
 use crate::ui::theme::Theme;
+use crate::ui::window::WindowRoot;
 
 #[derive(Resource)]
 pub struct LayoutEngine {
@@ -45,7 +47,69 @@ impl LayoutEngine {
             Pickable::default(),
         )).id();
 
-        let root = spawn_window(commands, title, width, height, x, y, None, |_| {});
+        let root = commands.spawn((
+            WindowRoot,
+            Transform::default(),
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(x),
+                top: Val::Px(y),
+                flex_direction: FlexDirection::Column,
+                width: Val::Px(width),
+                height: Val::Px(height),
+                overflow: Overflow::clip(),
+                ..default()
+            },
+            BackgroundColor(self.theme.window_bg),
+            Outline {
+                width: Val::Px(1.0),
+                offset: Val::ZERO,
+                color: Color::srgb(0.30, 0.30, 0.45),
+            },
+            ZIndex(101),
+        )).with_children(|parent| {
+            parent.spawn((
+                DragHandle,
+                Button,
+                Node {
+                    width: Val::Percent(100.0),
+                    height: Val::Px(36.0),
+                    flex_direction: FlexDirection::Row,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::SpaceBetween,
+                    padding: UiRect::horizontal(Val::Px(12.0)),
+                    border: UiRect::bottom(Val::Px(1.0)),
+                    ..default()
+                },
+                BackgroundColor(self.theme.section_bg),
+                BorderColor::all(self.theme.border),
+            )).with_children(|header| {
+                header.spawn((
+                    Text::new(title),
+                    tf(self.theme.font_size_title),
+                    TextColor(self.theme.text_primary),
+                ));
+                header.spawn((
+                    CloseButton,
+                    Button,
+                    Node {
+                        width: Val::Px(26.0),
+                        height: Val::Px(26.0),
+                        align_items: AlignItems::Center,
+                        justify_content: JustifyContent::Center,
+                        ..default()
+                    },
+                    BackgroundColor(self.theme.btn_close),
+                )).with_children(|btn| {
+                    btn.spawn((
+                        Text::new("X"),
+                        tf(14.0),
+                        TextColor(Color::WHITE),
+                    ));
+                });
+            });
+        }).id();
+
         commands.entity(overlay).add_child(root);
 
         self.render_sections(commands, root, panel_config, data);

@@ -8,6 +8,11 @@ use siege_factory::enemy::components::{LastWave, WaveState};
 use siege_factory::player::objective::ObjectiveState;
 use siege_factory::map::tile_grid::ChunkGrid;
 use siege_factory::save_load::*;
+use siege_factory::ui::components::pause_menu::{
+    PauseMenuConfig, PauseMenuRoot, SaveButton, LoadButton, ResumeButton, QuitButton,
+    toggle_pause_menu, spawn_pause_menu, resume_interaction, save_interaction,
+    cleanup_pause_menu,
+};
 use siege_factory::core::modding::ModRegistry;
 
 
@@ -35,6 +40,7 @@ fn save_load_test_app() -> App {
     app.insert_resource(TutorialState::default());
     app.init_resource::<FinalCountdown>();
     app.init_resource::<ObjectiveState>();
+    app.insert_resource(PauseMenuConfig::default());
     app
 }
 

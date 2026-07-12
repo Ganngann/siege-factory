@@ -1,6 +1,3 @@
-// 🏗️ LEGACY UI — génération du menu principal.
-// Pas encore migrée vers src/ui/. Le nouveau système n'a pas de PanelType::MainMenu implémenté.
-
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;
@@ -69,6 +66,7 @@ pub(crate) fn spawn_current_screen(
     let Some(screen) = def.screens.get(&screen_id) else {
         return;
     };
+    let cfg = &def.config;
 
     if !camera_exists {
         commands.spawn((Camera2d, MenuCamera));
@@ -86,22 +84,22 @@ pub(crate) fn spawn_current_screen(
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(Color::srgba(0.05, 0.05, 0.1, 1.0)),
+            BackgroundColor(cfg.bg_color),
         ))
         .with_children(|parent| {
             parent.spawn((
                 MenuRoot,
                 Text::new(&screen.title),
-                tf(48.0),
-                TextColor(Color::srgb(0.8, 0.8, 1.0)),
+                tf(cfg.title_font_size),
+                TextColor(cfg.title_color),
             ));
 
             if let Some(sub) = &screen.subtitle {
                 parent.spawn((
                     MenuRoot,
                     Text::new(sub.as_str()),
-                    tf(16.0),
-                    TextColor(Color::srgb(0.6, 0.6, 0.8)),
+                    tf(cfg.subtitle_font_size),
+                    TextColor(cfg.subtitle_color),
                 ));
             }
 
@@ -128,9 +126,9 @@ pub(crate) fn spawn_current_screen(
 
             for (idx, (id, label, action)) in items.iter().enumerate() {
                 let color = if idx == nav.selection {
-                    Color::srgb(1.0, 1.0, 1.0)
+                    cfg.item_selected_color
                 } else {
-                    Color::srgb(0.6, 0.6, 0.7)
+                    cfg.item_default_color
                 };
                 parent
                     .spawn((
@@ -140,8 +138,8 @@ pub(crate) fn spawn_current_screen(
                         Button,
                         Interaction::default(),
                         Node {
-                            padding: UiRect::axes(Val::Px(20.0), Val::Px(4.0)),
-                            min_width: Val::Px(300.0),
+                            padding: UiRect::axes(Val::Px(cfg.item_padding_x), Val::Px(cfg.item_padding_y)),
+                            min_width: Val::Px(cfg.item_min_width),
                             justify_content: JustifyContent::Center,
                             ..default()
                         },
@@ -151,13 +149,14 @@ pub(crate) fn spawn_current_screen(
                         p.spawn((
                             MenuRoot,
                             Text::new(label.as_str()),
-                            tf(20.0),
+                            tf(cfg.item_font_size),
                             TextColor(color),
                         ));
                     });
             }
         });
 }
+
 
 pub fn despawn_menu_ui(
     mut commands: Commands,

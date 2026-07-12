@@ -1,6 +1,7 @@
 pub mod components;
 pub mod context;
 pub mod engine;
+pub mod window;
 pub mod global_panels;
 pub mod panels;
 pub mod registry;

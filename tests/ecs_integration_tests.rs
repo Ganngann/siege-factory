@@ -5,7 +5,8 @@ use siege_factory::core::game_state::GameState;
 use siege_factory::core::input::KeyBindings;
 use siege_factory::core::settings::Settings;
 use siege_factory::core::game_font::GameFont;
-use siege_factory::core::toast::{toast_system, ToastMessage, ToastQueue};
+use siege_factory::core::toast::{ToastMessage, ToastQueue};
+use siege_factory::ui::components::toast::{toast_system, ToastConfig};
 use siege_factory::core::tutorial::{
     tutorial_tick, TutorialConditions, TutorialHighlightEntity, TutorialState, TutorialStepDef,
 };
@@ -13,7 +14,6 @@ use siege_factory::economy::components::Building;
 use siege_factory::economy::player::PlayerWorldPos;
 use siege_factory::map::components::TilePosition;
 use siege_factory::map::config::MapConfig;
-use siege_factory::rendering::config::VisualsConfig;
 use siege_factory::core::modding::ModRegistry;
 
 
@@ -609,7 +609,7 @@ fn toast_system_drains_queue_into_entities() {
     app.add_plugins(MinimalPlugins);
     app.init_resource::<ToastQueue>();
     app.init_resource::<GameFont>();
-    app.insert_resource(VisualsConfig::load(&test_mods()));
+    app.insert_resource(ToastConfig::default());
     app.add_systems(Update, toast_system);
 
     app.world_mut()
@@ -635,7 +635,7 @@ fn toast_system_empty_queue_no_entities() {
     app.add_plugins(MinimalPlugins);
     app.init_resource::<ToastQueue>();
     app.init_resource::<GameFont>();
-    app.insert_resource(VisualsConfig::load(&test_mods()));
+    app.insert_resource(ToastConfig::default());
     app.add_systems(Update, toast_system);
 
     app.update();

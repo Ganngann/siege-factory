@@ -1,0 +1,8 @@
+font_size = 11.0
+color = "#e6e6e6"
+background = "#000000"
+background_opacity = 0.75
+padding = 4.0
+offset_x = 8.0
+offset_y = 8.0
+z_index = 200

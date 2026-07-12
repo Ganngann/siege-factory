@@ -1,0 +1,6 @@
+font_size = 12
+color = "#ffffff"
+background = "0.1, 0.1, 0.1, 0.9"
+padding = 4
+offset_x = 15
+offset_y = -10

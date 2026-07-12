@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;
-
+use crate::core::modding::ModRegistry;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{Active, Building, PowerConsumer, PowerProducer};
 use crate::economy::resource::Inventory;
@@ -16,7 +16,83 @@ pub struct BuildingTooltip;
 #[derive(Resource, Default)]
 pub struct TooltipTarget(pub Option<Entity>);
 
-/// Affiche un tooltip au survol d'un bâtiment : nom, état, recette, power.
+#[derive(Resource)]
+pub struct BuildingTooltipConfig {
+    pub font_size: f32,
+    pub color: Color,
+    pub background: Color,
+    pub padding: f32,
+    pub offset_x: f32,
+    pub offset_y: f32,
+    pub z_index: i32,
+}
+
+fn parse_hex(hex: &str) -> Color {
+    let hex = hex.trim_start_matches('#');
+    if hex.len() != 6 {
+        return Color::srgb(0.5, 0.5, 0.5);
+    }
+    let r = u8::from_str_radix(&hex[0..2], 16).unwrap_or(128) as f32 / 255.0;
+    let g = u8::from_str_radix(&hex[2..4], 16).unwrap_or(128) as f32 / 255.0;
+    let b = u8::from_str_radix(&hex[4..6], 16).unwrap_or(128) as f32 / 255.0;
+    Color::srgb(r, g, b)
+}
+
+impl BuildingTooltipConfig {
+    pub fn load(mods: &ModRegistry) -> Self {
+        let content = mods.load_data("panel_building_tooltip.toml").unwrap_or_default();
+        let Ok(config) = toml::from_str::<toml::Value>(&content) else {
+            return Self::default();
+        };
+        let bg_hex = config.get("background").and_then(|v| v.as_str()).unwrap_or("#000000");
+        let bg = parse_hex(bg_hex);
+        let bg_srgba = bg.to_srgba();
+        let opacity = config.get("background_opacity").and_then(|v| v.as_float()).unwrap_or(0.75) as f32;
+        Self {
+            font_size: config
+                .get("font_size")
+                .and_then(|v| v.as_float())
+                .unwrap_or(11.0) as f32,
+            color: config
+                .get("color")
+                .and_then(|v| v.as_str())
+                .map(parse_hex)
+                .unwrap_or(Color::srgb(0.9, 0.9, 0.9)),
+            background: Color::srgba(bg_srgba.red, bg_srgba.green, bg_srgba.blue, opacity),
+            padding: config
+                .get("padding")
+                .and_then(|v| v.as_float())
+                .unwrap_or(4.0) as f32,
+            offset_x: config
+                .get("offset_x")
+                .and_then(|v| v.as_float())
+                .unwrap_or(8.0) as f32,
+            offset_y: config
+                .get("offset_y")
+                .and_then(|v| v.as_float())
+                .unwrap_or(8.0) as f32,
+            z_index: config
+                .get("z_index")
+                .and_then(|v| v.as_integer())
+                .unwrap_or(200) as i32,
+        }
+    }
+}
+
+impl Default for BuildingTooltipConfig {
+    fn default() -> Self {
+        Self {
+            font_size: 11.0,
+            color: Color::srgb(0.9, 0.9, 0.9),
+            background: Color::srgba(0.0, 0.0, 0.0, 0.75),
+            padding: 4.0,
+            offset_x: 8.0,
+            offset_y: 8.0,
+            z_index: 200,
+        }
+    }
+}
+
 pub fn building_tooltip_system(
     mut commands: Commands,
     windows: Query<&Window>,
@@ -33,6 +109,7 @@ pub fn building_tooltip_system(
     registry: Res<BuildingRegistry>,
     mut target: ResMut<TooltipTarget>,
     tooltip_q: Query<Entity, With<BuildingTooltip>>,
+    config: Res<BuildingTooltipConfig>,
 ) {
     let Some(TilePosition { x, y }) = cursor_to_tile(&windows, &camera, &cfg) else {
         clear_tooltip(&mut commands, &tooltip_q, &mut target);
@@ -48,29 +125,24 @@ pub fn building_tooltip_system(
         return;
     };
 
-    // Same target — no update needed
     if target.0 == Some(entity) {
         return;
     }
 
-    // Clear old tooltip
     clear_tooltip(&mut commands, &tooltip_q, &mut target);
     target.0 = Some(entity);
 
-    // Build tooltip text
     let def = registry.get(&building.kind);
     let name = def.map(|d| d.name.as_str()).unwrap_or(&building.kind);
     let mut lines: Vec<String> = Vec::new();
 
     lines.push(format!("┌─ {} ─────────────────┐", shorten(name, 22)));
 
-    // State
     if let Some(a) = active {
         let state = if a.0 { "▶ Actif" } else { "⏸ En pause" };
         lines.push(format!("│ {}                      │", state));
     }
 
-    // Inventory
     if let Some(inv) = inventory {
         let count = inv.total();
         if count > 0 {
@@ -84,7 +156,6 @@ pub fn building_tooltip_system(
         }
     }
 
-    // Power
     let mut power_parts: Vec<String> = Vec::new();
     if let Some(pc) = power_consumer {
         let status = if pc.satisfied { "✓" } else { "✗" };
@@ -99,22 +170,21 @@ pub fn building_tooltip_system(
 
     lines.push("└────────────────────────────┘".to_string());
 
-    // Spawn tooltip UI
     let full_text = lines.join("\n");
     commands.spawn((
         BuildingTooltip,
         Text::new(full_text),
-        tf(11.0),
-        TextColor(Color::srgb(0.9, 0.9, 0.9)),
+        tf(config.font_size),
+        TextColor(config.color),
         Node {
             position_type: PositionType::Absolute,
-            top: Val::Px(8.0),
-            left: Val::Px(8.0),
-            padding: UiRect::all(Val::Px(4.0)),
+            top: Val::Px(config.offset_y),
+            left: Val::Px(config.offset_x),
+            padding: UiRect::all(Val::Px(config.padding)),
             ..default()
         },
-        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.75)),
-        ZIndex(200),
+        BackgroundColor(config.background),
+        ZIndex(config.z_index),
     ));
 }
 

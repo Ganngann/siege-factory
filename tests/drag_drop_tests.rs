@@ -9,7 +9,7 @@ fn test_drag_start_on_press() {
     app.add_plugins(MinimalPlugins);
     app.insert_resource(ButtonInput::<KeyCode>::default());
     app.init_resource::<DragState>();
-    app.add_systems(Update, siege_factory::economy::ui::drag_start);
+    app.add_systems(Update, siege_factory::ui::components::inventory_drag::drag_start);
 
     let mut inv = Inventory::with_slots(1, 0);
     inv.add(&ResourceId("ore".into()), 5);
@@ -49,7 +49,7 @@ fn test_drag_end_transfer_works() {
     app.init_resource::<DragState>();
     app.insert_resource(ButtonInput::<MouseButton>::default());
     app.insert_resource(siege_factory::core::toast::ToastQueue(Vec::new()));
-    app.add_systems(Update, siege_factory::economy::ui::drag_end);
+    app.add_systems(Update, siege_factory::ui::components::inventory_drag::drag_end);
 
     let mut src_inv = Inventory::with_slots(1, 0);
     src_inv.add(&ResourceId("iron_ore".into()), 5);
@@ -102,7 +102,7 @@ fn test_same_inventory_swap() {
     app.init_resource::<DragState>();
     app.insert_resource(ButtonInput::<MouseButton>::default());
     app.insert_resource(siege_factory::core::toast::ToastQueue(Vec::new()));
-    app.add_systems(Update, siege_factory::economy::ui::drag_end);
+    app.add_systems(Update, siege_factory::ui::components::inventory_drag::drag_end);
 
     let mut inv = Inventory::with_slots(2, 0);
     inv.add(&ResourceId("ore".into()), 5);
@@ -161,7 +161,7 @@ fn test_drag_start_no_press() {
     app.add_plugins(MinimalPlugins);
     app.insert_resource(ButtonInput::<KeyCode>::default());
     app.init_resource::<DragState>();
-    app.add_systems(Update, siege_factory::economy::ui::drag_start);
+    app.add_systems(Update, siege_factory::ui::components::inventory_drag::drag_start);
 
     let mut inv = Inventory::with_slots(1, 0);
     inv.add(&ResourceId("ore".into()), 5);
@@ -185,7 +185,7 @@ fn test_drag_after_inventory_open() {
     app.add_plugins(MinimalPlugins);
     app.insert_resource(ButtonInput::<KeyCode>::default());
     app.init_resource::<DragState>();
-    app.add_systems(Update, siege_factory::economy::ui::drag_start);
+    app.add_systems(Update, siege_factory::ui::components::inventory_drag::drag_start);
 
     let mut inv = Inventory::with_slots(20, 0);
     inv.add(&ResourceId("ore".into()), 5);

@@ -41,6 +41,9 @@ impl MainMenuDef {
             })
             .collect();
 
-        Self { screens }
+        Self {
+            screens,
+            config: MainMenuConfig::load(mods),
+        }
     }
 }

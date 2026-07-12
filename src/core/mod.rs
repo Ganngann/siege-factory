@@ -6,6 +6,5 @@ pub mod modding;
 pub mod schedule;
 pub mod settings;
 pub mod toast;
-pub mod tooltip;
 pub mod tutorial;
 pub mod utils;

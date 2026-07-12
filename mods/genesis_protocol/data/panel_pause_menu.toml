@@ -1,0 +1,13 @@
+title = "PAUSED"
+title_font_size = 28.0
+title_color = "#ccccff"
+overlay_opacity = 0.6
+panel_bg = "#1a1a26"
+panel_outline = "#666677"
+button_width = 200.0
+button_height = 40.0
+button_bg = "#33334d"
+button_text_color = "#ffffff"
+button_font_size = 16.0
+padding = 24.0
+gap = 8.0

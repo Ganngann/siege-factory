@@ -1,14 +1,12 @@
-// Drag & drop (pas encore migré vers TOML).
-// La grille d'inventaire est gérée par ui/components/inventory_grid.rs (data-driven).
+use crate::core::game_font::tf;
+use crate::core::toast::ToastQueue;
 use crate::core::utils::silent_despawn;
 use crate::economy::components::{
     DragState, DraggedItemVisual, InventoryGrid, InventorySlot,
 };
 use crate::economy::resource::{Inventory, ResourceRegistry};
+use crate::rendering::TextureCache;
 use bevy::prelude::*;
-
-use crate::core::game_font::tf;
-use bevy::ui::widget::ImageNode;
 
 #[derive(Component)]
 pub struct InventoryPanel;
@@ -17,7 +15,6 @@ pub struct InventoryPanel;
 
 pub fn update_inventory_grids(
     inv_grid_query: Query<(&InventoryGrid, &Children)>,
-    // SUGGEST: type SlotQuery = Query<(&mut BackgroundColor, &mut BorderColor, &InventorySlot, Option<&mut ImageNode>, Option<&mut Text>)> (clippy::type_complexity)
     mut slot_query: Query<(
         &mut BackgroundColor,
         &mut BorderColor,
@@ -27,7 +24,7 @@ pub fn update_inventory_grids(
     )>,
     inv_query: Query<&Inventory>,
     registry: Res<ResourceRegistry>,
-    textures: Res<crate::rendering::TextureCache>,
+    textures: Res<TextureCache>,
 ) {
     for (grid, children) in inv_grid_query.iter() {
         let Ok(inv) = inv_query.get(grid.owner) else {
@@ -40,9 +37,7 @@ pub fn update_inventory_grids(
                     bg.0 = registry
                         .get_opt(&rid.0)
                         .map(|d| d.color)
-                        // ⚠️ IA ATTENTION: couleurs fallback slot en dur.
                         .unwrap_or(Color::srgba(0.3, 0.3, 0.4, 1.0));
-                    // ⚠️ IA ATTENTION: couleurs de bordure de slot en dur.
                     border.top = Color::srgba(0.5, 0.5, 0.6, 1.0);
                     border.bottom = Color::srgba(0.5, 0.5, 0.6, 1.0);
                     border.left = Color::srgba(0.5, 0.5, 0.6, 1.0);
@@ -54,7 +49,6 @@ pub fn update_inventory_grids(
                         t.0 = format!("{}", amount);
                     }
                 } else {
-                    // ⚠️ IA ATTENTION: couleur slot vide en dur.
                     bg.0 = Color::srgba(0.08, 0.08, 0.12, 1.0);
                     if let Some(mut img) = image {
                         img.image = Handle::default();
@@ -68,19 +62,14 @@ pub fn update_inventory_grids(
     }
 }
 
-// ── Drag & Drop (rect hit-test, no Interaction dependency) ──
+// ── Drag & Drop ──
 
 pub fn drag_start(
     mut drag: ResMut<DragState>,
     windows: Query<&Window>,
     keys: Res<ButtonInput<KeyCode>>,
-    // SUGGEST: type SlotQuery = Query<(Entity, &InventorySlot, &Interaction), (With<InventorySlot>, Changed<Interaction>)> (clippy::type_complexity)
     slots: Query<
-        (
-            Entity,
-            &InventorySlot,
-            &Interaction,
-        ),
+        (Entity, &InventorySlot, &Interaction),
         (With<InventorySlot>, Changed<Interaction>),
     >,
     grids: Query<(&InventoryGrid, &Children)>,
@@ -136,7 +125,6 @@ pub fn drag_start(
                             padding: UiRect::all(Val::Px(4.0)),
                             ..default()
                         },
-                        // ⚠️ IA ATTENTION: couleur de l'objet dragué en dur.
                         BackgroundColor(Color::srgba(0.2, 0.2, 0.3, 0.9)),
                         ZIndex(1000),
                     ))
@@ -170,12 +158,11 @@ pub fn drag_update(
 pub fn drag_end(
     mut drag: ResMut<DragState>,
     buttons: Res<ButtonInput<MouseButton>>,
-    // SUGGEST: type SlotQuery = Query<(Entity, &InventorySlot, &Interaction), (With<InventorySlot>, Without<InventoryGrid>)> (clippy::type_complexity)
     slots: Query<(Entity, &InventorySlot, &Interaction), (With<InventorySlot>, Without<InventoryGrid>)>,
     grids: Query<(&InventoryGrid, &Children), Without<InventorySlot>>,
     mut inv_query: Query<&mut Inventory>,
     mut commands: Commands,
-    mut toast_queue: ResMut<crate::core::toast::ToastQueue>,
+    mut toast_queue: ResMut<ToastQueue>,
 ) {
     if !drag.active {
         return;
@@ -197,7 +184,6 @@ pub fn drag_end(
     let Some(ref resource) = resource else { return };
     let Some(src_owner) = src_owner else { return };
 
-    // Find target slot via Interaction::Hovered (set by bevy's ui_focus_system)
     let mut dst_owner: Option<Entity> = None;
     let mut dst_idx: Option<usize> = None;
     'outer: for (slot_entity, slot, interaction) in slots.iter() {
@@ -233,10 +219,8 @@ pub fn drag_end(
                 .unwrap_or(false);
 
             if amount >= src_amount && !dst_same {
-                // Full stack to different/empty → swap
                 inv.swap_slots(src_idx, dst_idx);
             } else if dst_empty || dst_same {
-                // Merge (full or partial) into same resource or empty slot
                 let max = src_idx.max(dst_idx);
                 if max >= inv.slots.len() {
                     inv.slots.resize(max + 1, None);
@@ -264,14 +248,13 @@ pub fn drag_end(
                     }
                 }
             } else {
-                // Different resource → swap entire slots
                 inv.swap_slots(src_idx, dst_idx);
             }
         }
         return;
     }
 
-    // ── Cross-inventory transfer (1 unit) ──
+    // ── Cross-inventory transfer ──
     let removed = {
         if let Ok(mut inv) = inv_query.get_mut(src_owner) {
             if inv.get(resource) >= amount {

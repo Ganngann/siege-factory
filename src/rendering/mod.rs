@@ -1,4 +1,3 @@
-pub mod building_tooltip;
 pub mod cache;
 pub mod config;
 pub mod minimap;
@@ -11,7 +10,7 @@ pub use visuals::*;
 
 use crate::core::game_state::GameState;
 use crate::core::utils::silent_despawn;
-use crate::rendering::building_tooltip::{building_tooltip_system, TooltipTarget};
+use crate::ui::components::building_tooltip::{building_tooltip_system, TooltipTarget};
 use crate::ui::components::hud_text::{update_hud_wave_counter, update_hud_fps, FpsUpdateTimer};
 use crate::ui::global_panels::{spawn_game_over_overlay, despawn_game_over_overlay};
 use bevy::prelude::*;

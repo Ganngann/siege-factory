@@ -1,11 +1,6 @@
-// 🏗️ LEGACY UI — système de notifications toast.
-// Pas encore migrée vers src/ui/. Le nouveau système n'a pas de composant toast équivalent.
-
 use bevy::prelude::*;
 
-use crate::core::game_font::tf;
 use crate::core::utils::silent_despawn;
-use crate::rendering::config::VisualsConfig;
 
 #[derive(Component)]
 pub struct ToastMessage {
@@ -31,49 +26,6 @@ impl ToastQueue {
     /// Ajoute un toast qui reste à l'écran jusqu'à dismiss par le joueur.
     pub fn push_persistent(&mut self, msg: impl Into<String>) {
         self.0.push(format!("\x00PERSISTENT\x00{}", msg.into()));
-    }
-}
-
-pub fn toast_system(
-    mut commands: Commands,
-    mut queue: ResMut<ToastQueue>,
-    time: Res<Time>,
-    mut toasts: Query<(Entity, &mut ToastMessage)>,
-    config: Res<VisualsConfig>,
-) {
-    for msg in queue.0.drain(..) {
-        let persistent = msg.starts_with("\x00PERSISTENT\x00");
-        let text = if persistent { &msg[12..] } else { &msg };
-
-        commands.spawn((
-            ToastMessage {
-                timer: config.toast.lifetime,
-                persistent,
-            },
-            Text::new(text.to_string()),
-            tf(config.toast.font_size),
-            TextColor(config.toast.color),
-            TextLayout::new(Justify::Center, bevy::text::LineBreak::WordBoundary),
-            Node {
-                position_type: PositionType::Absolute,
-                bottom: Val::Px(config.toast.bottom_px),
-                left: Val::Auto,
-                right: Val::Auto,
-                justify_content: JustifyContent::Center,
-                max_width: Val::Px(500.0),
-                flex_wrap: FlexWrap::Wrap,
-                ..default()
-            },
-        ));
-    }
-    for (entity, mut msg) in toasts.iter_mut() {
-        if msg.persistent {
-            continue;
-        }
-        msg.timer -= time.delta_secs();
-        if msg.timer <= 0.0 {
-            silent_despawn(&mut commands, entity);
-        }
     }
 }
 

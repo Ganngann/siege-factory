@@ -1,6 +1,5 @@
 pub mod archive;
 pub mod belt;
-pub mod build_bar;
 pub mod building;
 pub mod capsule;
 pub mod compactor;
@@ -25,16 +24,16 @@ pub mod setup;
 pub mod spatial;
 pub mod tiered_structure;
 pub mod tool;
-pub mod ui;
 pub mod ui_components;
 pub mod unit_config;
-pub mod window;
-
 use crate::core::game_state::GameState;
 use crate::core::schedule::GameplayStep;
-use crate::core::toast::{ToastQueue, dismiss_persistent_toasts, toast_system};
-use crate::core::tooltip::{TooltipText, tooltip_ui};
+use crate::core::toast::{ToastQueue, dismiss_persistent_toasts};
+use crate::ui::components::toast::{ToastConfig, toast_system, spawn_toast_container, despawn_toast_container};
+use crate::ui::components::tooltip::{TooltipConfig, TooltipText, tooltip_ui};
 use crate::core::utils::silent_despawn;
+use crate::ui::components::pause_menu::PauseMenuConfig;
+use crate::ui::components::building_tooltip::BuildingTooltipConfig;
 use crate::ui::components::hud_text::{spawn_hud, despawn_hud};
 use crate::ui::components::hand_crafting_list::populate_hand_crafting_list;
 use crate::ui::components::hand_crafting_progress::update_hand_crafting_progress;
@@ -112,11 +111,15 @@ impl Plugin for EconomyPlugin {
         app.init_resource::<components::DeconstructDrag>();
         app.init_resource::<components::BuildingPanel>();
 
-        app.init_resource::<window::WindowDrag>();
+        app.init_resource::<crate::ui::window::WindowDrag>();
         app.init_resource::<PeacefulMode>();
         app.init_resource::<MenuState>();
         app.init_resource::<MenuItems>();
         app.init_resource::<ToastQueue>();
+        app.insert_resource(ToastConfig::load(&mods));
+        app.insert_resource(TooltipConfig::load(&mods));
+        app.insert_resource(PauseMenuConfig::load(&mods));
+        app.insert_resource(BuildingTooltipConfig::load(&mods));
         app.init_resource::<TooltipText>();
         app.init_resource::<UiIsBlocking>();
         app.init_resource::<player::PlayerWorldPos>();
@@ -143,9 +146,10 @@ impl Plugin for EconomyPlugin {
             (
                 player::setup_player.run_if(crate::save_load::is_fresh_game),
                 capsule::spawn_capsule.run_if(crate::save_load::is_fresh_game),
-                build_bar::spawn_menu_bar,
+                crate::ui::components::build_bar::spawn_build_bar,
                 crate::player::objective::spawn_objective_hud,
                 spawn_hud,
+                spawn_toast_container,
             ),
         );
         app.add_systems(
@@ -154,10 +158,11 @@ impl Plugin for EconomyPlugin {
                 cleanup_playing_ui,
                 cleanup_ghost,
                 cleanup_buildings,
-                build_bar::cleanup_menu_bar,
+                crate::ui::components::build_bar::cleanup_build_bar,
                 inspect::cleanup_popup,
                 crate::player::objective::despawn_objective_hud,
                 despawn_hud,
+                despawn_toast_container,
                 cleanup_inventory,
                 cleanup_crafting,
             ),
@@ -281,18 +286,18 @@ impl Plugin for EconomyPlugin {
             belt::building_output_tick.run_if(in_state(GameState::Playing)),
         );
         app.add_systems(Update, toggle_inventory.in_set(PlayingSystems));
-        app.add_systems(Update, ui::update_inventory_grids.in_set(PlayingSystems));
-        app.add_systems(Update, ui::drag_start.in_set(PlayingSystems));
-        app.add_systems(Update, ui::drag_update.in_set(PlayingSystems));
-        app.add_systems(Update, ui::drag_end.in_set(PlayingSystems));
-        app.add_systems(Update, window::close_window_system.in_set(PlayingSystems));
-        app.add_systems(Update, build_bar::menu_navigation.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::inventory_drag::update_inventory_grids.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::inventory_drag::drag_start.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::inventory_drag::drag_update.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::inventory_drag::drag_end.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::window::close_window_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::build_bar::menu_navigation.in_set(PlayingSystems));
         app.add_systems(
             Update,
-            build_bar::menu_bar_interaction.in_set(PlayingSystems),
+            crate::ui::components::build_bar::menu_bar_interaction.in_set(PlayingSystems),
         );
-        app.add_systems(Update, build_bar::refresh_menu_bar.in_set(PlayingSystems));
-        app.add_systems(Update, build_bar::update_menu_bar.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::build_bar::refresh_build_bar.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::build_bar::update_menu_bar.in_set(PlayingSystems));
         app.add_systems(Update, inspect::cache_capsule_ui_data.in_set(PlayingSystems));
         app.add_systems(
             Update,
@@ -332,7 +337,7 @@ impl Plugin for EconomyPlugin {
             Update,
             inspect::upgrade_button_system.in_set(PlayingSystems),
         );
-        app.add_systems(Update, window::drag_window_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::window::drag_window_system.in_set(PlayingSystems));
         app.add_systems(Update, toast_system.in_set(PlayingSystems));
         app.add_systems(
             Update,

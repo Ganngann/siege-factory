@@ -6,13 +6,18 @@ use std::path::PathBuf;
 use crate::core::game_state::{GameState, IsFreshGame};
 use crate::core::utils::config_dir;
 
+pub mod cleanup;
 pub mod load;
-pub mod pause_menu;
 pub mod save;
 
+pub use cleanup::*;
 pub use load::*;
-pub use pause_menu::*;
 pub use save::*;
+
+use crate::ui::components::pause_menu::{
+    toggle_pause_menu, spawn_pause_menu, resume_interaction, quit_interaction,
+    save_interaction, load_interaction, cleanup_pause_menu,
+};
 
 // ── load_data! macro (used by load.rs) ──
 
@@ -247,7 +252,7 @@ impl Plugin for SaveLoadPlugin {
         app.add_systems(
             OnEnter(GameState::Loading),
             (
-                pause_menu::cleanup_world,
+                cleanup::cleanup_world,
                 load::read_save_file,
                 load::load_chunks,
                 load::load_camera,
@@ -264,18 +269,18 @@ impl Plugin for SaveLoadPlugin {
             OnEnter(GameState::Playing),
             spawn_fresh_camera.run_if(is_fresh_game),
         );
-        app.add_systems(OnExit(GameState::Playing), pause_menu::cleanup_pause_menu);
+        app.add_systems(OnExit(GameState::Playing), cleanup_pause_menu);
 
         app.add_systems(
             Update,
             (
                 save::save_game,
-                pause_menu::toggle_pause_menu,
-                pause_menu::spawn_pause_menu,
-                pause_menu::resume_interaction,
-                pause_menu::quit_interaction,
-                pause_menu::save_interaction,
-                pause_menu::load_interaction,
+                toggle_pause_menu,
+                spawn_pause_menu,
+                resume_interaction,
+                quit_interaction,
+                save_interaction,
+                load_interaction,
             )
                 .run_if(in_state(GameState::Playing)),
         );

@@ -80,6 +80,21 @@ pub struct MenuItems {
     pub total_items: usize,
 }
 
+impl PartialEq for MenuItems {
+    fn eq(&self, other: &Self) -> bool {
+        self.items.len() == other.items.len()
+            && self.items.iter().zip(other.items.iter()).all(|(a, b)| {
+                a.label == b.label
+                    && std::mem::discriminant(&a.kind) == std::mem::discriminant(&b.kind)
+            })
+            && self.has_back == other.has_back
+            && self.breadcrumb == other.breadcrumb
+            && self.can_scroll_left == other.can_scroll_left
+            && self.can_scroll_right == other.can_scroll_right
+            && self.total_items == other.total_items
+    }
+}
+
 /// Number of visible slots (keys 2-0 = 9 slots).
 
 // ── TOML types ──
