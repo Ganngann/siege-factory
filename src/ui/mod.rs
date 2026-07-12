@@ -9,14 +9,18 @@ pub mod types;
 use bevy::prelude::*;
 
 use crate::ui::components::{
-    active_toggle::ActiveToggleComponent, button::ButtonComponent,
+    active_toggle::ActiveToggleComponent, alert_header::AlertHeaderComponent,
+    animate::AnimateComponent, badge_list::BadgeListComponent, button::ButtonComponent,
     conditional_text::ConditionalTextComponent, data_label::DataLabelComponent,
     data_list::DataListComponent, data_text::DataTextComponent,
-    h_split::HSplitComponent, hp_bar::HpBarComponent, inventory_grid::InventoryGridComponent,
-    label::LabelComponent, progress_bar::ProgressBarComponent,
+    frame::FrameComponent, grid::GridComponent, h_split::HSplitComponent,
+    hp_bar::HpBarComponent, icon::IconComponent, inventory_grid::InventoryGridComponent,
+    key_value::{KeyValueComponent, KeyValueListComponent},
+    label::LabelComponent, overlay::OverlayComponent, progress_bar::ProgressBarComponent,
     recipe_category::RecipeCategoryComponent, recipe_name::RecipeNameComponent,
     recipe_progress::RecipeProgressComponent, section::SectionComponent,
     spacer::SpacerComponent, tier_progress::TierProgressComponent, v_stack::VStackComponent,
+    wireframe::WireframeComponent,
 };
 use crate::ui::engine::LayoutEngine;
 use crate::ui::panels::{PanelRegistry, building::BuildingPanelImpl, capsule::CapsulePanelImpl};
@@ -50,6 +54,16 @@ impl Plugin for UiPlugin {
         comp_registry.register(Box::new(DataListComponent));
         comp_registry.register(Box::new(DataTextComponent));
         comp_registry.register(Box::new(ConditionalTextComponent));
+        comp_registry.register(Box::new(FrameComponent));
+        comp_registry.register(Box::new(OverlayComponent));
+        comp_registry.register(Box::new(AnimateComponent));
+        comp_registry.register(Box::new(WireframeComponent));
+        comp_registry.register(Box::new(GridComponent));
+        comp_registry.register(Box::new(KeyValueComponent));
+        comp_registry.register(Box::new(KeyValueListComponent));
+        comp_registry.register(Box::new(AlertHeaderComponent));
+        comp_registry.register(Box::new(BadgeListComponent));
+        comp_registry.register(Box::new(IconComponent));
 
         app.insert_resource(crate::ui::components::data_list::DataListSelected::default());
 

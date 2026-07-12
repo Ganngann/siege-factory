@@ -3,6 +3,9 @@ use bevy::prelude::{Handle, Mesh, Resource};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
+// ⚠️ IA ATTENTION: CHUNK_SIZE est défini ici ET dans map_config.toml (chunk_size).
+// Si tu modifie l'un sans l'autre, le comportement du monde est incohérent.
+// La const Rust devrait être supprimée et la valeur TOML utilisée partout.
 pub const CHUNK_SIZE: u32 = 32;
 
 #[derive(Clone, Default, Debug, PartialEq, Serialize, Deserialize)]

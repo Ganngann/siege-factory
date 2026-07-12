@@ -5,6 +5,11 @@ use bevy::ecs::hierarchy::ChildOf;
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;
+// 🏗️ LEGACY UI — migration vers src/ui/ en cours.
+// - Les constantes de couleurs sont dupliquées dans ui/theme.rs
+// - Le spawn de fenêtre est remplacé par ui/engine::LayoutEngine::render_panel()
+// - Les systèmes de drag/close sont encore legacy
+// Si tu ajoutes une fenêtre, préfère ui/engine::render_panel() avec config TOML.
 // ── Shared UI constants ──
 
 pub const BG_WINDOW: Color = Color::srgba(0.08, 0.08, 0.16, 0.97);
@@ -15,8 +20,6 @@ pub const TEXT_SECONDARY: Color = Color::srgb(0.60, 0.60, 0.75);
 pub const TEXT_GREEN: Color = Color::srgb(0.40, 0.85, 0.40);
 pub const TEXT_YELLOW: Color = Color::srgb(0.85, 0.85, 0.35);
 pub const BTN_CLOSE: Color = Color::srgb(0.50, 0.12, 0.12);
-pub const BTN_ACTIVE: Color = Color::srgb(0.15, 0.45, 0.15);
-pub const BTN_INACTIVE: Color = Color::srgb(0.30, 0.15, 0.15);
 pub const HP_GREEN: Color = Color::srgb(0.20, 0.65, 0.20);
 pub const BAR_BG: Color = Color::srgb(0.15, 0.15, 0.22);
 pub const SEPARATOR: Color = Color::srgb(0.20, 0.20, 0.30);

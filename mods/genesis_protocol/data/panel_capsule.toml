@@ -1,42 +1,63 @@
-title = "Capsule Genesis"
-width = 520
-height = 440
+title = "GENESIS ARRAY — STATUS TERMINAL"
+width = 960
+height = 720
 
 [[sections]]
-type = "section"
-title = "STATUT"
-elements = [
-    { type = "conditional_text", source_key = "capsule.current_tier", values = [
-        { when = "0", text = "La capsule est silencieuse. Aucun signe de vie derrière la vitre noire." },
-        { when = "1", text = "Un voyant clignote faiblement dans la pénombre. L'écran poussiéreux s'anime." },
-        { when = "2", text = "L'écran s'illumine. Un bourdonnement parcourt la coque métallique." },
-        { when = "3", text = "De la condensation apparaît sur la vitre. Une silhouette indistincte se dessine." },
-        { when = "4", text = "Un battement régulier résonne. La silhouette contre la vitre se précise." },
-        { when = "5", text = "Les pompes internes pulsent. Un fluide réparateur circule dans les artères de la capsule." },
-        { when = "6", text = "Le réservoir de stase se remplit de liquide ambré. Les nanites soude nt les fissures." },
-        { when = "7", text = "La main contre la vitre tremble. Les signes vitaux dansent sur l'écran." },
-        { when = "8", text = "Compte à rebours final. La capsule s'illumine. Un premier souffle." },
+type = "alert_header"
+alert = "SÉQUENCE DE STASE : DÉFAILLANCE CRITIQUE"
+subtitle_key = "objective.current"
+
+[[sections]]
+type = "grid"
+cols = 12
+gap = 8
+
+[[sections.children]]
+type = "column"
+width = 8
+children = [
+    { type = "frame", title = "CAPSULE SCHEMATIC", variant = "terminal", led = "red", children = [
+        { type = "overlay", effect = "scanlines", opacity = 0.2 },
+        { type = "wireframe", width = 600, height = 280, shapes = [
+            { type = "ellipse", cx = 300, cy = 140, rx = 130, ry = 80, color_key = "#33ff33" },
+            { type = "rect", x = 220, y = 100, w = 160, h = 80, color_key = "#33ff33" },
+            { type = "hline", y = 230, x1 = 80, x2 = 520, color_key = "#ffaa00" },
+            { type = "vline", x = 80, y1 = 60, y2 = 230, color_key = "#ffaa00" },
+            { type = "vline", x = 520, y1 = 60, y2 = 230, color_key = "#ffaa00" },
+        ] },
+        { type = "animate", effect = "pulse", duration = 2.0 },
+    ] },
+    { type = "frame", title = "SYSTÈMES", children = [
+        { type = "key_value_list", items = [
+            { key = "⚠ ALIMENTATION", value_key = "capsule.status_power" },
+            { key = "⚠ REFROIDISSEMENT", value_key = "capsule.status_cooling" },
+            { key = "⚠ CŒUR BIOLOGIQUE", value_key = "capsule.status_heart" },
+            { key = "⚠ VITRE CAPSULE", value_key = "capsule.status_glass" },
+        ] },
+    ] },
+]
+
+[[sections.children]]
+type = "column"
+width = 4
+children = [
+    { type = "frame", title = "PROGRESSION", children = [
+        { type = "tier_progress", current_key = "capsule.current_tier", max_key = "capsule.total_tiers" },
+        { type = "badge_list", data_key = "capsule.phase_list" },
     ] },
 ]
 
 [[sections]]
-type = "section"
-title = "RÉPARATION"
-elements = [
-    { type = "tier_progress", current_key = "capsule.current_tier", max_key = "capsule.total_tiers" },
-]
-
-[[sections]]
-type = "h_split"
-left_width = 50
-right_width = 50
-left = [
-    { type = "section", title = "DATA PAD", elements = [
-        { type = "data_list", data_key = "capsule.logs" },
-    ] },
-]
-right = [
-    { type = "section", title = "TEXTE", elements = [
-        { type = "data_text", data_key = "capsule.log_text" },
+type = "frame"
+title = "JOURNAL DE BORD"
+variant = "terminal"
+children = [
+    { type = "grid", cols = 12, gap = 8, children = [
+        { type = "column", width = 6, children = [
+            { type = "data_list", data_key = "capsule.logs" },
+        ] },
+        { type = "column", width = 6, children = [
+            { type = "data_text", data_key = "capsule.log_text" },
+        ] },
     ] },
 ]

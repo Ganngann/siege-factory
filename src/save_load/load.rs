@@ -12,7 +12,7 @@ use crate::economy::belt::{BeltSlots, ItemOnBelt};
 use crate::economy::building::{BuildingRegistry, attach_power_components};
 use crate::economy::components::{
     Active, Assembler, Builder, BuilderState, Building, Direction, HpBarChild, OccupiedTiles,
-    PeacefulMode, Player, Sorter, Splitter, Storage, TurretCombat, Unit,
+    PeacefulMode, Player, Sorter, Splitter, TurretCombat, Unit,
 };
 use crate::economy::fluid::FluidTank;
 use crate::economy::game_components::{Compactor, Miner};
@@ -382,8 +382,6 @@ pub fn load_buildings(
                     bs.tile_y
                 );
             }
-        } else if bs.storage {
-            commands.spawn((Storage, building, inv, occupied, tf, tile_pos, Active(true)));
         } else {
             let mut e = commands.spawn((building, inv, occupied, tf, tile_pos, Active(true)));
             if let Some(ft) = &bs.fluid_tank {
@@ -450,6 +448,7 @@ pub fn load_enemies(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapCo
                 HpBarChild,
                 Sprite {
                     custom_size: Some(Vec2::new(24.0, 3.0)),
+                    // ⚠️ IA ATTENTION: couleur et taille de HP bar en dur.
                     color: Color::srgb(0.2, 1.0, 0.2),
                     ..default()
                 },

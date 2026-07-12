@@ -39,6 +39,7 @@ pub struct ManagedPanel;
 // ── Helper functions ──
 
 pub fn styled_label(text: &str, style: LabelStyle) -> impl Bundle {
+    // ⚠️ IA ATTENTION: couleurs et tailles de police devraient venir du Theme, pas être hardcodées ici.
     let (size, color) = match style {
         LabelStyle::Title => (16.0, Color::srgb(0.90, 0.90, 1.00)),
         LabelStyle::Body => (12.0, Color::srgb(0.60, 0.60, 0.75)),

@@ -1,3 +1,6 @@
+// 🏗️ LEGACY UI — système de notifications toast.
+// Pas encore migrée vers src/ui/. Le nouveau système n'a pas de composant toast équivalent.
+
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;

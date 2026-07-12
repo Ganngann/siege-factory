@@ -46,9 +46,11 @@ impl ProgressionLogRegistry {
                     });
                 }
             }
+        let mut unlocked = HashSet::new();
+        unlocked.insert("system_boot".to_string());
         Self {
             logs,
-            unlocked: HashSet::new(),
+            unlocked,
         }
     }
 
@@ -89,6 +91,7 @@ pub fn structure_interact(
     capsule_q: Query<Entity, With<Capsule>>,
     mut countdown: ResMut<FinalCountdown>,
 ) {
+    // ⚠️ IA ATTENTION: KeyE en dur (structure interact). Devrait utiliser le système KeyBindings.
     if !keys.just_pressed(KeyCode::KeyE) {
         return;
     }

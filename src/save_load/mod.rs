@@ -125,7 +125,6 @@ pub struct BuildingSave {
     pub assembler: Option<AssemblerSave>,
     pub turret: Option<TurretSave>,
     pub belt: Option<BeltSave>,
-    pub storage: bool,
     pub splitter: Option<SplitterSave>,
     pub sorter: Option<SorterSave>,
     pub farm: Option<FarmSave>,

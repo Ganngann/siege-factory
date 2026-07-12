@@ -1,3 +1,6 @@
+// 🏗️ LEGACY UI — navigation dans la barre de construction.
+// Pas encore migrée vers src/ui/.
+
 use crate::core::tooltip::TooltipText;
 use crate::economy::building::BuildingRegistry;
 use crate::economy::components::{

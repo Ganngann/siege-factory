@@ -1,3 +1,6 @@
+// 🏗️ LEGACY UI — génération du menu principal.
+// Pas encore migrée vers src/ui/. Le nouveau système n'a pas de PanelType::MainMenu implémenté.
+
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;

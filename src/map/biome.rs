@@ -37,11 +37,14 @@ impl BiomeRegistry {
                     .tile_color_even
                     .as_deref()
                     .map(parse_hex_color)
+                    // ⚠️ IA ATTENTION: fallback couleur biome en dur.
+                    // Si un biome TOML n'a pas de tile_color, ce gris est utilisé sans erreur.
                     .unwrap_or(Color::srgb(0.3, 0.5, 0.3));
                 let tile_color_odd = entry
                     .tile_color_odd
                     .as_deref()
                     .map(parse_hex_color)
+                    // ⚠️ IA ATTENTION: fallback couleur biome odd en dur.
                     .unwrap_or(Color::srgb(0.4, 0.6, 0.4));
                 let decorations = entry
                     .decorations
@@ -54,7 +57,8 @@ impl BiomeRegistry {
                             .color
                             .as_deref()
                             .map(parse_hex_color)
-                            .unwrap_or(Color::srgb(0.3, 0.5, 0.2)),
+                            // ⚠️ IA ATTENTION: fallback couleur décoration biome en dur.
+                    .unwrap_or(Color::srgb(0.3, 0.5, 0.2)),
                         z: d.z,
                     })
                     .collect();

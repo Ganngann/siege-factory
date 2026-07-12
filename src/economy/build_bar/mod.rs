@@ -1,3 +1,7 @@
+// 🏗️ LEGACY UI — barre de construction en bas de l'écran.
+// Pas encore migrée vers src/ui/. À migrer quand le nouveau système
+// supportera les layouts ancrés (bottom: 0).
+
 pub mod interaction;
 pub mod menu;
 

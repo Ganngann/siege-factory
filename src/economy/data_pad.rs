@@ -14,6 +14,7 @@ pub fn interact_data_pad(
     mut progression_logs: ResMut<ProgressionLogRegistry>,
     mut toasts: ResMut<ToastQueue>,
 ) {
+    // ⚠️ IA ATTENTION: KeyE en dur. Devrait utiliser le système KeyBindings.
     if !keys.just_pressed(KeyCode::KeyE) {
         return;
     }

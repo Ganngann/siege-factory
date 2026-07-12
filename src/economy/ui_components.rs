@@ -1,7 +1,13 @@
-use crate::economy::resource::ResourceId;
-use bevy::prelude::*;
+// 🏗️ LEGACY UI — ces composants sont progressivement remplacés par src/ui/components/ et src/ui/types.rs.
+// - InventoryGrid, InventorySlot, DragState, DraggedItemVisual → ui/components/inventory_grid.rs
+// - BuildingPanel, PanelOverlay, PanelModal → ui/types.rs
+// - Tous les *Button, *Text, *Fill → ui/components/ (label, progress_bar, hp_bar, etc.)
+// Si tu ajoutes un composant UI, ajoute-le dans ui/components/ avec le trait UiComponent.
+// 🪣 IA NOTE: les composants legacy sont re-exportés ici.
+// Si tu ajoutes un composant dans ui/components/, n'oublie pas le `pub use` ici.
 
-// ── Inventory UI components ──
+use bevy::prelude::*;
+use crate::economy::resource::ResourceId;
 
 #[derive(Component)]
 pub struct InventoryGrid {
@@ -51,6 +57,8 @@ pub struct BuildingPanel {
     pub root: Option<Entity>,
     pub overlay: Option<Entity>,
     pub dirty: bool,
+    pub cached_objective: String,
+    pub cached_phase_list: String,
 }
 
 // ── Build state resources ──
@@ -109,38 +117,6 @@ pub struct DragHandle;
 pub struct ActiveToggleButton;
 #[derive(Component)]
 pub struct CloseButton;
-#[derive(Component)]
-pub struct ProgressBarBg;
-#[derive(Component)]
-pub struct ProgressBarFill;
-#[derive(Component)]
-pub struct FuelBarBg;
-#[derive(Component)]
-pub struct FuelBarFill;
-#[derive(Component)]
-pub struct StatusText;
-#[derive(Component)]
-pub struct FlowInputText;
-#[derive(Component)]
-pub struct FlowOutputText;
-#[derive(Component)]
-pub struct CapacityBarFill;
-#[derive(Component)]
-pub struct CapacityBarText;
-#[derive(Component)]
-pub struct ConnectionRowText;
-#[derive(Component)]
-pub struct StatRowText;
-#[derive(Component)]
-pub struct RecipeNameText;
-#[derive(Component)]
-pub struct HpBarFill;
-#[derive(Component)]
-pub struct HpText;
-#[derive(Component)]
-pub struct AlertText;
-#[derive(Component)]
-pub struct PowerStatusText;
 
 // ── Sorter settings ──
 
@@ -153,10 +129,6 @@ pub struct SorterInvertButton;
 
 // ── Farm panel ──
 
-#[derive(Component)]
-pub struct FarmCropText;
-#[derive(Component)]
-pub struct FarmCultivatorCountText;
 #[derive(Component)]
 pub struct FarmRecruitButton;
 #[derive(Component)]

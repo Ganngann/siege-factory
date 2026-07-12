@@ -1,8 +1,10 @@
+// Ouverture/fermeture + interactions du panneau d'inspection.
+// Les mises à jour live se font via les systèmes dans src/ui/components/ (update_capsule_statuses, etc.)
+// La génération du contenu se fait via TOML + layout_engine dans ui/panels/.
+
 pub mod interaction;
-pub mod update;
 
 pub use interaction::*;
-pub use update::*;
 
 use crate::core::input::KeyBindings;
 use crate::core::utils::silent_despawn;
@@ -31,15 +33,16 @@ pub fn close_panel(mut commands: Commands, mut panel: ResMut<BuildingPanel>) {
 
 // ── Overlay click to close ──
 
-#[allow(unused_mut)]
 pub fn overlay_click_system(
-    mut commands: Commands,
-    mut panel: ResMut<BuildingPanel>,
-    buttons: Res<ButtonInput<MouseButton>>,
+    commands: Commands,
+    panel: ResMut<BuildingPanel>,
+    q: Query<&Interaction, (Changed<Interaction>, With<PanelOverlay>)>,
 ) {
-    if panel.overlay.is_none() { return; }
-    if !buttons.just_pressed(MouseButton::Left) { return; }
-    close_panel(commands, panel);
+    for interaction in &q {
+        if *interaction != Interaction::Pressed { continue; }
+        close_panel(commands, panel);
+        return;
+    }
 }
 
 // ── Close button ──
@@ -93,4 +96,13 @@ pub fn cleanup_popup(mut commands: Commands, query: Query<Entity, With<PanelOver
     for entity in &query {
         silent_despawn(&mut commands, entity);
     }
+}
+
+// ── Cache capsule/objective data for UiDataContext ──
+
+pub fn cache_capsule_ui_data(
+    obj: Res<crate::player::objective::ObjectiveState>,
+    mut panel: ResMut<BuildingPanel>,
+) {
+    panel.cached_objective = obj.active_text.clone();
 }

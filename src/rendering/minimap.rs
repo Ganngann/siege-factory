@@ -1,3 +1,6 @@
+// 🏗️ LEGACY UI — minimap.
+// Pas de plan de migration pour ce fichier.
+
 use crate::economy::components::Player;
 use bevy::prelude::*;
 

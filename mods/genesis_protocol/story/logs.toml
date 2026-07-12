@@ -1,4 +1,10 @@
 [[logs]]
+id = "system_boot"
+tier = 0
+title = "Initialisation du terminal"
+text = "TERMINAL GENESIS ARRAY — LIEN ÉTABLI.\n\nFRÉQUENCE D'INTERROGATION : STABLE.\nCONSOLE DE DIAGNOSTIC EN LIGNE.\nSYSTÈMES EN ATTENTE D'INTERVENTION HUMAINE.\n\n... Les capteurs détectent une activité neurale compatible.\nBienvenue, Opérateur."
+
+[[logs]]
 id = "genesis_phase_0_clear"
 tier = 0
 title = "Déblayage"

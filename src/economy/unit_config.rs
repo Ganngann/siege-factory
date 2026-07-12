@@ -72,6 +72,7 @@ impl UnitConfig {
                         .projectile_color
                         .as_deref()
                         .map(parse_hex_color)
+                        // ⚠️ IA ATTENTION: couleur de projectile fallback en dur.
                         .unwrap_or(Color::srgb(0.3, 1.0, 0.3)),
                 };
                 units.insert(id, def);

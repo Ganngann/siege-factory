@@ -7,7 +7,7 @@ use crate::core::tutorial::TutorialState;
 use crate::economy::belt::BeltSlots;
 use crate::economy::components::{
     Assembler, Building, OccupiedTiles, PowerConsumer, PowerPole, PowerProducer, Sorter, Splitter,
-    Storage, TurretCombat, UnbuiltBuilding, Unit,
+    TurretCombat, UnbuiltBuilding, Unit,
 };
 use crate::economy::fluid::FluidTank;
 use crate::economy::game_components::Compactor;
@@ -50,7 +50,7 @@ pub fn save_game(
             Option<&Assembler>,
             Option<&TurretCombat>,
             Option<&BeltSlots>,
-            Option<&Storage>,
+        
             Option<&Splitter>,
             Option<&Sorter>,
             Option<&Farm>,
@@ -75,6 +75,7 @@ pub fn save_game(
         With<Unit>,
     >,
 ) {
+    // ⚠️ IA ATTENTION: F5 en dur (sauvegarde). Devrait utiliser le système KeyBindings.
     if !keys.just_pressed(KeyCode::F5) && !save_req.0 {
         return;
     }
@@ -159,7 +160,6 @@ pub fn save_game(
         assembler,
         turret,
         belt,
-        storage,
         splitter,
         sorter,
         farm,
@@ -206,7 +206,6 @@ pub fn save_game(
                 projectile_speed: t.projectile_speed,
             }),
             belt: belt_save,
-            storage: storage.is_some(),
             splitter: splitter.map(|s| super::SplitterSave {
                 counter: s.counter,
                 outputs: s.outputs,

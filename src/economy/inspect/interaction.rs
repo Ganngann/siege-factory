@@ -1,3 +1,8 @@
+// 🏗️ LEGACY UI — gestion des clics sur le panneau d'inspection.
+// Non encore migrée vers src/ui/panels/building.rs.
+// Si tu ajoutes un bouton ou une interaction, ajoute-la dans ui/panels/building.rs
+// et reproduis ici seulement si nécessaire pour la rétrocompatibilité.
+
 use crate::agriculture::components::Cultivator;
 use crate::core::modding::ModRegistry;
 use crate::core::toast::ToastQueue;
@@ -53,7 +58,9 @@ pub fn building_inspect_click(
 
     let Some(TilePosition { x: tile_x, y: tile_y }) =
         cursor_to_tile(&windows, &camera, &cfg)
-    else { return };
+    else {
+        return;
+    };
 
     if let Some(entity) = spatial.at(tile_x, tile_y) {
         if panel.inspected == Some(entity) {
@@ -61,7 +68,9 @@ pub fn building_inspect_click(
             return;
         }
 
-        let Ok((building, _occupied)) = building_query.get(entity) else { return };
+        let Ok((building, _occupied)) = building_query.get(entity) else {
+            return;
+        };
 
         let panel_type = if tier_q.contains(entity) {
             PanelType::Capsule
@@ -78,8 +87,31 @@ pub fn building_inspect_click(
                 panel_data.insert("tier.current".into(), tier.0.to_string());
                 panel_data.insert("capsule.current_tier".into(), tier.0.to_string());
                 if let Some(def) = reg.get(&building.kind) {
-                    panel_data.insert("capsule.total_tiers".into(), def.tiers.len().to_string());
+                    let total_tiers = if def.tiers.len() > 1 { def.tiers.len() - 1 } else { 0 };
+                    panel_data.insert("capsule.total_tiers".into(), total_tiers.to_string());
                 }
+            }
+
+            panel_data.insert("objective.current".into(), panel.cached_objective.clone());
+
+            // Pre-resolve capsule.phase_list as TOML string
+            if let Ok(tier) = tier_q.get(entity) {
+                let phase_names = [
+                    "Phase 0 (Réveil)",
+                    "Phase 1 (Étincelle)",
+                    "Phase 2 (Rouille & Vapeur)",
+                    "Phase 3 (Fil du Cuivre)",
+                    "Phase 4 (Pouls)",
+                    "Phase 5 (Nanites)",
+                    "Phase 6 (Genèse)",
+                    "SÉQUENCE FINALE",
+                ];
+                let items: Vec<String> = phase_names.iter().enumerate().map(|(i, name)| {
+                    let state = if i < tier.0 { "done" } else if i == tier.0 { "current" } else { "locked" };
+                    let sep = if i == 7 { "separator = true," } else { "" };
+                    format!("{{id = \"{}\", title = \"{}\", state = \"{}\", {}}}", i, name, state, sep)
+                }).collect();
+                panel_data.insert("capsule.phase_list".into(), format!("items = [{}]", items.join(",")));
             }
 
             if let Ok(asm) = asm_q.get(entity) {

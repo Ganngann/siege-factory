@@ -4,6 +4,7 @@ pub mod build_bar;
 pub mod building;
 pub mod capsule;
 pub mod compactor;
+pub mod capsule_status;
 pub mod components;
 pub mod data_pad;
 pub mod discovery;
@@ -38,7 +39,7 @@ use bevy::ecs::hierarchy::ChildOf;
 use bevy::picking::hover::HoverMap;
 use bevy::prelude::*;
 use building::DefaultSettings;
-use components::{Building, BuildingPanel, PeacefulMode, UiIsBlocking};
+use components::{Building, PeacefulMode, UiIsBlocking};
 use menu::{MenuItems, MenuState};
 use resource::ResourceRegistry;
 use spatial::SpatialRegistry;
@@ -46,10 +47,6 @@ use ui::InventoryPanel;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 struct PlayingSystems;
-
-fn panel_is_open(panel: Res<BuildingPanel>) -> bool {
-    panel.inspected.is_some()
-}
 
 pub fn update_ui_blocking(
     mut blocking: ResMut<UiIsBlocking>,
@@ -91,6 +88,7 @@ impl Plugin for EconomyPlugin {
 
         app.insert_resource(tool::ToolRegistry::load(&mods));
         app.insert_resource(crate::player::objective::ObjectiveRegistry::load(&mods));
+        app.insert_resource(capsule_status::CapsuleStatusRegistry::load(&mods));
         app.init_resource::<crate::player::objective::ObjectiveState>();
 
         // Load registries + derive MenuDef in dependency order (avoids double-load)
@@ -291,6 +289,7 @@ impl Plugin for EconomyPlugin {
         );
         app.add_systems(Update, build_bar::refresh_menu_bar.in_set(PlayingSystems));
         app.add_systems(Update, build_bar::update_menu_bar.in_set(PlayingSystems));
+        app.add_systems(Update, inspect::cache_capsule_ui_data.in_set(PlayingSystems));
         app.add_systems(
             Update,
             inspect::building_inspect_click
@@ -309,6 +308,9 @@ impl Plugin for EconomyPlugin {
         app.add_systems(Update, crate::ui::components::data_list::populate_data_list.in_set(PlayingSystems));
         app.add_systems(Update, crate::ui::components::data_list::data_list_click_system.in_set(PlayingSystems));
         app.add_systems(Update, crate::ui::components::data_text::update_data_text_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::animate::animation_tick_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::key_value::update_capsule_statuses_system.in_set(PlayingSystems));
+        app.add_systems(Update, crate::ui::components::wireframe::update_capsule_wireframe_system.in_set(PlayingSystems));
         app.add_systems(Update, inspect::farm_recruit_system.in_set(PlayingSystems));
         app.add_systems(
             Update,
@@ -327,24 +329,6 @@ impl Plugin for EconomyPlugin {
             inspect::upgrade_button_system.in_set(PlayingSystems),
         );
         app.add_systems(Update, window::drag_window_system.in_set(PlayingSystems));
-        app.add_systems(
-            Update,
-            (
-                inspect::update_panel_header,
-                inspect::update_panel_production,
-                inspect::update_panel_inventory,
-                inspect::update_panel_connections,
-                inspect::update_panel_stats,
-                inspect::update_panel_hp,
-                inspect::update_panel_alerts,
-                inspect::update_panel_power,
-                inspect::update_panel_burner,
-                inspect::update_farm_crop_text,
-                inspect::update_farm_cultivator_count,
-            )
-                .run_if(panel_is_open)
-                .in_set(PlayingSystems),
-        );
         app.add_systems(Update, toast_system.in_set(PlayingSystems));
         app.add_systems(
             Update,

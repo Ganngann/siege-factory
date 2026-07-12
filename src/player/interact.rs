@@ -54,6 +54,7 @@ pub fn contextual_interact(
 
     let Some(entity) = nearby_entity else {
         // Nothing nearby — still try to mine if E is held
+        // ⚠️ IA ATTENTION: KeyE en dur (interaction). Devrait utiliser le système KeyBindings.
         if keys.pressed(KeyCode::KeyE) {
             try_mine(player_tile, &time, &mut mining_timer, &mut player_inv, &deposit_q, &cfg, &mut chunk_grid, &mut commands, &tool_registry);
         }
@@ -61,6 +62,7 @@ pub fn contextual_interact(
     };
 
     // ── PRESS (just_pressed) ────────────────────────────────────
+    // ⚠️ IA ATTENTION: KeyE en dur (interaction structure).
     if keys.just_pressed(KeyCode::KeyE) {
         // Priorité 1 : Capsule / structure à tiers
         if capsule_q.contains(entity) {
@@ -110,6 +112,7 @@ pub fn contextual_interact(
     }
 
     // ── HOLD (pressed) ──────────────────────────────────────────
+    // ⚠️ IA ATTENTION: KeyE en dur (mining hold).
     if keys.pressed(KeyCode::KeyE) {
         try_mine(player_tile, &time, &mut mining_timer, &mut player_inv, &deposit_q, &cfg, &mut chunk_grid, &mut commands, &tool_registry);
     }

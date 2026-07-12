@@ -1,3 +1,7 @@
+// 🏗️ LEGACY UI — inventaire et drag & drop.
+// - Le grid d'inventaire est remplacé par ui/components/inventory_grid.rs
+// - Le drag & drop n'est PAS encore migré vers le nouveau système
+// Si tu modifies le drag & drop, mets-le à jour dans les DEUX systèmes ou migre-le.
 use crate::core::utils::silent_despawn;
 use crate::economy::components::{
     DragState, DraggedItemVisual, InventoryGrid, InventorySlot, Player,
@@ -23,6 +27,7 @@ pub fn toggle_inventory_panel(
     panel_query: Query<Entity, With<InventoryPanel>>,
     player_query: Query<Entity, With<Player>>,
 ) {
+    // ⚠️ IA ATTENTION: KeyI en dur (inventaire). Devrait utiliser le système KeyBindings.
     if !keys.just_pressed(KeyCode::KeyI) {
         return;
     }
@@ -92,6 +97,8 @@ pub fn toggle_inventory_panel(
                                 justify_content: JustifyContent::Center,
                                 ..default()
                             },
+                            // ⚠️ IA ATTENTION: couleurs de slot d'inventaire en dur.
+                            // Devrait venir du Theme.
                             BorderColor::all(Color::srgba(0.3, 0.3, 0.4, 1.0)),
                             BackgroundColor(Color::srgba(0.08, 0.08, 0.12, 1.0)),
                             ImageNode::default(),
@@ -133,7 +140,9 @@ pub fn update_inventory_grids(
                     bg.0 = registry
                         .get_opt(&rid.0)
                         .map(|d| d.color)
+                        // ⚠️ IA ATTENTION: couleurs fallback slot en dur.
                         .unwrap_or(Color::srgba(0.3, 0.3, 0.4, 1.0));
+                    // ⚠️ IA ATTENTION: couleurs de bordure de slot en dur.
                     border.top = Color::srgba(0.5, 0.5, 0.6, 1.0);
                     border.bottom = Color::srgba(0.5, 0.5, 0.6, 1.0);
                     border.left = Color::srgba(0.5, 0.5, 0.6, 1.0);
@@ -145,6 +154,7 @@ pub fn update_inventory_grids(
                         t.0 = format!("{}", amount);
                     }
                 } else {
+                    // ⚠️ IA ATTENTION: couleur slot vide en dur.
                     bg.0 = Color::srgba(0.08, 0.08, 0.12, 1.0);
                     if let Some(mut img) = image {
                         img.image = Handle::default();
@@ -235,6 +245,7 @@ pub fn drag_start(
                             padding: UiRect::all(Val::Px(4.0)),
                             ..default()
                         },
+                        // ⚠️ IA ATTENTION: couleur de l'objet dragué en dur.
                         BackgroundColor(Color::srgba(0.2, 0.2, 0.3, 0.9)),
                         ZIndex(1000),
                     ))

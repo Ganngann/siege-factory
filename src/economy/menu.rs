@@ -1,3 +1,6 @@
+// 🏗️ LEGACY UI — définitions des menus (items, catégories, breadcrumb).
+// Partagé entre l'ancien système et le nouveau. À migrer dans ui/panels/ quand possible.
+
 use crate::economy::building::BuildingRegistry;
 use crate::economy::discovery::GlobalArchive;
 use crate::economy::resource::Cost;
@@ -321,6 +324,7 @@ pub fn flat_items_at(
                         label: label.clone(),
                         kind: FlatItemKind::Action(action.clone()),
                         cost_str: String::new(),
+                        // ⚠️ IA ATTENTION: couleur de l'action en dur (rouge).
                         color: Color::srgb(0.8, 0.2, 0.2),
                         texture_stem: None,
                     });
@@ -335,6 +339,7 @@ pub fn flat_items_at(
                         label: label.clone(),
                         kind: FlatItemKind::SubMenu,
                         cost_str: String::new(),
+                        // ⚠️ IA ATTENTION: couleur de sous-menu en dur (gris).
                         color: Color::srgb(0.4, 0.4, 0.5),
                         texture_stem: None,
                     });

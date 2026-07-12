@@ -67,6 +67,7 @@ impl FromWorld for PreviewMaterials {
     fn from_world(world: &mut World) -> Self {
         let mut materials = world.resource_mut::<Assets<ColorMaterial>>();
         Self {
+            // ⚠️ IA ATTENTION: couleurs de preview en dur. Devrait être configurable depuis Theme ou visuals.toml.
             deconstruct_building: materials.add(Color::srgba(0.8, 0.0, 0.0, 0.45)),
             deconstruct_zone: materials.add(Color::srgba(0.8, 0.0, 0.0, 0.12)),
             build_valid: materials.add(Color::srgba(0.0, 0.8, 0.0, 0.4)),

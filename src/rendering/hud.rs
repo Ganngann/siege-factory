@@ -1,3 +1,7 @@
+// 🏗️ LEGACY UI — composants HUD (wave counter, game over, FPS overlay).
+// Pas encore migrée vers src/ui/. À migrer quand le nouveau système supportera
+// les overlays persistants (non liés à un building inspecté).
+
 use crate::core::utils::silent_despawn;
 use crate::economy::components::PeacefulMode;
 use crate::enemy::components::{Enemy, GameOverUi, WaveCounterText, WaveState};
@@ -50,6 +54,8 @@ pub fn wave_counter_ui(
             &mut commands,
             &msg,
             16.0,
+            // ⚠️ IA ATTENTION: couleurs et tailles de police HUD en dur.
+            // Devrait venir de Theme + VisualsConfig.
             Color::srgb(1.0, 0.6, 0.2),
             0.0,
             10.0,
@@ -83,12 +89,14 @@ pub fn spawn_game_over_ui(mut commands: Commands, wave: Res<WaveState>) {
             parent.spawn((
                 GameOverUi,
                 Text::new("GAME OVER"),
+                // ⚠️ IA ATTENTION: couleur et taille en dur.
                 tf(48.0),
                 TextColor(Color::srgb(1.0, 0.3, 0.3)),
             ));
             parent.spawn((
                 GameOverUi,
                 Text::new(format!("Waves survived: {}", wave.wave - 1)),
+                // ⚠️ IA ATTENTION: taille de police en dur.
                 tf(24.0),
                 TextColor(Color::WHITE),
             ));
@@ -139,6 +147,7 @@ pub fn fps_overlay(
             .get(&FrameTimeDiagnosticsPlugin::FPS)
             .and_then(|d| d.smoothed())
             .map_or("--".to_string(), |v| format!("{:.0}", v));
+        // ⚠️ IA ATTENTION: taille, couleur et position FPS en dur.
         let entity = spawn_hud_node(
             &mut commands,
             &format!("FPS: {}", fps),

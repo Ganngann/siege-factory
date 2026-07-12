@@ -360,6 +360,7 @@ pub fn player_mine(
     mut commands: Commands,
     tool_registry: Res<ToolRegistry>,
 ) {
+    // ⚠️ IA ATTENTION: KeyE en dur (mining). Devrait utiliser le système KeyBindings.
     if keys.pressed(KeyCode::KeyE) {
         mining_timer.0 += time.delta_secs();
         let Ok((player_tile, mut inv)) = player_query.single_mut() else {
@@ -479,6 +480,7 @@ pub fn player_pickup_belt(
     mut belt_query: Query<&mut BeltSlots>,
     mut commands: Commands,
 ) {
+    // ⚠️ IA ATTENTION: KeyF en dur (pickup belt). Devrait utiliser le système KeyBindings.
     if !keys.just_pressed(KeyCode::KeyF) {
         return;
     }

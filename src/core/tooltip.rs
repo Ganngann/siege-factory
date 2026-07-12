@@ -1,3 +1,6 @@
+// 🏗️ LEGACY UI — système d'infobulles (tooltips).
+// Pas encore migrée vers src/ui/. Le nouveau système n'a pas de composant tooltip équivalent.
+
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;

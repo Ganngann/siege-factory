@@ -1,3 +1,6 @@
+// 🏗️ LEGACY UI — rendu des lignes électriques (gizmos).
+// Pas de plan de migration pour ce fichier — il restera probablement un système à part.
+
 use crate::economy::components::{PowerConsumer, PowerPole, UnbuiltBuilding};
 use crate::economy::power_components::BurnerGenerator;
 use bevy::prelude::*;
@@ -29,6 +32,7 @@ pub fn render_power_lines(
             .iter()
             .find(|(pp, range)| pp.distance(pos) <= *range)
         {
+            // ⚠️ IA ATTENTION: couleur de ligne électrique en dur.
             gizmos.line(pp, pos, Color::srgba(0.3, 0.6, 1.0, 0.6));
         }
     }

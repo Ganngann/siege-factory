@@ -25,7 +25,7 @@ pub struct ComponentRegistry {
 impl ComponentRegistry {
     pub fn register(&mut self, component: Box<dyn UiComponent>) {
         let id = component.id().to_string();
-        info!("ComponentRegistry: registered '{}'", id);
+        debug!("ComponentRegistry: registered '{}'", id);
         self.components.push(component);
     }
 

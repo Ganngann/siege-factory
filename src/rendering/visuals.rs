@@ -1,3 +1,8 @@
+// 📏 IA NOTE: fichier volumineux (500+ lignes).
+// Les HP bars et barres de progression sont partiellement remplacés par ui/components/hp_bar.rs et
+// ui/components/progress_bar.rs. Les composants visuels monde (sprites, tuiles) n'ont PAS d'équivalent
+// dans ui/ — ils restent ici.
+
 use crate::combat::Projectile;
 use crate::core::utils::{silent_despawn, tile_to_world};
 use crate::economy::belt::BeltSlots;
@@ -412,6 +417,8 @@ pub fn attach_building_visuals(
         let stem = &def.texture_stem;
         let tint = match belt_variant.unwrap_or(&BeltVariant::Normal) {
             BeltVariant::Normal => Color::WHITE,
+            // ⚠️ IA ATTENTION: couleurs de variantes de belt en dur.
+            // Si tu ajoutes une variante, ajoute sa couleur ici.
             BeltVariant::Underground => Color::srgb(0.6, 0.6, 0.8),
             BeltVariant::Aerial => Color::srgb(0.8, 0.9, 1.0),
             BeltVariant::Curved => Color::srgb(0.9, 0.75, 0.6),

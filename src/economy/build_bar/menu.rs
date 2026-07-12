@@ -1,3 +1,6 @@
+// 🏗️ LEGACY UI — rendu de la barre de construction.
+// Pas encore migrée vers src/ui/components/.
+
 use crate::economy::components::{
     BackButton, BreadcrumbText, MenuBarPanel, MenuItemButton, ScrollButton,
 };

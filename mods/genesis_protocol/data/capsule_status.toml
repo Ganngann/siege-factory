@@ -1,0 +1,165 @@
+# ============================================================
+# Genesis Protocol — Statuts capsule par tier
+# Utilisé par le composant key_value_list + update_capsule_statuses_system
+# ============================================================
+
+[[statuses]]
+id = "power"
+label = "ALIMENTATION"
+
+[[statuses.tiers]]
+tier = 0
+text = "DÉFAILLANTE (REQ. 200kW)"
+color = "#ff3333"
+
+[[statuses.tiers]]
+tier = 1
+text = "ALIMENTATION PRIMAIRE"
+color = "#ffaa00"
+
+[[statuses.tiers]]
+tier = 2
+text = "CIRCUIT REFROIDISSEMENT OK"
+color = "#ffaa00"
+
+[[statuses.tiers]]
+tier = 3
+text = "CPU OK — PUISSANCE STABLE"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 4
+text = "POMPES INTERNES ACTIVES"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 5
+text = "NANITES RÉPARENT LA COQUE"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 6
+text = "RÉSERVOIR DE STASE OK"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 7
+text = "TOUS SYSTÈMES VERTS"
+color = "#33ff33"
+
+[[statuses]]
+id = "cooling"
+label = "REFROIDISSEMENT"
+
+[[statuses.tiers]]
+tier = 0
+text = "ÉTEINT"
+color = "#ff3333"
+
+[[statuses.tiers]]
+tier = 1
+text = "VENTILATEURS DÉFAILLANTS"
+color = "#ff3333"
+
+[[statuses.tiers]]
+tier = 2
+text = "LIQUIDE DE REFROIDISSEMENT CIRCULE"
+color = "#ffaa00"
+
+[[statuses.tiers]]
+tier = 3
+text = "TEMPÉRATURE STABLE"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 4
+text = "OK"
+color = "#33ff33"
+
+[[statuses]]
+id = "heart"
+label = "CŒUR BIOLOGIQUE"
+
+[[statuses.tiers]]
+tier = 0
+text = "PAS DE SIGNES VITAUX"
+color = "#ff3333"
+
+[[statuses.tiers]]
+tier = 1
+text = "SIGNAL FAIBLE DÉTECTÉ"
+color = "#ff3333"
+
+[[statuses.tiers]]
+tier = 2
+text = "BATTEMENT IRRÉGULIER"
+color = "#ffaa00"
+
+[[statuses.tiers]]
+tier = 3
+text = "RYTHME CARDIAQUE STABLE"
+color = "#ffaa00"
+
+[[statuses.tiers]]
+tier = 4
+text = "POMPES INTERNES ACTIVES"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 5
+text = "FLUIDES BIOLOGIQUES SYNTHÉTISÉS"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 6
+text = "RÉSERVOIR DE STASE PRÊT"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 7
+text = "STABLE — PRÊT POUR LE RÉVEIL"
+color = "#33ff33"
+
+[[statuses]]
+id = "glass"
+label = "VITRE CAPSULE"
+
+[[statuses.tiers]]
+tier = 0
+text = "OPAQUE / NOIRE"
+color = "#ff3333"
+
+[[statuses.tiers]]
+tier = 1
+text = "LÉGÈRE LUEUR"
+color = "#ff3333"
+
+[[statuses.tiers]]
+tier = 2
+text = "VITRE PARTIELLEMENT TRANSPARENTE"
+color = "#ffaa00"
+
+[[statuses.tiers]]
+tier = 3
+text = "CONDENSATION SUR LA VITRE"
+color = "#ffaa00"
+
+[[statuses.tiers]]
+tier = 4
+text = "SILHOUETTE VISIBLE"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 5
+text = "MAIN CONTRE LE VERRE"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 6
+text = "VITRE CLAIRE — LA PERSONNE DISTINCTE"
+color = "#33ff33"
+
+[[statuses.tiers]]
+tier = 7
+text = "LUMIÈRE À L'INTÉRIEUR"
+color = "#33ff33"

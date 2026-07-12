@@ -150,9 +150,6 @@ pub struct HasHpBar;
 pub struct OccupiedTiles(pub Vec<(i32, i32)>);
 
 #[derive(Component)]
-pub struct Storage;
-
-#[derive(Component)]
 pub struct Splitter {
     pub counter: u32,
     pub outputs: u32,

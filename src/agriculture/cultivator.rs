@@ -138,6 +138,8 @@ pub fn cultivator_ai(
                                 .keys()
                                 .next()
                                 .cloned()
+                                // ⚠️ IA ATTENTION: fallback "wheat" en dur.
+                                // Si "wheat" n'existe pas dans crops.toml, ça compile et plante au runtime.
                                 .unwrap_or_else(|| "wheat".to_string())
                         } else {
                             let idx =

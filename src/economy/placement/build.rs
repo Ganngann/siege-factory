@@ -13,7 +13,7 @@ use crate::economy::components::{
     RecipeGenerator, ResourceDeposit, TurretCombat, UiIsBlocking, UnbuiltBuilding,
 };
 use crate::economy::fluid::{FluidPipe, FluidTank};
-use crate::economy::game_components::{Compactor, Level, Pump, Storage};
+use crate::economy::game_components::{Compactor, Level, Pump};
 use crate::economy::resource::Inventory;
 use crate::economy::spatial::SpatialRegistry;
 use crate::core::utils::world_to_tile;
@@ -26,14 +26,6 @@ use crate::rendering::{PreviewMaterials, ShapeCache, direction_arrow};
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;
-
-const BUILDING_TURRET: &str = "turret";
-const BUILDING_STORAGE: &str = "storage";
-const BUILDING_FARM: &str = "farm";
-const BUILDING_ARCHIVE: &str = "archive";
-const BUILDING_COMPACTOR: &str = "compactor";
-const BUILDING_PIPE: &str = "pipe";
-const BUILDING_PUMP: &str = "water_pump";
 
 // ── Auto-direction ──
 
@@ -513,131 +505,93 @@ pub fn handle_build_click(
         Inventory::new()
     };
 
-    if let Some(default_recipe) = &def.default_recipe {
-        let interval = def.production_interval.unwrap_or(2.0);
+    // ── Generic data-driven block ──
+    // Components are added based on BuildingDef properties, not hardcoded IDs.
 
-        // RecipeGenerator: hybrid building that produces both items AND grid power
+    let mut e = commands.spawn((base, inv, Level(def.level)));
+
+    // Recipes: Assembler or RecipeGenerator
+    if def.has_recipes || def.default_recipe.is_some() || def.production_interval.is_some() {
+        let interval = def.production_interval.unwrap_or(2.0);
+        let recipe_id = def.default_recipe.clone().unwrap_or_default();
+
         if def.fuel_burn_interval > 0.0 && def.power_generation > 0.0 {
-            let mut e = commands.spawn((
-                base,
-                RecipeGenerator {
-                    recipe_id: default_recipe.clone(),
-                    production_timer: 0.0,
-                    interval,
-                    base_output: def.power_generation,
-                },
-                inv,
-                ProductionCounter::default(),
-                DiscoveredRecipes::default(),
-                Level(def.level),
-            ));
-            if def.power_consumption > 0.0 {
-                e.insert(PowerConsumer {
-                    draw: def.power_consumption,
-                    satisfied: false,
-                });
-            }
-            if def.power_generation > 0.0 {
-                e.insert(PowerProducer {
-                    output: def.power_generation,
-                });
-            }
-            if def.power_pole_range > 0.0 {
-                e.insert(crate::economy::components::PowerPole {
-                    range: def.power_pole_range,
-                });
-            }
+            e.insert(RecipeGenerator {
+                recipe_id,
+                production_timer: 0.0,
+                interval,
+                base_output: def.power_generation,
+            });
         } else {
-            let mut e = commands.spawn((
-                base,
-                Assembler {
-                    production_timer: 0.0,
-                    interval,
-                    recipe_id: default_recipe.clone(),
-                },
-                inv,
-                ProductionCounter::default(),
-                DiscoveredRecipes::default(),
-                Level(def.level),
-            ));
-            attach_power_components(&mut e, def);
-        }
-    } else if def.id == BUILDING_TURRET || def.id == "turret_ii" {
-        let stats = def.combat.as_ref();
-        let mut e = commands.spawn((
-            base,
-            inv,
-            TurretCombat {
-                damage: stats.map_or(0, |s| s.damage),
-                range_sq: stats.map_or(0.0, |s| s.range),
-                fire_interval: stats.map_or(0.0, |s| s.fire_rate_sec),
-                timer: 0.0,
-                projectile_speed: stats.map_or(0.0, |s| s.projectile_speed),
-            },
-            Level(def.level),
-        ));
-        attach_power_components(&mut e, def);
-    } else if def.id == BUILDING_STORAGE {
-        let mut e = commands.spawn((base, inv, Storage, Level(def.level)));
-        attach_power_components(&mut e, def);
-    } else if def.id == BUILDING_FARM {
-        let crop_types = def.crop_types.clone();
-        let mut e = commands.spawn((
-            base,
-            inv,
-            Farm {
-                crop_index: 0,
-                crop_types,
-            },
-            ProductionCounter::default(),
-            DiscoveredRecipes::default(),
-            Level(def.level),
-        ));
-        attach_power_components(&mut e, def);
-    } else if def.id == BUILDING_ARCHIVE {
-        let mut e = commands.spawn((base, inv, Archive, Level(def.level)));
-        attach_power_components(&mut e, def);
-    } else if def.id == BUILDING_COMPACTOR {
-        let mut e = commands.spawn((
-            base,
-            inv,
-            Compactor {
-                ratio: def.compactor_ratio,
-                timer: 0.0,
-                interval: def.compactor_interval,
-            },
-            Level(def.level),
-        ));
-        attach_power_components(&mut e, def);
-    } else if def.id == BUILDING_PIPE {
-        let mut e = commands.spawn((
-            base,
-            FluidPipe { transfer_rate: def.pipe_transfer_rate, direction: crate::economy::game_components::Direction::East },
-        ));
-        attach_power_components(&mut e, def);
-    } else if def.id == BUILDING_PUMP {
-        let mut e = commands.spawn((
-            base,
-            inv,
-            Pump,
-            Level(def.level),
-        ));
-        if def.fluid_tank_capacity > 0.0 {
-            e.insert(FluidTank::new(def.fluid_tank_capacity));
-        }
-        if let Some(default_recipe) = &def.default_recipe {
-            let interval = def.production_interval.unwrap_or(2.0);
             e.insert(Assembler {
                 production_timer: 0.0,
                 interval,
-                recipe_id: default_recipe.clone(),
+                recipe_id,
             });
-            e.insert(ProductionCounter::default());
-            e.insert(DiscoveredRecipes::default());
         }
-        attach_power_components(&mut e, def);
-    } else {
-        let mut e = commands.spawn((base, inv, Level(def.level)));
-        attach_power_components(&mut e, def);
+        e.insert(ProductionCounter::default());
+        e.insert(DiscoveredRecipes::default());
+    }
+
+    // Combat
+    if let Some(stats) = &def.combat {
+        e.insert(TurretCombat {
+            damage: stats.damage,
+            range_sq: stats.range,
+            fire_interval: stats.fire_rate_sec,
+            timer: 0.0,
+            projectile_speed: stats.projectile_speed,
+        });
+    }
+
+    // Farm
+    if !def.crop_types.is_empty() {
+        e.insert(Farm {
+            crop_index: 0,
+            crop_types: def.crop_types.clone(),
+        });
+    }
+
+    // Archive
+    if def.is_archive {
+        e.insert(Archive);
+    }
+
+    // Compactor
+    if def.compactor_ratio > 0 {
+        e.insert(Compactor {
+            ratio: def.compactor_ratio,
+            timer: 0.0,
+            interval: def.compactor_interval,
+        });
+    }
+
+    // Fluids
+    if def.fluid_tank_capacity > 0.0 {
+        e.insert(FluidTank::new(def.fluid_tank_capacity));
+        if def.id == "water_pump" {
+            e.insert(Pump);
+        }
+    }
+    if def.pipe_transfer_rate > 0.0 {
+        e.insert(FluidPipe { transfer_rate: def.pipe_transfer_rate, direction: crate::economy::game_components::Direction::East });
+    }
+
+    // Power
+    if def.power_consumption > 0.0 {
+        e.insert(PowerConsumer { draw: def.power_consumption, satisfied: false });
+    }
+    if def.power_generation > 0.0 {
+        e.insert(PowerProducer { output: def.power_generation });
+    }
+    if def.fuel_burn_interval > 0.0 {
+        e.insert(crate::economy::components::BurnerGenerator {
+            fuel_burn_timer: 0.0,
+            fuel_burn_interval: def.fuel_burn_interval,
+            base_output: 0.0,
+        });
+    }
+    if def.power_pole_range > 0.0 {
+        e.insert(crate::economy::components::PowerPole { range: def.power_pole_range });
     }
 }

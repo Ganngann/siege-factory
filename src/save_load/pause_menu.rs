@@ -48,6 +48,8 @@ pub fn spawn_pause_menu(
     show: Res<ShowPauseMenu>,
     panel_query: Query<Entity, With<PauseMenuRoot>>,
 ) {
+    // ⚠️ IA ATTENTION: toutes les couleurs, backgrounds et tailles de police ci-dessous sont en dur.
+    // Devrait utiliser le Theme + VisualsConfig.
     if show.0 && panel_query.is_empty() {
         let _ = commands
             .spawn((
@@ -76,6 +78,8 @@ pub fn spawn_pause_menu(
                             row_gap: Val::Px(8.0),
                             ..default()
                         },
+                        // ⚠️ IA ATTENTION: background, outline et boutons du menu pause en dur.
+                        // Devrait utiliser le Theme.
                         BackgroundColor(Color::srgba(0.1, 0.1, 0.15, 0.9)),
                         Outline {
                             width: Val::Px(2.0),
@@ -87,6 +91,7 @@ pub fn spawn_pause_menu(
                         panel.spawn((
                             Text::new("PAUSED"),
                             tf(28.0),
+                            // ⚠️ IA ATTENTION: couleurs et tailles de police du menu pause en dur.
                             TextColor(Color::srgb(0.8, 0.8, 1.0)),
                             Node {
                                 margin: UiRect::bottom(Val::Px(12.0)),
@@ -104,6 +109,7 @@ pub fn spawn_pause_menu(
                                     justify_content: JustifyContent::Center,
                                     ..default()
                                 },
+                                // ⚠️ IA ATTENTION: boutons du menu pause en dur.
                                 BackgroundColor(Color::srgb(0.2, 0.2, 0.3)),
                             ))
                             .with_children(|btn| {

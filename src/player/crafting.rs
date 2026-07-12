@@ -1,3 +1,7 @@
+// 🏗️ LEGACY UI — panneau d'artisanat (crafting).
+// Partiellement remplacé par src/ui/panels/crafting.rs.
+// Si tu ajoutes une fonctionnalité de crafting, mets-la dans ui/panels/crafting.rs.
+
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;
