@@ -1,0 +1,10 @@
+title = "Inventaire"
+width = 280
+height = 280
+
+[[sections]]
+type = "section"
+title = "INVENTAIRE"
+elements = [
+    { type = "inventory_grid", cols = 5, rows = 4 },
+]

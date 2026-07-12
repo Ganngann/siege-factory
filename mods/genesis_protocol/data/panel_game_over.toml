@@ -1,0 +1,12 @@
+title = "Game Over"
+background = "#000000"
+# Fullscreen overlay with centered text
+[[sections]]
+type = "section"
+title = ""
+elements = [
+    { type = "label", text = "GAME OVER", font_size = 48, color = "#ff4d4d" },
+    { type = "data_label", key = "game_over.waves", style = "title" },
+    { type = "spacer", height = 8 },
+    { type = "label", text = "Press R to restart  |  ESC for main menu", font_size = 20, color = "#ccccff" },
+]

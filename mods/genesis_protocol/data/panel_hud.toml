@@ -1,0 +1,15 @@
+title = "HUD"
+# Elements are positioned absolutely within the screen space
+[[sections]]
+type = "hud_text"
+data_key = "hud.wave_counter"
+font_size = 16
+color = "#ffcc44"
+position = { top = 10, right = 10 }
+
+[[sections]]
+type = "hud_text"
+data_key = "hud.fps"
+font_size = 12
+color = "#00ff00"
+position = { top = 40, right = 10 }

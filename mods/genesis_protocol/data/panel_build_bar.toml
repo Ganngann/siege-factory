@@ -1,0 +1,4 @@
+title = "Construction"
+# Full-width bar at bottom of screen
+[[sections]]
+type = "build_bar"

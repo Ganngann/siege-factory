@@ -10,11 +10,13 @@ use bevy::prelude::*;
 
 use crate::ui::components::{
     active_toggle::ActiveToggleComponent, alert_header::AlertHeaderComponent,
-    animate::AnimateComponent, badge_list::BadgeListComponent, button::ButtonComponent,
+    animate::AnimateComponent, badge_list::BadgeListComponent, build_bar::BuildBarComponent,
+    button::ButtonComponent,
     conditional_text::ConditionalTextComponent, data_label::DataLabelComponent,
     data_list::DataListComponent, data_text::DataTextComponent,
     frame::FrameComponent, grid::GridComponent, h_split::HSplitComponent,
-    hp_bar::HpBarComponent, icon::IconComponent, inventory_grid::InventoryGridComponent,
+    hp_bar::HpBarComponent, hud_text::HudTextComponent,
+    icon::IconComponent, inventory_grid::InventoryGridComponent,
     key_value::{KeyValueComponent, KeyValueListComponent},
     label::LabelComponent, overlay::OverlayComponent, progress_bar::ProgressBarComponent,
     recipe_category::RecipeCategoryComponent, recipe_name::RecipeNameComponent,
