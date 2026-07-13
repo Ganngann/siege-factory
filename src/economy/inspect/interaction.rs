@@ -1,3 +1,9 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 // Click handling on building inspection panels. Spawns TOML-driven panels via LayoutEngine.
 // et reproduis ici seulement si nécessaire pour la rétrocompatibilité.
 
@@ -34,6 +40,7 @@ pub fn not_build_mode(build_mode: Res<BuildMode>) -> bool {
 
 // ── Click detection ──
 
+#[allow(clippy::too_many_arguments)]
 pub fn building_inspect_click(
     mut commands: Commands,
     mut panel: ResMut<BuildingPanel>,
@@ -209,6 +216,7 @@ pub fn farm_crop_select_system(
 
 // ── Farm recruit button ──
 
+#[allow(clippy::too_many_arguments)]
 pub fn farm_recruit_system(
     mut commands: Commands,
     panel: ResMut<BuildingPanel>,

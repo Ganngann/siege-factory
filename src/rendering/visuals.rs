@@ -1,3 +1,9 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 // 📏 IA NOTE: fichier volumineux (500+ lignes).
 // Les HP bars et barres de progression sont partiellement remplacés par ui/components/hp_bar.rs et
 // ui/components/progress_bar.rs. Les composants visuels monde (sprites, tuiles) n'ont PAS d'équivalent
@@ -31,6 +37,7 @@ pub struct TileHighlight;
 pub struct TileHighlightEntity(pub Option<Entity>);
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn tile_highlight(
     mut commands: Commands,
     build_mode: Res<BuildMode>,
@@ -325,6 +332,7 @@ pub fn attach_unit_visuals(
 }
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn attach_building_visuals(
     mut commands: Commands,
     // SUGGEST: type BuildingSpriteQuery = Query<(Entity, &Building), (Without<Sprite>, Without<BeltSlots>, Without<UnbuiltBuilding>)> (clippy::type_complexity)

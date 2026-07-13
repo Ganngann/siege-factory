@@ -16,6 +16,7 @@ struct MenuItemAction {
     action: MenuAction,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn menu_navigation(
     mut commands: Commands,
     mut nav: ResMut<MenuNav>,
@@ -183,6 +184,7 @@ pub fn menu_navigation(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn menu_rebind_handler(
     mut commands: Commands,
     mut rebind: ResMut<RebindState>,

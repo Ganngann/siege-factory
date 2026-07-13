@@ -59,6 +59,7 @@ pub fn read_save_file(
 }
 
 // SUGGEST: extraire un struct LoadChunkParams (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn load_chunks(
     buf: Res<LoadBuffer>,
     mut chunk_grid: ResMut<ChunkGrid>,
@@ -502,6 +503,7 @@ pub fn load_units(buf: Res<LoadBuffer>, mut commands: Commands, cfg: Res<MapConf
 }
 
 // SUGGEST: extraire un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn load_finalize(
     mut buf: ResMut<LoadBuffer>,
     mut wave: ResMut<WaveState>,

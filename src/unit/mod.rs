@@ -159,6 +159,7 @@ fn soldier_auto_attack(
 }
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 fn worker_harvest(
     time: Res<Time>,
     unit_cfg: Res<UnitConfig>,

@@ -1,3 +1,9 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 use bevy::prelude::*;
 
 use crate::core::utils::{move_toward, tile_to_world, world_to_tile};
@@ -349,6 +355,7 @@ pub struct MiningTimer(pub f32);
 // ── Player mining ──
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn player_mine(
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,

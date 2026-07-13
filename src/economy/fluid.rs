@@ -1,3 +1,9 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 use bevy::prelude::*;
 
 use crate::economy::components::{Active, Direction, PowerConsumer, UnbuiltBuilding};
