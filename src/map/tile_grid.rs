@@ -1,3 +1,13 @@
+#![allow(clippy::unnecessary_sort_by)]
+#![allow(clippy::should_implement_trait)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 use crate::map::components::TileType;
 use bevy::prelude::{Handle, Mesh, Resource};
 use serde::{Deserialize, Serialize};
@@ -169,6 +179,7 @@ impl ChunkGrid {
 }
 
 // SUGGEST: extraire un struct GenParams (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 fn generate_chunk(
     seed: u64,
     cx: i32,

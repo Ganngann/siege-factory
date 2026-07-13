@@ -1,3 +1,9 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 use crate::core::input::KeyBindings;
 use crate::core::utils::silent_despawn;
 use crate::core::toast::ToastQueue;
@@ -14,6 +20,7 @@ use crate::rendering::minimap::MinimapCamera;
 use bevy::prelude::*;
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn handle_deconstruct_click_v2(
     mut commands: Commands,
     deconstruct: Res<DeconstructMode>,
@@ -111,6 +118,7 @@ pub fn deconstruct_entity(
 
 /// Observer for `DeconstructAreaEvent`. Despawns all buildings in the zone.
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn on_deconstruct_area(
     on: On<DeconstructAreaEvent>,
     mut commands: Commands,

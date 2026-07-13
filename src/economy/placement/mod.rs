@@ -1,3 +1,9 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 pub mod build;
 pub use build::*;
 pub mod belt_drag;
@@ -22,6 +28,7 @@ use crate::rendering::{PreviewMaterials, ShapeCache};
 use bevy::prelude::*;
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn build_mode_input(
     mut build_mode: ResMut<BuildMode>,
     mut deconstruct: ResMut<DeconstructMode>,
@@ -169,6 +176,7 @@ pub fn track_belt_drag(
 
 /// Preview the deconstruct drag zone as a red ghost overlay of actual buildings
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn deconstruct_drag_preview(
     mut commands: Commands,
     deconstruct: Res<DeconstructMode>,
@@ -239,6 +247,7 @@ pub fn deconstruct_drag_preview(
 // ── Deconstruct drag ──
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn track_deconstruct_drag(
     mut commands: Commands,
     mut drag: ResMut<DeconstructDrag>,

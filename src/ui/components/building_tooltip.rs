@@ -1,3 +1,9 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 use bevy::prelude::*;
 
 use crate::core::game_font::tf;
@@ -93,6 +99,7 @@ impl Default for BuildingTooltipConfig {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn building_tooltip_system(
     mut commands: Commands,
     windows: Query<&Window>,

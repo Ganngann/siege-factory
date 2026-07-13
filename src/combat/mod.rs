@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 use crate::core::game_state::GameState;
 use crate::core::utils::{move_toward, silent_despawn};
 use crate::enemy::wave_config::WaveConfig;

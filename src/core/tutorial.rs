@@ -296,6 +296,7 @@ fn evaluate_condition(
 pub struct TutorialHighlightEntity(pub Option<Entity>);
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn tutorial_highlight_system(
     mut commands: Commands,
     state: Res<TutorialState>,

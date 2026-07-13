@@ -116,6 +116,7 @@ fn mesh_from_quads(positions: Vec<[f32; 3]>, indices: Vec<u32>) -> Mesh {
 }
 
 // SUGGEST: extraire un struct ChunkParams (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_single_chunk_visuals(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
@@ -332,6 +333,7 @@ pub fn spawn_single_chunk_visuals(
 }
 
 // SUGGEST: extraire un struct ChunkParams (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_chunks_in_range(
     commands: &mut Commands,
     chunk_grid: &mut ChunkGrid,
@@ -375,6 +377,7 @@ pub fn spawn_chunks_in_range(
 }
 
 // SUGGEST: extraire un struct ChunkParams (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn update_visible_chunks(
     mut commands: Commands,
     camera: Query<(&Camera, &Transform), Without<MinimapCamera>>,

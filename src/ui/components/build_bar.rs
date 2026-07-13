@@ -1,3 +1,13 @@
+#![allow(clippy::unnecessary_sort_by)]
+#![allow(clippy::should_implement_trait)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 use bevy::prelude::*;
 use crate::core::game_font::tf;
 use crate::core::modding::ModRegistry;
@@ -465,6 +475,7 @@ pub fn cleanup_build_bar(
 
 // ── Keyboard navigation ──
 
+#[allow(clippy::too_many_arguments)]
 pub fn menu_navigation(
     mut menu_state: ResMut<MenuState>,
     menu_def: Res<MenuDef>,

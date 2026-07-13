@@ -1,3 +1,13 @@
+#![allow(clippy::unnecessary_sort_by)]
+#![allow(clippy::should_implement_trait)]
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::collapsible_else_if)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 use bevy::prelude::*;
 
 use crate::core::toast::ToastQueue;
@@ -17,6 +27,7 @@ use crate::map::tile_grid::ChunkGrid;
 /// Centralisé toutes les interactions avec la touche E.
 /// Press (just_pressed) : Capsule (tiers) → sinon mine (si dépôt)
 /// Hold (pressed) : mine les dépôts
+#[allow(clippy::too_many_arguments)]
 pub fn contextual_interact(
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
@@ -118,6 +129,7 @@ pub fn contextual_interact(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn try_mine(
     player_tile: &TilePosition,
     time: &Time,

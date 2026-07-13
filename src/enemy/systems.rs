@@ -30,6 +30,7 @@ pub fn wave_timer(
 }
 
 // SUGGEST: extraire dans un struct SystemParam (clippy::too_many_arguments)
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_enemies(
     mut commands: Commands,
     mut wave: ResMut<WaveState>,

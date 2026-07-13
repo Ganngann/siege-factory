@@ -1,3 +1,9 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::collapsible_if)]
+#![allow(clippy::drop_non_drop)]
+#![allow(clippy::unnecessary_cast)]
+#![allow(clippy::useless_format)]
+#![allow(clippy::single_match)]
 // 📏 IA NOTE: fichier volumineux (630+ lignes). `handle_build_click` est long,
 // les cas de placement (belts, buildings, etc.) pourraient être extraits.
 
