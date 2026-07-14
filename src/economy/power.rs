@@ -39,7 +39,7 @@ pub fn detect_power_changes(
 pub fn is_in_range(pos: Vec3, poles: &[(Entity, Vec3, f32)]) -> bool {
     poles
         .iter()
-        .any(|(_, pp, range)| pp.distance(pos) <= *range)
+        .any(|(_, pp, range)| pp.distance_squared(pos) <= (*range) * (*range))
 }
 
 fn has_recipe_resources(
@@ -155,21 +155,24 @@ pub fn rebuild_power_grid(
             .map(|(_, p, _)| p.output)
             .sum::<f32>();
 
-    let total_actual: f32 = consumers
-        .iter()
-        .filter(|(entity, _, _, active, assembler, recipe_gen, inventory)| {
-            consumer_can_produce(
-                *entity,
-                &connected_consumers,
-                *active,
-                *assembler,
-                *recipe_gen,
-                *inventory,
-                &recipes,
-            )
-        })
-        .map(|(_, _, consumer, _, _, _, _)| consumer.draw)
-        .sum();
+    let mut total_actual = 0.0;
+    let mut producing_states = Vec::with_capacity(consumers.iter().len());
+
+    for (entity, _, consumer, active, assembler, recipe_gen, inventory) in consumers.iter() {
+        let producing = consumer_can_produce(
+            entity,
+            &connected_consumers,
+            active,
+            assembler,
+            recipe_gen,
+            inventory,
+            &recipes,
+        );
+        producing_states.push(producing);
+        if producing {
+            total_actual += consumer.draw;
+        }
+    }
 
     let ratio = if total_available > 0.0 {
         (total_actual / total_available).min(1.0)
@@ -180,16 +183,7 @@ pub fn rebuild_power_grid(
 
     let power_ok = total_available > 0.0 && total_actual <= total_available;
 
-    for (entity, _, mut consumer, active, assembler, recipe_gen, inventory) in consumers.iter_mut() {
-        let producing = consumer_can_produce(
-            entity,
-            &connected_consumers,
-            active,
-            assembler,
-            recipe_gen,
-            inventory,
-            &recipes,
-        );
+    for ((_, _, mut consumer, _, _, _, _), producing) in consumers.iter_mut().zip(producing_states.into_iter()) {
         consumer.satisfied = producing && power_ok;
     }
 }

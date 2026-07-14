@@ -29,7 +29,7 @@ pub fn render_power_lines(
         let pos = tf.translation;
         if let Some(&(pp, _)) = pole_data
             .iter()
-            .find(|(pp, range)| pp.distance(pos) <= *range)
+            .find(|(pp, range)| pp.distance_squared(pos) <= (*range) * (*range))
         {
             // ⚠️ IA ATTENTION: couleur de ligne électrique en dur.
             gizmos.line(pp, pos, Color::srgba(0.3, 0.6, 1.0, 0.6));
