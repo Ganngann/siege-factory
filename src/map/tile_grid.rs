@@ -68,7 +68,7 @@ impl ChunkGrid {
         let spawn_chance = self.deposit_spawn_chance_pct;
         let min_per = self.deposit_min_per_chunk;
         let max_per = self.deposit_max_per_chunk;
-        let dist = self.deposit_distribution.clone();
+        // ⚡ Bolt: pass `deposit_distribution` by slice reference to avoid needless heap allocations
         self.chunks.entry((cx, cy)).or_insert_with(|| {
             generate_chunk(
                 seed,
@@ -79,7 +79,7 @@ impl ChunkGrid {
                 spawn_chance,
                 min_per,
                 max_per,
-                dist,
+                &self.deposit_distribution,
             )
         })
     }
@@ -178,7 +178,7 @@ fn generate_chunk(
     deposit_spawn_chance_pct: u32,
     deposit_min_per_chunk: u32,
     deposit_max_per_chunk: u32,
-    deposit_distribution: Vec<(String, u32)>,
+    deposit_distribution: &[(String, u32)],
 ) -> Chunk {
     use super::rng::{SimpleRng, chunk_hash};
 
