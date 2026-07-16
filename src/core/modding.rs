@@ -76,6 +76,10 @@ pub struct ModRegistry {
     pub mods: Vec<ActiveMod>,
 }
 
+fn is_safe_filename(filename: &str) -> bool {
+    !filename.contains("..") && !filename.starts_with('/') && !filename.starts_with('\\')
+}
+
 impl ModRegistry {
     /// Scan the `mods/` directory (relative to working dir) and discover all mods.
     /// Each mod must have a `mod.toml` manifest.
@@ -182,6 +186,9 @@ impl ModRegistry {
     /// Returns the content of the FIRST **enabled** mod that has `data/{filename}`.
     /// Checks mods in priority order (last active mod wins).
     pub fn load_data(&self, filename: &str) -> Option<String> {
+        if !is_safe_filename(filename) {
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
@@ -199,6 +206,9 @@ impl ModRegistry {
     /// Returns (mod_id, content) pairs in mod priority order (base first).
     pub fn load_all_data(&self, filename: &str) -> Vec<(String, String)> {
         let mut results = Vec::new();
+        if !is_safe_filename(filename) {
+            return results;
+        }
         for am in &self.mods {
             if !am.enabled {
                 continue;
@@ -215,6 +225,9 @@ impl ModRegistry {
     /// Load a texture file from mods in order (first found wins).
     pub fn load_texture(&self, stem: &str, layer: &str) -> Option<Vec<u8>> {
         let filename = format!("{}_{}.png", stem, layer);
+        if !is_safe_filename(&filename) {
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
@@ -230,6 +243,9 @@ impl ModRegistry {
 
     /// Load a story file from mods in order.
     pub fn load_story(&self, filename: &str) -> Option<String> {
+        if !is_safe_filename(filename) {
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
