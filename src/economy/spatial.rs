@@ -31,12 +31,13 @@ impl SpatialRegistry {
         let mut seen = Vec::new();
         for gx in x1..=x2 {
             for gy in y1..=y2 {
-                if let Some(&entity) = self.map.get(&(gx, gy))
-                    && !seen.contains(&entity) {
-                        seen.push(entity);
-                    }
+                if let Some(&entity) = self.map.get(&(gx, gy)) {
+                    seen.push(entity);
+                }
             }
         }
+        seen.sort_unstable();
+        seen.dedup();
         seen
     }
 
