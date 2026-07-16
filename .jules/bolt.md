@@ -1,0 +1,3 @@
+## 2025-02-18 - Spatial Registry O(N^2) Performance Bottleneck
+**Learning:** Found an O(N^2) bottleneck inside `SpatialRegistry::entities_in_rect` caused by checking `!seen.contains(&entity)` directly inside the nested loops. This function is called every frame during deconstruct drag previews, causing significant framerate drops on large selections. Replacing it with a post-loop `sort_unstable()` and `dedup()` improves performance to O(N log N).
+**Action:** When filtering for unique items in a tight nested loop or high-frequency function, prefer pushing all items and then using `sort_unstable` + `dedup` instead of using `contains` iteratively on a growing `Vec`, which has a quadratic complexity characteristic.
