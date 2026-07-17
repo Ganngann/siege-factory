@@ -1,0 +1,3 @@
+## 2025-02-18 - Replacing HashSet with pre-computed Sorted Vec in Bevy Systems
+**Learning:** Creating a `HashSet` dynamically per invocation inside a Bevy system's nested loop causes significant O(N) allocation overhead per frame. Additionally, repeatedly iterating a `Query` (like `crops.iter()`) inside a nested loop causes O(N^2) time complexity.
+**Action:** When a nested loop needs to repeatedly query the same set of components or coordinates, pre-collect the relevant data into a `Vec` *outside* the inner loop. For fast O(log N) presence checks instead of `HashSet` lookups, apply `.sort_unstable()` and `.dedup()` to the `Vec` and use `binary_search`.
