@@ -1,0 +1,3 @@
+## 2024-05-15 - Bevy Global Button Hover States
+**Learning:** In Bevy 0.19, global interactive UI enhancements like button hover states can be cleanly implemented as a single, centralized `Update` system querying for `Changed<Interaction>` and modifying standard UI components like `BackgroundColor` using a shared `Theme` resource, avoiding the need to manually attach hover logic to every individual button spawn.
+**Action:** For simple global UI interaction feedback (like hover color changes, click sounds, or standard tooltips), prefer creating one generic system that operates on a component bundle (e.g., `(Interaction, With<Button>)`) rather than duplicating interaction logic within each specific UI panel's codebase.
