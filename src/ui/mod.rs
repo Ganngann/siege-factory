@@ -1,3 +1,4 @@
+pub mod button_hover;
 pub mod components;
 pub mod context;
 pub mod engine;
@@ -80,6 +81,8 @@ impl Plugin for UiPlugin {
         app.insert_resource(crate::ui::components::data_list::DataListSelected::default());
 
         let theme = app.world().resource::<Theme>().clone();
+        app.add_systems(Update, crate::ui::button_hover::button_hover_system);
+
         let layout_engine = LayoutEngine::new(comp_registry, theme);
         app.insert_resource(layout_engine);
 
