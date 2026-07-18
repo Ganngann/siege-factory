@@ -1,0 +1,4 @@
+## 2025-02-27 - Path Traversal in Mod Loading
+**Vulnerability:** User-provided mod configuration files and IDs were loaded without sanitizing the input path in `load_data`, `load_texture`, `load_story` and `load_all_data`. Since `PathBuf::join` replaces the entire path if the appended segment is an absolute path or contains traversal characters (`..`), an attacker could craft a malicious mod to read sensitive system files (e.g., `../../../../etc/passwd`).
+**Learning:** `PathBuf::join` provides no built-in protection against path traversal.
+**Prevention:** Use a helper function (e.g., `is_safe_path`) that inspects `Path::components()` and rejects any path containing `Component::ParentDir`, `Component::RootDir`, or `Component::Prefix`. Always validate user-provided or mod-provided paths before joining them with base directories.
