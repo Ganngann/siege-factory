@@ -69,6 +69,21 @@ pub fn cultivator_ai(
     let speed = cultivator_def.speed;
     let carry_capacity = cultivator_def.carry_capacity;
 
+    // BOLT OPTIMIZATION:
+    // We pre-calculate and sort occupied crop positions outside the cultivator loop.
+    // This avoids iterating through all crops and creating a HashSet dynamically
+    // for each individual cultivator seeking to plant, shifting complexity from
+    // O(C * N) with allocations to O(N log N) without dynamic allocations per cultivator.
+    let mut occupied_crops: Vec<(i32, i32)> = crops
+        .iter()
+        .map(|(_, _, tf)| {
+            world_to_tile(tf.translation.truncate(), tile_size)
+        })
+        .collect();
+    occupied_crops.sort_unstable();
+    occupied_crops.dedup();
+
+
     for (_entity, mut cultivator, mut transform) in set.p2().iter_mut() {
         match cultivator.state.clone() {
             CultivatorState::Idle => {
@@ -105,7 +120,7 @@ pub fn cultivator_ai(
                         cy,
                         tile_size,
                         &spatial,
-                        &crops,
+                        &occupied_crops,
                         &taken_tiles,
                     ) {
                         taken_tiles.insert((tx, ty));
@@ -289,18 +304,12 @@ pub fn cultivator_ai(
 fn find_plantable_tile_spiral(
     cx: i32,
     cy: i32,
-    tile_size: f32,
+    _tile_size: f32,
     spatial: &SpatialRegistry,
-    crops: &Query<(Entity, &Crop, &Transform)>,
+    occupied_crops: &[(i32, i32)],
     reserved_tiles: &HashSet<(i32, i32)>,
 ) -> Option<(i32, i32)> {
     let max_radius = 50;
-    let occupied_crops: HashSet<(i32, i32)> = crops
-        .iter()
-        .map(|(_, _, tf)| {
-            world_to_tile(tf.translation.truncate(), tile_size)
-        })
-        .collect();
 
     let mut x = 0i32;
     let mut y = 0i32;
@@ -315,7 +324,7 @@ fn find_plantable_tile_spiral(
             let tx = cx + x;
             let ty = cy + y;
             if spatial.is_free(tx, ty)
-                && !occupied_crops.contains(&(tx, ty))
+                && occupied_crops.binary_search(&(tx, ty)).is_err()
                 && !reserved_tiles.contains(&(tx, ty))
             {
                 return Some((tx, ty));

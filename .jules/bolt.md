@@ -1,0 +1,3 @@
+## 2024-07-18 - Pre-calculation of Query data for nested loop avoidance
+**Learning:** In Bevy, performing a `.iter()` over a `Query` and mapping the result into a `HashSet` inside a per-entity loop (like `cultivator.iter()`) causes severe allocation overhead and O(C * N) time complexity.
+**Action:** Always extract the collection of Query data into a `Vec`, sort and dedup it *outside* of the main loop. Then, pass the `Vec` as a slice to helper functions inside the loop, and use `.binary_search().is_err()` instead of `HashSet::contains()`. This is both faster and eliminates per-frame allocation.
