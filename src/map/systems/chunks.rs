@@ -494,10 +494,24 @@ pub fn update_visible_chunks(
             && !spawned.contains(&(cx, cy))
     });
 
+    // Bolt: Optimization - avoid cloning and sorting if all chunks are already spawned.
+    // Instead of doing O(N^2) lookups, lazily initialize a sorted set of pending spawns.
+    let mut pending_spawns_sorted: Option<Vec<(i32, i32)>> = None;
+
     for cx in min_cx..=max_cx {
         for cy in min_cy..=max_cy {
-            if !spawned.contains(&(cx, cy)) && !chunk_grid.pending_spawns.contains(&(cx, cy)) {
-                chunk_grid.pending_spawns.push((cx, cy));
+            if !spawned.contains(&(cx, cy)) {
+                // Initialize the sorted list of pending spawns only if there are unspawned chunks
+                let sorted = pending_spawns_sorted.get_or_insert_with(|| {
+                    let mut sorted = chunk_grid.pending_spawns.clone();
+                    sorted.sort_unstable();
+                    sorted.dedup();
+                    sorted
+                });
+
+                if sorted.binary_search(&(cx, cy)).is_err() {
+                    chunk_grid.pending_spawns.push((cx, cy));
+                }
             }
         }
     }
