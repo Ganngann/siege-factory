@@ -69,6 +69,9 @@ pub fn cultivator_ai(
     let speed = cultivator_def.speed;
     let carry_capacity = cultivator_def.carry_capacity;
 
+    // Lazily initialized cache of occupied crop coordinates, sorted for binary_search
+    let mut lazy_occupied_crops: Option<Vec<(i32, i32)>> = None;
+
     for (_entity, mut cultivator, mut transform) in set.p2().iter_mut() {
         match cultivator.state.clone() {
             CultivatorState::Idle => {
@@ -100,12 +103,22 @@ pub fn cultivator_ai(
                 } else if carrying_seeds {
                     let (cx, cy) =
                         nearest_farm_tile(transform.translation, &farm_positions, tile_size);
+
+                    let occupied_crops_ref = lazy_occupied_crops.get_or_insert_with(|| {
+                        let mut vec: Vec<(i32, i32)> = crops
+                            .iter()
+                            .map(|(_, _, tf)| world_to_tile(tf.translation.truncate(), tile_size))
+                            .collect();
+                        vec.sort_unstable();
+                        vec.dedup();
+                        vec
+                    });
+
                     if let Some((tx, ty)) = find_plantable_tile_spiral(
                         cx,
                         cy,
-                        tile_size,
-                        &spatial,
-                        &crops,
+                        spatial.as_ref(),
+                        occupied_crops_ref,
                         &taken_tiles,
                     ) {
                         taken_tiles.insert((tx, ty));
@@ -289,18 +302,11 @@ pub fn cultivator_ai(
 fn find_plantable_tile_spiral(
     cx: i32,
     cy: i32,
-    tile_size: f32,
     spatial: &SpatialRegistry,
-    crops: &Query<(Entity, &Crop, &Transform)>,
+    occupied_crops: &[(i32, i32)],
     reserved_tiles: &HashSet<(i32, i32)>,
 ) -> Option<(i32, i32)> {
     let max_radius = 50;
-    let occupied_crops: HashSet<(i32, i32)> = crops
-        .iter()
-        .map(|(_, _, tf)| {
-            world_to_tile(tf.translation.truncate(), tile_size)
-        })
-        .collect();
 
     let mut x = 0i32;
     let mut y = 0i32;
@@ -315,7 +321,7 @@ fn find_plantable_tile_spiral(
             let tx = cx + x;
             let ty = cy + y;
             if spatial.is_free(tx, ty)
-                && !occupied_crops.contains(&(tx, ty))
+                && occupied_crops.binary_search(&(tx, ty)).is_err()
                 && !reserved_tiles.contains(&(tx, ty))
             {
                 return Some((tx, ty));
