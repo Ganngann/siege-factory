@@ -76,6 +76,17 @@ pub struct ModRegistry {
     pub mods: Vec<ActiveMod>,
 }
 
+
+fn is_safe_path(filename: &str) -> bool {
+    let path = std::path::Path::new(filename);
+    for comp in path.components() {
+        if matches!(comp, std::path::Component::ParentDir | std::path::Component::RootDir | std::path::Component::Prefix(_)) {
+            return false;
+        }
+    }
+    true
+}
+
 impl ModRegistry {
     /// Scan the `mods/` directory (relative to working dir) and discover all mods.
     /// Each mod must have a `mod.toml` manifest.
@@ -182,6 +193,10 @@ impl ModRegistry {
     /// Returns the content of the FIRST **enabled** mod that has `data/{filename}`.
     /// Checks mods in priority order (last active mod wins).
     pub fn load_data(&self, filename: &str) -> Option<String> {
+        if !is_safe_path(filename) {
+            error!("Unsafe path detected: {}", filename);
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
@@ -198,6 +213,10 @@ impl ModRegistry {
     /// Load ALL versions of a data file across all **enabled** mods.
     /// Returns (mod_id, content) pairs in mod priority order (base first).
     pub fn load_all_data(&self, filename: &str) -> Vec<(String, String)> {
+        if !is_safe_path(filename) {
+            error!("Unsafe path detected: {}", filename);
+            return Vec::new();
+        }
         let mut results = Vec::new();
         for am in &self.mods {
             if !am.enabled {
@@ -230,6 +249,10 @@ impl ModRegistry {
 
     /// Load a story file from mods in order.
     pub fn load_story(&self, filename: &str) -> Option<String> {
+        if !is_safe_path(filename) {
+            error!("Unsafe path detected: {}", filename);
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
