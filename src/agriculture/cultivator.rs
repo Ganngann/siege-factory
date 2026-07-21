@@ -61,6 +61,8 @@ pub fn cultivator_ai(
     let mut taken_crops = reserved_crops.clone();
     let mut taken_tiles = reserved_tiles.clone();
 
+    let mut lazy_occupied_crops: Option<Vec<(i32, i32)>> = None;
+
     let tile_size = cfg.tile_size;
     let cultivator_def = match unit_cfg.get("cultivator") {
         Some(d) => d,
@@ -107,6 +109,7 @@ pub fn cultivator_ai(
                         &spatial,
                         &crops,
                         &taken_tiles,
+                        &mut lazy_occupied_crops,
                     ) {
                         taken_tiles.insert((tx, ty));
                         cultivator.state = CultivatorState::MovingToPlant(tx, ty);
@@ -293,14 +296,9 @@ fn find_plantable_tile_spiral(
     spatial: &SpatialRegistry,
     crops: &Query<(Entity, &Crop, &Transform)>,
     reserved_tiles: &HashSet<(i32, i32)>,
+    lazy_occupied_crops: &mut Option<Vec<(i32, i32)>>,
 ) -> Option<(i32, i32)> {
     let max_radius = 50;
-    let occupied_crops: HashSet<(i32, i32)> = crops
-        .iter()
-        .map(|(_, _, tf)| {
-            world_to_tile(tf.translation.truncate(), tile_size)
-        })
-        .collect();
 
     let mut x = 0i32;
     let mut y = 0i32;
@@ -314,11 +312,20 @@ fn find_plantable_tile_spiral(
         if !(x == 0 && y == 0) {
             let tx = cx + x;
             let ty = cy + y;
-            if spatial.is_free(tx, ty)
-                && !occupied_crops.contains(&(tx, ty))
-                && !reserved_tiles.contains(&(tx, ty))
-            {
-                return Some((tx, ty));
+            if spatial.is_free(tx, ty) && !reserved_tiles.contains(&(tx, ty)) {
+                let occupied = lazy_occupied_crops.get_or_insert_with(|| {
+                    let mut vec: Vec<(i32, i32)> = crops
+                        .iter()
+                        .map(|(_, _, tf)| world_to_tile(tf.translation.truncate(), tile_size))
+                        .collect();
+                    vec.sort_unstable();
+                    vec.dedup();
+                    vec
+                });
+
+                if occupied.binary_search(&(tx, ty)).is_err() {
+                    return Some((tx, ty));
+                }
             }
         }
 
