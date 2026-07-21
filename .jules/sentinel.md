@@ -1,0 +1,4 @@
+## 2025-02-14 - Path Traversal Vulnerability in Modding
+**Vulnerability:** The modding system allowed `ModRegistry` to dynamically load files by concatenating untrusted mod-provided filenames with base directories using `PathBuf::join`. Absolute paths or traversal components (`..`) could allow an attacker to escape the mod directory and read arbitrary files on the system.
+**Learning:** `PathBuf::join` replaces the base path entirely if the appended path is absolute. Relying on simple path joining without validating the appended path's components is insecure when inputs are derived from external configurations like mods.
+**Prevention:** Always validate that paths derived from user input or mods are strictly relative and contain no `ParentDir` (`..`), `RootDir` (`/`), or `Prefix` (e.g. `C:`) components using `std::path::Component` before calling `PathBuf::join`.

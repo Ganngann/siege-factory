@@ -2,7 +2,20 @@ use bevy::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+fn is_safe_path(filename: &str) -> bool {
+    let path = Path::new(filename);
+    !path.is_absolute()
+        && !path.components().any(|c| {
+            matches!(
+                c,
+                std::path::Component::ParentDir
+                    | std::path::Component::RootDir
+                    | std::path::Component::Prefix(_)
+            )
+        })
+}
 
 /// Manifest file loaded from each mod's mod.toml
 #[derive(Deserialize, Debug, Clone)]
@@ -182,6 +195,10 @@ impl ModRegistry {
     /// Returns the content of the FIRST **enabled** mod that has `data/{filename}`.
     /// Checks mods in priority order (last active mod wins).
     pub fn load_data(&self, filename: &str) -> Option<String> {
+        if !is_safe_path(filename) {
+            bevy::prelude::error!("SECURITY: Blocked unsafe data file access: {}", filename);
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
@@ -198,6 +215,10 @@ impl ModRegistry {
     /// Load ALL versions of a data file across all **enabled** mods.
     /// Returns (mod_id, content) pairs in mod priority order (base first).
     pub fn load_all_data(&self, filename: &str) -> Vec<(String, String)> {
+        if !is_safe_path(filename) {
+            bevy::prelude::error!("SECURITY: Blocked unsafe data file access: {}", filename);
+            return Vec::new();
+        }
         let mut results = Vec::new();
         for am in &self.mods {
             if !am.enabled {
@@ -214,6 +235,10 @@ impl ModRegistry {
 
     /// Load a texture file from mods in order (first found wins).
     pub fn load_texture(&self, stem: &str, layer: &str) -> Option<Vec<u8>> {
+        if !is_safe_path(stem) || !is_safe_path(layer) {
+            bevy::prelude::error!("SECURITY: Blocked unsafe texture file access");
+            return None;
+        }
         let filename = format!("{}_{}.png", stem, layer);
         for am in self.mods.iter().rev() {
             if !am.enabled {
@@ -230,6 +255,10 @@ impl ModRegistry {
 
     /// Load a story file from mods in order.
     pub fn load_story(&self, filename: &str) -> Option<String> {
+        if !is_safe_path(filename) {
+            bevy::prelude::error!("SECURITY: Blocked unsafe story file access: {}", filename);
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
