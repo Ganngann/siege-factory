@@ -2,7 +2,13 @@ use bevy::prelude::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
+
+/// Helper to prevent path traversal and absolute path injection when joining user-provided paths.
+fn is_safe_path(path: &str) -> bool {
+    let p = Path::new(path);
+    !p.components().any(|c| matches!(c, Component::ParentDir | Component::RootDir | Component::Prefix(_)))
+}
 
 /// Manifest file loaded from each mod's mod.toml
 #[derive(Deserialize, Debug, Clone)]
@@ -182,6 +188,10 @@ impl ModRegistry {
     /// Returns the content of the FIRST **enabled** mod that has `data/{filename}`.
     /// Checks mods in priority order (last active mod wins).
     pub fn load_data(&self, filename: &str) -> Option<String> {
+        if !is_safe_path(filename) {
+            warn!("Rejected unsafe path in load_data: {}", filename);
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
@@ -198,6 +208,10 @@ impl ModRegistry {
     /// Load ALL versions of a data file across all **enabled** mods.
     /// Returns (mod_id, content) pairs in mod priority order (base first).
     pub fn load_all_data(&self, filename: &str) -> Vec<(String, String)> {
+        if !is_safe_path(filename) {
+            warn!("Rejected unsafe path in load_all_data: {}", filename);
+            return Vec::new();
+        }
         let mut results = Vec::new();
         for am in &self.mods {
             if !am.enabled {
@@ -214,6 +228,10 @@ impl ModRegistry {
 
     /// Load a texture file from mods in order (first found wins).
     pub fn load_texture(&self, stem: &str, layer: &str) -> Option<Vec<u8>> {
+        if !is_safe_path(stem) || !is_safe_path(layer) {
+            warn!("Rejected unsafe path in load_texture: stem={}, layer={}", stem, layer);
+            return None;
+        }
         let filename = format!("{}_{}.png", stem, layer);
         for am in self.mods.iter().rev() {
             if !am.enabled {
@@ -230,6 +248,10 @@ impl ModRegistry {
 
     /// Load a story file from mods in order.
     pub fn load_story(&self, filename: &str) -> Option<String> {
+        if !is_safe_path(filename) {
+            warn!("Rejected unsafe path in load_story: {}", filename);
+            return None;
+        }
         for am in self.mods.iter().rev() {
             if !am.enabled {
                 continue;
