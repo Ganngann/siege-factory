@@ -88,5 +88,7 @@ impl Plugin for UiPlugin {
         panel_registry.register(Box::new(BuildingPanelImpl));
         panel_registry.register(Box::new(CapsulePanelImpl));
         app.insert_resource(panel_registry);
+
+        app.add_systems(Update, crate::ui::components::button::button_hover_system);
     }
 }
